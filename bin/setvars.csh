@@ -1,0 +1,3 @@
+setenv CRPROPAROOT /ssd/munger/Mag/CRPropa/install
+setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:$PWD/lib
+setenv LD_LIBRARY_PATH $CRPROPAROOT/lib:$LD_LIBRARY_PATH
