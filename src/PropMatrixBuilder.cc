@@ -113,6 +113,7 @@ namespace prop {
         ++m[jSec][iPrim];
       }
     }
+    crpFile->Close();
   }
 
 
