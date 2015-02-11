@@ -1,6 +1,8 @@
 #include <PropMatrixBuilder.h>
 #include <PropMatrixFile.h>
 
+#include <iostream>
+
 using namespace prop;
 using namespace std;
 
@@ -17,7 +19,9 @@ main(int argc, char** argv)
 
   PropMatrixBuilder pmb;
   pmb.Process(filenames);
-  prop::PropMatrixFile pmf("propMatrix.root", "RECREATE");
+  pmb.PrintSummary();
+
+  PropMatrixFile pmf("propMatrix.root", false);
   pmf.Write(pmb.GetPropMatrixCollection());
   pmf.Close();
 

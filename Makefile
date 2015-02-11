@@ -1,3 +1,5 @@
+.PHONY: Make-depend
+
 LD            := $(CXX)
 
 SRC_DIR = src
@@ -10,7 +12,7 @@ BIN_DIR = bin
 CINT = rootcint
 CXXFLAGS += -std=c++0x -O2 -Wall -Wextra -fPIC
 CXXFLAGS += $(shell root-config --cflags)
-CXXFLAGS += -I$(SRC_DIR) -I. -I$(CRPROPAROOT)/include
+CXXFLAGS += -I$(SRC_DIR) -I.
 LDFLAGS  += -fPIC -ggdb3 -Wall
 LDFLAGS  += $(shell root-config --libs)  -Wl,--no-as-needed -fPIC
 LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
@@ -27,10 +29,10 @@ EXE = $(patsubst $(PROG_DIR)/%.cc, $(BIN_DIR)/%, $(wildcard $(PROG_DIR)/*.cc))
 CLIBS = $(LIB_DIR)/libProp.so
 
 
-all: depend $(CLIBS) $(EXE)
+all: Make-depend $(CLIBS) $(EXE)
 
 $(BIN_DIR)/%: $(PROG_DIR)/%.cc
-	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp -L$(CRPROPAROOT)/lib -lcrpropa
+	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp
 
 $(CLIBS): $(OBJS)
 	@mkdir -p $(LIB_DIR)
@@ -52,9 +54,7 @@ clean:
 	@rm -f $(EXE)
 	@rm -f Make-depend
 
-depend: Make-depend
-
-Make-depend: $(SOURCES)
+Make-depend:
 	$(CPP) $(CXXFLAGS) $(ROOTCXXFLAGS) $(CPPFLAGS) -MM $(SOURCES) > $@
 
 #ifneq ($(MAKECMDGOALS),clean)
