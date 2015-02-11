@@ -118,8 +118,8 @@ namespace prop {
 
 
   const
-  PropMatrixCollection&
-  PropMatrixBuilder::GetPropMatrixCollection()
+  PropMatrices&
+  PropMatrixBuilder::GetPropMatrices()
     const
   {
     if (!fIsNormalized) {

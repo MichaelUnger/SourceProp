@@ -1,19 +1,19 @@
-#ifndef _PropMatrixCollection_h_
-#define _PropMatrixCollection_h_
+#ifndef _PropMatrices_h_
+#define _PropMatrices_h_
 
 #include <map>
 #include <TMatrixD.h>
 
 namespace prop {
 
-  class PropMatrixCollection {
+  class PropMatrices {
 
   public:
     typedef std::map<unsigned int, TMatrixD> SecondaryMap;
     typedef std::map<unsigned int, SecondaryMap> PrimaryMap;
 
   public:
-    PropMatrixCollection(const double lgEmin = 0,
+    PropMatrices(const double lgEmin = 0,
                          const double lgEmax = 0);
 
     bool HasPrimary(const unsigned int Aprim) const;
@@ -28,6 +28,7 @@ namespace prop {
     const SecondaryMap& GetSecondaryMap(const unsigned int Aprim) const
     { return fMatrices.find(Aprim)->second; }
 
+    unsigned int GetN() const;
     double GetLgEmin() const { return fLgEmin; }
     double GetLgEmax() const { return fLgEmax; }
     void SetEnergyRange(const double lgEmin, const double lgEmax)

@@ -1,7 +1,7 @@
 #ifndef _PropMatrixFile_h_
 #define _PropMatrixFile_h_
 
-#include "PropMatrixCollection.h"
+#include "PropMatrices.h"
 
 #include <string>
 
@@ -14,15 +14,15 @@ namespace prop {
   public:
     PropMatrixFile(const std::string& outputFilename,
                    const bool read = true);
-    void Write(const PropMatrixCollection& pmc);
+    void Write(const PropMatrices& pmc);
     void Close();
-    const PropMatrixCollection& GetPropMatrixCollection()
+    const PropMatrices& GetPropMatrices()
     { return fPropMatrices; }
 
   private:
     bool fReadMode;
     TFile* fFile;
-    PropMatrixCollection fPropMatrices;
+    PropMatrices fPropMatrices;
   };
 }
 #endif

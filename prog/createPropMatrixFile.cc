@@ -22,7 +22,7 @@ main(int argc, char** argv)
   pmb.PrintSummary();
 
   PropMatrixFile pmf("propMatrix.root", false);
-  pmf.Write(pmb.GetPropMatrixCollection());
+  pmf.Write(pmb.GetPropMatrices());
   pmf.Close();
 
 }

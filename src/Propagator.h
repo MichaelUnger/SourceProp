@@ -1,7 +1,7 @@
 #ifndef _Propagator_h_
 #define _Propagator_h_
 
-#include "PropMatrixCollection.h"
+#include "PropMatrices.h"
 #include <Rtypes.h>
 #include <map>
 
@@ -12,7 +12,7 @@ namespace prop {
   class Propagator {
 
   public:
-    Propagator(const PropMatrixCollection& m) :
+    Propagator(const PropMatrices& m) :
       fPropMatrices(m) {}
 
     void Propagate(const std::map<unsigned int, TMatrixD>& spectrum);
@@ -21,7 +21,7 @@ namespace prop {
 
   private:
     Propagator();
-    const PropMatrixCollection& fPropMatrices;
+    const PropMatrices& fPropMatrices;
     std::map<unsigned int, TMatrixD> fResult;
     TMatrixD fSum;
     ClassDefNV(Propagator, 1)

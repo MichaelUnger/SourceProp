@@ -1,7 +1,7 @@
 #ifndef _PropMatrixBuilder_h_
 #define _PropMatrixBuilder_h_
 
-#include "PropMatrixCollection.h"
+#include "PropMatrices.h"
 #include <string>
 #include <vector>
 #include <TAxis.h>
@@ -18,7 +18,7 @@ namespace prop {
     ~PropMatrixBuilder();
     void Process(const std::vector<std::string>& filenames);
     void Process(const std::string& filename);
-    const PropMatrixCollection& GetPropMatrixCollection() const;
+    const PropMatrices& GetPropMatrices() const;
     void PrintSummary() const;
 
   private:
@@ -28,7 +28,7 @@ namespace prop {
     double fLgEmax;
     TAxis fAxis;
     std::map<unsigned int, TH1D*> fGenMap;
-    mutable PropMatrixCollection fPropMatrices;
+    mutable PropMatrices fPropMatrices;
   };
 }
 #endif

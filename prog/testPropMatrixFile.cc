@@ -15,12 +15,13 @@ int
 main(int /*argc*/, char** /*argv*/)
 {
 
-  PropMatrixFile pmf("propMatrix.root");
-  Propagator p(pmf.GetPropMatrixCollection());
+  PropMatrixFile pmf("ROOT/propMatrix.root");
+  const PropMatrices& pmc = pmf.GetPropMatrices();
+  Propagator p(pmc);
 
-  const unsigned int nBins = 50;
-  const double lgEmin = 17;
-  const double lgEmax = 22;
+  const unsigned int nBins = pmc.GetN();
+  const double lgEmin = pmc.GetLgEmin();
+  const double lgEmax = pmc.GetLgEmax();
   TAxis axis(nBins, lgEmin, lgEmax);
   TMatrixD spectrum1(nBins, 1);
   TMatrixD spectrum2(nBins, 1);

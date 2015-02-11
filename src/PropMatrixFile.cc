@@ -1,5 +1,5 @@
 #include "PropMatrixFile.h"
-#include "PropMatrixCollection.h"
+#include "PropMatrices.h"
 
 #include <TFile.h>
 #include <TROOT.h>
@@ -58,7 +58,7 @@ namespace prop {
   }
 
   void
-  PropMatrixFile::Write(const PropMatrixCollection& pmc)
+  PropMatrixFile::Write(const PropMatrices& pmc)
   {
     if (fReadMode) {
       cerr << " PropMatrixFile::Write() -- ignored (read mode)! " << endl;

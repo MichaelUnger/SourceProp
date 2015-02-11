@@ -14,7 +14,6 @@
 //#pragma link C++ namespace tst;
 
 #pragma link C++ class prop::Propagator+;
-
 #endif  // CINT
 
 
