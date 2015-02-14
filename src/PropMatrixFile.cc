@@ -49,6 +49,8 @@ namespace prop {
           const unsigned int Asec = boost::lexical_cast<unsigned int>(splitname[2]);
           TMatrixD& m = fPropMatrices.GetMatrix(Aprim, Asec);
           m.ResizeTo(h->GetNbinsX(), h->GetNbinsY());
+          fPropMatrices.SetEnergyRange(h->GetXaxis()->GetXmin(),
+                                       h->GetXaxis()->GetXmax());
           for (int i = 0; i < m.GetNcols(); ++i)
             for (int j = 0; j < m.GetNrows(); ++j)
               m[j][i] = h->GetBinContent(i+1, j+1);

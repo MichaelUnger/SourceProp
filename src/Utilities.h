@@ -5,10 +5,11 @@ namespace prop {
 
   inline
   void
-  zetaToFraction(const double* zeta, double* fractions)
+  zetaToFraction(const unsigned int nFractions,
+                 const double* zeta, double* fractions)
   {
-    for (unsigned int i = 0; i < gnMass; ++i) {
-      fractions[i] = (i < gnMass - 1 ? zeta[i] : 1);
+    for (unsigned int i = 0; i < nFractions; ++i) {
+      fractions[i] = (i < nFractions - 1 ? zeta[i] : 1);
       for (unsigned int j = 0;  j < i; ++j)
         fractions[i] *= (1 - zeta[j]);
     }
@@ -16,9 +17,10 @@ namespace prop {
 
   inline
   void
-  fractionToZeta(const double* fractions, double* zeta)
+  fractionToZeta(const unsigned int nZeta,
+                 const double* fractions, double* zeta)
   {
-    for (unsigned int i = 0; i < gnMass - 1; ++i) {
+    for (unsigned int i = 0; i < nZeta; ++i) {
       zeta[i] = fractions[i];
       for (unsigned int j = 0;  j < i; ++j)
         zeta[i] /= (1 - zeta[j]);
@@ -26,3 +28,5 @@ namespace prop {
   }
 
 }
+
+#endif

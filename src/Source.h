@@ -2,6 +2,7 @@
 #define _Source_h_
 
 #include <cmath>
+#include <iostream>
 
 namespace prop {
   class Source {

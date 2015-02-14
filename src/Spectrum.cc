@@ -1,14 +1,19 @@
 #include "Spectrum.h"
 #include "Source.h"
 #include <cmath>
+#include <iostream>
 using namespace std;
 
 namespace prop {
 
-  void
-  Spectrum::CalcEscFlux()
+  const
+  Spectrum::SpecMap&
+  Spectrum::GetEscFlux()
+    const
   {
-    fEscape.clear();
+    if (!fEscape.empty())
+      return fEscape;
+
     const double dlgE = (fLgEmax - fLgEmin) / fN;
     for (const auto& iter : fFractions) {
       const unsigned int Ainj = iter.first;
@@ -19,17 +24,17 @@ namespace prop {
         if (!m.GetNoElements())
           m.ResizeTo(fN, 1);
 
-        double lgE = dlgE / 2;
+        double lgE = fLgEmin + dlgE / 2;
         for (unsigned int iE = 0; iE < fN; ++iE) {
           const double flux =
             frac * NucleusFlux(Ainj, Asec, pow(10, lgE));
-          m[iE][0] += flux;
+           m[iE][0] += flux;
           lgE += dlgE;
         }
       }
 
       TMatrixD& m = fEscape[1];
-      double lgE = dlgE / 2;
+      double lgE = fLgEmin + dlgE / 2;
       for (unsigned int iE = 0; iE < fN; ++iE) {
         const double flux =
           frac * NucleonFlux(Ainj, pow(10, lgE));
@@ -37,8 +42,88 @@ namespace prop {
         lgE += dlgE;
       }
     }
+    return fEscape;
   }
 
+  const
+  Spectrum::SpecMap&
+  Spectrum::GetInjFlux()
+    const
+  {
+    if (!fInj.empty())
+      return fInj;
+
+    const double dlgE = (fLgEmax - fLgEmin) / fN;
+
+    for (const auto& iter : fFractions) {
+      const unsigned int Ainj = iter.first;
+      const double frac = iter.second;
+      TMatrixD& m = fInj[Ainj];
+      if (!m.GetNoElements())
+        m.ResizeTo(fN, 1);
+
+      double lgE = fLgEmin + dlgE / 2;
+      for (unsigned int iE = 0; iE < fN; ++iE) {
+        const double flux =
+          frac * InjectedFlux(pow(10, lgE), Ainj);
+          m[iE][0] += flux;
+          lgE += dlgE;
+      }
+    }
+
+    return fInj;
+
+  }
+
+  unsigned int
+  Spectrum::LgEtoIndex(const double lgE)
+    const
+  {
+    const double dlgE = (fLgEmax - fLgEmin) / fN;
+    return (lgE - fLgEmin) / dlgE;
+  }
+
+  double
+  Spectrum::GetFluxSum(const double lgE)
+    const
+  {
+    return GetFluxSum(LgEtoIndex(lgE));
+  }
+
+  double
+  Spectrum::GetFluxSum(const unsigned int i)
+    const
+  {
+    if (i >= fN) {
+      std::cerr << " Spectrum::GetFluxSum() - "
+                << i << " is out of bound " << std::endl;
+      return 0;
+    }
+
+    if (fEscape.empty())
+      GetEscFlux();
+
+    double sum = 0;
+    for (const auto& iter : fEscape)
+      sum += iter.second[i][0];
+    return sum;
+
+  }
+
+  void
+  Spectrum::Rescale(const double f)
+  {
+    if (fInj.empty())
+      GetInjFlux();
+    for (auto& iter : fInj)
+      iter.second *= f;
+
+    if (fEscape.empty())
+      GetEscFlux();
+    for (auto& iter : fEscape)
+      iter.second *= f;
+
+  }
 
   double
   Spectrum::NucleonFlux(const double Ainj, const double E)
@@ -64,9 +149,9 @@ namespace prop {
                         const double E)
     const
   {
-    double prod = Ainj/A_i * InjectedFlux(E*Ainj/double(A_i), Ainj);
+    double prod = Ainj/A_i * InjectedFlux(E * Ainj / A_i, Ainj);
     for (unsigned int A_j = A_i + 1; A_j <= Ainj; ++A_j) {
-      const double Eprime = E * A_j / double(A_i);
+      const double Eprime = E * A_j / A_i;
       const double lambdaI = fSource->LambdaInt(Eprime, A_j);
       const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
       prod *= lambdaE / (lambdaE + lambdaI);
