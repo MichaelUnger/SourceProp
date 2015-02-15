@@ -8,6 +8,12 @@ namespace prop {
   class Source {
 
   public:
+    Source() :
+      fEscFac(1), fEscGamma(1),
+      fEps0(1), fAlpha(1), fBeta(),
+      fNoInteraction(true)
+    {}
+
     Source(const double escFac, const double escGamma,
            const double eps0, const double alpha,
            const double beta) :
@@ -15,6 +21,19 @@ namespace prop {
       fEps0(eps0), fAlpha(alpha), fBeta(beta),
       fNoInteraction(false)
     {}
+
+    void
+    SetParameters(const double escFac, const double escGamma,
+                  const double eps0, const double alpha,
+                  const double beta, const bool noInteraction = false)
+    {
+      fEscFac = escFac;
+      fEscGamma = escGamma;
+      fEps0 = eps0;
+      fAlpha = alpha;
+      fBeta = beta;
+      fNoInteraction = noInteraction;
+    }
 
     double
     LambdaEsc(const double E, const double A)
@@ -45,7 +64,6 @@ namespace prop {
     }
 
   private:
-    Source();
     double fEscFac;
     double fEscGamma;
     double fEps0;

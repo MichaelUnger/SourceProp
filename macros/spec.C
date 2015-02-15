@@ -16,6 +16,7 @@
 #include "../src/Spectrum.h"
 #include "../src/Source.h"
 #include "../src/Utilities.h"
+#include "../src/Plotter.h"
 
 using namespace std;
 using namespace prop;
@@ -40,9 +41,10 @@ vector<double> gFluxErr;
 
 const double gGammaScale = 3;
 const unsigned int gnMass = 4;
-const double gMass[gnMass] = {1, 11, 14, 56};
+const double gMass[gnMass] = {1, 4, 14, 56};
 
 Propagator* gPropagator;
+Spectrum gSpectrum;
 
 double
 calcNorm(const Spectrum& s)
@@ -65,11 +67,11 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
         const int /*iFlag*/)
 {
 
-  const Source source(pow(10, par[eLgEscFac]),
-                      par[eEscGamma],
-                      pow(10, par[eEps0]),
-                      par[eAlpha],
-                      par[eBeta]);
+  Source source(pow(10, par[eLgEscFac]),
+                par[eEscGamma],
+                pow(10, par[eEps0]),
+                par[eAlpha],
+                par[eBeta]);
 
   map<unsigned int, double> fractions;
   double frac[gnMass];
@@ -77,24 +79,23 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
   for (unsigned int i = 0; i < gnMass - 1; ++i)
     zeta[i] = pow(10, *(par + eNpars + i));
   zetaToFraction(gnMass, zeta, frac);
-  for (unsigned int i = 0; i < gnMass; ++i) {
+  for (unsigned int i = 0; i < gnMass; ++i)
     fractions[gMass[i]] = frac[i];
-  }
-  Spectrum spectrum(source,
-                    par[eGamma],
-                    pow(10, par[eLgEmax]),
-                    gN, gLgEmin, gLgEmax,
-                    fractions);
 
-  const double norm = calcNorm(spectrum);
-  spectrum.Rescale(norm);
-  calcNorm(spectrum);
+  gSpectrum.SetParameters(source,
+                          par[eGamma],
+                          pow(10, par[eLgEmax]),
+                          gN, gLgEmin, gLgEmax,
+                          fractions);
+
+  const double norm = calcNorm(gSpectrum);
+  gSpectrum.Rescale(norm);
 
   chi2 = 0;
   for (unsigned int i = 0; i < gLgE.size(); ++i) {
     const double y = gFlux[i];
     const double sigma = gFluxErr[i];
-    const double m = spectrum.GetFluxSum(gLgE[i]);
+    const double m = gSpectrum.GetFluxSum(gLgE[i]);
     const double r = (y -  m) / sigma;
     chi2 += pow(r, 2);
   }
@@ -109,37 +110,12 @@ SetStyle(TF1* func, const unsigned int npx, const unsigned int color,
   func->SetLineStyle(style);
 }
 
-void
-spec(bool fit = true)
+double
+readSpectrum(TGraphAsymmErrors* fluxGraph1,
+             TGraphAsymmErrors* fluxGraph2)
 {
-
-  gLgE.clear();
-  gFlux.clear();
-  gFluxErr.clear();
-
-  PropMatrixFile pmf("ROOT/propMatrix.root");
-  const PropMatrices& matrices = pmf.GetPropMatrices();
-  gN = matrices.GetN();
-  gLgEmin = matrices.GetLgEmin();
-  gLgEmax = matrices.GetLgEmax();
-  Propagator p(matrices);
-  gPropagator = &p;
-
-  //  double fStart[gnMass] = {1e-2, 1e-2, 1e-2, 0};
-  double fStart[gnMass] = {2e-5, 0.05, 0.8, 0};
-  // double fStart[gnMass] = {0, .99999999, 0, 0};
-  double zetaStart[gnMass-1];
-  fractionToZeta(gnMass - 1, fStart, zetaStart);
-  zetaToFraction(gnMass, zetaStart, fStart);
-  for (unsigned int i = 0; i < gnMass; ++i)
-    cout << " A = " << gMass[i] << ", f = " << fStart[i] << endl;
-  for (unsigned int i = 0; i < gnMass - 1; ++i)
-    cout << " i = " << i << ", zeta = " << zetaStart[i]
-         << ", " << log10(zetaStart[i]) << endl;
-
-  TGraphAsymmErrors* fluxGraph1 = new TGraphAsymmErrors();
-  TGraphAsymmErrors* fluxGraph2 = new TGraphAsymmErrors();
-  TCanvas* c = new TCanvas("c", "", 800, 500);
+  fluxGraph1 = new TGraphAsymmErrors();
+  fluxGraph2 = new TGraphAsymmErrors();
   ifstream in("macros/auger_icrc2013.dat");
   double maxY = 0;
   while (true) {
@@ -165,6 +141,38 @@ spec(bool fit = true)
     if ((flux+eyUp)*w > maxY)
       maxY = (flux+eyUp)*w;
   }
+  return maxY;
+}
+
+void
+spec(bool fit = true)
+{
+  gLgE.clear();
+  gFlux.clear();
+  gFluxErr.clear();
+
+  PropMatrixFile pmf("ROOT/propMatrix.root");
+  const PropMatrices& matrices = pmf.GetPropMatrices();
+  gN = matrices.GetN();
+  gLgEmin = matrices.GetLgEmin();
+  gLgEmax = matrices.GetLgEmax();
+  Propagator p(matrices);
+  gPropagator = &p;
+
+  double fStart[gnMass] = {2e-5, 0.05, 0.8, 0};
+  double zetaStart[gnMass-1];
+  fractionToZeta(gnMass - 1, fStart, zetaStart);
+  zetaToFraction(gnMass, zetaStart, fStart);
+  for (unsigned int i = 0; i < gnMass; ++i)
+    cout << " A = " << gMass[i] << ", f = " << fStart[i] << endl;
+  for (unsigned int i = 0; i < gnMass - 1; ++i)
+    cout << " i = " << i << ", zeta = " << zetaStart[i]
+         << ", " << log10(zetaStart[i]) << endl;
+
+  TGraphAsymmErrors* fluxGraph1 = NULL;
+  TGraphAsymmErrors* fluxGraph2 = NULL;
+  TCanvas* c = new TCanvas("c", "", 800, 500);
+  const double maxY = readSpectrum(fluxGraph1, fluxGraph2);
 
   ostringstream title;
   title << ";lg(E/eV); E^{" << gGammaScale << "} #upoint #Phi [eV^{"
@@ -172,10 +180,9 @@ spec(bool fit = true)
   TH2D* back = new TH2D("back", title.str().c_str(), 100, 17.2, 20.8,
                         100, 0, maxY*1.1);
 
-  const unsigned int nPar = 7 + gnMass -1;
+  const unsigned int nPar = 7 + gnMass - 1;
   TMinuit minuit(nPar);
 
-  // function to fit
   minuit.SetPrintLevel(0);
   minuit.SetFCN(fitFunc);
 
@@ -198,10 +205,9 @@ spec(bool fit = true)
   minuit.FixParameter(5);
   minuit.FixParameter(6);
 
-  // perform minimization
   if (fit) {
     double arglist[2] = {10000, 1.};
-    minuit.mnexcm("MIGRAD", arglist, 2, ierflag);
+    minuit.mnexcm("MINIMIZE", arglist, 2, ierflag);
   }
 
   double par[nPar];
@@ -221,4 +227,13 @@ spec(bool fit = true)
   for (unsigned int i = 0; i < gnMass; ++i)
     cout << " A = " << gMass[i] << ", f = " << frac[i] << endl;
 
+
+  vector<MassGroup> massGroups;
+  massGroups.push_back(MassGroup(1, 2, kRed));
+  massGroups.push_back(MassGroup(3, 7, kAzure+10));
+  massGroups.push_back(MassGroup(8, 24, kGreen+1));
+  massGroups.push_back(MassGroup(25, 56, kBlue));
+
+  Plotter* plot = new Plotter();
+  plot->Draw(gSpectrum, massGroups);
  }

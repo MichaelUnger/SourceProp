@@ -134,8 +134,8 @@ namespace prop {
       double prod = 1;
       for (unsigned int A_j = A_i; A_j <= Ainj; ++A_j) {
         const double Eprime = E * A_j;
-        const double lambdaI = fSource->LambdaInt(Eprime, A_j);
-        const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
+        const double lambdaI = fSource.LambdaInt(Eprime, A_j);
+        const double lambdaE = fSource.LambdaEsc(Eprime, A_j);
         prod *= lambdaE / (lambdaE + lambdaI);
       }
       nucleonSum += prod;
@@ -152,12 +152,12 @@ namespace prop {
     double prod = Ainj/A_i * InjectedFlux(E * Ainj / A_i, Ainj);
     for (unsigned int A_j = A_i + 1; A_j <= Ainj; ++A_j) {
       const double Eprime = E * A_j / A_i;
-      const double lambdaI = fSource->LambdaInt(Eprime, A_j);
-      const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
+      const double lambdaI = fSource.LambdaInt(Eprime, A_j);
+      const double lambdaE = fSource.LambdaEsc(Eprime, A_j);
       prod *= lambdaE / (lambdaE + lambdaI);
     }
-    const double lambdaI = fSource->LambdaInt(E, A_i);
-    const double lambdaE = fSource->LambdaEsc(E, A_i);
+    const double lambdaI = fSource.LambdaInt(E, A_i);
+    const double lambdaE = fSource.LambdaEsc(E, A_i);
     return prod * lambdaI / (lambdaE + lambdaI);
   }
 
