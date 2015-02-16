@@ -12,6 +12,7 @@ class TH1D;
 namespace prop {
 
   class Spectrum;
+  class Propagator;
 
   class MassGroup {
 
@@ -31,16 +32,35 @@ namespace prop {
 
   class Plotter {
   public:
-    Plotter(TCanvas* c = nullptr, const double gamma = 3);
+    enum EPad {
+      eFluxInj = 1,
+      eFluxEsc,
+      eFluxEarth,
+      eCompInj,
+      eCompEsc,
+      eCompEarth,
+      eNCanvas
+    };
+  public:
+    Plotter(TCanvas* c = nullptr,
+            const double gammaSource = 2,
+            const double gammaEarth = 3);
     void Draw(const prop::Spectrum& spectrum,
+              const prop::Propagator& prop,
               const std::vector<prop::MassGroup>& mGroups);
+    void SetXRange(const double x1, const double x2);
+    TCanvas* GetCanvas() { return fCanvas; }
+
   private:
     void DrawHists(const std::map<unsigned int, TMatrixD>& specMap,
-                   const std::vector<MassGroup>& mGroups, const std::string& nameBase,
+                   const std::vector<MassGroup>& mGroups,
+                   const double gamma,
+                   const std::string& nameBase,
                    const unsigned int n, const double x1, const double x2,
                    const unsigned int specPad, const unsigned int lnaPad);
     TCanvas* fCanvas;
-    double fGamma;
+    double fGammaSource;
+    double fGammaEarth;
     std::vector<TH1D*> fHists;
   };
 }

@@ -35,5 +35,45 @@ namespace prop {
       }
     }
   }
+
+  void
+  Propagator::Rescale(const double f)
+  {
+    for (auto& iter : fResult)
+      iter.second *= f;
+    fSum *= f;
+  }
+
+  double
+  Propagator::GetFluxSum(const double lgE)
+    const
+  {
+    return GetFluxSum(LgEtoIndex(lgE));
+  }
+
+  unsigned int
+  Propagator::LgEtoIndex(const double lgE)
+    const
+  {
+    const unsigned int n = fPropMatrices.GetN();
+    const double lgEmin = fPropMatrices.GetLgEmin();
+    const double lgEmax = fPropMatrices.GetLgEmax();
+    const double dlgE = (lgEmax - lgEmin) / n;
+    return (lgE - lgEmin) / dlgE;
+  }
+
+  double
+  Propagator::GetFluxSum(const unsigned int i)
+    const
+  {
+    if (i >=  fPropMatrices.GetN()) {
+      std::cerr << " Propagator::GetFluxSum() - "
+                << i << " is out of bound " << std::endl;
+      return 0;
+    }
+    return fSum[i][0];
+  }
+
+
 }
 

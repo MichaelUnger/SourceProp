@@ -17,10 +17,18 @@ namespace prop {
 
     void Propagate(const std::map<unsigned int, TMatrixD>& spectrum);
 
-    const TMatrixD& GetSum() const { return fSum; }
+    double GetFluxSum(const unsigned int i) const;
+    double GetFluxSum(const double lgE) const;
+
+    const std::map<unsigned int, TMatrixD>& GetFluxAtEarth() const
+    { return fResult; }
+
+    void Rescale(const double f);
 
   private:
     Propagator();
+    unsigned int LgEtoIndex(const double lgE) const;
+
     const PropMatrices& fPropMatrices;
     std::map<unsigned int, TMatrixD> fResult;
     TMatrixD fSum;
