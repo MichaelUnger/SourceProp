@@ -37,9 +37,9 @@ namespace prop {
     const double x1 = spectrum.GetLgEmin();
     const double x2 = spectrum.GetLgEmax();
     DrawHists(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
-              n, x1, x2, eFluxInj, eCompInj);
+              n, x1, x2, eFluxInj, 0);
     DrawHists(spectrum.GetEscFlux(), mGroups, fGammaSource, "hEsc",
-              n, x1, x2, eFluxEsc, eCompEsc);
+              n, x1, x2, eFluxEsc, 0);
     DrawHists(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
               n, x1, x2, eFluxEarth, eCompEarth);
 
@@ -54,21 +54,27 @@ namespace prop {
     fCanvas->cd(eFluxEarth);
     l.DrawLatex(0.5, 0.98, " at Earth");
 
-    fCanvas->cd(eFluxEarth);
-    TLegend fluxLeg(0.71, 0.64, 0.99, 0.99, NULL,"brNDCARC");
-    fluxLeg.SetFillColor(0);
-    fluxLeg.SetTextFont(42);
-    fluxLeg.SetFillStyle(1001);
-    fluxLeg.SetBorderSize(1);
+    for (int i = 0; i <= eFluxEarth; ++i)
+      fCanvas->cd(i + 1)->RedrawAxis();
+    for (int i= eFluxInj; i < eFluxEarth; ++i)
+      fCanvas->cd(i)->SetLogy(1);
+
+
+    fCanvas->cd(eCompInj);
+    double yMass = 0.95;
+    const double dyMass = 0.1;
+    const double xMass = 0.1;
+    l.SetTextAlign(12);
     for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
       stringstream title;
       if (i < mGroups.size())
         title << mGroups[i].fFirst << " #leq A #leq " << mGroups[i].fLast;
       else
-        title << "sum";
-      fluxLeg.AddEntry(fHists[i], title.str().c_str(), "L");
+        title << "total flux";
+      l.SetTextColor(i == mGroups.size() ? kBlack : mGroups[i].fColor);
+      l.DrawLatex(xMass, yMass, title.str().c_str());
+      yMass -= dyMass;
     }
-    fluxLeg.Draw();
 
     fCanvas->cd(eCompEarth);
     TLegend lnaLeg(0.78, 0.83, 0.99, 0.98, NULL,"brNDCARC");
@@ -142,19 +148,21 @@ namespace prop {
         histTot->SetBinContent(i + 1, sumTot);
       }
     }
-    fCanvas->cd(specPad);
-    histTot->Draw();
-    for (unsigned int i = 0; i < n; ++i) {
-      const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
-      const double w = pow(pow(10, lgE), gamma);
-      for (unsigned int j = iFirst; j < fHists.size(); ++j)
-        fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
+
+    if (specPad) {
+      fCanvas->cd(specPad);
+      histTot->Draw();
+      for (unsigned int i = 0; i < n; ++i) {
+        const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
+        const double w = pow(pow(10, lgE), gamma);
+        for (unsigned int j = iFirst; j < fHists.size(); ++j)
+          fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
+      }
+      for (unsigned int i = iFirst; i < fHists.size() - 1; ++i)
+        fHists[i]->Draw("SAME");
     }
 
-    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i)
-      fHists[i]->Draw("SAME");
 
-    fCanvas->cd(lnaPad);
     stringstream name;
     name << nameBase << "LnA";
     TH1D* lnA = new TH1D(name.str().c_str(),
@@ -189,18 +197,16 @@ namespace prop {
     lnA->GetXaxis()->SetTitle("lg(E/eV)");
     //    lnA->GetYaxis()->SetTitle("#LTln A#GT, V(ln A)");
 
-    lnA->Draw();
-    vlnA->Draw("SAME");
+    if (lnaPad) {
+      fCanvas->cd(lnaPad);
+      lnA->Draw();
+      vlnA->Draw("SAME");
 
-    for (auto& h : fHists) {
-      h->GetXaxis()->CenterTitle();
-      h->GetYaxis()->CenterTitle();
+      for (auto& h : fHists) {
+        h->GetXaxis()->CenterTitle();
+        h->GetYaxis()->CenterTitle();
+      }
     }
-
-    for (int i = 0; i < eNCanvas; ++i)
-      fCanvas->cd(i + 1)->RedrawAxis();
-    for (int i= eFluxInj; i < eFluxEarth; ++i)
-      fCanvas->cd(i)->SetLogy(1);
   }
 
 }

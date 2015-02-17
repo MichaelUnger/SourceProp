@@ -39,6 +39,7 @@ namespace prop {
     LambdaEsc(const double E, const double A)
       const
     {
+#warning wrong charge
       return fNoInteraction ? 1e-99 : fEscFac*pow(E/1e19*2/A, fEscGamma);
     }
 

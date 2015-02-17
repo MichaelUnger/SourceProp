@@ -6,11 +6,13 @@
 #include <TCanvas.h>
 #include <TLegend.h>
 #include <TF1.h>
+#include <TLatex.h>
 #include <TPad.h>
 #include <TFile.h>
 
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <sstream>
 #include <cmath>
 #include "../src/PropMatrixFile.h"
@@ -31,9 +33,15 @@ enum EPars {
   eEps0,
   eAlpha,
   eBeta,
+  //  ePhiGal,
+  //  eGammaGal,
   eNpars
 };
 
+string gParNames[eNpars] = {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)", "lg(f_{esc})",
+                            "#delta_{esc}", "lg(#varepsilon_{0}/eV)", "#alpha",
+                            "#beta"};
+//, "#Phi_{gal}^17", "#gamma_{gal}"};
 unsigned int gN;
 double gLgEmin;
 double gLgEmax;
@@ -41,8 +49,8 @@ vector<double> gLgE;
 vector<double> gFlux;
 vector<double> gFluxErr;
 
-const unsigned int gnMass = 4;
-const double gMass[gnMass] = {1, 4, 14, 56};
+const unsigned int gnMass = 5;
+const double gMass[gnMass] = {1, 4, 14, 28, 56};
 
 Propagator* gPropagator = NULL;
 Spectrum gSpectrum;
@@ -187,7 +195,7 @@ spec(bool fit = true)
   delete gPropagator;
   gPropagator = new Propagator(matrices);
 
-  double fStart[gnMass] = {0.0001, 0.05, 0.5, 0};
+  double fStart[gnMass] = {0.0001, 0.05, 0.1, 0.5, 0};
   double zetaStart[gnMass-1];
   fractionToZeta(gnMass - 1, fStart, zetaStart);
   zetaToFraction(gnMass, zetaStart, fStart);
@@ -210,7 +218,7 @@ spec(bool fit = true)
 
   int ierflag;
   minuit.mnparm(eGamma,"gamma", -2., 0.1 ,0, 0, ierflag);
-  minuit.mnparm(eLgEmax,"lgEmax", log10(1e19), 0.1 ,0, 0, ierflag);
+  minuit.mnparm(eLgEmax,"lgRmax", log10(1e19), 0.1 ,0, 0, ierflag);
   minuit.mnparm(eLgEscFac,"lgEscFac",  -0.3, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEscGamma,"escGamma", -1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEps0,"lgEpsilon0", -1, 0.1 ,0, 0, ierflag);
@@ -248,8 +256,6 @@ spec(bool fit = true)
   for (unsigned int i = 0; i < gnMass - 1; ++i)
     zeta[i] = pow(10, *(par + eNpars + i));
   zetaToFraction(gnMass, zeta, frac);
-  for (unsigned int i = 0; i < gnMass; ++i)
-    cout << " A = " << gMass[i] << ", f = " << frac[i] << endl;
 
 
   vector<MassGroup> massGroups;
@@ -265,7 +271,6 @@ spec(bool fit = true)
   TCanvas* can = plot.GetCanvas();
 
   can->cd(Plotter::eFluxEarth);
-  cout << fluxGraph1 << " " << fluxGraph2 << endl;
   fluxGraph1->Draw("P");
   fluxGraph2->Draw("P");
 
@@ -286,5 +291,30 @@ spec(bool fit = true)
   vlnA->Draw("P");
 
 
+  can->cd(Plotter::eCompEsc);
+  TLatex l;
+  l.SetTextAlign(13); l.SetTextSize(0.06);
+  l.SetTextFont(42); l.SetNDC(true);
+  double y = 0.95;
+  const double dy = 0.13;
+  const double x = 0.;
+  for (unsigned int i = 0; i < eNpars; ++i) {
+    stringstream parString;
+    parString << gParNames[i] << " = " << showpoint << setprecision(3) << par[i];
+    if (parErr[i] == 0)
+      parString << " (fixed)";
+    else
+      parString << "#pm" << noshowpoint << parErr[i];
+    l.DrawLatex(x, y, parString.str().c_str());
+    y -= dy;
+  }
+  y = 0.95;
+  for (unsigned int i = 0; i < gnMass; ++i) {
+    stringstream parString;
+    parString << "f(" << gMass[i] << ") = " << scientific << setprecision(2)
+              << frac[i] << endl;
+    l.DrawLatex(0.63, y, parString.str().c_str());
+    y -= dy;
+  }
 
  }
