@@ -155,14 +155,12 @@ namespace prop {
         G. Hasinger, T. Miyaji and M. Schmidt, Astron. Astrophys.
         441, 417 (2005).
       */
-      const double n17 = pow(2.7, 5);
-      const double n27 = pow(10, 0.43);
       if (z < 1.7)
-        return pow(1+z, 5) / n17;
+        return pow(1+z, 5) / pow(2.7, 5);
       else if (z < 2.7)
         return 1;
       else
-        return pow(n27, 2.7-z);
+        return exp(2.7-z);
     }
     }
     return 0;
