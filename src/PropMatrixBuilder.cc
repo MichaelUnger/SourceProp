@@ -163,6 +163,20 @@ namespace prop {
       else
         return exp(2.7-z);
     }
+    case eSFR: {
+      /*
+        [53] H. Yüksel, M. D. Kistler, J. F. Beacom and A. M. Hopkins,
+        Astrophys. J. 683, L5 (2008).
+        [54] H. Yüksel and M. D. Kistler, Phys. Rev. D 75, 083004
+        (2007).
+      */
+      if (z < 1)
+        return pow(1+z, 3.4) / pow(2, 3.4);
+      else if (z < 4)
+        return pow(1+z, -0.3) / pow(2, -0.3);
+      else
+        return pow(1+z, -3.5) / pow(5, -3.5) * pow(5, -0.3) / pow(2, -0.3);
+    }
     }
     return 0;
   }

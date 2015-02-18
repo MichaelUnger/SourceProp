@@ -13,7 +13,7 @@ main(int argc, char** argv)
 
   stringstream usage;
   usage << argv[0] << " <option> <filenames>\n"
-        << "        options: uniform, AGN";
+        << "        options: uniform, AGN, SFR";
   if (argc < 2) {
     cerr << usage.str() << endl;
     return 1;
@@ -25,6 +25,8 @@ main(int argc, char** argv)
     s = PropMatrixBuilder::eUniform;
   else if (option == "AGN")
     s = PropMatrixBuilder::eAGN;
+  else if (option == "SFR")
+    s = PropMatrixBuilder::eSFR;
   else {
     cerr << usage.str() << endl;
     return 1;

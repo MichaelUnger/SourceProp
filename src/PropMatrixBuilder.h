@@ -13,7 +13,8 @@ namespace prop {
   public:
     enum ESourceDistribution {
       eUniform,
-      eAGN
+      eAGN,
+      eSFR
     };
 
   public:
