@@ -60,6 +60,8 @@ namespace prop {
 
     void Rescale(const double f);
 
+    const Source& GetSource() const { return fSource; }
+
   private:
     double InjectedFlux(const double E, const double A) const;
     double NucleonFlux(const double Ainj, const double E) const;

@@ -1,5 +1,7 @@
 #include "Spectrum.h"
 #include "Source.h"
+#include "Utilities.h"
+
 #include <cmath>
 #include <iostream>
 using namespace std;
@@ -167,9 +169,7 @@ namespace prop {
   Spectrum::InjectedFlux(const double E, const double A)
     const
   {
-    const double zEmax = fEmax * (A == 56 ? 26 : A/2.);
+    const double zEmax = fEmax * aToZ(A);
     return pow(E, fGamma) * exp(-E/zEmax);
   }
-
-
 }

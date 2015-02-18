@@ -1,5 +1,6 @@
 #include "Plotter.h"
 #include "Spectrum.h"
+#include "Source.h"
 #include "Propagator.h"
 
 #include <TCanvas.h>
@@ -19,8 +20,11 @@ namespace prop {
     fGammaEarth(gammaEarth)
   {
     gStyle->SetPadTopMargin(0.1);
+    gStyle->SetTitleOffset(1.2, "Y");
     if (!fCanvas)
-      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 500);
+      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 600);
+    fCanvas->SetBottomMargin(0.2);
+    fCanvas->SetBorderMode(1);
     fCanvas->Divide(3, 2);
   }
 
@@ -42,56 +46,127 @@ namespace prop {
               n, x1, x2, eFluxEsc, 0);
     DrawHists(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
               n, x1, x2, eFluxEarth, eCompEarth);
+    DrawSource(spectrum.GetSource(), mGroups, n, x1, x2);
 
+    for (int i = 0; i <= eFluxEarth; ++i)
+      fCanvas->cd(i + 1)->RedrawAxis();
+
+    for (int i = eFluxInj; i < eFluxEarth; ++i) {
+      fCanvas->cd(i)->SetLogy(1);
+      fCanvas->cd(i)->SetLeftMargin(0.2);
+    }
+
+    DrawLabels(mGroups);
+
+    for (auto& h : fHists) {
+      h->GetXaxis()->CenterTitle();
+      h->GetYaxis()->CenterTitle();
+    }
+  }
+
+
+  void
+  Plotter::DrawSource(const Source& source,
+                      const vector<MassGroup>& mGroups,
+                      const unsigned int n, const double x1, const double x2)
+  {
+    unsigned int firstHist = fHists.size();
+    double yMax = -1;
+    double yMin = -1;
+    const double xMax = 21;
+    for (auto& m : mGroups) {
+      stringstream name;
+      name << "lambdaInt" << m.fRepA;
+      fHists.push_back(new TH1D(name.str().c_str(),
+                                ";lg(E/eV);#lambda [a.u.]",
+                                n, x1, x2));
+      TH1D* hInt = fHists.back();
+      name.str("");
+      name << "lambdaEsc" << m.fRepA;
+      fHists.push_back(new TH1D(name.str().c_str(),
+                                ";#lambda [a.u.]; lg(E/eV)",
+                                n, x1, x2));
+      TH1D* hEsc = fHists.back();
+      hEsc->SetLineStyle(2);
+
+      for (unsigned int i = 0; i < n; ++i) {
+        const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
+        const double lInt = source.LambdaInt(pow(10, lgE), m.fRepA);
+        if (lInt < 1e99) {
+          if (lgE < xMax && (yMax < 0 || lInt > yMax))
+            yMax = lInt;
+          if (lgE < xMax && (yMin < 0 || lInt < yMin))
+            yMin = lInt;
+          hInt->SetBinContent(i+1, lInt);
+          hInt->SetLineColor(m.fColor);
+        }
+
+        const double lEsc = source.LambdaEsc(pow(10, lgE), m.fRepA);
+        if (lgE < xMax && (yMax < 0 || lEsc > yMax))
+          yMax = lEsc;
+        if (lgE < xMax && (yMin < 0 || lEsc < yMin))
+          yMin = lEsc;
+        hEsc->SetBinContent(i+1, lEsc);
+        hEsc->SetLineColor(m.fColor);
+      }
+    }
+
+    fCanvas->cd(eCompInj)->SetLogy(1);
+    for (unsigned int i = firstHist; i < fHists.size(); ++i) {
+      if (i == firstHist) {
+        fHists[i]->GetYaxis()->SetRangeUser(yMin*0.5, yMax*2);
+        fHists[i]->Draw("C");
+      }
+      else
+        fHists[i]->Draw("CSAME");
+    }
+  }
+
+
+  void
+  Plotter::DrawLabels(const vector<MassGroup>& mGroups)
+  {
     TLatex l;
     l.SetTextAlign(23); l.SetTextSize(0.06);
     l.SetTextFont(42); l.SetNDC(true);
 
     fCanvas->cd(eFluxInj);
-    l.DrawLatex(0.5, 0.98, " injected");
+    l.DrawLatex(0.5, 0.98, "   injected");
     fCanvas->cd(eFluxEsc);
-    l.DrawLatex(0.5, 0.98, " escaping");
+    l.DrawLatex(0.5, 0.98, "   escaping");
     fCanvas->cd(eFluxEarth);
     l.DrawLatex(0.5, 0.98, " at Earth");
 
-    for (int i = 0; i <= eFluxEarth; ++i)
-      fCanvas->cd(i + 1)->RedrawAxis();
-    for (int i= eFluxInj; i < eFluxEarth; ++i)
-      fCanvas->cd(i)->SetLogy(1);
-
-
-    fCanvas->cd(eCompInj);
-    double yMass = 0.95;
-    const double dyMass = 0.1;
-    const double xMass = 0.1;
+    fCanvas->cd();
     l.SetTextAlign(12);
-    for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
+    l.SetTextSize(0.023);
+    const double yMass = 0.5;
+    const double dxMass = 0.1;
+    double xMass = 0.32;
+    for (const auto& m : mGroups) {
       stringstream title;
-      if (i < mGroups.size())
-        title << mGroups[i].fFirst << " #leq A #leq " << mGroups[i].fLast;
-      else
-        title << "total flux";
-      l.SetTextColor(i == mGroups.size() ? kBlack : mGroups[i].fColor);
+      title << m.fFirst << " #leq A #leq " << m.fLast;
+      l.SetTextColor(m.fColor);
       l.DrawLatex(xMass, yMass, title.str().c_str());
-      yMass -= dyMass;
+      xMass += dxMass;
     }
 
     fCanvas->cd(eCompEarth);
-    TLegend lnaLeg(0.78, 0.83, 0.99, 0.98, NULL,"brNDCARC");
-    lnaLeg.SetFillColor(0);
-    lnaLeg.SetTextFont(42);
-    lnaLeg.SetFillStyle(1001);
-    lnaLeg.SetBorderSize(1);
-    lnaLeg.AddEntry(fHists[fHists.size()-2], "   #LTln A#GT", "L");
-    lnaLeg.AddEntry(fHists[fHists.size()], "   V(ln A)", "L");
-    lnaLeg.Draw();
+    l.SetTextSize(0.05);
+    l.SetTextColor(kRed);
+    l.DrawLatex(0.2, 0.85, "#LTlnA#GT");
+    l.SetTextColor(kBlack);
+    l.DrawLatex(0.2, 0.78, "V(lnA)");
+
   }
+
 
   void
   Plotter::SetXRange(const double x1, const double x2)
   {
-    for (auto& h : fHists)
+    for (auto& h : fHists) {
       h->GetXaxis()->SetRangeUser(x1, x2);
+    }
   }
 
   void
@@ -121,7 +196,7 @@ namespace prop {
       fHists.back()->SetLineColor(color);
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
       stringstream yTit;
-      yTit << "E^{" << gamma << "} #upoint #Phi";
+      yTit << "E^{" << gamma << "} #upoint flux";
       fHists.back()->GetYaxis()->SetTitle(yTit.str().c_str());
     }
 
@@ -152,6 +227,8 @@ namespace prop {
     if (specPad) {
       fCanvas->cd(specPad);
       histTot->Draw();
+      if (specPad == eFluxInj || specPad == eFluxEsc)
+        histTot->GetYaxis()->SetTitleOffset(1.7);
       for (unsigned int i = 0; i < n; ++i) {
         const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
         const double w = pow(pow(10, lgE), gamma);
@@ -201,11 +278,6 @@ namespace prop {
       fCanvas->cd(lnaPad);
       lnA->Draw();
       vlnA->Draw("SAME");
-
-      for (auto& h : fHists) {
-        h->GetXaxis()->CenterTitle();
-        h->GetYaxis()->CenterTitle();
-      }
     }
   }
 

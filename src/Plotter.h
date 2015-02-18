@@ -12,6 +12,7 @@ class TH1D;
 namespace prop {
 
   class Spectrum;
+  class Source;
   class Propagator;
 
   class MassGroup {
@@ -19,13 +20,16 @@ namespace prop {
   public:
     MassGroup(unsigned int firstA = 0,
               unsigned int lastA = 0,
+              unsigned int repA = 0,
               unsigned int color = 0) :
       fFirst(firstA),
       fLast(lastA),
+      fRepA(repA),
       fColor(color) {}
 
     unsigned int fFirst;
     unsigned int fLast;
+    unsigned int fRepA;
     unsigned int fColor;
 
   };
@@ -41,6 +45,7 @@ namespace prop {
       eCompEarth,
       eNCanvas
     };
+
   public:
     Plotter(TCanvas* c = nullptr,
             const double gammaSource = 2,
@@ -58,6 +63,13 @@ namespace prop {
                    const std::string& nameBase,
                    const unsigned int n, const double x1, const double x2,
                    const unsigned int specPad, const unsigned int lnaPad);
+
+    void DrawSource(const prop::Source& source,
+                    const std::vector<MassGroup>& mGroups,
+                    const unsigned int n, const double x1, const double x2);
+
+    void DrawLabels(const std::vector<MassGroup>& mGroups);
+
     TCanvas* fCanvas;
     double fGammaSource;
     double fGammaEarth;

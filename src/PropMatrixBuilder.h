@@ -10,9 +10,15 @@
 namespace prop {
 
   class PropMatrixBuilder {
+  public:
+    enum ESourceDistribution {
+      eUniform,
+      eAGN
+    };
 
   public:
-    PropMatrixBuilder(const unsigned int nBins = 50,
+    PropMatrixBuilder(const ESourceDistribution s = eUniform,
+                      const unsigned int nBins = 50,
                       const double lgEmin = 17,
                       const double lgEmax = 22);
     ~PropMatrixBuilder();
@@ -22,6 +28,9 @@ namespace prop {
     void PrintSummary() const;
 
   private:
+    double DistributionWeight(const double z) const;
+
+    ESourceDistribution fSourceDistribution;
     mutable bool fIsNormalized;
     unsigned int fNbins;
     double fLgEmin;

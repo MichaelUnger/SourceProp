@@ -19,11 +19,13 @@ namespace prop {
 
     double GetFluxSum(const unsigned int i) const;
     double GetFluxSum(const double lgE) const;
+    const TMatrixD& GetSum() const { return fSum; }
 
     const std::map<unsigned int, TMatrixD>& GetFluxAtEarth() const
     { return fResult; }
 
     void Rescale(const double f);
+    void AddGalactic(const unsigned int /*A*/, const TMatrixD& /*flux*/) {};
 
   private:
     Propagator();

@@ -38,7 +38,8 @@ enum EPars {
   eNpars
 };
 
-string gParNames[eNpars] = {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)", "lg(f_{esc})",
+string gParNames[eNpars] = {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
+                            "lg(R_{esc}^{ Fe19})",
                             "#delta_{esc}", "lg(#varepsilon_{0}/eV)", "#alpha",
                             "#beta"};
 //, "#Phi_{gal}^17", "#gamma_{gal}"};
@@ -94,12 +95,14 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
 {
 
   ++gIteration;
-  Source source(pow(10, par[eLgEscFac]),
+  Source source(1,
                 par[eEscGamma],
                 pow(10, par[eEps0]),
                 par[eAlpha],
                 par[eBeta]);
-
+  const double lambdaI = source.LambdaInt(1e19, 56);
+  const double lambdaE = source.LambdaEsc(1e19, 56);
+  source.SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
   map<unsigned int, double> fractions;
   double frac[gnMass];
   double zeta[gnMass-1];
@@ -219,7 +222,7 @@ spec(bool fit = true)
   int ierflag;
   minuit.mnparm(eGamma,"gamma", -2., 0.1 ,0, 0, ierflag);
   minuit.mnparm(eLgEmax,"lgRmax", log10(1e19), 0.1 ,0, 0, ierflag);
-  minuit.mnparm(eLgEscFac,"lgEscFac",  -0.3, 0.1 ,0, 0, ierflag);
+  minuit.mnparm(eLgEscFac,"lgResc",  1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEscGamma,"escGamma", -1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEps0,"lgEpsilon0", -1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eAlpha,"alpha", -1, 0.1 ,0, 0, ierflag);
@@ -232,7 +235,7 @@ spec(bool fit = true)
   }
   minuit.FixParameter(eNpars);
   minuit.FixParameter(eGamma);
-  //  minuit.FixParameter(eEscGamma);
+  minuit.FixParameter(eEscGamma);
   //  minuit.FixParameter(eEps0);
   minuit.FixParameter(eAlpha);
   minuit.FixParameter(eBeta);
@@ -259,10 +262,10 @@ spec(bool fit = true)
 
 
   vector<MassGroup> massGroups;
-  massGroups.push_back(MassGroup(1, 2, kRed));
-  massGroups.push_back(MassGroup(3, 7, kAzure+10));
-  massGroups.push_back(MassGroup(8, 24, kGreen+1));
-  massGroups.push_back(MassGroup(25, 56, kBlue));
+  massGroups.push_back(MassGroup(1, 2, 1, kRed));
+  massGroups.push_back(MassGroup(3, 7, 4, kAzure+10));
+  massGroups.push_back(MassGroup(8, 24, 14, kGreen+1));
+  massGroups.push_back(MassGroup(25, 56, 56, kBlue));
 
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
   plot.Draw(gSpectrum, *gPropagator, massGroups);
@@ -295,8 +298,9 @@ spec(bool fit = true)
   TLatex l;
   l.SetTextAlign(13); l.SetTextSize(0.06);
   l.SetTextFont(42); l.SetNDC(true);
-  double y = 0.95;
-  const double dy = 0.13;
+  const double yStart = 0.9;
+  double y = yStart;
+  const double dy = 0.11;
   const double x = 0.;
   for (unsigned int i = 0; i < eNpars; ++i) {
     stringstream parString;
@@ -304,17 +308,28 @@ spec(bool fit = true)
     if (parErr[i] == 0)
       parString << " (fixed)";
     else
-      parString << "#pm" << noshowpoint << parErr[i];
+      parString << "#pm" << noshowpoint << setprecision(1) << parErr[i];
     l.DrawLatex(x, y, parString.str().c_str());
     y -= dy;
   }
-  y = 0.95;
+  y = yStart;
+
   for (unsigned int i = 0; i < gnMass; ++i) {
     stringstream parString;
-    parString << "f(" << gMass[i] << ") = " << scientific << setprecision(2)
+    parString << "f(" << gMass[i] << ") = " << scientific << setprecision(1)
               << frac[i] << endl;
     l.DrawLatex(0.63, y, parString.str().c_str());
     y -= dy;
   }
 
+  /*
+    double fCovariance[nPar][nPar];
+    minuit.mnemat(&fCovariance[0][0],nPar);
+
+    for (int i=0; i<nPar; ++i) {
+      for (int j=0; j<nPar; ++j)
+        cout << fCovariance[i][j]/sqrt(fCovariance[j][j]*fCovariance[i][i]) << " ";
+      cout << endl;
+    }
+  */
  }

@@ -16,9 +16,11 @@ namespace prop {
 
   const string gPrefix = " \033[1;34m[pmb]:\033[0m";
 
-  PropMatrixBuilder::PropMatrixBuilder(const unsigned int nBins,
+  PropMatrixBuilder::PropMatrixBuilder(const ESourceDistribution s,
+                                       const unsigned int nBins,
                                        const double lgEmin,
                                        const double lgEmax) :
+    fSourceDistribution(s),
     fIsNormalized(false),
     fNbins(nBins),
     fLgEmin(lgEmin),
@@ -26,6 +28,7 @@ namespace prop {
     fAxis(fNbins, fLgEmin, fLgEmax),
     fPropMatrices(fLgEmin, fLgEmax)
   {
+    cout << " source distribution : " << fSourceDistribution << endl;
   }
 
 
@@ -86,6 +89,7 @@ namespace prop {
       eventTree->GetEntry(i);
       const unsigned int Aprim = event.GetMass();
       const double lgEprim = log10(event.GetEnergy()) + 18;
+      const double w = DistributionWeight(event.GetRedShift());
       const int iPrim = fAxis.FindFixBin(lgEprim) - 1;
       if (iPrim < 0 || iPrim >= int(fNbins)) {
         cerr << " energy out of range " << lgEprim << endl;
@@ -100,7 +104,7 @@ namespace prop {
         save->cd();
       }
       TH1D& hGen = *(fGenMap[Aprim]);
-      hGen.Fill(lgEprim);
+      hGen.Fill(lgEprim, w);
       for (const auto& secondary : event.GetSecondaries()) {
         const unsigned int Asec = secondary.GetMass();
         const double lgEsec = log10(secondary.GetEnergy()) + 18;
@@ -110,7 +114,7 @@ namespace prop {
         TMatrixD& m = fPropMatrices.GetMatrix(Aprim, Asec);
         if (!m.GetNoElements())
           m.ResizeTo(fNbins, fNbins);
-        ++m[jSec][iPrim];
+        m[jSec][iPrim] += w;
       }
     }
     crpFile->Close();
@@ -137,6 +141,31 @@ namespace prop {
       fIsNormalized = true;
     }
     return fPropMatrices;
+  }
+
+  double
+  PropMatrixBuilder::DistributionWeight(const double z)
+    const
+  {
+    switch (fSourceDistribution) {
+    case eUniform:
+      return 1;
+    case eAGN: {
+      /*
+        G. Hasinger, T. Miyaji and M. Schmidt, Astron. Astrophys.
+        441, 417 (2005).
+      */
+      const double n17 = pow(2.7, 5);
+      const double n27 = pow(10, 0.43);
+      if (z < 1.7)
+        return pow(1+z, 5) / n17;
+      else if (z < 2.7)
+        return 1;
+      else
+        return pow(n27, 2.7-z);
+    }
+    }
+    return 0;
   }
 
 }

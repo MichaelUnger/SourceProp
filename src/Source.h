@@ -1,6 +1,8 @@
 #ifndef _Source_h_
 #define _Source_h_
 
+#include "Utilities.h"
+
 #include <cmath>
 #include <iostream>
 
@@ -35,12 +37,14 @@ namespace prop {
       fNoInteraction = noInteraction;
     }
 
+    void SetEscFac(const double f) { fEscFac = f; }
+
     double
     LambdaEsc(const double E, const double A)
       const
     {
-#warning wrong charge
-      return fNoInteraction ? 1e-99 : fEscFac*pow(E/1e19*2/A, fEscGamma);
+      const double Z = aToZ(A);
+      return fNoInteraction ? 1e-99 : fEscFac*pow(E/1e19*Z, fEscGamma);
     }
 
     double
@@ -53,7 +57,7 @@ namespace prop {
       const double epsilonGDR = A >= 4 ?
         42.65e6*pow(A,-0.21) :
         0.925e6*pow(A, 2.433);
-      const double mP = 1e9;
+      const double mP = 938.272046e6;
       const double E0 = epsilonGDR / (2 * fEps0 / (A*mP));
       return (E < E0 ? pow(E/E0, fBeta+1) : pow(E/E0, fAlpha+1))/A;
     }
