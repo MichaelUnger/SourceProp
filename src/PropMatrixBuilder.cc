@@ -152,6 +152,7 @@ namespace prop {
       return 1;
     case eAGN: {
       /*
+        Stanev arXiv:0808.1045 analysis of
         G. Hasinger, T. Miyaji and M. Schmidt, Astron. Astrophys.
         441, 417 (2005).
       */
