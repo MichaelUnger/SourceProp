@@ -44,7 +44,7 @@ namespace prop {
       const
     {
       const double Z = aToZ(A);
-      return fNoInteraction ? 1e-99 : fEscFac*pow(E/1e19*Z, fEscGamma);
+      return fNoInteraction ? 1e-99 : fEscFac*pow(E/1e19/Z, fEscGamma);
     }
 
     double
