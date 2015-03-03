@@ -4,6 +4,7 @@
 #include "PropMatrices.h"
 #include <Rtypes.h>
 #include <map>
+#include <utility>
 
 #include <TMatrixD.h>
 
@@ -21,11 +22,14 @@ namespace prop {
     double GetFluxSum(const double lgE) const;
     const TMatrixD& GetSum() const { return fSum; }
 
+    std::pair<double, double> GetLnAMoments(const unsigned int i) const;
+    std::pair<double, double> GetLnAMoments(const double lgE) const;
+
     const std::map<unsigned int, TMatrixD>& GetFluxAtEarth() const
     { return fResult; }
 
     void Rescale(const double f);
-    void AddGalactic(const unsigned int /*A*/, const TMatrixD& /*flux*/) {};
+    void AddGalactic(const unsigned int A, const TMatrixD& flux);
 
   private:
     Propagator();

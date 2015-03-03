@@ -21,16 +21,19 @@ namespace prop {
     MassGroup(unsigned int firstA = 0,
               unsigned int lastA = 0,
               unsigned int repA = 0,
-              unsigned int color = 0) :
+              unsigned int color = 0,
+              unsigned int lineStyle = 1) :
       fFirst(firstA),
       fLast(lastA),
       fRepA(repA),
-      fColor(color) {}
+      fColor(color),
+      fLineStyle(lineStyle) {}
 
     unsigned int fFirst;
     unsigned int fLast;
     unsigned int fRepA;
     unsigned int fColor;
+    unsigned int fLineStyle;
 
   };
 

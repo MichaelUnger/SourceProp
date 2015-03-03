@@ -2,6 +2,9 @@
 #define _Utilities_h_
 
 #include <iostream>
+#include <map>
+#include <utility>
+#include <TMatrixDfwd.h>
 
 namespace prop {
 
@@ -28,6 +31,11 @@ namespace prop {
         zeta[i] /= (1 - zeta[j]);
     }
   }
+
+  // first: <lnA>, second: V(lnA)
+  std::pair<double, double>
+  logMassMoments(const std::map<unsigned int, TMatrixD>& specMap,
+                 unsigned int index);
 
   inline
   double aToZ(const unsigned int A)
@@ -91,10 +99,7 @@ namespace prop {
         24,  // Cr-54
         25,  // Mn-55
         26};
-    if (A == 56)
-      return 26;
-    else
-      return A / 2.;
+
 
     if (A > Amax || A == 0) {
       std::cerr << " aToZ(): Error -- A out of range "

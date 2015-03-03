@@ -1,4 +1,5 @@
 #include "Propagator.h"
+#include "Utilities.h"
 
 #include <sstream>
 #include <stdexcept>
@@ -44,6 +45,22 @@ namespace prop {
     fSum *= f;
   }
 
+
+  std::pair<double, double>
+  Propagator::GetLnAMoments(const unsigned int i)
+    const
+  {
+    return logMassMoments(fResult, i);
+  }
+
+  std::pair<double, double>
+  Propagator::GetLnAMoments(const double lgE)
+    const
+  {
+    return GetLnAMoments(LgEtoIndex(lgE));
+  }
+
+
   double
   Propagator::GetFluxSum(const double lgE)
     const
@@ -72,6 +89,17 @@ namespace prop {
       return 0;
     }
     return fSum[i][0];
+  }
+
+  void
+  Propagator::AddGalactic(const unsigned int A,
+                          const TMatrixD& flux)
+  {
+    TMatrixD& spectrum = fResult[A];
+    if (!spectrum.GetNoElements())
+      spectrum.ResizeTo(flux);
+    spectrum += flux;
+    fSum += flux;
   }
 
 

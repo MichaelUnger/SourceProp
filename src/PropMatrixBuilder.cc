@@ -163,7 +163,7 @@ namespace prop {
       else
         return exp(2.7-z);
     }
-    case eSFR: {
+    case eSFR1: {
       /*
         [53] H. Yüksel, M. D. Kistler, J. F. Beacom and A. M. Hopkins,
         Astrophys. J. 683, L5 (2008).
@@ -176,6 +176,18 @@ namespace prop {
         return pow(1+z, -0.3) / pow(2, -0.3);
       else
         return pow(1+z, -3.5) / pow(5, -3.5) * pow(5, -0.3) / pow(2, -0.3);
+    }
+    case eSFR2: {
+      /*
+        Brant E. Robertson, Richard S. Ellis, Steven R. Furlanetto, James S. Dunlop.
+        arXiv:1502.02024
+      */
+      // Eq.(2)
+      const double ap = 1./11.2485; //0.01376
+      const double bp = 3.26;
+      const double cp = 2.59;
+      const double dp = 5.68;
+      return ap * pow(1+z, bp) / (1 + pow((1+z)/cp, dp));
     }
     }
     return 0;

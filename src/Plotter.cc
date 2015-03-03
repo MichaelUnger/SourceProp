@@ -7,6 +7,7 @@
 #include <TStyle.h>
 #include <TLatex.h>
 #include <TLegend.h>
+#include <TLine.h>
 #include <TH1D.h>
 
 #include <sstream>
@@ -20,7 +21,8 @@ namespace prop {
     fGammaEarth(gammaEarth)
   {
     gStyle->SetPadTopMargin(0.1);
-    gStyle->SetTitleOffset(1.2, "Y");
+    gStyle->SetPadLeftMargin(.16);
+    gStyle->SetTitleOffset(1.3, "Y");
     if (!fCanvas)
       fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 600);
     fCanvas->SetBottomMargin(0.2);
@@ -47,13 +49,12 @@ namespace prop {
     DrawHists(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
               n, x1, x2, eFluxEarth, eCompEarth);
     DrawSource(spectrum.GetSource(), mGroups, n, x1, x2);
-
     for (int i = 0; i <= eFluxEarth; ++i)
       fCanvas->cd(i + 1)->RedrawAxis();
 
     for (int i = eFluxInj; i < eFluxEarth; ++i) {
       fCanvas->cd(i)->SetLogy(1);
-      fCanvas->cd(i)->SetLeftMargin(0.2);
+      //      fCanvas->cd(i)->SetLeftMargin(0.2);
     }
 
     DrawLabels(mGroups);
@@ -75,6 +76,8 @@ namespace prop {
     double yMin = -1;
     const double xMax = 21;
     for (auto& m : mGroups) {
+      if (m.fRepA > 56)
+        continue;
       stringstream name;
       name << "lambdaInt" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
@@ -90,24 +93,24 @@ namespace prop {
       hEsc->SetLineStyle(2);
 
       for (unsigned int i = 0; i < n; ++i) {
-        const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
-        const double lInt = source.LambdaInt(pow(10, lgE), m.fRepA);
-        if (lInt < 1e99) {
+        if (m.fRepA != 1) {
+          const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
+          const double lInt = source.LambdaInt(pow(10, lgE), m.fRepA);
           if (lgE < xMax && (yMax < 0 || lInt > yMax))
             yMax = lInt;
           if (lgE < xMax && (yMin < 0 || lInt < yMin))
             yMin = lInt;
           hInt->SetBinContent(i+1, lInt);
           hInt->SetLineColor(m.fColor);
-        }
 
-        const double lEsc = source.LambdaEsc(pow(10, lgE), m.fRepA);
-        if (lgE < xMax && (yMax < 0 || lEsc > yMax))
-          yMax = lEsc;
-        if (lgE < xMax && (yMin < 0 || lEsc < yMin))
-          yMin = lEsc;
-        hEsc->SetBinContent(i+1, lEsc);
-        hEsc->SetLineColor(m.fColor);
+          const double lEsc = source.LambdaEsc(pow(10, lgE), m.fRepA);
+          if (lgE < xMax && (yMax < 0 || lEsc > yMax))
+            yMax = lEsc;
+          if (lgE < xMax && (yMin < 0 || lEsc < yMin))
+            yMin = lEsc;
+          hEsc->SetBinContent(i+1, lEsc);
+          hEsc->SetLineColor(m.fColor);
+        }
       }
     }
 
@@ -140,12 +143,15 @@ namespace prop {
     fCanvas->cd();
     l.SetTextAlign(12);
     l.SetTextSize(0.023);
-    const double yMass = 0.5;
+    const double yMass = 0.502;
     const double dxMass = 0.1;
     double xMass = 0.32;
     for (const auto& m : mGroups) {
       stringstream title;
-      title << m.fFirst << " #leq A #leq " << m.fLast;
+      if (m.fFirst > 56)
+        title << "galactic Fe";
+      else
+        title << m.fFirst << " #leq A #leq " << m.fLast;
       l.SetTextColor(m.fColor);
       l.DrawLatex(xMass, yMass, title.str().c_str());
       xMass += dxMass;
@@ -154,9 +160,18 @@ namespace prop {
     fCanvas->cd(eCompEarth);
     l.SetTextSize(0.05);
     l.SetTextColor(kRed);
-    l.DrawLatex(0.2, 0.85, "#LTlnA#GT");
-    l.SetTextColor(kBlack);
-    l.DrawLatex(0.2, 0.78, "V(lnA)");
+    l.DrawLatex(0.25, 0.85, "#LTlnA#GT");
+    l.SetTextColor(kGray+3);
+    l.DrawLatex(0.37, 0.85, "V(lnA)");
+
+    fCanvas->cd(eCompInj);
+    TLine* inj = new TLine();
+    inj->DrawLineNDC(0.58, 0.85, 0.64, 0.85);
+    TLine* esc = new TLine();
+    esc->SetLineStyle(2);
+    esc->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
+    l.DrawLatex(0.68, 0.85, "interaction");
+    l.DrawLatex(0.68, 0.78, "escape");
 
   }
 
@@ -180,12 +195,18 @@ namespace prop {
     for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
       stringstream title;
       unsigned int color;
+      unsigned int style;
       if ( i < mGroups.size()) {
         color = mGroups[i].fColor;
-        title << mGroups[i].fFirst << "#leq A #leq" << mGroups[i].fLast;
+        style = mGroups[i].fLineStyle;
+        if (mGroups[i].fFirst > 56)
+          title << "galactic Fe";
+        else
+          title << mGroups[i].fFirst << "#leq A #leq" << mGroups[i].fLast;
       }
       else {
         color = kBlack;
+        style = 1;
         title << "total flux";
       }
       stringstream name;
@@ -194,9 +215,15 @@ namespace prop {
                               title.str().c_str(),
                               n, x1, x2));
       fHists.back()->SetLineColor(color);
+      fHists.back()->SetLineStyle(style);
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
       stringstream yTit;
-      yTit << "E^{" << gamma << "} #upoint flux";
+      if (specPad != eFluxEarth)
+        yTit << "E^{" << gamma << "}  n_{s} dN/dE/dt [a.u.]";
+      else
+        yTit << "E^{" << gamma << "} J(E) [eV^{" << gamma-1
+             << "} km^{-2} sr^{-1} yr^{-1}]";
+
       fHists.back()->GetYaxis()->SetTitle(yTit.str().c_str());
     }
 
@@ -226,9 +253,7 @@ namespace prop {
 
     if (specPad) {
       fCanvas->cd(specPad);
-      histTot->Draw();
-      if (specPad == eFluxInj || specPad == eFluxEsc)
-        histTot->GetYaxis()->SetTitleOffset(1.7);
+      histTot->Draw("C");
       for (unsigned int i = 0; i < n; ++i) {
         const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
         const double w = pow(pow(10, lgE), gamma);
@@ -236,7 +261,7 @@ namespace prop {
           fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
       }
       for (unsigned int i = iFirst; i < fHists.size() - 1; ++i)
-        fHists[i]->Draw("SAME");
+        fHists[i]->Draw("CSAME");
     }
 
 
@@ -252,32 +277,22 @@ namespace prop {
     fHists.push_back(vlnA);
 
     for (unsigned int i = 0; i < n; ++i) {
-      double sumFluxLnA = 0;
-      double sumFluxLnA2 = 0;
-      double sumFlux = 0;
-      for (auto& iter : specMap) {
-        const unsigned int lnA = log(iter.first);
-        const TMatrixD& m = iter.second;
-        const double flux = m[i][0];
-        sumFlux += flux;
-        sumFluxLnA += flux*lnA;
-        sumFluxLnA2 += flux*lnA*lnA;
-      }
-      if (sumFlux) {
-        const double meanLnA = sumFluxLnA / sumFlux;
-        lnA->SetBinContent(i+1, meanLnA);
-        vlnA->SetBinContent(i+1, sumFluxLnA2/sumFlux - pow(meanLnA,2));
-      }
+      pair<double, double> lmm = logMassMoments(specMap, i);
+      lnA->SetBinContent(i+1, lmm.first);
+      vlnA->SetBinContent(i+1, lmm.second);
     }
     lnA->GetYaxis()->SetRangeUser(-0.05, 4.1);
     lnA->SetLineColor(kRed);
     lnA->GetXaxis()->SetTitle("lg(E/eV)");
+    vlnA->SetLineColor(kGray+3);
     //    lnA->GetYaxis()->SetTitle("#LTln A#GT, V(ln A)");
 
     if (lnaPad) {
       fCanvas->cd(lnaPad);
-      lnA->Draw();
-      vlnA->Draw("SAME");
+      lnA->Draw("C");
+      vlnA->Draw("CSAME");
+      lnA->SetLineWidth(2);
+      vlnA->SetLineWidth(2);
     }
   }
 

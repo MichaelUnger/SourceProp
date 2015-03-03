@@ -14,7 +14,8 @@ namespace prop {
     enum ESourceDistribution {
       eUniform,
       eAGN,
-      eSFR
+      eSFR1,
+      eSFR2
     };
 
   public:
