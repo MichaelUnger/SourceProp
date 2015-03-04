@@ -158,9 +158,14 @@ namespace prop {
       const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
       prod *= lambdaE / (lambdaE + lambdaI);
     }
-    const double lambdaI = fSource->LambdaInt(E, A_i);
-    const double lambdaE = fSource->LambdaEsc(E, A_i);
-    return prod * lambdaI / (lambdaE + lambdaI);
+#warning no p interactions
+    if (A_i > 1) {
+      const double lambdaI = fSource->LambdaInt(E, A_i);
+      const double lambdaE = fSource->LambdaEsc(E, A_i);
+      return prod * lambdaI / (lambdaE + lambdaI);
+    }
+    else
+      return prod;
   }
 
 

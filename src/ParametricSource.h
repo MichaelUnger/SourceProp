@@ -1,17 +1,13 @@
 #ifndef _ParametricSource_h_
 #define _ParametricSource_h_
 
-#include "Utilities.h"
-
 #include <cmath>
-#include <iostream>
 
 namespace prop {
   class ParametricSource : public VSource {
 
   public:
     ParametricSource() :
-      fEscFac(1), fEscGamma(1),
       fEps0(1), fAlpha(1), fBeta(),
       fNoInteraction(true)
     {}
@@ -19,7 +15,7 @@ namespace prop {
     ParametricSource(const double escFac, const double escGamma,
            const double eps0, const double alpha,
            const double beta) :
-      fEscFac(escFac), fEscGamma(escGamma),
+      VSource(escFac, escGamma),
       fEps0(eps0), fAlpha(alpha), fBeta(beta),
       fNoInteraction(false)
     {}
@@ -29,29 +25,19 @@ namespace prop {
                   const double eps0, const double alpha,
                   const double beta, const bool noInteraction = false)
     {
-      fEscFac = escFac;
-      fEscGamma = escGamma;
+      SetEscFac(escFac);
+      SetEscGamma(escGamma);
       fEps0 = eps0;
       fAlpha = alpha;
       fBeta = beta;
       fNoInteraction = noInteraction;
     }
 
-    void SetEscFac(const double f) { fEscFac = f; }
-
-    double
-    LambdaEsc(const double E, const double A)
-      const
-    {
-      const double Z = aToZ(A);
-      return fNoInteraction ? 1e-99 : fEscFac*pow(E/1e19/Z, fEscGamma);
-    }
-
     double
     LambdaInt(const double E, const double A)
       const
     {
-      if (A == 1 || fNoInteraction)
+      if (fNoInteraction)
         return 1e99;
 
       const double epsilonGDR = A >= 4 ?
@@ -69,8 +55,6 @@ namespace prop {
     }
 
   private:
-    double fEscFac;
-    double fEscGamma;
     double fEps0;
     double fAlpha;
     double fBeta;

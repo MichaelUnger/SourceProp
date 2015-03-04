@@ -10,17 +10,31 @@ namespace prop {
   class VSource {
 
   public:
-    virtual
+
+    VSource(const double escFac = 1, const double escGamma = 1) :
+      fEscFac(escFac),
+      fEscGamma(escGamma)
+    {}
+
+    void SetEscFac(const double f) { fEscFac = f; }
+    void SetEscGamma(const double g) { fEscGamma = g; }
+
     double
-    LambdaEsc(const double /*E*/, const double /*A*/)
-      const = nullptr;
+    LambdaEsc(const double E, const double A)
+      const
+    {
+      const double Z = aToZ(A);
+      return fEscFac*pow(E/1e19/Z, fEscGamma);
+    }
 
     virtual
     double
     LambdaInt(const double /*E*/, const double /*A*/)
-      const = nullptr;
+      const = 0;
 
-  private:
+  protected:
+    double fEscFac;
+    double fEscGamma;
   };
 }
 

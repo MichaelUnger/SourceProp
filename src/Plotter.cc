@@ -33,7 +33,8 @@ namespace prop {
   void
   Plotter::Draw(const Spectrum& spectrum,
                 const Propagator& prop,
-                const vector<MassGroup>& mGroups)
+                const vector<MassGroup>& mGroups,
+                const bool drawProtonSourceLines)
   {
     while(!fHists.empty()) {
       delete fHists.back();
@@ -48,7 +49,7 @@ namespace prop {
               n, x1, x2, eFluxEsc, 0);
     DrawHists(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
               n, x1, x2, eFluxEarth, eCompEarth);
-    DrawSource(spectrum.GetSource(), mGroups, n, x1, x2);
+    DrawSource(spectrum.GetSource(), mGroups, n, x1, x2, drawProtonSourceLines);
     for (int i = 0; i <= eFluxEarth; ++i)
       fCanvas->cd(i + 1)->RedrawAxis();
 
@@ -69,7 +70,8 @@ namespace prop {
   void
   Plotter::DrawSource(const VSource* source,
                       const vector<MassGroup>& mGroups,
-                      const unsigned int n, const double x1, const double x2)
+                      const unsigned int n, const double x1, const double x2,
+                      const bool drawProtonLines)
   {
     unsigned int firstHist = fHists.size();
     double yMax = -1;
@@ -93,7 +95,7 @@ namespace prop {
       hEsc->SetLineStyle(2);
 
       for (unsigned int i = 0; i < n; ++i) {
-        if (m.fRepA != 1) {
+        if (drawProtonLines || m.fRepA != 1) {
           const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
           const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
           if (lgE < xMax && (yMax < 0 || lInt > yMax))

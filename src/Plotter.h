@@ -55,7 +55,8 @@ namespace prop {
             const double gammaEarth = 3);
     void Draw(const prop::Spectrum& spectrum,
               const prop::Propagator& prop,
-              const std::vector<prop::MassGroup>& mGroups);
+              const std::vector<prop::MassGroup>& mGroups,
+              const bool drawProtonSourceLines);
     void SetXRange(const double x1, const double x2);
     TCanvas* GetCanvas() { return fCanvas; }
 
@@ -69,7 +70,8 @@ namespace prop {
 
     void DrawSource(const prop::VSource* source,
                     const std::vector<MassGroup>& mGroups,
-                    const unsigned int n, const double x1, const double x2);
+                    const unsigned int n, const double x1, const double x2,
+                    const bool drawProtonLines);
 
     void DrawLabels(const std::vector<MassGroup>& mGroups);
 

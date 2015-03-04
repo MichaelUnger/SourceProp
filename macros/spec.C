@@ -108,13 +108,17 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
                               pow(10, par[eEps0]),
                               par[eAlpha],
                               par[eBeta]);
-    const double lambdaI = gParSource->LambdaInt(1e19, 56);
-    const double lambdaE = gParSource->LambdaEsc(1e19, 56);
-    gParSource->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
     source = gParSource;
   }
   else
     source = gNumSource;
+
+  source->SetEscFac(1);
+  source->SetEscGamma(par[eEscGamma]);
+  const double lambdaI = source->LambdaInt(1e19, 56);
+  const double lambdaE = source->LambdaEsc(1e19, 56);
+  source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
+
 
   map<unsigned int, double> fractions;
   double frac[gnMass];
@@ -261,7 +265,7 @@ spec(bool fit = true)
     gvLnAGraph->SetPoint(i, log10(*(gvLnAGraph->GetX()+i)), *(gvLnAGraph->GetY()+i));
   }
 
-  const string evolution = "AGN";
+  const string evolution = "SFR2";
   const string filename = "ROOT/propMatrix_" + evolution + ".root";
   PropMatrixFile pmf(filename.c_str());
   const PropMatrices& matrices = pmf.GetPropMatrices();
@@ -270,7 +274,9 @@ spec(bool fit = true)
   gLgEmax = matrices.GetLgEmax();
   delete gPropagator;
   gPropagator = new Propagator(matrices);
-  gParSource = new ParametricSource();
+  //  gParSource = new ParametricSource();
+  gNumSource = new NumericSource("SzaboProtheroe52",
+                                 "/ssd/munger/Mag/CRPropa3-data/data");
 
   double fStart[gnMass] = {0.0001, 0.0001, 0.45, 0.54};
   //double fStart[gnMass] = {0.5, 0.0001, 0.13, 0.};
@@ -312,7 +318,7 @@ spec(bool fit = true)
     minuit.mnparm(eNpars + i, parName.str().c_str(), log10(zetaStart[i]),
                   0.1 ,-5, 1e-14, ierflag);
   }
-  //  minuit.FixParameter(eNpars);
+  minuit.FixParameter(eNpars);
   //minuit.FixParameter(eNpars+1);
   // minuit.FixParameter(eNpars+2);
   minuit.FixParameter(eGamma);
@@ -354,7 +360,7 @@ spec(bool fit = true)
   massGroups.push_back(MassGroup(57, 57, 57, kMagenta+2, 2));
 
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
-  plot.Draw(gSpectrum, *gPropagator, massGroups);
+  plot.Draw(gSpectrum, *gPropagator, massGroups, !gParSource);
   plot.SetXRange(17., 20.7);
   TCanvas* can = plot.GetCanvas();
 
