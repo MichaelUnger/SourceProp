@@ -12,7 +12,7 @@ class TH1D;
 namespace prop {
 
   class Spectrum;
-  class Source;
+  class VSource;
   class Propagator;
 
   class MassGroup {
@@ -67,7 +67,7 @@ namespace prop {
                    const unsigned int n, const double x1, const double x2,
                    const unsigned int specPad, const unsigned int lnaPad);
 
-    void DrawSource(const prop::Source& source,
+    void DrawSource(const prop::VSource* source,
                     const std::vector<MassGroup>& mGroups,
                     const unsigned int n, const double x1, const double x2);
 

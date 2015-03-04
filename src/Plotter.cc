@@ -1,6 +1,6 @@
 #include "Plotter.h"
 #include "Spectrum.h"
-#include "Source.h"
+#include "VSource.h"
 #include "Propagator.h"
 
 #include <TCanvas.h>
@@ -67,7 +67,7 @@ namespace prop {
 
 
   void
-  Plotter::DrawSource(const Source& source,
+  Plotter::DrawSource(const VSource* source,
                       const vector<MassGroup>& mGroups,
                       const unsigned int n, const double x1, const double x2)
   {
@@ -95,7 +95,7 @@ namespace prop {
       for (unsigned int i = 0; i < n; ++i) {
         if (m.fRepA != 1) {
           const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
-          const double lInt = source.LambdaInt(pow(10, lgE), m.fRepA);
+          const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
           if (lgE < xMax && (yMax < 0 || lInt > yMax))
             yMax = lInt;
           if (lgE < xMax && (yMin < 0 || lInt < yMin))
@@ -103,7 +103,7 @@ namespace prop {
           hInt->SetBinContent(i+1, lInt);
           hInt->SetLineColor(m.fColor);
 
-          const double lEsc = source.LambdaEsc(pow(10, lgE), m.fRepA);
+          const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
           if (lgE < xMax && (yMax < 0 || lEsc > yMax))
             yMax = lEsc;
           if (lgE < xMax && (yMin < 0 || lEsc < yMin))

@@ -3,18 +3,18 @@
 
 #include <map>
 #include <TMatrixD.h>
-#include "Source.h"
+#include "VSource.h"
 
 namespace prop {
 
-  class Source;
+  class VSource;
 
   class Spectrum {
   public:
     typedef std::map<unsigned int, TMatrixD> SpecMap;
   public:
     Spectrum() { }
-    Spectrum(const Source& s, const double gamma,
+    Spectrum(const VSource* s, const double gamma,
              const double Emax, const double nE,
              const double lgEmin, const double lgEmax,
              const std::map<unsigned int, double>& fractions) :
@@ -27,7 +27,7 @@ namespace prop {
       fFractions(fractions)
     {}
 
-    void SetParameters(const Source& s, const double gamma,
+    void SetParameters(const VSource* s, const double gamma,
                        const double Emax, const double nE,
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions)
@@ -60,7 +60,7 @@ namespace prop {
 
     void Rescale(const double f);
 
-    const Source& GetSource() const { return fSource; }
+    const VSource* GetSource() const { return fSource; }
 
   private:
     double InjectedFlux(const double E, const double A) const;
@@ -71,7 +71,7 @@ namespace prop {
 
     double fEmax;
     double fGamma;
-    Source fSource;
+    const VSource* fSource;
     double fN;
     double fLgEmin;
     double fLgEmax;

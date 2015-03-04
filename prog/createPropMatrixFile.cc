@@ -25,8 +25,10 @@ main(int argc, char** argv)
     s = PropMatrixBuilder::eUniform;
   else if (option == "AGN")
     s = PropMatrixBuilder::eAGN;
-  else if (option == "SFR")
-    s = PropMatrixBuilder::eSFR;
+  else if (option == "SFR1")
+    s = PropMatrixBuilder::eSFR1;
+  else if (option == "SFR2")
+    s = PropMatrixBuilder::eSFR2;
   else {
     cerr << usage.str() << endl;
     return 1;

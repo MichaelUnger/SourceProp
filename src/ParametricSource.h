@@ -1,5 +1,5 @@
-#ifndef _Source_h_
-#define _Source_h_
+#ifndef _ParametricSource_h_
+#define _ParametricSource_h_
 
 #include "Utilities.h"
 
@@ -7,16 +7,16 @@
 #include <iostream>
 
 namespace prop {
-  class Source {
+  class ParametricSource : public VSource {
 
   public:
-    Source() :
+    ParametricSource() :
       fEscFac(1), fEscGamma(1),
       fEps0(1), fAlpha(1), fBeta(),
       fNoInteraction(true)
     {}
 
-    Source(const double escFac, const double escGamma,
+    ParametricSource(const double escFac, const double escGamma,
            const double eps0, const double alpha,
            const double beta) :
       fEscFac(escFac), fEscGamma(escGamma),

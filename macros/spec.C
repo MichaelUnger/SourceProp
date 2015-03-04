@@ -19,7 +19,8 @@
 #include "../src/PropMatrixFile.h"
 #include "../src/Propagator.h"
 #include "../src/Spectrum.h"
-#include "../src/Source.h"
+#include "../src/ParametricSource.h"
+#include "../src/NumericSource.h"
 #include "../src/Utilities.h"
 #include "../src/Plotter.h"
 
@@ -57,6 +58,8 @@ const double gMass[gnMass] = {1, 4, 14, 28, 56};
 
 Propagator* gPropagator = NULL;
 Spectrum gSpectrum;
+ParametricSource* gParSource = NULL;
+NumericSource* gNumSource = NULL;
 const bool gFitGal = true;
 
 unsigned int gIteration = 0;
@@ -98,14 +101,21 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
 {
 
   ++gIteration;
-  Source source(1,
-                par[eEscGamma],
-                pow(10, par[eEps0]),
-                par[eAlpha],
-                par[eBeta]);
-  const double lambdaI = source.LambdaInt(1e19, 56);
-  const double lambdaE = source.LambdaEsc(1e19, 56);
-  source.SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
+  VSource* source = NULL;
+  if (gParSource) {
+    gParSource->SetParameters(1,
+                              par[eEscGamma],
+                              pow(10, par[eEps0]),
+                              par[eAlpha],
+                              par[eBeta]);
+    const double lambdaI = gParSource->LambdaInt(1e19, 56);
+    const double lambdaE = gParSource->LambdaEsc(1e19, 56);
+    gParSource->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
+    source = gParSource;
+  }
+  else
+    source = gNumSource;
+
   map<unsigned int, double> fractions;
   double frac[gnMass];
   double zeta[gnMass-1];
@@ -136,7 +146,7 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
   for (unsigned int i = 0; i < gN; ++i) {
     const double E = pow(10, lgE);
     galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
-   lgE += dlgE;
+    lgE += dlgE;
   }
   gPropagator->AddGalactic(57, galactic);
   const double norm = calcNorm(*gPropagator);
@@ -171,12 +181,12 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
 
 
   if (!(gIteration%10))
-    cout << " iteration " << gIteration
-         << ", gamma = " << par[eGamma]
-         << ", chi2Tot = " << chi2
-         << ", chi2Spec = " << chi2Spec
-         << ", chi2LnA = " << chi2LnA
-         << ", chi2vLnA = " << chi2vLnA << endl;
+    cout << scientific << setprecision(3)
+         << " iteration " << setw(5) << gIteration
+         << ", chi2: tot = " << chi2
+         << ", spec = " << chi2Spec
+         << ", lnA = " << chi2LnA
+         << ", V(lnA) = " << chi2vLnA << endl;
 
 }
 
@@ -247,7 +257,7 @@ spec(bool fit = true)
 
 
   for (int i = 0; i < gLnAGraph->GetN(); ++i) {
-   gLnAGraph->SetPoint(i, log10(*(gLnAGraph->GetX()+i)), *(gLnAGraph->GetY()+i));
+    gLnAGraph->SetPoint(i, log10(*(gLnAGraph->GetX()+i)), *(gLnAGraph->GetY()+i));
     gvLnAGraph->SetPoint(i, log10(*(gvLnAGraph->GetX()+i)), *(gvLnAGraph->GetY()+i));
   }
 
@@ -260,6 +270,7 @@ spec(bool fit = true)
   gLgEmax = matrices.GetLgEmax();
   delete gPropagator;
   gPropagator = new Propagator(matrices);
+  gParSource = new ParametricSource();
 
   double fStart[gnMass] = {0.0001, 0.0001, 0.45, 0.54};
   //double fStart[gnMass] = {0.5, 0.0001, 0.13, 0.};
@@ -417,9 +428,9 @@ spec(bool fit = true)
     minuit.mnemat(&fCovariance[0][0],nPar);
 
     for (int i=0; i<nPar; ++i) {
-      for (int j=0; j<nPar; ++j)
-        cout << fCovariance[i][j]/sqrt(fCovariance[j][j]*fCovariance[i][i]) << " ";
-      cout << endl;
+    for (int j=0; j<nPar; ++j)
+    cout << fCovariance[i][j]/sqrt(fCovariance[j][j]*fCovariance[i][i]) << " ";
+    cout << endl;
     }
   */
- }
+}
