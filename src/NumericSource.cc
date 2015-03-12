@@ -2,6 +2,7 @@
 #include "Utilities.h"
 
 #include <TGraph.h>
+#include <TMath.h>
 
 #include <sstream>
 #include <iostream>
@@ -14,6 +15,50 @@ namespace prop {
 
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
+
+  // fast linear interpolation assuming values are equally spaced in x
+  double
+  EvalFast(const TGraph& graph, const double xx)
+  {
+    const int n = graph.GetN();
+    const double* y = graph.GetY();
+    const double* x = graph.GetX();
+    const double x1 = x[0];
+    const double x2 = x[n - 1];
+    if (xx <= x1) {
+      cerr << " EvalFast(): below TGraph range " << endl;
+      return y[0];
+    }
+    else if (xx >= x2) {
+      cerr << " EvalFast(): above TGraph range " << endl;
+      return  y[n - 1];
+    }
+
+    const double dx = (x2 - x1)/(n - 1);
+    const unsigned int i = (xx - x1) / dx;
+    const double xLow = x[i];
+    const double xUp = x[i+1];
+    const double yLow = y[i];
+    const double yUp = y[i+1];
+    const double yn = xx*(yLow - yUp) + xLow*yUp - xUp*yLow;
+    return yn / (xLow - xUp);
+  }
+
+  void
+  CheckEqualSpacing(const TGraph& graph)
+  {
+    const int n = graph.GetN();
+    const double* x = graph.GetX();
+    const double x1 = x[0];
+    const double x2 = x[n - 1];
+    const double dx = (x2 - x1)/(n - 1);
+    for (int i = 0; i < n - 1; ++i) {
+      const double deltaX = x[i+1] - x[i];
+      if (abs(deltaX-dx)/dx > 1e-10) {
+        throw runtime_error("graph not equally spaced!");
+      }
+    }
+  }
 
 
   NumericSource::~NumericSource()
@@ -66,6 +111,7 @@ namespace prop {
         }
         graph = new TGraph(lambdaInv.size(),
                            &lgGammaVec.front(), &lambdaInv.front());
+        CheckEqualSpacing(*graph);
         fPhotoDissociation[A] = graph;
         return *graph;
       }
@@ -124,7 +170,8 @@ namespace prop {
       lgGammaVec.push_back(lgE);
     }
     graph = new TGraph(lambdaInv.size(),
-                               &lgGammaVec.front(), &lambdaInv.front());
+                       &lgGammaVec.front(), &lambdaInv.front());
+    CheckEqualSpacing(*graph);
     fPhotoPionProduction[A] = graph;
     return *graph;
   }
@@ -136,9 +183,33 @@ namespace prop {
     const double lgE = log10(E);
     const TGraph& ppp = GetPPP(A);
     if (A == 1)
-      return ppp.Eval(lgE);
+      return EvalFast(ppp, lgE);
     const TGraph& pd = GetPD(A);
-    return 1./(1/pd.Eval(lgE) + 1/ppp.Eval(lgE));
+    return 1./(1/EvalFast(pd, lgE) + 1/EvalFast(ppp, lgE));
+  }
+
+  double
+  NumericSource::GetPPFraction(const double E, const double A)
+    const
+  {
+    const double lgE = log10(E);
+    if (A == 1)
+      return 1;
+    const double lPPP = GetPPP(A).Eval(lgE);
+    const double lPD = GetPD(A).Eval(lgE);
+    return 1./(1+lPPP/lPD);
+  }
+
+  double
+  NumericSource::GetPDFraction(const double E, const double A)
+    const
+  {
+    const double lgE = log10(E);
+    if (A == 1)
+      return 0;
+    const double lPPP = GetPPP(A).Eval(lgE);
+    const double lPD = GetPD(A).Eval(lgE);
+    return 1./(1+lPD/lPPP);
   }
 
 }

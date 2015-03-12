@@ -54,6 +54,16 @@ namespace prop {
       fNoInteraction = true;
     }
 
+    double
+    GetPPFraction(const double E, const double A) const
+    { return .5; }
+
+    double
+    GetPDFraction(const double E, const double A) const
+    { return .5; }
+
+
+
   private:
     double fEps0;
     double fAlpha;

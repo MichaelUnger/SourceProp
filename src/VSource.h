@@ -32,6 +32,16 @@ namespace prop {
     LambdaInt(const double /*E*/, const double /*A*/)
       const = 0;
 
+    virtual
+    double
+    GetPPFraction(const double E, const double A)
+      const = 0;
+
+    virtual
+    double
+    GetPDFraction(const double E, const double A)
+      const = 0;
+
   protected:
     double fEscFac;
     double fEscGamma;

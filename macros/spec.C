@@ -7,6 +7,7 @@
 #include <TLegend.h>
 #include <TROOT.h>
 #include <TF1.h>
+#include <TMath.h>
 #include <TLatex.h>
 #include <TPad.h>
 #include <TFile.h>
@@ -16,6 +17,10 @@
 #include <iomanip>
 #include <sstream>
 #include <cmath>
+
+#include <utl/Units.h>
+#include <utl/PhysicalConstants.h>
+
 #include "../src/PropMatrixFile.h"
 #include "../src/Propagator.h"
 #include "../src/Spectrum.h"
@@ -53,16 +58,35 @@ vector<double> gFluxErr;
 TGraphAsymmErrors* gLnAGraph;
 TGraphAsymmErrors* gvLnAGraph;
 
+#undef _GALCOMP_
+#ifdef _GALCOMP_
+const unsigned int gnMass = 10;
+const double gMass[gnMass] = {1, 4, 12, 16, 20, 24, 28, 32, 40, 56};
+#else
 const unsigned int gnMass = 5;
 const double gMass[gnMass] = {1, 4, 14, 28, 56};
+#endif
 
 Propagator* gPropagator = NULL;
 Spectrum gSpectrum;
 ParametricSource* gParSource = NULL;
 NumericSource* gNumSource = NULL;
+
+
 const bool gFitGal = true;
+const bool gFitCompo = true;
 
 unsigned int gIteration = 0;
+
+double
+powInt(double index, double e1, double e2)
+{
+  if (TMath::Abs(index+1) < 0.001)
+    return log(e2) - log(e1);
+  else
+    return (e2 > 1e90 ? - pow(e1, index+1) :(pow(e2, index+1)  - pow(e1, index+1))) /
+      (index+1);
+}
 
 double
 calcNorm(const Spectrum& s)
@@ -154,6 +178,7 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
   }
   gPropagator->AddGalactic(57, galactic);
   const double norm = calcNorm(*gPropagator);
+
   gSpectrum.Rescale(norm);
   gPropagator->Rescale(norm);
 
@@ -181,7 +206,9 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
     chi2vLnA += pow( (vLnA - m.second) / sigmavLnA, 2);
   }
 
-  chi2 = chi2Spec + chi2LnA + chi2vLnA;
+  chi2 = chi2Spec;
+  if (gFitCompo)
+    chi2 += chi2LnA + chi2vLnA;
 
 
   if (!(gIteration%10))
@@ -227,7 +254,7 @@ readSpectrum(TGraphAsymmErrors*& fluxGraph1,
     if (lgE > minlgE && N > -1) {
       gLgE.push_back(lgE);
       gFlux.push_back(flux);
-      gFluxErr.push_back(TMath::Max((eyUp+eyDown)*0.5, 0.000005*flux));
+      gFluxErr.push_back(TMath::Max((eyUp+eyDown)*0.5, 0.0000005*flux));
       fluxGraph1->SetPoint(fluxGraph1->GetN(), lgE, flux*w);
       fluxGraph1->SetPointEYlow(fluxGraph1->GetN()-1, eyDown*w);
       fluxGraph1->SetPointEYhigh(fluxGraph1->GetN()-1, eyUp*w);
@@ -275,12 +302,19 @@ spec(bool fit = true)
   delete gPropagator;
   gPropagator = new Propagator(matrices);
   //  gParSource = new ParametricSource();
-  gNumSource = new NumericSource("SzaboProtheroe52",
+  const string photonField = "SzaboProtheroe02";
+  gNumSource = new NumericSource(photonField,
                                  "/ssd/munger/Mag/CRPropa3-data/data");
 
-  double fStart[gnMass] = {0.0001, 0.0001, 0.45, 0.54};
-  //double fStart[gnMass] = {0.5, 0.0001, 0.13, 0.};
-  //double fStart[gnMass] = {0.1, 0.1, 0.1, 0.5, 0};
+
+#ifdef _GALCOMP_
+  double fStart[gnMass] =
+    {0.364962, 0.309246, 0.0447689, 0.0769107, 0.018918, 0.0387816,
+     0.0392122, 0.00964516, 0.0140032, 0.0835522};
+#else
+  double fStart[gnMass] = {0.0001, 0.0001, 0.0001, 0.99, 0};
+#endif
+
   double zetaStart[gnMass-1];
   fractionToZeta(gnMass - 1, fStart, zetaStart);
   zetaToFraction(gnMass, zetaStart, fStart);
@@ -303,25 +337,31 @@ spec(bool fit = true)
   minuit.SetFCN(fitFunc);
 
   int ierflag;
-  minuit.mnparm(eGamma,"gamma", -1., 0.1 ,0, 0, ierflag);
-  minuit.mnparm(eLgEmax,"lgRmax", 18.9, 0.1 ,0, 0, ierflag);
-  minuit.mnparm(eLgEscFac,"lgResc",  2.9, 0.1 ,0, 0, ierflag);
+  minuit.mnparm(eGamma,"gamma", -1, 0.1 ,0, 0, ierflag);
+  minuit.mnparm(eLgEmax,"lgRmax", 1.85738e+01, 0.1 ,0, 0, ierflag);
+  minuit.mnparm(eLgEscFac,"lgResc",  2.51056e+00, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEscGamma,"escGamma", -1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEps0,"lgEpsilon0", -1.3, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eAlpha,"alpha", -1, 0.1, 0, 0, ierflag);
   minuit.mnparm(eBeta,"beta", -2, 0.1, 0, 0, ierflag);
-  minuit.mnparm(eFGal,"fGal", gFitGal ? 0.5 : 0, 0.1, 0, 1, ierflag);
-  minuit.mnparm(eGammaGal, "fGammaGal", -4, 0.1, 0, 0, ierflag);
+  minuit.mnparm(eFGal,"fGal", gFitGal ? 6.28828e-01 : 0, 0.1, 0, 1, ierflag);
+  minuit.mnparm(eGammaGal, "fGammaGal", -4.25012e+00, 0.1, 0, 0, ierflag);
   for (unsigned int i = 0; i < gnMass - 1; ++i) {
     ostringstream parName;
     parName << "zeta" << i;
     minuit.mnparm(eNpars + i, parName.str().c_str(), log10(zetaStart[i]),
                   0.1 ,-5, 1e-14, ierflag);
+#ifdef _GALCOMP_
+    minuit.FixParameter(eNpars + i);
+#endif
   }
+
   minuit.FixParameter(eNpars);
   //minuit.FixParameter(eNpars+1);
   // minuit.FixParameter(eNpars+2);
+  //  minuit.FixParameter(eLgEscFac);
   minuit.FixParameter(eGamma);
+  //  minuit.FixParameter(eLgEmax);
   minuit.FixParameter(eEscGamma);
   minuit.FixParameter(eEps0);
   minuit.FixParameter(eAlpha);
@@ -386,9 +426,14 @@ spec(bool fit = true)
   double y = yStart;
   const double dy = 0.08;
   const double x = 0.;
+  unsigned int nFreePar = 0;
   for (unsigned int i = 0; i < eNpars; ++i) {
+
     if (!gFitGal && (i == eFGal || i == eGammaGal))
       continue;
+    if (!gParSource && (i == eAlpha || i == eBeta))
+      continue;
+
     stringstream parString;
     parString << gParNames[i] << " = " << showpoint << setprecision(3) << par[i];
     if (parErr[i] == 0) {
@@ -396,12 +441,28 @@ spec(bool fit = true)
       parString << " (fixed)";
     }
     else {
+      ++nFreePar;
       l.SetTextColor(kBlack);
       parString << "#pm" << noshowpoint << setprecision(1) << parErr[i];
     }
     l.DrawLatex(x, y, parString.str().c_str());
     y -= dy;
   }
+
+  if (!gParSource) {
+    l.DrawLatex(x, y, photonField.c_str());
+    y -= dy;
+  }
+
+  unsigned int ndf = gLgE.size();
+  if (gFitCompo)
+    ndf += 2*gLnAGraph->GetN();
+  ndf -= nFreePar;
+  stringstream chi2String;
+  chi2String << "#chi^{2}/ndf = " << chi2 << "/" << ndf;
+  l.DrawLatex(x, y, chi2String.str().c_str());
+  y -= dy;
+
   y -= dy/3;
   l.SetTextColor(kBlack);
   l.DrawLatex(x, y, ("source evolution: " + evolution).c_str());
@@ -413,7 +474,7 @@ spec(bool fit = true)
               << (gMass[i] < 10 ? "  = " : "= ")
 
               << setprecision(3)
-              << int(frac[i]*100)/100. << endl;
+              << TMath::Nint(frac[i]*100)/100. << endl;
     l.DrawLatex(0.63, y, parString.str().c_str());
     y -= dy;
   }
@@ -428,6 +489,40 @@ spec(bool fit = true)
 
 
 
+
+  //
+  if (gNumSource) {
+    using namespace utl;
+    const double crpropaNorm = 3.28722e+29*56*0.938233*1/m3*1/joule; // 1/m^3/J
+    const double ratio = pow(10, par[eLgEscFac]);
+    const double E = 1e18;
+    const double A = 56;
+    const double Z = 26;
+    const double lambdaI = gNumSource->LambdaInt(E, A)*Mpc;
+    const double lambdaE = gNumSource->LambdaEsc(E, A)*Mpc;
+    const double lEscGalaxy = 30*1e5*lightyear*pow(E/Z/1e18, -0.7);
+    const double alpha = 5/2.;
+    const double beta = -2;
+    const double epsilon0 = 0.03*eV;
+    const double epsStart = 1.24e-3*eV; //0*eV;
+    const double epsStop =  0.12*eV; //1*keV;
+    const double photonDensity =
+      crpropaNorm * (pow(epsilon0, -alpha) * powInt(alpha, epsStart, epsilon0) +
+           pow(epsilon0, -beta) * powInt(beta, epsilon0, epsStop));
+    const double energyDensity =
+      crpropaNorm * (pow(epsilon0, -alpha) * powInt(alpha+1, epsStart, epsilon0) +
+           pow(epsilon0, -beta) * powInt(beta+1, epsilon0, epsStop));
+    cout << " eDens = " << energyDensity / (eV/cm3) << ", phDens = "
+         << photonDensity / (1/cm3) <<endl;
+    const double R = lambdaE/lEscGalaxy;
+    cout << lEscGalaxy/lightyear << " " << lambdaE/lightyear << " R "
+         << R <<  endl;
+    cout << " eDens = " << R*energyDensity / (eV/cm3) << ", phDens = "
+         << R*photonDensity / (1/cm3) <<endl;
+    const double solarConst = 1.36e3 * joule / s / m2;
+    cout << " solar at 1 AU: eDens = "
+         << solarConst / kSpeedOfLight  / (MeV/cm3) << " MeV/cm3" <<  endl;
+  }
 
   /*
     double fCovariance[nPar][nPar];

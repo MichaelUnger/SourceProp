@@ -22,6 +22,12 @@ namespace prop {
     double
     LambdaInt(const double E, const double A) const;
 
+    double
+    GetPPFraction(const double E, const double A) const;
+
+    double
+    GetPDFraction(const double E, const double A) const;
+
   private:
     NumericSource& operator=(const NumericSource&);
     NumericSource(NumericSource&);
