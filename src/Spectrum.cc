@@ -38,8 +38,8 @@ namespace prop {
       TMatrixD& m = fEscape[1];
       double lgE = fLgEmin + dlgE / 2;
       for (unsigned int iE = 0; iE < fN; ++iE) {
-        const double flux =
-          frac * NucleonFlux(Ainj, pow(10, lgE));
+        const double flux = frac *
+          (NucleonFlux(Ainj, pow(10, lgE), ePD) + NucleonFlux(Ainj, pow(10, lgE), ePPP));
         m[iE][0] += flux;
         lgE += dlgE;
       }
@@ -128,21 +128,27 @@ namespace prop {
   }
 
   double
-  Spectrum::NucleonFlux(const double Ainj, const double E)
+  Spectrum::NucleonFlux(const double Ainj, const double E,
+                        const EProcess p)
     const
   {
+    const double kappa = (p == ePPP ? 0.8 : 1);
     double nucleonSum = 0;
     for (unsigned int A_i = 2; A_i <= Ainj; ++A_i) {
       double prod = 1;
       for (unsigned int A_j = A_i; A_j <= Ainj; ++A_j) {
-        const double Eprime = E * A_j;
+        const double Eprime = E * A_j / kappa;
         const double lambdaI = fSource->LambdaInt(Eprime, A_j);
         const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
         prod *= lambdaE / (lambdaE + lambdaI);
       }
-      nucleonSum += prod;
+      const double Eprime = E * A_i / kappa;
+      const double procFrac = (p == ePPP ?
+                               fSource->GetPPFraction(Eprime, A_i) :
+                               fSource->GetPDFraction(Eprime, A_i));
+      nucleonSum += procFrac * prod;
     }
-    nucleonSum *= Ainj * InjectedFlux(E*Ainj, Ainj);
+    nucleonSum *= (Ainj / kappa) * InjectedFlux(E*Ainj/kappa, Ainj);
     return nucleonSum;
   }
 

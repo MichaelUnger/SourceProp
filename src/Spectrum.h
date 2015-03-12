@@ -10,7 +10,13 @@ namespace prop {
   class VSource;
 
   class Spectrum {
+
   public:
+    enum EProcess {
+      ePD,
+      ePPP
+    };
+
     typedef std::map<unsigned int, TMatrixD> SpecMap;
   public:
     Spectrum() { }
@@ -62,11 +68,12 @@ namespace prop {
 
     const VSource* GetSource() const { return fSource; }
 
-  private:
-    double InjectedFlux(const double E, const double A) const;
-    double NucleonFlux(const double Ainj, const double E) const;
+    double NucleonFlux(const double Ainj, const double E, const EProcess p) const;
     double NucleusFlux(const double Ainj, const double A_i,
                        const double E) const;
+
+  private:
+    double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
     double fEmax;

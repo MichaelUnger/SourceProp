@@ -116,7 +116,6 @@ namespace prop {
         return *graph;
       }
     }
-
     stringstream errMsg;
     errMsg << "could not find table " << A << " " << N << " " << Z;
     throw runtime_error(errMsg.str());
