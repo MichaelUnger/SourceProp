@@ -394,9 +394,10 @@ spec(bool fit = true)
 
   vector<MassGroup> massGroups;
   massGroups.push_back(MassGroup(1, 2, 1, kRed));
-  massGroups.push_back(MassGroup(3, 7, 4, kAzure+10));
-  massGroups.push_back(MassGroup(8, 24, 14, kGreen+1));
-  massGroups.push_back(MassGroup(25, 56, 56, kBlue));
+  massGroups.push_back(MassGroup(3, 6, 4, kOrange));
+  massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
+  massGroups.push_back(MassGroup(20, 40, 28, kAzure+10));
+  massGroups.push_back(MassGroup(41, 56, 56, kBlue));
   massGroups.push_back(MassGroup(57, 57, 57, kMagenta+2, 2));
 
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);

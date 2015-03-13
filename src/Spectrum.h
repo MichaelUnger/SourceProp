@@ -12,11 +12,11 @@ namespace prop {
   class Spectrum {
 
   public:
-    enum EProcess {
-      ePD,
-      ePPP
+    enum ENucleonType {
+      eRemnant,
+      eKnockOutPD,
+      eKnockOutPP
     };
-
     typedef std::map<unsigned int, TMatrixD> SpecMap;
   public:
     Spectrum() { }
@@ -53,6 +53,7 @@ namespace prop {
 
     const SpecMap& GetInjFlux() const;
     const SpecMap& GetEscFlux() const;
+    const SpecMap& GetNucleonFlux() const;
 
     double GetFluxSum(const unsigned int i) const;
     double GetFluxSum(const double lgE) const;
@@ -68,11 +69,12 @@ namespace prop {
 
     const VSource* GetSource() const { return fSource; }
 
-    double NucleonFlux(const double Ainj, const double E, const EProcess p) const;
-    double NucleusFlux(const double Ainj, const double A_i,
-                       const double E) const;
 
   private:
+    double NucleonFlux(const double Ainj, const double E,
+                       const VSource::EProcess p) const;
+    double NucleusFlux(const double Ainj, const double A_i,
+                       const double E) const;
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
@@ -85,6 +87,7 @@ namespace prop {
     std::map<unsigned int, double> fFractions;
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
+    mutable SpecMap fNucleons;
   };
 }
 #endif

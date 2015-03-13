@@ -61,12 +61,18 @@ namespace prop {
     TCanvas* GetCanvas() { return fCanvas; }
 
   private:
-    void DrawHists(const std::map<unsigned int, TMatrixD>& specMap,
-                   const std::vector<MassGroup>& mGroups,
-                   const double gamma,
-                   const std::string& nameBase,
-                   const unsigned int n, const double x1, const double x2,
-                   const unsigned int specPad, const unsigned int lnaPad);
+    template<class T>
+    void DrawSpectrum(const std::map<T, TMatrixD>& specMap,
+                      const std::vector<MassGroup>& mGroups,
+                      const double gamma,
+                      const std::string& nameBase,
+                      const unsigned int n, const double x1, const double x2,
+                      const unsigned int specPad,
+                      const bool drawTot = true);
+
+    template<class T>
+    void DrawLnA(const std::map<T, TMatrixD>& specMap,
+                 const unsigned int n, const double x1, const double x2);
 
     void DrawSource(const prop::VSource* source,
                     const std::vector<MassGroup>& mGroups,

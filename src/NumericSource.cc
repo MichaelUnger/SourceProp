@@ -188,27 +188,25 @@ namespace prop {
   }
 
   double
-  NumericSource::GetPPFraction(const double E, const double A)
+  NumericSource::GetProcessFraction(const double E,
+                                    const double A,
+                                    const EProcess p)
     const
   {
     const double lgE = log10(E);
+    double f = 0;
     if (A == 1)
-      return 1;
-    const double lPPP = GetPPP(A).Eval(lgE);
-    const double lPD = GetPD(A).Eval(lgE);
-    return 1./(1+lPPP/lPD);
-  }
+      f = 1;
+    else {
+      const double lPPP = GetPPP(A).Eval(lgE);
+      const double lPD = GetPD(A).Eval(lgE);
+      f = 1./(1+lPPP/lPD);
+    }
 
-  double
-  NumericSource::GetPDFraction(const double E, const double A)
-    const
-  {
-    const double lgE = log10(E);
-    if (A == 1)
-      return 0;
-    const double lPPP = GetPPP(A).Eval(lgE);
-    const double lPD = GetPD(A).Eval(lgE);
-    return 1./(1+lPD/lPPP);
+    if (p == ePP)
+      return f;
+    else
+      return 1 - f;
   }
 
 }

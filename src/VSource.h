@@ -8,7 +8,11 @@
 
 namespace prop {
   class VSource {
-
+  public:
+    enum EProcess {
+      ePD,
+      ePP
+    };
   public:
 
     VSource(const double escFac = 1, const double escGamma = 1) :
@@ -34,12 +38,8 @@ namespace prop {
 
     virtual
     double
-    GetPPFraction(const double E, const double A)
-      const = 0;
-
-    virtual
-    double
-    GetPDFraction(const double E, const double A)
+    GetProcessFraction(const double E, const double A,
+                       const EProcess p)
       const = 0;
 
   protected:

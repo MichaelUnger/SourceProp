@@ -43,20 +43,34 @@ namespace prop {
     const unsigned int n = spectrum.GetN();
     const double x1 = spectrum.GetLgEmin();
     const double x2 = spectrum.GetLgEmax();
-    DrawHists(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
-              n, x1, x2, eFluxInj, 0);
-    DrawHists(spectrum.GetEscFlux(), mGroups, fGammaSource, "hEsc",
-              n, x1, x2, eFluxEsc, 0);
-    DrawHists(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
-              n, x1, x2, eFluxEarth, eCompEarth);
+    DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
+                 n, x1, x2, eFluxInj);
+    DrawSpectrum(spectrum.GetEscFlux(), mGroups, fGammaSource, "hEsc",
+                 n, x1, x2, eFluxEsc);
+
+    vector<MassGroup> nucleonGroups;
+    nucleonGroups.push_back(MassGroup(Spectrum::eKnockOutPD,
+                                      Spectrum::eKnockOutPD,
+                                      Spectrum::eKnockOutPD,
+                                      kRed, 2));
+    nucleonGroups.push_back(MassGroup(Spectrum::eKnockOutPP,
+                                      Spectrum::eKnockOutPP,
+                                      Spectrum::eKnockOutPP,
+                                      kRed, 3));
+    DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource, "hNucl",
+                 n, x1, x2, eFluxEsc, false);
+
+    DrawSpectrum(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
+                 n, x1, x2, eFluxEarth);
+
     DrawSource(spectrum.GetSource(), mGroups, n, x1, x2, drawProtonSourceLines);
+    DrawLnA(prop.GetFluxAtEarth(), n, x1, x2);
+
     for (int i = 0; i <= eFluxEarth; ++i)
       fCanvas->cd(i + 1)->RedrawAxis();
 
-    for (int i = eFluxInj; i < eFluxEarth; ++i) {
+    for (int i = eFluxInj; i < eFluxEarth; ++i)
       fCanvas->cd(i)->SetLogy(1);
-      //      fCanvas->cd(i)->SetLeftMargin(0.2);
-    }
 
     DrawLabels(mGroups);
 
@@ -147,7 +161,7 @@ namespace prop {
     l.SetTextSize(0.023);
     const double yMass = 0.502;
     const double dxMass = 0.1;
-    double xMass = 0.32;
+    double xMass = 0.24;
     for (const auto& m : mGroups) {
       stringstream title;
       if (m.fFirst > 56)
@@ -186,19 +200,21 @@ namespace prop {
     }
   }
 
+  template<class T>
   void
-  Plotter::DrawHists(const map<unsigned int, TMatrixD>& specMap,
-                     const std::vector<MassGroup>& mGroups, const double gamma,
-                     const string& nameBase,
-                     const unsigned int n, const double x1, const double x2,
-                     const unsigned int specPad, const unsigned int lnaPad)
+  Plotter::DrawSpectrum(const map<T, TMatrixD>& specMap,
+                        const std::vector<MassGroup>& mGroups, const double gamma,
+                        const string& nameBase,
+                        const unsigned int n, const double x1, const double x2,
+                        const unsigned int specPad,
+                        const bool drawTot)
   {
     const unsigned int iFirst = fHists.size();
     for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
       stringstream title;
       unsigned int color;
       unsigned int style;
-      if ( i < mGroups.size()) {
+      if (i < mGroups.size()) {
         color = mGroups[i].fColor;
         style = mGroups[i].fLineStyle;
         if (mGroups[i].fFirst > 56)
@@ -214,8 +230,8 @@ namespace prop {
       stringstream name;
       name << nameBase << i;
       fHists.push_back(new TH1D(name.str().c_str(),
-                              title.str().c_str(),
-                              n, x1, x2));
+                                title.str().c_str(),
+                                n, x1, x2));
       fHists.back()->SetLineColor(color);
       fHists.back()->SetLineStyle(style);
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
@@ -234,14 +250,15 @@ namespace prop {
       const unsigned int A = iter.first;
       const TMatrixD& m = iter.second;
       int histIndex = -1;
-      for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
+      for (unsigned int i = 0; i < mGroups.size(); ++i) {
         if (A >= mGroups[i].fFirst && A <= mGroups[i].fLast) {
           histIndex = iFirst + i;
           break;
         }
       }
       if (histIndex == -1) {
-        cerr << " mass " << A << " not in massGroups" << endl;
+        cerr << " mass " << A << " not in massGroups ("
+             << nameBase << ")" << endl;
         continue;
       }
       TH1D* hist = fHists[histIndex];
@@ -253,28 +270,29 @@ namespace prop {
       }
     }
 
-    if (specPad) {
-      fCanvas->cd(specPad);
+    fCanvas->cd(specPad);
+    if (drawTot)
       histTot->Draw("C");
-      for (unsigned int i = 0; i < n; ++i) {
-        const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
-        const double w = pow(pow(10, lgE), gamma);
-        for (unsigned int j = iFirst; j < fHists.size(); ++j)
-          fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
-      }
-      for (unsigned int i = iFirst; i < fHists.size() - 1; ++i)
-        fHists[i]->Draw("CSAME");
+    for (unsigned int i = 0; i < n; ++i) {
+      const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
+      const double w = pow(pow(10, lgE), gamma);
+      for (unsigned int j = iFirst; j < fHists.size(); ++j)
+        fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
     }
+    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
+      fHists[i]->Draw("CSAME");
+      cout << fHists[i]->GetName() << " " << fHists[i]->GetBinContent(11) << " " << specMap.size() << endl;
+    }
+  }
 
 
-    stringstream name;
-    name << nameBase << "LnA";
-    TH1D* lnA = new TH1D(name.str().c_str(),
-                         "lnA", n, x1, x2);
-    name.str("");
-    name << nameBase << "vLnA";
-    TH1D* vlnA = new TH1D(name.str().c_str(),
-                          "vlnA", n, x1, x2);
+  template<class T>
+  void
+  Plotter::DrawLnA(const map<T, TMatrixD>& specMap,
+                   const unsigned int n, const double x1, const double x2)
+  {
+    TH1D* lnA = new TH1D("hLnA", "lnA", n, x1, x2);
+    TH1D* vlnA = new TH1D("hvLnA", "vlnA", n, x1, x2);
     fHists.push_back(lnA);
     fHists.push_back(vlnA);
 
@@ -289,13 +307,11 @@ namespace prop {
     vlnA->SetLineColor(kGray+3);
     //    lnA->GetYaxis()->SetTitle("#LTln A#GT, V(ln A)");
 
-    if (lnaPad) {
-      fCanvas->cd(lnaPad);
-      lnA->Draw("C");
-      vlnA->Draw("CSAME");
-      lnA->SetLineWidth(2);
-      vlnA->SetLineWidth(2);
-    }
+    fCanvas->cd(eCompEarth);
+    lnA->Draw("C");
+    vlnA->Draw("CSAME");
+    lnA->SetLineWidth(2);
+    vlnA->SetLineWidth(2);
   }
 
 }

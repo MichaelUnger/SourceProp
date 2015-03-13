@@ -55,13 +55,9 @@ namespace prop {
     }
 
     double
-    GetPPFraction(const double E, const double A) const
+    GetProcessFraction(const double /*E*/, const double /*A*/,
+                       const EProcess /*p*/)
     { return .5; }
-
-    double
-    GetPDFraction(const double E, const double A) const
-    { return .5; }
-
 
 
   private:
