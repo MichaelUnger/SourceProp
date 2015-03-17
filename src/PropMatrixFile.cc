@@ -61,7 +61,7 @@ namespace prop {
               const double dEEarth =
                 pow(10, h->GetYaxis()->GetBinUpEdge(j+1)) -
                 pow(10, h->GetYaxis()->GetBinLowEdge(j+1));
-              m[j][i] = h->GetBinContent(i+1, j+1) * dESource / dEEarth;
+              m[j][i] = h->GetBinContent(i+1, j+1);// dESource / dEEarth;
             }
           }
         }

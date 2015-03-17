@@ -150,6 +150,8 @@ namespace prop {
     switch (fSourceDistribution) {
     case eUniform:
       return 1;
+    case eUniformCutAt3:
+      return z < 3;
     case eAGN: {
       /*
         Stanev arXiv:0808.1045 analysis of

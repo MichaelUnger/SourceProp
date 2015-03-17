@@ -13,6 +13,7 @@ namespace prop {
   public:
     enum ESourceDistribution {
       eUniform,
+      eUniformCutAt3,
       eAGN,
       eSFR1,
       eSFR2

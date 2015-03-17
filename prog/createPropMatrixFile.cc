@@ -13,7 +13,7 @@ main(int argc, char** argv)
 
   stringstream usage;
   usage << argv[0] << " <option> <filenames>\n"
-        << "        options: uniform, AGN, SFR";
+        << "        options: uniform, uniformCutAt3, AGN, SFR1, SFR2";
   if (argc < 2) {
     cerr << usage.str() << endl;
     return 1;
@@ -23,6 +23,8 @@ main(int argc, char** argv)
   PropMatrixBuilder::ESourceDistribution s;
   if (option == "uniform")
     s = PropMatrixBuilder::eUniform;
+  if (option == "uniformCutAt3")
+    s = PropMatrixBuilder::eUniformCutAt3;
   else if (option == "AGN")
     s = PropMatrixBuilder::eAGN;
   else if (option == "SFR1")
