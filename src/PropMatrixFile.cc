@@ -6,11 +6,13 @@
 #include <TH2D.h>
 #include <TDirectory.h>
 #include <TKey.h>
+#include <TAxis.h>
 #include <TClass.h>
 
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <cmath>
 
 #include <boost/lexical_cast.hpp>
 
@@ -48,12 +50,20 @@ namespace prop {
           const unsigned int Aprim = boost::lexical_cast<unsigned int>(splitname[1]);
           const unsigned int Asec = boost::lexical_cast<unsigned int>(splitname[2]);
           TMatrixD& m = fPropMatrices.GetMatrix(Aprim, Asec);
-          m.ResizeTo(h->GetNbinsX(), h->GetNbinsY());
+          m.ResizeTo(h->GetNbinsY(), h->GetNbinsX());
           fPropMatrices.SetEnergyRange(h->GetXaxis()->GetXmin(),
                                        h->GetXaxis()->GetXmax());
-          for (int i = 0; i < m.GetNcols(); ++i)
-            for (int j = 0; j < m.GetNrows(); ++j)
-              m[j][i] = h->GetBinContent(i+1, j+1);
+          for (int i = 0; i < m.GetNcols(); ++i) {
+            const double dESource =
+              pow(10, h->GetXaxis()->GetBinUpEdge(i+1)) -
+              pow(10, h->GetXaxis()->GetBinLowEdge(i+1));
+            for (int j = 0; j < m.GetNrows(); ++j) {
+              const double dEEarth =
+                pow(10, h->GetYaxis()->GetBinUpEdge(j+1)) -
+                pow(10, h->GetYaxis()->GetBinLowEdge(j+1));
+              m[j][i] = h->GetBinContent(i+1, j+1) * dESource / dEEarth;
+            }
+          }
         }
       }
     }

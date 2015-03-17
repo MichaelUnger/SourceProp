@@ -280,8 +280,8 @@ namespace prop {
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
     }
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
+      fHists[i]->SetLineWidth(1);
       fHists[i]->Draw("CSAME");
-      cout << fHists[i]->GetName() << " " << fHists[i]->GetBinContent(11) << " " << specMap.size() << endl;
     }
   }
 

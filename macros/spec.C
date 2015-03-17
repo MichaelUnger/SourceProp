@@ -158,6 +158,19 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
                           pow(10, par[eLgEmax]),
                           gN, gLgEmin, gLgEmax,
                           fractions);
+
+  const double noPhotonFrac = 0;
+  if (noPhotonFrac > 0) {
+    const Spectrum::SpecMap& injFlux = gSpectrum.GetInjFlux();
+    for (Spectrum::SpecMap::const_iterator iter = injFlux.begin();
+         iter != injFlux.end(); ++iter) {
+      const unsigned int A = iter->first;
+      const TMatrixD& m = iter->second;
+      const TMatrixD mm = noPhotonFrac * m;
+      gSpectrum.AddEscComponent(A, mm);
+    }
+  }
+
   gPropagator->Propagate(gSpectrum.GetEscFlux());
 
   const double lgE0 = 17.55;
@@ -176,7 +189,8 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
     galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
     lgE += dlgE;
   }
-  gPropagator->AddGalactic(57, galactic);
+  gPropagator->AddComponent(57, galactic);
+
   const double norm = calcNorm(*gPropagator);
 
   gSpectrum.Rescale(norm);
@@ -212,8 +226,8 @@ fitFunc(int& /*npar*/, double* const /*gin*/,
 
 
   if (!(gIteration%10))
-    cout << scientific << setprecision(3)
-         << " iteration " << setw(5) << gIteration
+    cout << scientific << setprecision(2)
+         << " iter " << setw(5) << gIteration
          << ", chi2: tot = " << chi2
          << ", spec = " << chi2Spec
          << ", lnA = " << chi2LnA
@@ -244,17 +258,20 @@ readSpectrum(TGraphAsymmErrors*& fluxGraph1,
     in >> lgE >> flux >> eyDown >> eyUp >> N;
     if (!in.good())
       break;
-    //lgE += .1;
+
+    const bool isOutlier = (lgE > 18.4 && lgE < 18.5) ||  (lgE > 18 && lgE < 18.2);
+    //    lgE -= .1;
+
     const double E = pow(10, lgE);
     const double w = pow(E, gamma);
     if (flux*w > maxY)
       maxY = flux*w;
 
     const double minlgE = gFitGal ? 0 : 18;
-    if (lgE > minlgE && N > -1) {
+    if (lgE > minlgE && N > -1 && !isOutlier) {
       gLgE.push_back(lgE);
       gFlux.push_back(flux);
-      gFluxErr.push_back(TMath::Max((eyUp+eyDown)*0.5, 0.0000005*flux));
+      gFluxErr.push_back(TMath::Max((eyUp+eyDown)*0.5, 0.00000005*flux));
       fluxGraph1->SetPoint(fluxGraph1->GetN(), lgE, flux*w);
       fluxGraph1->SetPointEYlow(fluxGraph1->GetN()-1, eyDown*w);
       fluxGraph1->SetPointEYhigh(fluxGraph1->GetN()-1, eyUp*w);
@@ -302,8 +319,18 @@ spec(bool fit = true)
   delete gPropagator;
   gPropagator = new Propagator(matrices);
   //  gParSource = new ParametricSource();
-  const string photonField = "SzaboProtheroe02";
-  gNumSource = new NumericSource(photonField,
+  const double alphaNom = 3;
+  const double alphaDenom = 2;
+  const double beta = -2;
+  const double eps0 = 0.03;
+  const string photonField = "SzaboProtheroe";
+  stringstream photonFieldFile;
+  photonFieldFile << photonField << "_" << eps0
+                  << "_" << setprecision(2) << showpoint << TMath::Abs(beta)
+                  << "_" << noshowpoint << setprecision(0)
+                  << alphaNom << alphaDenom;
+  cout << " CRPropa File " << photonFieldFile.str() << endl;
+  gNumSource = new NumericSource(photonFieldFile.str(),
                                  "/ssd/munger/Mag/CRPropa3-data/data");
 
 
@@ -312,7 +339,7 @@ spec(bool fit = true)
     {0.364962, 0.309246, 0.0447689, 0.0769107, 0.018918, 0.0387816,
      0.0392122, 0.00964516, 0.0140032, 0.0835522};
 #else
-  double fStart[gnMass] = {0.0001, 0.0001, 0.0001, 0.99, 0};
+  double fStart[gnMass] = {0.001, 0.66, 0.22, 0.12, 0};
 #endif
 
   double zetaStart[gnMass-1];
@@ -339,13 +366,13 @@ spec(bool fit = true)
   int ierflag;
   minuit.mnparm(eGamma,"gamma", -1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eLgEmax,"lgRmax", 1.85738e+01, 0.1 ,0, 0, ierflag);
-  minuit.mnparm(eLgEscFac,"lgResc",  2.51056e+00, 0.1 ,0, 0, ierflag);
+  minuit.mnparm(eLgEscFac,"lgResc",  2.62056e+00, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEscGamma,"escGamma", -1, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eEps0,"lgEpsilon0", -1.3, 0.1 ,0, 0, ierflag);
   minuit.mnparm(eAlpha,"alpha", -1, 0.1, 0, 0, ierflag);
   minuit.mnparm(eBeta,"beta", -2, 0.1, 0, 0, ierflag);
-  minuit.mnparm(eFGal,"fGal", gFitGal ? 6.28828e-01 : 0, 0.1, 0, 1, ierflag);
-  minuit.mnparm(eGammaGal, "fGammaGal", -4.25012e+00, 0.1, 0, 0, ierflag);
+  minuit.mnparm(eFGal,"fGal", gFitGal ? 0.6 : 0, 0.1, 0, 1, ierflag);
+  minuit.mnparm(eGammaGal, "fGammaGal", -4.17e+00, 0.1, 0, 0, ierflag);
   for (unsigned int i = 0; i < gnMass - 1; ++i) {
     ostringstream parName;
     parName << "zeta" << i;
@@ -356,11 +383,11 @@ spec(bool fit = true)
 #endif
   }
 
-  minuit.FixParameter(eNpars);
+  //  minuit.FixParameter(eNpars);
   //minuit.FixParameter(eNpars+1);
   // minuit.FixParameter(eNpars+2);
   //  minuit.FixParameter(eLgEscFac);
-  minuit.FixParameter(eGamma);
+  //  minuit.FixParameter(eGamma);
   //  minuit.FixParameter(eLgEmax);
   minuit.FixParameter(eEscGamma);
   minuit.FixParameter(eEps0);
@@ -402,7 +429,7 @@ spec(bool fit = true)
 
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
   plot.Draw(gSpectrum, *gPropagator, massGroups, !gParSource);
-  plot.SetXRange(17., 20.7);
+  plot.SetXRange(17.5, 20.7);
   TCanvas* can = plot.GetCanvas();
 
   can->cd(Plotter::eFluxEarth);
@@ -432,7 +459,7 @@ spec(bool fit = true)
 
     if (!gFitGal && (i == eFGal || i == eGammaGal))
       continue;
-    if (!gParSource && (i == eAlpha || i == eBeta))
+    if (!gParSource && (i == eAlpha || i == eBeta || i == eEps0))
       continue;
 
     stringstream parString;
@@ -451,7 +478,15 @@ spec(bool fit = true)
   }
 
   if (!gParSource) {
-    l.DrawLatex(x, y, photonField.c_str());
+    stringstream photonString;
+    photonString << "#varepsilon_{0}=" << eps0 << " eV (fixed)";
+    l.DrawLatex(x, y, photonString.str().c_str());
+    y -= dy;
+    photonString.str("");
+    photonString << "#alpha="
+                 << alphaNom << "/" << alphaDenom << ", beta="
+                 << beta << " (fixed)";
+    l.DrawLatex(x, y, photonString.str().c_str());
     y -= dy;
   }
 
@@ -464,7 +499,7 @@ spec(bool fit = true)
   l.DrawLatex(x, y, chi2String.str().c_str());
   y -= dy;
 
-  y -= dy/3;
+  y -= dy/4;
   l.SetTextColor(kBlack);
   l.DrawLatex(x, y, ("source evolution: " + evolution).c_str());
 

@@ -92,8 +92,8 @@ namespace prop {
   }
 
   void
-  Propagator::AddGalactic(const unsigned int A,
-                          const TMatrixD& flux)
+  Propagator::AddComponent(const unsigned int A,
+                           const TMatrixD& flux)
   {
     TMatrixD& spectrum = fResult[A];
     if (!spectrum.GetNoElements())
@@ -101,7 +101,6 @@ namespace prop {
     spectrum += flux;
     fSum += flux;
   }
-
 
 }
 

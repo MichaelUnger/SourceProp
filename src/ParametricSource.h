@@ -56,7 +56,7 @@ namespace prop {
 
     double
     GetProcessFraction(const double /*E*/, const double /*A*/,
-                       const EProcess /*p*/)
+                       const EProcess /*p*/) const
     { return .5; }
 
 

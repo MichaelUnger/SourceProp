@@ -88,6 +88,12 @@ namespace prop {
 
     const string filename = fDirectory + "/pd_" + fType + ".txt";
     ifstream infile(filename.c_str());
+    if (!infile.good()) {
+      stringstream errMsg;
+      errMsg << " error opening " << filename;
+      throw runtime_error(errMsg.str());
+    }
+
     string line;
     // two header lines
     getline(infile, line);
@@ -138,6 +144,11 @@ namespace prop {
 
     const string filename = fDirectory + "/ppp_" + fType + ".txt";
     ifstream infile(filename.c_str());
+    if (!infile.good()) {
+      stringstream errMsg;
+      errMsg << " error opening " << filename;
+      throw runtime_error(errMsg.str());
+    }
     string line;
     // two header lines
     getline(infile, line);

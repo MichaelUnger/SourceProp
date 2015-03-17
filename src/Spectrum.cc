@@ -202,6 +202,18 @@ namespace prop {
   }
 
 
+  void
+  Spectrum::AddEscComponent(const unsigned int A,
+                            const TMatrixD& flux)
+  {
+    if (fNucleons.empty())
+      GetEscFlux();
+    TMatrixD& spectrum = fEscape[A];
+    if (!spectrum.GetNoElements())
+      spectrum.ResizeTo(flux);
+    spectrum += flux;
+  }
+
 
   double
   Spectrum::InjectedFlux(const double E, const double A)

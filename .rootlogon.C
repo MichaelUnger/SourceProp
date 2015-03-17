@@ -4,7 +4,7 @@
     cout << "libProp.so loaded!" << endl;
   else
     cout << "failed loading libProp.so" << endl;
-  if (gSystem->CompileMacro("macros/spec.C"))
+  if (gSystem->CompileMacro("macros/spec.C","O"))
     cout << "spec.so loaded!" << endl;
   else
     cout << "failed compiling spec.C" << endl;

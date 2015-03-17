@@ -49,11 +49,13 @@ namespace prop {
     }
 
     void Reset()
-    { fEscape.clear(); fInj.clear(); }
+    { fEscape.clear(); fInj.clear(); fNucleons.clear(); }
 
     const SpecMap& GetInjFlux() const;
     const SpecMap& GetEscFlux() const;
     const SpecMap& GetNucleonFlux() const;
+
+    void AddEscComponent(const unsigned int A, const TMatrixD& flux);
 
     double GetFluxSum(const unsigned int i) const;
     double GetFluxSum(const double lgE) const;

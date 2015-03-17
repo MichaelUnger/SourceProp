@@ -29,7 +29,7 @@ namespace prop {
     { return fResult; }
 
     void Rescale(const double f);
-    void AddGalactic(const unsigned int A, const TMatrixD& flux);
+    void AddComponent(const unsigned int A, const TMatrixD& flux);
 
   private:
     Propagator();
