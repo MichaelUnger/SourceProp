@@ -151,7 +151,7 @@ namespace prop {
     case eUniform:
       return 1;
     case eUniformCutAt3:
-      return z < 3;
+      return (z > 0.001 && z < 3); // zmin ~ 4 Mpc
     case eAGN: {
       /*
         Stanev arXiv:0808.1045 analysis of
