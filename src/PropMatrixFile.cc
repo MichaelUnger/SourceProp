@@ -53,15 +53,15 @@ namespace prop {
           m.ResizeTo(h->GetNbinsY(), h->GetNbinsX());
           fPropMatrices.SetEnergyRange(h->GetXaxis()->GetXmin(),
                                        h->GetXaxis()->GetXmax());
-          for (int i = 0; i < m.GetNcols(); ++i) {
+          for (int iPrim = 0; iPrim < h->GetNbinsX(); ++iPrim) {
             const double dESource =
-              pow(10, h->GetXaxis()->GetBinUpEdge(i+1)) -
-              pow(10, h->GetXaxis()->GetBinLowEdge(i+1));
-            for (int j = 0; j < m.GetNrows(); ++j) {
+              pow(10, h->GetXaxis()->GetBinUpEdge(iPrim+1)) -
+              pow(10, h->GetXaxis()->GetBinLowEdge(iPrim+1));
+            for (int jSec = 0; jSec < h->GetNbinsY(); ++jSec) {
               const double dEEarth =
-                pow(10, h->GetYaxis()->GetBinUpEdge(j+1)) -
-                pow(10, h->GetYaxis()->GetBinLowEdge(j+1));
-              m[j][i] = h->GetBinContent(i+1, j+1);// dESource / dEEarth;
+                pow(10, h->GetYaxis()->GetBinUpEdge(jSec+1)) -
+                pow(10, h->GetYaxis()->GetBinLowEdge(jSec+1));
+              m[jSec][iPrim] = h->GetBinContent(iPrim+1, jSec+1) * dESource / dEEarth;
             }
           }
         }
