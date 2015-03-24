@@ -104,7 +104,8 @@ namespace prop {
         save->cd();
       }
       TH1D& hGen = *(fGenMap[Aprim]);
-      hGen.Fill(lgEprim, w);
+//    hGen.Fill(lgEprim, w);
+      hGen.Fill(lgEprim, 1);
       for (const auto& secondary : event.GetSecondaries()) {
         const unsigned int Asec = secondary.GetMass();
         const double lgEsec = log10(secondary.GetEnergy()) + 18;
