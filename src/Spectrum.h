@@ -17,13 +17,20 @@ namespace prop {
       eKnockOutPD,
       eKnockOutPP
     };
+    enum ECutoffType {
+      eExponential,
+      eBrokenExponential
+    };
+
     typedef std::map<unsigned int, TMatrixD> SpecMap;
   public:
-    Spectrum() { }
+    Spectrum() : fCutoffType(eExponential) { }
     Spectrum(const VSource* s, const double gamma,
              const double Emax, const double nE,
              const double lgEmin, const double lgEmax,
-             const std::map<unsigned int, double>& fractions) :
+             const std::map<unsigned int, double>& fractions,
+             const ECutoffType cutoffType = eExponential) :
+      fCutoffType(cutoffType),
       fEmax(Emax),
       fGamma(gamma),
       fSource(s),
@@ -36,7 +43,8 @@ namespace prop {
     void SetParameters(const VSource* s, const double gamma,
                        const double Emax, const double nE,
                        const double lgEmin, const double lgEmax,
-                       const std::map<unsigned int, double>& fractions)
+                       const std::map<unsigned int, double>& fractions,
+                       const ECutoffType cutoffType = eExponential)
     {
       Reset();
       fEmax = Emax;
@@ -46,6 +54,7 @@ namespace prop {
       fLgEmin = lgEmin;
       fLgEmax = lgEmax;
       fFractions = fractions;
+      fCutoffType = cutoffType;
     }
 
     void Reset()
@@ -80,6 +89,7 @@ namespace prop {
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
+    ECutoffType fCutoffType;
     double fEmax;
     double fGamma;
     const VSource* fSource;

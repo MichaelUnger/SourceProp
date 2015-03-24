@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <stdexcept>
 using namespace std;
 
 namespace prop {
@@ -220,6 +221,15 @@ namespace prop {
     const
   {
     const double zEmax = fEmax * aToZ(A);
-    return pow(E, fGamma) * exp(-E/zEmax);
+    if (fCutoffType == eExponential)
+      return pow(E, fGamma) * exp(-E/zEmax);
+    else if (fCutoffType == eBrokenExponential) {
+      if (E > zEmax)
+        return  pow(zEmax, fGamma) * exp(1 - E/zEmax);
+      else
+        return pow(E, fGamma);
+    }
+    else
+      throw runtime_error("cutoff type not implemented");
   }
 }
