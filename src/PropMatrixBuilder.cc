@@ -9,6 +9,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
 
 using namespace std;
 
@@ -154,6 +155,7 @@ namespace prop {
     case eUniformCutAt3:
       return (z > 0.001 && z < 3); // zmin ~ 4 Mpc
     case eAGN: {
+      throw runtime_error("eAGN not normalized");
       /*
         Stanev arXiv:0808.1045 analysis of
         G. Hasinger, T. Miyaji and M. Schmidt, Astron. Astrophys.
@@ -167,6 +169,7 @@ namespace prop {
         return exp(2.7-z);
     }
     case eSFR1: {
+      throw runtime_error("eSFR2 not normalized");
       /*
         [53] H. Yüksel, M. D. Kistler, J. F. Beacom and A. M. Hopkins,
         Astrophys. J. 683, L5 (2008).
@@ -186,11 +189,25 @@ namespace prop {
         arXiv:1502.02024
       */
       // Eq.(2)
-      const double ap = 1./11.2485; //0.01376
+      //const double ap = 0.01376;
       const double bp = 3.26;
       const double cp = 2.59;
       const double dp = 5.68;
-      return ap * pow(1+z, bp) / (1 + pow((1+z)/cp, dp));
+      const double norm = pow(1, bp) / (1 + pow((1)/cp, dp));
+      return pow(1+z, bp) / (1 + pow((1+z)/cp, dp)) / norm;
+    }
+    case eAAGHRW05: {
+      /*
+        Ahlers et al,  Phys.Rev. D72 (2005) 023001
+        astro-ph/0503229
+      */
+      // Eq.(2), Tab.I
+      const double zMin = 0.012;
+      const double zMax = 2;
+      if (z >= zMin && z <= zMax)
+        return pow(1 + z, 2.54);
+      else
+        return 0;
     }
     }
     return 0;

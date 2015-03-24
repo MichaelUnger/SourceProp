@@ -16,7 +16,8 @@ namespace prop {
       eUniformCutAt3,
       eAGN,
       eSFR1,
-      eSFR2
+      eSFR2,
+      eAAGHRW05
     };
 
   public:

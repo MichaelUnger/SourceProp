@@ -309,7 +309,7 @@ spec(bool fit = true)
     gvLnAGraph->SetPoint(i, log10(*(gvLnAGraph->GetX()+i)), *(gvLnAGraph->GetY()+i));
   }
 
-  const string evolution = "SFR2";
+  const string evolution = "SFR2New";
   const string filename = "ROOT/propMatrix_" + evolution + ".root";
   PropMatrixFile pmf(filename.c_str());
   const PropMatrices& matrices = pmf.GetPropMatrices();
@@ -387,7 +387,7 @@ spec(bool fit = true)
   //minuit.FixParameter(eNpars+1);
   // minuit.FixParameter(eNpars+2);
   //  minuit.FixParameter(eLgEscFac);
-  //  minuit.FixParameter(eGamma);
+  minuit.FixParameter(eGamma);
   //  minuit.FixParameter(eLgEmax);
   minuit.FixParameter(eEscGamma);
   minuit.FixParameter(eEps0);
