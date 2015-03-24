@@ -205,7 +205,7 @@ namespace prop {
       const double zMin = 0.012;
       const double zMax = 2;
       if (z >= zMin && z <= zMax)
-        return pow(1 + z, 2.54);
+        return pow(1 + z, 3.45);
       else
         return 0;
     }
