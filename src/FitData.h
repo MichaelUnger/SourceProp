@@ -27,6 +27,12 @@ namespace prop {
     double fVlnAErr;
   };
 
+  struct FitParameter {
+    double fValue;
+    double fError;
+    bool fIsFixed;
+  };
+
   class FitData {
   public:
     FitData();
@@ -37,7 +43,6 @@ namespace prop {
                     const double lgEmax)
     { fNLgE = n; fLgEmin = lgEmin; fLgEmax = lgEmax; }
     double GetChi2Tot() const;
-
 
     unsigned int fIteration;
     NumericSource* fSource;
@@ -55,6 +60,8 @@ namespace prop {
     double fChi2Spec;
     double fChi2LnA;
     double fChi2VlnA;
+    std::vector<FitParameter> fFitParameters;
+
   };
 }
 

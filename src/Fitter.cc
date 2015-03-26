@@ -38,9 +38,18 @@ namespace prop {
 
 
   Fitter::Fitter(const FitOptions& opt) :
-    fOptions(opt)
+    fOptions(opt),
+    fMinuit(GetNParameters())
   {
     ReadData();
+    Init();
+  }
+
+  unsigned int
+  Fitter::GetNParameters()
+    const
+  {
+    return eNpars + fOptions.GetNmass() - 1;
   }
 
   void
@@ -148,10 +157,11 @@ namespace prop {
   }
 
   void
-  Fitter::Fit()
+  Fitter::Init()
   {
 
     fFitData.Clear();
+    fFitData.fFitParameters.resize(GetNParameters());
 
     cout << " reading prop matrix from "
          << fOptions.GetPropmatrixFilename() << endl;
@@ -171,10 +181,8 @@ namespace prop {
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
 
-    const unsigned int nPar = eNpars + fOptions.GetNmass() - 1;
-    TMinuit minuit(nPar);
-    minuit.SetPrintLevel(-1);
-    minuit.SetFCN(Fitter::FitFunc);
+    fMinuit.SetPrintLevel(-1);
+    fMinuit.SetFCN(Fitter::FitFunc);
 
     const string separator =
       "--------------------------------"
@@ -184,15 +192,21 @@ namespace prop {
     int ierflag;
     for (unsigned int i = 0; i < eNpars; ++i) {
       const EPar par = EPar(i);
-      minuit.mnparm(par,
+      fMinuit.mnparm(par,
                     GetParName(par),
                     fOptions.GetStartValue(par),
                     fOptions.GetStep(par),
                     fOptions.GetMin(par),
                     fOptions.GetMax(par),
                     ierflag);
-      if (fOptions.IsFixed(par))
-        minuit.FixParameter(par);
+
+      if (fOptions.IsFixed(par)) {
+        fMinuit.FixParameter(par);
+        fFitData.fFitParameters[i].fIsFixed = true;
+      }
+      else
+        fFitData.fFitParameters[i].fIsFixed = false;
+
       cout << setw(2) << i << setw(10) << GetParName(par)
            << setw(11) << scientific << setprecision(3) << fOptions.GetStartValue(par)
            << setw(11) << fOptions.GetStep(par)
@@ -232,10 +246,15 @@ namespace prop {
       const double step = 0.1;
       const double minZeta = -7;
       const double maxZeta = 1e-14;
-      minuit.mnparm(eNpars + i, parName.str().c_str(), log10(zeta[i]),
+      fMinuit.mnparm(eNpars + i, parName.str().c_str(), log10(zeta[i]),
                     step ,minZeta, maxZeta, ierflag);
-      if (fixed[i])
-        minuit.FixParameter(eNpars + i);
+      if (fixed[i]) {
+        fMinuit.FixParameter(eNpars + i);
+        fFitData.fFitParameters[eNpars + i].fIsFixed = true;
+      }
+      else
+        fFitData.fFitParameters[eNpars + i].fIsFixed = false;
+
       cout << setw(2) << eNpars + i << setw(10) << parName.str()
            << setw(11) << scientific << setprecision(3) << log10(zeta[i])
            << setw(11) << step
@@ -245,10 +264,30 @@ namespace prop {
     }
     cout << separator << endl;
 
-    double arglist[2] = {10000, 1.};
-    minuit.SetPrintLevel(0);
-    minuit.mnexcm("MINIMIZE", arglist, 2, ierflag);
+    vector<double> p;
+    for (unsigned int i = 0; i < GetNParameters(); ++i) {
+      FitParameter& par = fFitData.fFitParameters[i];
+      fMinuit.GetParameter(i, par.fValue, par.fError);
+      p.push_back(par.fValue);
+    }
 
+    double chi2;
+    FitFunc(ierflag, NULL, chi2, &p.front(), ierflag);
+    cout << " initial chi2 is " << chi2 << endl;
+  }
+
+  void
+  Fitter::Fit()
+  {
+    int ierflag;
+    double arglist[2] = {10000, 1.};
+    fMinuit.SetPrintLevel(0);
+    fMinuit.mnexcm("MINIMIZE", arglist, 2, ierflag);
+
+    for (unsigned int i = 0; i < GetNParameters(); ++i) {
+      FitParameter& par = fFitData.fFitParameters[i];
+      fMinuit.GetParameter(i, par.fValue, par.fError);
+    }
   }
 
   void

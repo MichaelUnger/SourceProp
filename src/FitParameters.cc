@@ -10,7 +10,9 @@ namespace prop {
   {
     static const string parNames[eNpars] =
       {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
-       "lg(R_{esc}^{ Fe19})","#gamma_{gal}","f_{noPhot}"};
+       "lg(R_{esc}^{ Fe19})","#delta_{esc}",
+       "f_{gal}", "#gamma_{gal}",
+       "f_{noPhot}"};
     return parNames[p];
   }
 

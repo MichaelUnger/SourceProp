@@ -445,7 +445,6 @@ spec(bool fit = true)
   gLnAGraph->Draw("P");
   gvLnAGraph->Draw("P");
 
-
   can->cd(Plotter::eCompEsc);
   TLatex l;
   l.SetTextAlign(13); l.SetTextSize(0.06);

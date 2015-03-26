@@ -4,8 +4,9 @@
 #include "FitOptions.h"
 #include "FitData.h"
 
-namespace prop {
+#include <TMinuit.h>
 
+namespace prop {
 
   class Fitter {
   public:
@@ -16,12 +17,15 @@ namespace prop {
     { return fFitData; }
 
   private:
+    void Init();
     void ReadData();
+    unsigned int GetNParameters() const;
     static void FitFunc(int& , double* const,
                         double& , double* const,
                         const int);
     FitOptions fOptions;
     static FitData fFitData;
+    TMinuit fMinuit;
   };
 }
 #endif
