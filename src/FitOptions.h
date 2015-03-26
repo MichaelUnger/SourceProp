@@ -4,6 +4,7 @@
 #include "FitParameters.h"
 
 #include <map>
+#include <string>
 
 namespace prop {
 
@@ -26,17 +27,40 @@ namespace prop {
   class FitOptions {
 
   public:
-    FitOptions();
-    unsigned int GetNmass() const { return fNmass; }
+    FitOptions(const std::string& filename);
+    unsigned int GetNmass() const { return fMassValues.size(); }
     double GetStartValue(const EPar par) const;
     double GetStep(const EPar par) const;
     double GetMin(const EPar par) const;
     double GetMax(const EPar par) const;
     bool IsFixed(const EPar par) const;
 
+    const std::map<unsigned int, StartValues>&
+    GetMasses() const
+    { return fMassValues; }
+
+    const std::string& GetEvolution() const
+    { return fEvolution; }
+
+    std::string GetPropmatrixFilename() const;
+    std::string GetPhotIntFilename() const;
+    std::string GetPhotIntDirname() const;
+
+    double GetEps0() const;
+    double GetAlpha() const;
+    double GetBeta() const;
+
+    bool DoCompositionFit() const
+    { return fFitCompo; }
+
   private:
-    unsigned int fNmass;
     std::map<EPar, StartValues> fStartValues;
+    std::map<unsigned int, StartValues> fMassValues;
+    std::string fEvolution;
+    std::string fEps0;
+    std::string fBeta;
+    std::string fAlpha;
+    bool fFitCompo;
   };
 }
 

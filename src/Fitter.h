@@ -2,8 +2,10 @@
 #define _Fitter_h_
 
 #include "FitOptions.h"
+#include "FitData.h"
 
 namespace prop {
+
 
   class Fitter {
   public:
@@ -12,7 +14,11 @@ namespace prop {
     void Fit();
 
   private:
+    static void FitFunc(int& , double* const,
+                        double& , double* const,
+                        const int);
     FitOptions fOptions;
+    static FitData fFitData;
   };
 }
 #endif

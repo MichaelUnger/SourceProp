@@ -4,9 +4,9 @@
     cout << "libProp.so loaded!" << endl;
   else
     cout << "failed loading libProp.so" << endl;
-  if (gSystem->CompileMacro("macros/spec.C","O"))
-    cout << "spec.so loaded!" << endl;
+  if (gSystem->CompileMacro("macros/fit.C","O"))
+    cout << "fit.so loaded!" << endl;
   else
-    cout << "failed compiling spec.C" << endl;
+    cout << "failed compiling fit.C" << endl;
   gStyle->SetOptStat(0);
 }

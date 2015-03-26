@@ -9,15 +9,23 @@ namespace prop {
     eLgEmax,
     eLgEscFac,
     eEscGamma,
-    eEps0,
     eFGal,
     eGammaGal,
+    eNoPhoton,
     eNpars
   };
 
   const
   std::string&
+  GetParLatexName(const EPar p);
+
+  const
+  std::string&
   GetParName(const EPar p);
+
+  EPar
+  GetPar(const std::string& parName);
+
 
 }
 #endif
