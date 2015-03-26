@@ -6,8 +6,11 @@
 #include "Propagator.h"
 
 #include <TMinuit.h>
+#include <TFile.h>
+#include <TGraphAsymmErrors.h>
 #include <iostream>
 #include <iomanip>
+#include <fstream>
 #include <sstream>
 
 using namespace std;
@@ -37,9 +40,8 @@ namespace prop {
   Fitter::Fitter(const FitOptions& opt) :
     fOptions(opt)
   {
-
+    ReadData();
   }
-
 
   void
   Fitter::FitFunc(int& /*npar*/, double* const /*gin*/,
@@ -91,23 +93,25 @@ namespace prop {
     data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
 
     // galactic
-    const double lgE0 = 17.55;
-    const double E0 = pow(10, lgE0);
     const double fGal = par[eFGal];
-    const double emaxGal = 1e22; // infinity for now
-    const double gammaGal = par[eGammaGal];
-    const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
-    const double sE = exp(-E0/emaxGal);
-    const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
-    const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
-    double lgE = data.fLgEmin + dlgE/2;
-    TMatrixD galactic(data.fNLgE, 1);
-    for (unsigned int i = 0; i < data.fNLgE; ++i) {
-      const double E = pow(10, lgE);
-      galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
-      lgE += dlgE;
+    if (fGal > 0) {
+      const double lgE0 = 17.55;
+      const double E0 = pow(10, lgE0);
+      const double emaxGal = 1e22; // infinity for now
+      const double gammaGal = par[eGammaGal];
+      const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
+      const double sE = exp(-E0/emaxGal);
+      const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
+      const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+      double lgE = data.fLgEmin + dlgE/2;
+      TMatrixD galactic(data.fNLgE, 1);
+      for (unsigned int i = 0; i < data.fNLgE; ++i) {
+        const double E = pow(10, lgE);
+        galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+        lgE += dlgE;
+      }
+      data.fPropagator->AddComponent(57, galactic);
     }
-    data.fPropagator->AddComponent(57, galactic);
 
     const double norm = calcNorm(data);
 
@@ -127,9 +131,9 @@ namespace prop {
     data.fChi2VlnA = 0;
     for (const auto& compo : data.fCompoData) {
       const pair<double, double> m =
-        data.fPropagator->GetLnAMoments(lgE);
+        data.fPropagator->GetLnAMoments(compo.fLgE);
       data.fChi2LnA += pow((compo.fLnA - m.first) / compo.fLnAErr, 2);
-      data.fChi2VlnA += pow( (compo.fVlnA - m.second) / compo.fVlnAErr, 2);
+      data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
     }
 
     chi2 = data.GetChi2Tot();
@@ -171,6 +175,11 @@ namespace prop {
     TMinuit minuit(nPar);
     minuit.SetPrintLevel(-1);
     minuit.SetFCN(Fitter::FitFunc);
+
+    const string separator =
+      "--------------------------------"
+      "-------------------------------";
+    cout << "\n" << separator << endl;
 
     int ierflag;
     for (unsigned int i = 0; i < eNpars; ++i) {
@@ -234,5 +243,77 @@ namespace prop {
            << setw(11) << maxZeta
            << setw(7) << (fixed[i] ? "fixed" : "free") << endl;
     }
+    cout << separator << endl;
+
+    double arglist[2] = {10000, 1.};
+    minuit.SetPrintLevel(0);
+    minuit.mnexcm("MINIMIZE", arglist, 2, ierflag);
+
   }
+
+  void
+  Fitter::ReadData()
+  {
+    // spectrum
+    ifstream in("macros/auger_icrc2013.dat");
+    while (true) {
+      FluxData flux;
+      double eyDown, eyUp, N;
+      in >> flux.fLgE >> flux.fFlux >> eyDown >> eyUp >> N;
+      if (!in.good())
+        break;
+
+      flux.fFluxErr = (eyUp+eyDown)/2;
+
+      bool isSpectrumOutlier = false;
+      if (fOptions.RejectOutliers())
+        isSpectrumOutlier =
+          (flux.fLgE > 18.4 && flux.fLgE < 18.5) ||
+          (flux.fLgE > 18 && flux.fLgE < 18.2);
+
+      // syst shift?
+      flux.fLgE += (.1 * fOptions.GetEnergyBinShift());
+
+
+      fFitData.fAllFluxData.push_back(flux);
+      if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
+        fFitData.fFluxData.push_back(flux);
+    }
+
+    cout << " spectrum: nAll = " <<  fFitData.fAllFluxData.size()
+         << ", nFit = " <<  fFitData.fFluxData.size() << endl;
+
+    TFile* erFile =
+      TFile::Open("/home/munger/TeX/svn/xmaxLongPaper/ROOT/files/elongationRate.root");
+    if (erFile) {
+      TGraphAsymmErrors* lnAGraph =
+        (TGraphAsymmErrors*) erFile->Get(("lnA/lnA_"
+                                          + fOptions.GetInteractionModel()).c_str());
+      TGraphAsymmErrors* vLnAGraph =
+        (TGraphAsymmErrors*) erFile->Get(("lnA/lnAVariance_"
+                                          + fOptions.GetInteractionModel()).c_str());
+      if (lnAGraph && vLnAGraph) {
+        for (int i = 0; i < lnAGraph->GetN(); ++i) {
+          CompoData comp;
+          comp.fLgE = log10(*(lnAGraph->GetX()+i));
+          comp.fLnA = *(lnAGraph->GetY()+i);
+          comp.fVlnA = *(vLnAGraph->GetY()+i);
+          comp.fLnAErr = 0.5*(*(lnAGraph->GetEY()+i) +
+                              *(lnAGraph->GetEY()+i));
+          comp.fVlnAErr = 0.5*(*(vLnAGraph->GetEY()+i) +
+                               *(vLnAGraph->GetEY()+i));
+          fFitData.fAllCompoData.push_back(comp);
+          if (comp.fLgE > fOptions.GetMinCompLgE())
+            fFitData.fCompoData.push_back(comp);
+        }
+      }
+    }
+
+
+    cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()
+         << ", nFit = " <<  fFitData.fCompoData.size() << endl;
+
+
+  }
+
 }

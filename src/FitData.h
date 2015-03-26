@@ -49,6 +49,8 @@ namespace prop {
     std::vector<double> fMasses;
     std::vector<FluxData> fFluxData;
     std::vector<CompoData> fCompoData;
+    std::vector<FluxData> fAllFluxData;
+    std::vector<CompoData> fAllCompoData;
     bool fFitCompo;
     double fChi2Spec;
     double fChi2LnA;

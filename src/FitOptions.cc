@@ -16,6 +16,11 @@ namespace prop {
     fBeta = "2.0";
     fAlpha = "32";
     fFitCompo = 1;
+    fRejectOutliers = 1;
+    fMinFluxLgE = 17;
+    fMinCompLgE = 17;
+    fEnergyBinShift = 0;
+    fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValues(-2.54, 0.1 ,0, 0, 0);
     fStartValues[eLgEmax] = StartValues(21.5, 0.1 ,0, 0, 0);
     fStartValues[eLgEscFac] = StartValues(2.62056e+00, 0.1 ,0, 0, 0);
@@ -71,9 +76,29 @@ namespace prop {
         if (!(line >> fAlpha))
           throw runtime_error("error decoding alpha");
       }
+      else if (keyword == "interactionModel") {
+        if (!(line >> fInteractionModel))
+          throw runtime_error("error decoding interactionModel");
+      }
       else if (keyword == "fitComposition") {
         if (!(line >> fFitCompo))
           throw runtime_error("error decoding fitComposition");
+      }
+      else if (keyword == "energyBinShift") {
+        if (!(line >> fEnergyBinShift))
+          throw runtime_error("error decoding energyBinShift");
+      }
+      else if (keyword == "rejectOutliers") {
+        if (!(line >> fRejectOutliers))
+          throw runtime_error("error decoding rejectOutliers");
+      }
+      else if (keyword == "minLgEFlux") {
+        if (!(line >> fMinFluxLgE))
+          throw runtime_error("error decoding minLgEFlux");
+      }
+      else if (keyword == "minLgECompo") {
+        if (!(line >> fMinCompLgE))
+          throw runtime_error("error decoding minLgECompo");
       }
       else
         throw runtime_error("unknown keyword " + keyword);

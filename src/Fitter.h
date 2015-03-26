@@ -12,8 +12,11 @@ namespace prop {
 
     Fitter(const FitOptions& opt);
     void Fit();
+    const FitData& GetFitData()
+    { return fFitData; }
 
   private:
+    void ReadData();
     static void FitFunc(int& , double* const,
                         double& , double* const,
                         const int);

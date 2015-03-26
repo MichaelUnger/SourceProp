@@ -53,6 +53,21 @@ namespace prop {
     bool DoCompositionFit() const
     { return fFitCompo; }
 
+    bool RejectOutliers() const
+    { return fRejectOutliers; }
+
+    double GetMinFluxLgE() const
+    { return fMinFluxLgE; }
+
+    double GetMinCompLgE() const
+    { return fMinCompLgE; }
+
+    int GetEnergyBinShift() const
+    { return fEnergyBinShift; }
+
+    const std::string GetInteractionModel() const
+    { return fInteractionModel; }
+
   private:
     std::map<EPar, StartValues> fStartValues;
     std::map<unsigned int, StartValues> fMassValues;
@@ -61,6 +76,11 @@ namespace prop {
     std::string fBeta;
     std::string fAlpha;
     bool fFitCompo;
+    bool fRejectOutliers;
+    double fMinFluxLgE;
+    double fMinCompLgE;
+    int fEnergyBinShift;
+    std::string fInteractionModel;
   };
 }
 

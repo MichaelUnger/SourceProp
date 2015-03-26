@@ -56,7 +56,7 @@ namespace prop {
     void Draw(const prop::Spectrum& spectrum,
               const prop::Propagator& prop,
               const std::vector<prop::MassGroup>& mGroups,
-              const bool drawProtonSourceLines);
+              const bool drawProtonSourceLines = true);
     void SetXRange(const double x1, const double x2);
     TCanvas* GetCanvas() { return fCanvas; }
 
