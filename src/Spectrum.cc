@@ -225,7 +225,7 @@ namespace prop {
       return pow(E, fGamma) * exp(-E/zEmax);
     else if (fCutoffType == eBrokenExponential) {
       if (E > zEmax)
-        return  pow(zEmax, fGamma) * exp(1 - E/zEmax);
+        return  pow(E, fGamma) * exp(1 - E/zEmax);
       else
         return pow(E, fGamma);
     }

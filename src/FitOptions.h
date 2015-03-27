@@ -36,6 +36,9 @@ namespace prop {
     double GetMax(const EPar par) const;
     bool IsFixed(const EPar par) const;
 
+    void SetStartValue(const EPar par, const double val)
+    { fStartValues[par].fStart = val; }
+
     const std::map<unsigned int, StartValues>&
     GetMasses() const
     { return fMassValues; }

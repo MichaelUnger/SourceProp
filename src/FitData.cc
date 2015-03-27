@@ -23,6 +23,11 @@ namespace prop {
     delete fPropagator;
     delete fSource;
     fMasses.clear();
+    fFluxData.clear();
+    fCompoData.clear();
+    fAllFluxData.clear();
+    fAllCompoData.clear();
+    fFitParameters.clear();
   }
 
   double

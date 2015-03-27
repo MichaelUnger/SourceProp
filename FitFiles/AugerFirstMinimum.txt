@@ -1,17 +1,17 @@
 #
-# Auger 'second minimum', D.Walz Thu, 26 Mar 2015 09:53:56 +0100
+# Auger 'first minimum', D.Walz Mon, 23 Mar 2015 09:30:35 +0100
 #
-par gammaInj -2.003365     0.1 0 0 0
-par lgRmax    19.812475    0.1 0 0 0
+par gammaInj  1.384563     0.1 0 0 0
+par lgRmax    18.131670    0.1 0 0 0
 par lgResc    -21         0.1 0 0 1
 par deltaEsc           -1 0.1 0 0 1
 par fGal              0.6 0.1 0 0 1
 par gammaGal        -4.17 0.1 0 0 1
 par fNoPhoton           0 0.1 0 0 1
-mass  1 9.601407e-06 0
-mass  4 1.346739e-04 0
-mass 14 8.872397e-01 0
-mass 56 1.126161e-01 0
+mass  1 5.940326e-01 0
+mass  4 3.922547e-01 0
+mass 14 1.369428e-02 0
+mass 56 1.847594e-05 0
 evolution uniformCutAt3
 eps0 0.03
 alpha 32

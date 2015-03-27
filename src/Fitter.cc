@@ -41,7 +41,6 @@ namespace prop {
     fOptions(opt),
     fMinuit(GetNParameters())
   {
-    ReadData();
     Init();
   }
 
@@ -163,6 +162,8 @@ namespace prop {
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
+
+    ReadData();
 
     cout << " reading prop matrix from "
          << fOptions.GetPropmatrixFilename() << endl;
