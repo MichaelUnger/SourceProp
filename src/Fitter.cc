@@ -7,7 +7,7 @@
 
 #include <TMinuit.h>
 #include <TFile.h>
-#include <TGraphAsymmErrors.h>
+#include <TGraphErrors.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -162,16 +162,18 @@ namespace prop {
 
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
+    fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
 
     cout << " reading prop matrix from "
          << fOptions.GetPropmatrixFilename() << endl;
     PropMatrixFile pmf(fOptions.GetPropmatrixFilename());
-    const PropMatrices& matrices = pmf.GetPropMatrices();
+    fPropMatrices = pmf.GetPropMatrices();
 
-    fFitData.SetBinning(matrices.GetN(), matrices.GetLgEmin(),
-                        matrices.GetLgEmax());
+    fFitData.SetBinning(fPropMatrices.GetN(),
+                        fPropMatrices.GetLgEmin(),
+                        fPropMatrices.GetLgEmax());
 
-    fFitData.fPropagator = new Propagator(matrices);
+    fFitData.fPropagator = new Propagator(fPropMatrices);
 
     cout << " interaction lengths: "
          << fOptions.GetPhotIntFilename() << endl;
@@ -247,7 +249,7 @@ namespace prop {
       const double minZeta = -7;
       const double maxZeta = 1e-14;
       fMinuit.mnparm(eNpars + i, parName.str().c_str(), log10(zeta[i]),
-                    step ,minZeta, maxZeta, ierflag);
+                    step, minZeta, maxZeta, ierflag);
       if (fixed[i]) {
         fMinuit.FixParameter(eNpars + i);
         fFitData.fFitParameters[eNpars + i].fIsFixed = true;
@@ -303,6 +305,9 @@ namespace prop {
         break;
 
       flux.fFluxErr = (eyUp+eyDown)/2;
+      flux.fFluxErrUp = eyUp;
+      flux.fFluxErrLow = eyDown;
+      flux.fN = N;
 
       bool isSpectrumOutlier = false;
       if (fOptions.RejectOutliers())
@@ -325,11 +330,11 @@ namespace prop {
     TFile* erFile =
       TFile::Open("/home/munger/TeX/svn/xmaxLongPaper/ROOT/files/elongationRate.root");
     if (erFile) {
-      TGraphAsymmErrors* lnAGraph =
-        (TGraphAsymmErrors*) erFile->Get(("lnA/lnA_"
+      TGraphErrors* lnAGraph =
+        (TGraphErrors*) erFile->Get(("lnA/lnA_"
                                           + fOptions.GetInteractionModel()).c_str());
-      TGraphAsymmErrors* vLnAGraph =
-        (TGraphAsymmErrors*) erFile->Get(("lnA/lnAVariance_"
+      TGraphErrors* vLnAGraph =
+        (TGraphErrors*) erFile->Get(("lnA/lnAVariance_"
                                           + fOptions.GetInteractionModel()).c_str());
       if (lnAGraph && vLnAGraph) {
         for (int i = 0; i < lnAGraph->GetN(); ++i) {
@@ -337,10 +342,8 @@ namespace prop {
           comp.fLgE = log10(*(lnAGraph->GetX()+i));
           comp.fLnA = *(lnAGraph->GetY()+i);
           comp.fVlnA = *(vLnAGraph->GetY()+i);
-          comp.fLnAErr = 0.5*(*(lnAGraph->GetEY()+i) +
-                              *(lnAGraph->GetEY()+i));
-          comp.fVlnAErr = 0.5*(*(vLnAGraph->GetEY()+i) +
-                               *(vLnAGraph->GetEY()+i));
+          comp.fLnAErr = *(lnAGraph->GetEY()+i);
+          comp.fVlnAErr = *(vLnAGraph->GetEY()+i);
           fFitData.fAllCompoData.push_back(comp);
           if (comp.fLgE > fOptions.GetMinCompLgE())
             fFitData.fCompoData.push_back(comp);

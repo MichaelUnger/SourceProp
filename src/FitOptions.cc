@@ -28,6 +28,7 @@ namespace prop {
     fStartValues[eFGal] = StartValues(0.6, 0.1, 0, 1, 0);
     fStartValues[eGammaGal] = StartValues(-4.17e+00, 0.1, 0, 0, 0);
     fStartValues[eNoPhoton] = StartValues(0, 0.1, 0, 0, 1);
+    fCutoffType = Spectrum::eExponential;
 
     ifstream optionsFile(filename.c_str());
     while (true) {
@@ -99,6 +100,17 @@ namespace prop {
       else if (keyword == "minLgECompo") {
         if (!(line >> fMinCompLgE))
           throw runtime_error("error decoding minLgECompo");
+      }
+      else if (keyword == "cutoffType") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding cutoffType");
+        if (type == "exponential")
+          fCutoffType = Spectrum::eExponential;
+        else if (type == "brokenExponential")
+          fCutoffType = Spectrum::eBrokenExponential;
+        else
+          throw runtime_error("unknown cutoff type" + type);
       }
       else
         throw runtime_error("unknown keyword " + keyword);

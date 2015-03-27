@@ -11,10 +11,14 @@ namespace prop {
   class Propagator;
 
   struct FluxData {
-    FluxData() : fLgE(0), fFlux(0), fFluxErr(0) {}
+    FluxData() : fLgE(0), fFlux(0), fFluxErr(0),
+                 fFluxErrUp(0), fFluxErrLow(0) {}
     double fLgE;
+    double fN;
     double fFlux;
     double fFluxErr;
+    double fFluxErrUp;
+    double fFluxErrLow;
   };
 
   struct CompoData {

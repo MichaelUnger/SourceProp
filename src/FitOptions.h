@@ -2,6 +2,7 @@
 #define _FitOptions_h_
 
 #include "FitParameters.h"
+#include "Spectrum.h"
 
 #include <map>
 #include <string>
@@ -68,6 +69,10 @@ namespace prop {
     const std::string GetInteractionModel() const
     { return fInteractionModel; }
 
+    Spectrum::ECutoffType GetCutoffType() const
+    { return fCutoffType; }
+
+
   private:
     std::map<EPar, StartValues> fStartValues;
     std::map<unsigned int, StartValues> fMassValues;
@@ -81,6 +86,7 @@ namespace prop {
     double fMinCompLgE;
     int fEnergyBinShift;
     std::string fInteractionModel;
+    Spectrum::ECutoffType fCutoffType;
   };
 }
 

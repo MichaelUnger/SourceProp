@@ -14,7 +14,7 @@ namespace prop {
 
   public:
     PropMatrices(const double lgEmin = 0,
-                         const double lgEmax = 0);
+                 const double lgEmax = 0);
 
     bool HasPrimary(const unsigned int Aprim) const;
     bool HasMatrix(const unsigned int Aprim,

@@ -40,11 +40,13 @@ namespace prop {
       fFractions(fractions)
     {}
 
+    void SetCutoffType(const ECutoffType type)
+    { fCutoffType = type; }
+
     void SetParameters(const VSource* s, const double gamma,
                        const double Emax, const double nE,
                        const double lgEmin, const double lgEmax,
-                       const std::map<unsigned int, double>& fractions,
-                       const ECutoffType cutoffType = eExponential)
+                       const std::map<unsigned int, double>& fractions)
     {
       Reset();
       fEmax = Emax;
@@ -54,7 +56,6 @@ namespace prop {
       fLgEmin = lgEmin;
       fLgEmax = lgEmax;
       fFractions = fractions;
-      fCutoffType = cutoffType;
     }
 
     void Reset()

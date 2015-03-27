@@ -22,3 +22,4 @@ rejectOutliers 1
 minLgEFlux 17
 minLgECompo 17
 interactionModel eposLHC
+cutoffType exponential

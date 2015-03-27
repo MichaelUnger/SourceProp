@@ -3,6 +3,7 @@
 
 #include "FitOptions.h"
 #include "FitData.h"
+#include "PropMatrices.h"
 
 #include <TMinuit.h>
 
@@ -23,6 +24,7 @@ namespace prop {
     static void FitFunc(int& , double* const,
                         double& , double* const,
                         const int);
+    PropMatrices fPropMatrices;
     FitOptions fOptions;
     static FitData fFitData;
     TMinuit fMinuit;
