@@ -198,7 +198,7 @@ namespace prop {
   FitOptions::GetBeta()
     const
   {
-    return -stod(fEps0);
+    return -stod(fBeta);
   }
 
 

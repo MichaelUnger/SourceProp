@@ -66,6 +66,8 @@ namespace prop {
           }
         }
       }
+      fFile->Close();
+      fFile = nullptr;
     }
   }
 
@@ -109,9 +111,11 @@ namespace prop {
   void
   PropMatrixFile::Close()
   {
-    fFile->Close();
-    delete fFile;
-    fFile = nullptr;
+    if (fFile) {
+      fFile->Close();
+      delete fFile;
+      fFile = nullptr;
+    }
   }
 
 }

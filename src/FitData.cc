@@ -39,4 +39,20 @@ namespace prop {
     return chi2;
   }
 
+  unsigned int
+  FitData::GetNdfTot() const
+  {
+    unsigned int nFreePar = 0;
+    for (const auto& par : fFitParameters)
+      if (!par.fIsFixed)
+        ++nFreePar;
+
+    unsigned int ndf = fFluxData.size();
+    if (fFitCompo)
+      ndf += 2*fCompoData.size();
+    ndf -= nFreePar;
+    return ndf;
+  }
+
+
 };

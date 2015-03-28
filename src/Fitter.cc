@@ -158,13 +158,11 @@ namespace prop {
   void
   Fitter::Init()
   {
-
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
 
     ReadData();
-
     cout << " reading prop matrix from "
          << fOptions.GetPropmatrixFilename() << endl;
     PropMatrixFile pmf(fOptions.GetPropmatrixFilename());

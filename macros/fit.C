@@ -11,6 +11,8 @@
 #include <TMath.h>
 #include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
+#include <TROOT.h>
+#include <TH1D.h>
 
 using namespace std;
 
@@ -20,6 +22,7 @@ using namespace prop;
 void
 DrawData(const FitData& fitData,
          const double gammaScaleEarth,
+         const unsigned int nMassGroups,
          TCanvas* can)
 {
 
@@ -32,6 +35,7 @@ DrawData(const FitData& fitData,
     fitSpectrum->SetPointEYlow(i, w*fluxData[i].fFluxErrLow);
   }
 
+  double maxY = 0;
   TGraphAsymmErrors* allSpectrum = new TGraphAsymmErrors();
   const vector<FluxData>& fluxDataAll = fitData.fAllFluxData;
   for (unsigned int i = 0; i < fluxDataAll.size(); ++i) {
@@ -39,8 +43,20 @@ DrawData(const FitData& fitData,
     allSpectrum->SetPoint(i, fluxDataAll[i].fLgE, w*fluxDataAll[i].fFlux);
     allSpectrum->SetPointEYhigh(i, w*fluxDataAll[i].fFluxErrUp);
     allSpectrum->SetPointEYlow(i, w*fluxDataAll[i].fFluxErrLow);
+    const double thisY = w*(fluxDataAll[i].fFlux + fluxDataAll[i].fFluxErrUp);
+    if (thisY > maxY)
+      maxY = thisY;
   }
   allSpectrum->SetMarkerStyle(24);
+
+  stringstream histTit;
+  histTit << "hEarth" << nMassGroups;
+  TH1D* fluxTotAtEarth = (TH1D*) gROOT->FindObject(histTit.str().c_str());
+  if (fluxTotAtEarth)
+    fluxTotAtEarth->GetYaxis()->SetRangeUser(0, maxY*1.1);
+  else
+    cerr << " cannot find " << histTit.str() << endl;
+
 
   can->cd(Plotter::eFluxEarth);
   allSpectrum->Draw("P");
@@ -73,6 +89,10 @@ DrawValues(const FitData& fitData,
            const FitOptions& fitOptions,
            TCanvas* can)
 {
+
+  int fixColor = kGray+1;
+  int freeColor = kBlack;
+
   can->cd(Plotter::eCompEsc);
   TLatex l;
   l.SetTextAlign(13); l.SetTextSize(0.06);
@@ -81,49 +101,41 @@ DrawValues(const FitData& fitData,
   double y = yStart;
   const double dy = 0.08;
   const double x = 0.;
-  unsigned int nFreePar = 0;
   const vector<FitParameter>& fitParameters = fitData.fFitParameters;
   for (unsigned int i = 0; i < eNpars; ++i) {
     const EPar par = EPar(i);
     stringstream parString;
     parString << GetParLatexName(par) << " = " << showpoint
               << setprecision(3) << fitParameters[i].fValue;
-    if (fitParameters[i].fIsFixed) {
-      l.SetTextColor(kBlack);
-      parString << " (fixed)";
-    }
-    else {
-      ++nFreePar;
-      l.SetTextColor(kBlack);
+    l.SetTextColor(fitParameters[i].fIsFixed ? fixColor : freeColor);
+    if (!fitParameters[i].fIsFixed)
       parString << "#pm" << noshowpoint
                 << setprecision(1) << fitParameters[i].fError;
-    }
     l.DrawLatex(x, y, parString.str().c_str());
     y -= dy;
   }
 
   stringstream photonString;
-  photonString << "#varepsilon_{0} = " << fitOptions.GetEps0() << " eV (fixed)";
+  photonString << "#varepsilon_{0} = " << fitOptions.GetEps0() << " eV";
+  l.SetTextColor(fixColor);
   l.DrawLatex(x, y, photonString.str().c_str());
   y -= dy;
   photonString.str("");
   photonString << "#alpha="
                << fitOptions.GetAlpha() << ", beta="
-               << fitOptions.GetBeta() << " (fix)";
+               << fitOptions.GetBeta();
   l.DrawLatex(x, y, photonString.str().c_str());
   y -= dy;
 
-  unsigned int ndf = fitData.fFluxData.size();
-  if (fitOptions.DoCompositionFit())
-    ndf += 2*fitData.fCompoData.size();
-  ndf -= nFreePar;
+  l.SetTextColor(freeColor);
   stringstream chi2String;
-  chi2String << "#chi^{2}/ndf = " << fitData.GetChi2Tot() << "/" << ndf;
+  chi2String << "#chi^{2}/ndf = " << fitData.GetChi2Tot() << "/"
+             << fitData.GetNdfTot();
   l.DrawLatex(x, y, chi2String.str().c_str());
   y -= dy;
 
   y -= dy/4;
-  l.SetTextColor(kBlack);
+  l.SetTextColor(freeColor);
   l.DrawLatex(x, y, ("source evolution: " + fitOptions.GetEvolution()).c_str());
 
   vector<double> fractions(fitData.fMasses.size());
@@ -132,14 +144,28 @@ DrawValues(const FitData& fitData,
     zeta.push_back(pow(10, fitParameters[eNpars + i].fValue));
   zetaToFraction(fractions.size(), &zeta.front(), &fractions.front());
   y = yStart;
+
+  unsigned int nFix = 0;
   for (unsigned int i = 0; i < fractions.size(); ++i) {
     stringstream parString;
     parString << "f(" << fitData.fMasses[i] << ")"
               << (fitData.fMasses[i] < 10 ? "  = " : "= ")
               << scientific << setprecision(1)
               << fractions[i];
-    if (i < fractions.size() -1 && fitParameters[eNpars + i].fIsFixed)
-      parString << " (fix)";
+
+    bool isFix = false;
+    if (i < fractions.size() - 1) {
+      if (fitParameters[eNpars + i].fIsFixed) {
+        ++nFix;
+        isFix = true;
+      }
+    }
+    else {
+      if (nFix == fractions.size() - 1)
+        isFix = true;
+    }
+
+    l.SetTextColor(isFix ? fixColor : freeColor);
     l.DrawLatex(0.63, y, parString.str().c_str());
     y -= dy;
   }
@@ -172,7 +198,7 @@ fit(string fitFilename = "Standard", bool fit = true)
             massGroups);
   plot.SetXRange(17.5, 20.7);
   TCanvas* can = plot.GetCanvas();
-  DrawData(fitData, gammaScaleEarth, can);
+  DrawData(fitData, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
   can->Print(("FitFiles/" + fitFilename + ".pdf").c_str());

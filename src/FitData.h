@@ -47,6 +47,7 @@ namespace prop {
                     const double lgEmax)
     { fNLgE = n; fLgEmin = lgEmin; fLgEmax = lgEmax; }
     double GetChi2Tot() const;
+    unsigned int GetNdfTot() const;
 
     unsigned int fIteration;
     NumericSource* fSource;
