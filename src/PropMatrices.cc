@@ -6,8 +6,8 @@ using namespace std;
 namespace prop {
 
   PropMatrices::PropMatrices(const double lgEmin,
-                                             const double lgEmax):
-    fLgEmin(lgEmin), fLgEmax(lgEmax)
+                             const double lgEmax):
+    fLgEmin(lgEmin), fLgEmax(lgEmax), fMaxDistance(0)
   {}
 
   bool
@@ -19,7 +19,7 @@ namespace prop {
 
   bool
   PropMatrices::HasMatrix(const unsigned int Aprim,
-                                   const unsigned int Asec)
+                          const unsigned int Asec)
     const
   {
     auto m = fMatrices.find(Aprim);
@@ -33,7 +33,7 @@ namespace prop {
 
   TMatrixD&
   PropMatrices::GetMatrix(const unsigned int Aprim,
-                                  const unsigned int Asec)
+                          const unsigned int Asec)
   {
     return fMatrices[Aprim][Asec];
   }
@@ -49,7 +49,7 @@ namespace prop {
         if (m.GetNcols() == m.GetNrows())
           return m.GetNcols();
         else {
-          cerr << " PropMatrices::GetN() -- Error: nCol == nRow?? " << endl;
+          cerr << " PropMatrices::GetN() -- Error: nCol != nRow?? " << endl;
           return 0;
         }
       }

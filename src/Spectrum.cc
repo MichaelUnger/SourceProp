@@ -222,13 +222,15 @@ namespace prop {
   {
     const double zEmax = fEmax * aToZ(A);
     if (fCutoffType == eExponential)
-      return pow(E, fGamma) * exp(-E/zEmax);
+      return pow(E / GetE0(), fGamma) * exp(-E/zEmax);
     else if (fCutoffType == eBrokenExponential) {
       if (E > zEmax)
-        return  pow(E, fGamma) * exp(1 - E/zEmax);
+        return  pow(E / GetE0(), fGamma) * exp(1 - E/zEmax);
       else
-        return pow(E, fGamma);
+        return pow(E / GetE0(), fGamma);
     }
+    else if (fCutoffType == eHeavyside)
+      return E > zEmax ? 0 :pow(E / GetE0(), fGamma);
     else
       throw runtime_error("cutoff type not implemented");
   }

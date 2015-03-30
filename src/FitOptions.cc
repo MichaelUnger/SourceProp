@@ -109,6 +109,8 @@ namespace prop {
           fCutoffType = Spectrum::eExponential;
         else if (type == "brokenExponential")
           fCutoffType = Spectrum::eBrokenExponential;
+        else if (type == "heavyside")
+          fCutoffType = Spectrum::eHeavyside;
         else
           throw runtime_error("unknown cutoff type" + type);
       }

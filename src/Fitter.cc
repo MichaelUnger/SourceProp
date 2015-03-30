@@ -13,7 +13,11 @@
 #include <fstream>
 #include <sstream>
 
+#include <utl/Units.h>
+#include <utl/PhysicalConstants.h>
+
 using namespace std;
+using namespace utl;
 
 namespace prop {
 
@@ -122,7 +126,9 @@ namespace prop {
     }
 
     const double norm = calcNorm(data);
-
+    const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
+    const double normInternalUnits = norm * 1 / (km2 * year * eV * sr);
+    data.fQ0 = normInternalUnits / kSpeedOfLight / tMax / kFourPi;
     data.fSpectrum.Rescale(norm);
     data.fPropagator->Rescale(norm);
 

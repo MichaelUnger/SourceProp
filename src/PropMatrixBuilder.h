@@ -42,6 +42,7 @@ namespace prop {
     TAxis fAxis;
     std::map<unsigned int, TH1D*> fGenMap;
     mutable PropMatrices fPropMatrices;
+    double fMaxDistance;
   };
 }
 #endif

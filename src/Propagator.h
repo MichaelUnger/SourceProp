@@ -30,6 +30,8 @@ namespace prop {
 
     void Rescale(const double f);
     void AddComponent(const unsigned int A, const TMatrixD& flux);
+    double GetMaximumDistance() const
+    { return fPropMatrices.GetMaximumDistance(); }
 
   private:
     Propagator();

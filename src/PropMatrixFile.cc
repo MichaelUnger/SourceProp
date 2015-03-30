@@ -14,12 +14,18 @@
 #include <sstream>
 #include <cmath>
 
+#include <utl/Units.h>
+
 #include <boost/lexical_cast.hpp>
 
 using namespace std;
 
-
 namespace prop {
+
+  enum ESimSettings {
+    eMaxDistance = 0,
+    eNSimSettings
+  };
 
   PropMatrixFile::PropMatrixFile(const string& outputFilename,
                                  const bool readMode) :
@@ -65,6 +71,15 @@ namespace prop {
             }
           }
         }
+        else if (obj->IsA()->InheritsFrom("TH1D")) {
+          TH1D* h = static_cast<TH1D*>(obj);
+          if (string(h->GetName()) == string("hSimSettings")) {
+            fPropMatrices.SetMaximumDistance(h->GetBinContent(eMaxDistance+1));
+            cout << " maximum distance is "
+                 << fPropMatrices.GetMaximumDistance() / utl::Gpc << " Gpc" << endl;
+          }
+        }
+
       }
       fFile->Close();
       fFile = nullptr;
@@ -105,6 +120,10 @@ namespace prop {
         delete h;
       }
     }
+    TH1D* hSimSettings = new TH1D("hSimSettings", "", eNSimSettings, 0, eNSimSettings);
+    hSimSettings->SetBinContent(eMaxDistance+1, pmc.GetMaximumDistance());
+    hSimSettings->Write();
+    delete hSimSettings;
     save->cd();
   }
 

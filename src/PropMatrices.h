@@ -34,9 +34,15 @@ namespace prop {
     void SetEnergyRange(const double lgEmin, const double lgEmax)
     { fLgEmin = lgEmin; fLgEmax = lgEmax; }
 
+    double GetMaximumDistance() const
+    { return fMaxDistance; }
+    void SetMaximumDistance(const double dm)
+    { fMaxDistance = dm; }
+
   private:
     double fLgEmin;
     double fLgEmax;
+    double fMaxDistance;
     PrimaryMap fMatrices;
   };
 }

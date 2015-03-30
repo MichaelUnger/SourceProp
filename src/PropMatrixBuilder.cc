@@ -11,6 +11,8 @@
 #include <sstream>
 #include <stdexcept>
 
+#include <utl/Units.h>
+
 using namespace std;
 
 namespace prop {
@@ -27,7 +29,8 @@ namespace prop {
     fLgEmin(lgEmin),
     fLgEmax(lgEmax),
     fAxis(fNbins, fLgEmin, fLgEmax),
-    fPropMatrices(fLgEmin, fLgEmax)
+    fPropMatrices(fLgEmin, fLgEmax),
+    fMaxDistance(0)
   {
     cout << " source distribution : " << fSourceDistribution << endl;
   }
@@ -88,6 +91,9 @@ namespace prop {
     eventTree->SetBranchAddress("fEvent.", &eventPtr);
     for (int i = 0; i < eventTree->GetEntries(); ++i) {
       eventTree->GetEntry(i);
+      const double d = event.GetLightDistance() * utl::Mpc;
+      if (d > fMaxDistance)
+        fMaxDistance = d;
       const unsigned int Aprim = event.GetMass();
       const double lgEprim = log10(event.GetEnergy()) + 18;
       const double w = DistributionWeight(event.GetRedShift());
@@ -119,6 +125,7 @@ namespace prop {
         m[jSec][iPrim] += w;
       }
     }
+    fPropMatrices.SetMaximumDistance(fMaxDistance);
     crpFile->Close();
   }
 

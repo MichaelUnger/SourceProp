@@ -3,6 +3,8 @@
 
 #include <map>
 #include <TMatrixD.h>
+#include <utl/Units.h>
+
 #include "VSource.h"
 
 namespace prop {
@@ -17,9 +19,11 @@ namespace prop {
       eKnockOutPD,
       eKnockOutPP
     };
+
     enum ECutoffType {
       eExponential,
-      eBrokenExponential
+      eBrokenExponential,
+      eHeavyside
     };
 
     typedef std::map<unsigned int, TMatrixD> SpecMap;
@@ -80,6 +84,8 @@ namespace prop {
     void Rescale(const double f);
 
     const VSource* GetSource() const { return fSource; }
+
+    static double GetE0() { return 1e18*utl::eV; }
 
 
   private:
