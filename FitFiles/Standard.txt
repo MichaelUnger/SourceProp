@@ -12,7 +12,7 @@ mass  1 0.001 0
 mass  4 0.66 0
 mass 14 0.22 0
 mass 28 0.12 0
-mass 56 0    1
+mass 56 0    0
 evolution SFR2
 eps0 0.03
 alpha 32
