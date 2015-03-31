@@ -17,7 +17,7 @@ namespace prop {
                   const std::string& directory) :
       fType(type), fDirectory(directory) {}
 
-    ~NumericSource();
+    virtual ~NumericSource();
 
     double
     LambdaInt(const double E, const double A) const;
