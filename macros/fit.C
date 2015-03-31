@@ -1,6 +1,7 @@
 #include <FitOptions.h>
 #include <Fitter.h>
 #include <Plotter.h>
+#include <utl/Units.h>
 
 #include <vector>
 #include <sstream>
@@ -15,8 +16,6 @@
 #include <TH1D.h>
 
 using namespace std;
-
-
 using namespace prop;
 
 void
@@ -164,11 +163,15 @@ DrawValues(const FitData& fitData,
       if (nFix == fractions.size() - 1)
         isFix = true;
     }
-
     l.SetTextColor(isFix ? fixColor : freeColor);
     l.DrawLatex(0.63, y, parString.str().c_str());
     y -= dy;
   }
+
+  using namespace utl;
+
+  cout <<  fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) ) << endl;
+
 }
 
 

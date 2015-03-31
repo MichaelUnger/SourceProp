@@ -127,8 +127,9 @@ namespace prop {
 
     const double norm = calcNorm(data);
     const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
-    const double normInternalUnits = norm * 1 / (km2 * year * eV * sr);
-    data.fQ0 = normInternalUnits / kSpeedOfLight / tMax / kFourPi;
+    const double normInternalUnits = norm *  1 / (km2 * year * eV * sr);
+    cout << norm << " " << normInternalUnits << " " << tMax / year << endl;
+    data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
     data.fSpectrum.Rescale(norm);
     data.fPropagator->Rescale(norm);
 
@@ -308,8 +309,8 @@ namespace prop {
       in >> flux.fLgE >> flux.fFlux >> eyDown >> eyUp >> N;
       if (!in.good())
         break;
-
-      flux.fFluxErr = (eyUp+eyDown)/2;
+      // cout << "ReadData() :" << flux.fLgE << " " <<  flux.fFlux  << endl;
+      flux.fFluxErr = (eyUp+eyDown)/2 ;
       flux.fFluxErrUp = eyUp;
       flux.fFluxErrLow = eyDown;
       flux.fN = N;

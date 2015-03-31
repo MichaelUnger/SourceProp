@@ -237,7 +237,7 @@ namespace prop {
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
       stringstream yTit;
       if (specPad != eFluxEarth)
-        yTit << "E^{" << gamma << "}  n_{0} dN/dE^#prime/dt [a.u.]";
+        yTit << "E^{" << gamma << "}  n_{0} dN/dE/dt [a.u.]";
       else
         yTit << "E^{" << gamma << "} J(E) [eV^{" << gamma-1
              << "} km^{-2} sr^{-1} yr^{-1}]";
