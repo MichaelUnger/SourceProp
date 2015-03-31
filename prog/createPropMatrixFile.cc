@@ -24,7 +24,7 @@ main(int argc, char** argv)
   PropMatrixBuilder::ESourceDistribution s;
   if (option == "uniform")
     s = PropMatrixBuilder::eUniform;
-  if (option == "uniformCutAt3")
+  else if (option == "uniformCutAt3")
     s = PropMatrixBuilder::eUniformCutAt3;
   else if (option == "AGN")
     s = PropMatrixBuilder::eAGN;

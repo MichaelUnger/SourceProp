@@ -360,7 +360,6 @@ namespace prop {
     cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()
          << ", nFit = " <<  fFitData.fCompoData.size() << endl;
 
-
   }
 
 }
