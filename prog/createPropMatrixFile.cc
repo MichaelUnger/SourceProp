@@ -15,6 +15,7 @@ main(int argc, char** argv)
   usage << argv[0] << " <option> <filenames>\n"
         << "        options: uniform, uniformCutAt3, AGN, SFR1, SFR2, AAGHRW05";
   if (argc < 2) {
+    cerr << " not enough arguments " << endl;
     cerr << usage.str() << endl;
     return 1;
   }
@@ -34,6 +35,7 @@ main(int argc, char** argv)
   else if (option == "AAGHRW05")
     s = PropMatrixBuilder::eAAGHRW05;
   else {
+    cerr << " unknown source evolution " << option << endl;
     cerr << usage.str() << endl;
     return 1;
   }
