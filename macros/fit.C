@@ -170,7 +170,11 @@ DrawValues(const FitData& fitData,
 
   using namespace utl;
 
-  cout <<  fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) ) << endl;
+  cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
+       << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
+  const double P =  fitData.fSpectrum.InjectedPower(pow(10, 17.5), pow(10, 21.5), 1);
+  cout << " edot: "
+       << fitData.fQ0 * P / ( erg / (pow(Mpc, 3) * year) ) << endl;
 
 }
 

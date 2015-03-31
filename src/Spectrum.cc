@@ -234,4 +234,27 @@ namespace prop {
     else
       throw runtime_error("cutoff type not implemented");
   }
+
+  // P = int E * f(E/E0) dE
+  double
+  Spectrum::InjectedPower(const double E1, const double E2, const double A)
+    const
+  {
+    const double zEmax = fEmax * aToZ(A);
+    if (fCutoffType == eExponential)
+      throw runtime_error("integral for eExponential not implemented");
+    else if (fCutoffType == eBrokenExponential)
+      throw runtime_error("integral for eBrokenExponential not implemented");
+    else if (fCutoffType == eHeavyside) {
+      const double energy1 = fmin(E1, zEmax);
+      const double energy2 = fmin(E2, zEmax);
+      if (fabs(fGamma+2) < 1e-9)
+        return pow(GetE0(), 2) * (log(energy2 / GetE0()) - log(energy1 / GetE0()));
+      else
+        return pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(), fGamma+2) -
+                                               pow(energy1 / GetE0(), fGamma+2));
+    }
+    else
+      throw runtime_error("cutoff type not implemented");
+  }
 }

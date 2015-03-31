@@ -66,6 +66,7 @@ namespace prop {
     double fChi2LnA;
     double fChi2VlnA;
     double fQ0;
+    double fQ0Err;
     std::vector<FitParameter> fFitParameters;
 
   };

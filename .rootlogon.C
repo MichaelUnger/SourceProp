@@ -1,5 +1,5 @@
 {
-  gSystem->SetIncludePath("-I$ROOTSYS/include -I../MagField -Isrc");
+  gSystem->SetIncludePath("-I$ROOTSYS/include -Isrc");
   if (gSystem->Load("lib/libProp.so") == 0)
     cout << "libProp.so loaded!" << endl;
   else

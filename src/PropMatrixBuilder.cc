@@ -162,18 +162,18 @@ namespace prop {
     case eUniformCutAt3:
       return (z > 0.001 && z < 3); // zmin ~ 4 Mpc
     case eAGN: {
-      throw runtime_error("eAGN not normalized");
       /*
         Stanev arXiv:0808.1045 analysis of
         G. Hasinger, T. Miyaji and M. Schmidt, Astron. Astrophys.
         441, 417 (2005).
       */
+      const double n0 = pow(1, 5) / pow(2.7, 5);
       if (z < 1.7)
-        return pow(1+z, 5) / pow(2.7, 5);
+        return pow(1+z, 5) / pow(2.7, 5) / n0;
       else if (z < 2.7)
-        return 1;
+        return 1 / n0;
       else
-        return exp(2.7-z);
+        return exp(2.7-z) / n0;
     }
     case eSFR1: {
       throw runtime_error("eSFR2 not normalized");

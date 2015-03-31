@@ -94,6 +94,8 @@ namespace prop {
     double NucleusFlux(const double Ainj, const double A_i,
                        const double E) const;
     double InjectedFlux(const double E, const double A) const;
+    double InjectedPower(const double E1, const double E2,
+                         const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
     ECutoffType fCutoffType;

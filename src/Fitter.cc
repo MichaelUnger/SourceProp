@@ -23,7 +23,7 @@ namespace prop {
 
   FitData Fitter::fFitData;
 
-  double
+  pair<double, double>
   calcNorm(const FitData& data)
   {
     const Propagator& p = *data.fPropagator;
@@ -36,7 +36,7 @@ namespace prop {
       mywSum += (m*y*w);
       mmwSum += (m*m*w);
     }
-    return (mywSum / mmwSum);
+    return  pair<double, double>(mywSum / mmwSum, sqrt(1/mmwSum));
   }
 
 
@@ -125,13 +125,13 @@ namespace prop {
       data.fPropagator->AddComponent(57, galactic);
     }
 
-    const double norm = calcNorm(data);
+    const pair<double, double> norm = calcNorm(data);
     const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
-    const double normInternalUnits = norm *  1 / (km2 * year * eV * sr);
-    cout << norm << " " << normInternalUnits << " " << tMax / year << endl;
+    const double normInternalUnits = norm.first *  1 / (km2 * year * eV * sr);
     data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
-    data.fSpectrum.Rescale(norm);
-    data.fPropagator->Rescale(norm);
+    data.fQ0Err = norm.second / norm.first * data.fQ0;
+    data.fSpectrum.Rescale(norm.first);
+    data.fPropagator->Rescale(norm.first);
 
     data.fChi2Spec = 0;
     for (const auto& flux : data.fFluxData) {
@@ -356,7 +356,6 @@ namespace prop {
         }
       }
     }
-
 
     cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()
          << ", nFit = " <<  fFitData.fCompoData.size() << endl;
