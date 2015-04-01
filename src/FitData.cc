@@ -1,6 +1,11 @@
 #include "FitData.h"
+#include "FitParameters.h"
 #include "NumericSource.h"
 #include "Propagator.h"
+#include "Utilities.h"
+#include <vector>
+
+using namespace std;
 
 namespace prop {
   FitData::FitData() :
@@ -52,6 +57,21 @@ namespace prop {
       ndf += 2*fCompoData.size();
     ndf -= nFreePar;
     return ndf;
+  }
+
+  double
+  FitData::GetTotalPower(const double Elow)
+    const
+  {
+    vector<double> fractions(fMasses.size());
+    vector<double> zeta;
+    for (unsigned int i = 0; i < fractions.size() - 1; ++i)
+      zeta.push_back(pow(10, fFitParameters[eNpars + i].fValue));
+    zetaToFraction(fractions.size(), &zeta.front(), &fractions.front());
+    double powerSum = 0;
+    for (unsigned int i = 0; i < fractions.size(); ++i)
+      powerSum += fSpectrum.InjectedPower(Elow, fMasses[i]);
+    return fQ0 * powerSum;
   }
 
 

@@ -16,6 +16,7 @@ CXXFLAGS += -I$(SRC_DIR) -I.
 LDFLAGS  += -fPIC -ggdb3 -Wall
 LDFLAGS  += $(shell root-config --libs)  -Wl,--no-as-needed -fPIC
 LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
+LDFLAGS  += -lgsl -lgslcblas
 SOFLAGS   = -Wl,--no-as-needed -fPIC -ggdb3 -Wall -shared
 
 

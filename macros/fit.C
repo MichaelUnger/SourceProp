@@ -2,6 +2,7 @@
 #include <Fitter.h>
 #include <Plotter.h>
 #include <utl/Units.h>
+#include <utl/PhysicalConstants.h>
 
 #include <vector>
 #include <sstream>
@@ -94,7 +95,8 @@ DrawValues(const FitData& fitData,
 
   can->cd(Plotter::eCompEsc);
   TLatex l;
-  l.SetTextAlign(13); l.SetTextSize(0.06);
+  const double textSize = 0.06;
+  l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
   const double yStart = 0.9;
   double y = yStart;
@@ -114,6 +116,7 @@ DrawValues(const FitData& fitData,
     y -= dy;
   }
 
+  const double eps0Y = y;
   stringstream photonString;
   photonString << "#varepsilon_{0} = " << fitOptions.GetEps0() << " eV";
   l.SetTextColor(fixColor);
@@ -172,9 +175,26 @@ DrawValues(const FitData& fitData,
 
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
-  const double P =  fitData.fSpectrum.InjectedPower(pow(10, 17.5), pow(10, 21.5), 1);
-  cout << " edot: "
-       << fitData.fQ0 * P / ( erg / (pow(Mpc, 3) * year) ) << endl;
+  const double lgEmin = 17.5;
+  const double edot =
+    fitData.GetTotalPower(pow(10, lgEmin)) / ( erg / (pow(Mpc, 3) * year));
+  //  const double P =  fitData.fSpectrum.InjectedPower(pow(10, lgEmin), 1);
+  //  const double edot = fitData.fQ0 * P / ( erg / (pow(Mpc, 3) * year));
+
+  cout << " edot: " << setprecision(10) << edot << endl;
+  const double mSun = 1.98855e30*kg;
+  const double eSun = mSun * kSpeedOfLight * kSpeedOfLight;
+  cout << " eSun " << eSun / erg << " erg " << endl;
+  l.SetTextColor(freeColor);
+  stringstream powerString;
+  powerString << "#dot{#varepsilon}_{" << lgEmin << "} = "
+              << setprecision(2) << showpoint << edot;
+  const double xEdot = 0.47;
+  l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
+  l.SetTextSize(textSize*0.7);
+  l.DrawLatex(xEdot+0.38, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
+  l.SetTextSize(textSize);
+  y -= dy;
 
 }
 

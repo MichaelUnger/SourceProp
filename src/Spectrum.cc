@@ -3,8 +3,10 @@
 #include "Utilities.h"
 
 #include <cmath>
+#include <limits>
 #include <iostream>
 #include <stdexcept>
+#include <gsl/gsl_sf_gamma.h>
 using namespace std;
 
 namespace prop {
@@ -235,14 +237,16 @@ namespace prop {
       throw runtime_error("cutoff type not implemented");
   }
 
-  // P = int E * f(E/E0) dE
   double
   Spectrum::InjectedPower(const double E1, const double E2, const double A)
     const
   {
     const double zEmax = fEmax * aToZ(A);
-    if (fCutoffType == eExponential)
-      throw runtime_error("integral for eExponential not implemented");
+    if (fCutoffType == eExponential) {
+      const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / zEmax);
+      const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / zEmax);
+      return pow(GetE0(), 2) * pow(zEmax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
+    }
     else if (fCutoffType == eBrokenExponential)
       throw runtime_error("integral for eBrokenExponential not implemented");
     else if (fCutoffType == eHeavyside) {
@@ -253,6 +257,32 @@ namespace prop {
       else
         return pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(), fGamma+2) -
                                                pow(energy1 / GetE0(), fGamma+2));
+    }
+    else
+      throw runtime_error("cutoff type not implemented");
+  }
+
+  double
+  Spectrum::InjectedPower(const double E1, const double A)
+    const
+  {
+    const double zEmax = fEmax * aToZ(A);
+    if (fCutoffType == eExponential) {
+      const double Gamma = gsl_sf_gamma_inc(fGamma+2, E1 / zEmax);
+      return pow(GetE0(), 2) * pow(zEmax / GetE0(), fGamma+2) * Gamma;
+    }
+    else if (fCutoffType == eBrokenExponential)
+      throw runtime_error("integral for eBrokenExponential not implemented");
+    else if (fCutoffType == eHeavyside) {
+      if (fabs(fGamma+2) < 1e-9)
+        return numeric_limits<double>::infinity();
+      else {
+        if (E1 > zEmax)
+          return 0;
+        else
+          return pow(GetE0(), 2) / (fGamma+2) * (pow(zEmax / GetE0(), fGamma+2) -
+                                                 pow(E1 / GetE0(), fGamma+2));
+      }
     }
     else
       throw runtime_error("cutoff type not implemented");

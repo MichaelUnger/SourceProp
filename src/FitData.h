@@ -48,6 +48,7 @@ namespace prop {
     { fNLgE = n; fLgEmin = lgEmin; fLgEmax = lgEmax; }
     double GetChi2Tot() const;
     unsigned int GetNdfTot() const;
+    double GetTotalPower(const double Elow) const;
 
     unsigned int fIteration;
     NumericSource* fSource;
