@@ -176,7 +176,7 @@ namespace prop {
         return exp(2.7-z) / n0;
     }
     case eSFR1: {
-      throw runtime_error("eSFR2 not normalized");
+      throw runtime_error("eSFR1 not normalized");
       /*
         [53] H. Yüksel, M. D. Kistler, J. F. Beacom and A. M. Hopkins,
         Astrophys. J. 683, L5 (2008).

@@ -26,7 +26,8 @@ namespace prop {
     const double x1 = x[0];
     const double x2 = x[n - 1];
     if (xx <= x1) {
-      cerr << " EvalFast(): below TGraph range " << endl;
+      cerr << " EvalFast(): below TGraph range, "
+           << xx << " < " << x1 << endl;
       return y[0];
     }
     else if (xx >= x2) {

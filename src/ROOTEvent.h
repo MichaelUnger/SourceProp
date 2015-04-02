@@ -8,20 +8,19 @@ namespace crpropa {
   class ROOTSecondary {
   public:
     ROOTSecondary() :
-      fA(0), fZ(0), fE(0) {}
-    ROOTSecondary(const unsigned int id, const double E) :
-      fA((id/10)%1000), fZ((id/10000)%1000), fE(E) {}
+      fId(0), fE(0) {}
+    ROOTSecondary(const int id, const double E) :
+      fId(id), fE(E) {}
 
     /// mass number
-    unsigned short GetMass() const { return fA; }
+    unsigned int GetMass() const;
     /// charge
-    unsigned short GetCharge() const { return fZ; }
+    unsigned int GetCharge() const;
     /// energy [EeV]
     double GetEnergy() const { return fE; }
 
   private:
-    UChar_t fA;
-    UChar_t fZ;
+    int fId;
     Double32_t fE;
     ClassDefNV(ROOTSecondary, 1);
   };
@@ -39,9 +38,9 @@ namespace crpropa {
     ROOTEvent();
 
     /// mass number
-    unsigned short GetMass() const { return fA0; }
+    unsigned int GetMass() const;
     /// charge
-    unsigned short GetCharge() const { return fZ0; }
+    unsigned int GetCharge() const;
     /// energy [EeV]
     double GetEnergy() const { return fE0; }
     /// comoving distance of source [Mpc]
@@ -57,8 +56,8 @@ namespace crpropa {
     void ResetSecondaries();
 
     /// set id of primary (PDG numbering scheme)
-    void SetId(const unsigned int id)
-    { fA0 = (id/10)%1000; fZ0 = (id/10000)%1000; }
+    void SetId(const int id)
+    { fId0 = id; }
     void SetEnergy(const double e) { fE0 = e; }
     void SetComovingDistance(const double d) { fDSource = d; }
     void SetLightDistance(const double l) { fLSource = l; }
@@ -68,8 +67,7 @@ namespace crpropa {
 
   private:
 
-    UChar_t fA0;
-    UChar_t fZ0;
+    int fId0;
     Double32_t fE0;
     Double32_t fDSource;
     Double32_t fLSource;
