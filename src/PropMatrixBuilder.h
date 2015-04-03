@@ -24,7 +24,8 @@ namespace prop {
     PropMatrixBuilder(const ESourceDistribution s = eUniform,
                       const unsigned int nBins = 50,
                       const double lgEmin = 17,
-                      const double lgEmax = 22);
+                      const double lgEmax = 22,
+                      const bool onlyNuclei = true);
     ~PropMatrixBuilder();
     void Process(const std::vector<std::string>& filenames);
     void Process(const std::string& filename);
@@ -39,6 +40,7 @@ namespace prop {
     unsigned int fNbins;
     double fLgEmin;
     double fLgEmax;
+    bool fOnlyNuclei;
     TAxis fAxis;
     std::map<unsigned int, TH1D*> fGenMap;
     mutable PropMatrices fPropMatrices;

@@ -12,6 +12,8 @@ neutronDecay()
   electron->SetParameters(m_e, Q);
   electron->Draw();
 
+  TCanvas* c1 = new TCanvas();
+
   const double E_n = 1e18;
   TH1D* h1 = new TH1D("h1","", 100, -0.001, .002);
   TH1D* h2 = new TH1D("h2","", 100, 12, 17);
@@ -29,7 +31,10 @@ neutronDecay()
     h3->Fill(Tnu);
   }
   h3->Draw();
-  return;
+
+
+  TCanvas* c2 = new TCanvas();
+
   TH1D* hLuis = new TH1D("hLuis",";lg(E_{#nu} /eV);E^{2} J_{#nu} [a.u.]",
                          100, 12, 17);
   TH1D* h5 = new TH1D("h5","", 100, 12, 17);

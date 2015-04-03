@@ -41,12 +41,25 @@ main(int argc, char** argv)
   }
   const vector<string> filenames(argv + 2, argv + argc);
 
-  PropMatrixBuilder pmb(s);
-  pmb.Process(filenames);
-  pmb.PrintSummary();
+  {
+    PropMatrixBuilder pmb(s);
+    pmb.Process(filenames);
+    pmb.PrintSummary();
 
-  PropMatrixFile pmf("propMatrix_" + option + ".root", false);
-  pmf.Write(pmb.GetPropMatrices());
-  pmf.Close();
+    PropMatrixFile pmf("propMatrix_" + option + ".root", false);
+    pmf.Write(pmb.GetPropMatrices());
+    pmf.Close();
+  }
+
+  {
+    PropMatrixBuilder pmbNu(s, 100, 12, 22, false);
+    pmbNu.Process(filenames);
+    pmbNu.PrintSummary();
+
+    PropMatrixFile pmfNu("propMatrix_" + option + "_nu.root", false);
+    pmfNu.Write(pmbNu.GetPropMatrices());
+    pmfNu.Close();
+  }
+
 
 }

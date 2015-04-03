@@ -165,6 +165,12 @@ namespace prop {
     return "ROOT/propMatrix_" + fEvolution + ".root";
   }
 
+  std::string FitOptions::GetPropmatrixNuFilename()
+    const
+  {
+    return "ROOT/propMatrix_" + fEvolution + "_nu.root";
+  }
+
   std::string FitOptions::GetPhotIntFilename()
     const
   {

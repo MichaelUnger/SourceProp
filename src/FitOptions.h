@@ -47,6 +47,7 @@ namespace prop {
     { return fEvolution; }
 
     std::string GetPropmatrixFilename() const;
+    std::string GetPropmatrixNuFilename() const;
     std::string GetPhotIntFilename() const;
     std::string GetPhotIntDirname() const;
 

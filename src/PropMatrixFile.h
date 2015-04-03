@@ -16,7 +16,7 @@ namespace prop {
                    const bool read = true);
     void Write(const PropMatrices& pmc);
     void Close();
-    const PropMatrices& GetPropMatrices()
+    const PropMatrices& GetPropMatrices() const
     { return fPropMatrices; }
 
   private:

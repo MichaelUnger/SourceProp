@@ -1,5 +1,6 @@
 #include <FitOptions.h>
 #include <Fitter.h>
+#include <Neutrinos.h>
 #include <Plotter.h>
 #include <utl/Units.h>
 #include <utl/PhysicalConstants.h>
@@ -229,6 +230,11 @@ fit(string fitFilename = "Standard", bool fit = true)
   DrawValues(fitData, opt, can);
 
   can->Print(("FitFiles/" + fitFilename + ".pdf").c_str());
+
+  Neutrinos neutrinos(fitData.fSpectrum,
+                      opt.GetPropmatrixNuFilename());
+
+
 
 }
 

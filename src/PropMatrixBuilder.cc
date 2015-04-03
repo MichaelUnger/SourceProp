@@ -1,4 +1,5 @@
 #include "PropMatrixBuilder.h"
+#include "Particles.h"
 
 #include "ROOTEvent.h"
 #include <TFile.h>
@@ -22,12 +23,14 @@ namespace prop {
   PropMatrixBuilder::PropMatrixBuilder(const ESourceDistribution s,
                                        const unsigned int nBins,
                                        const double lgEmin,
-                                       const double lgEmax) :
+                                       const double lgEmax,
+                                       const bool onlyNuclei) :
     fSourceDistribution(s),
     fIsNormalized(false),
     fNbins(nBins),
     fLgEmin(lgEmin),
     fLgEmax(lgEmax),
+    fOnlyNuclei(onlyNuclei),
     fAxis(fNbins, fLgEmin, fLgEmax),
     fPropMatrices(fLgEmin, fLgEmax),
     fMaxDistance(0)
@@ -95,6 +98,8 @@ namespace prop {
       if (d > fMaxDistance)
         fMaxDistance = d;
       const unsigned int Aprim = event.GetMass();
+      if (fOnlyNuclei && !IsNucleus(Aprim))
+        continue;
       const double lgEprim = log10(event.GetEnergy()) + 18;
       const double w = DistributionWeight(event.GetRedShift());
       const int iPrim = fAxis.FindFixBin(lgEprim) - 1;
@@ -115,6 +120,8 @@ namespace prop {
       hGen.Fill(lgEprim, 1);
       for (const auto& secondary : event.GetSecondaries()) {
         const unsigned int Asec = secondary.GetMass();
+        if (fOnlyNuclei && !IsNucleus(Asec))
+          continue;
         const double lgEsec = log10(secondary.GetEnergy()) + 18;
         const int jSec = fAxis.FindFixBin(lgEsec) - 1;
         if (jSec < 0 || jSec >= int(fNbins))
@@ -142,8 +149,10 @@ namespace prop {
           TMatrixD& m = iter2.second;
           for (unsigned int j = 0; j < fNbins; ++j) {
             const double nGen = hGen.GetBinContent(j+1);
-            for (unsigned int i = 0; i < fNbins; ++i)
-              m[i][j] /= nGen;
+            if (nGen) {
+              for (unsigned int i = 0; i < fNbins; ++i)
+                m[i][j] /= nGen;
+            }
           }
         }
       }

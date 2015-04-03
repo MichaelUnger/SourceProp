@@ -9,4 +9,12 @@ enum EPseudoMass {
   eAntiMuonNeutrino = 1114
 };
 
+// nucleus = protons and nuclei
+inline
+bool
+IsNucleus(const unsigned int A)
+{
+  return A < eNeutron;
+}
+
 #endif
