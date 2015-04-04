@@ -54,7 +54,7 @@ main(int argc, char** argv)
   else if (option == "M50")
     s = PropMatrixBuilder::eM50;
   else {
-    cerr << " unknown source evolution " << option << endl;
+    cerr << " unknown source evolution " << option << "!" << endl;
     cerr << usage.str() << endl;
     return 1;
   }
