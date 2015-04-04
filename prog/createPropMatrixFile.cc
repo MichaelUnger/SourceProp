@@ -13,7 +13,8 @@ main(int argc, char** argv)
 
   stringstream usage;
   usage << argv[0] << " <option> <filenames>\n"
-        << "        options: uniform, uniformCutAt3, AGN, SFR1, SFR2, AAGHRW05";
+        << "        options: uniform, uniformCutAt3, AGN, SFR1,"
+        << " SFR2, AAGHRW05, M10...M50";
   if (argc < 2) {
     cerr << " not enough arguments " << endl;
     cerr << usage.str() << endl;
@@ -34,6 +35,24 @@ main(int argc, char** argv)
     s = PropMatrixBuilder::eSFR2;
   else if (option == "AAGHRW05")
     s = PropMatrixBuilder::eAAGHRW05;
+  else if (option == "M10")
+    s = PropMatrixBuilder::eM10;
+  else if (option == "M15")
+    s = PropMatrixBuilder::eM15;
+  else if (option == "M20")
+    s = PropMatrixBuilder::eM20;
+  else if (option == "M25")
+    s = PropMatrixBuilder::eM25;
+  else if (option == "M30")
+    s = PropMatrixBuilder::eM30;
+  else if (option == "M35")
+    s = PropMatrixBuilder::eM35;
+  else if (option == "M40")
+    s = PropMatrixBuilder::eM40;
+  else if (option == "M45")
+    s = PropMatrixBuilder::eM45;
+  else if (option == "M50")
+    s = PropMatrixBuilder::eM50;
   else {
     cerr << " unknown source evolution " << option << endl;
     cerr << usage.str() << endl;

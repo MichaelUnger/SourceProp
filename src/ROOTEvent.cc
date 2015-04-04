@@ -40,6 +40,10 @@ namespace crpropa {
       return eAntiElectronNeutrino;
     else if (id == -14) // nu_anti_mu
       return eAntiMuonNeutrino;
+    else if (id == -211)
+      return ePionMinus;
+    else if (id == 211)
+      return ePionPlus;
     else
       throw runtime_error("unknown id" + to_string(id));
   }

@@ -17,7 +17,16 @@ namespace prop {
       eAGN,
       eSFR1,
       eSFR2,
-      eAAGHRW05
+      eAAGHRW05,
+      eM10,
+      eM15,
+      eM20,
+      eM25,
+      eM30,
+      eM35,
+      eM40,
+      eM45,
+      eM50
     };
 
   public:

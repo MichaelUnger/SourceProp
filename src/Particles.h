@@ -6,7 +6,9 @@ enum EPseudoMass {
   eElectronNeutrino = 1012,
   eAntiElectronNeutrino = 1112,
   eMuonNeutrino = 1014,
-  eAntiMuonNeutrino = 1114
+  eAntiMuonNeutrino = 1114,
+  ePionPlus = 11211,
+  ePionMinus = 10211
 };
 
 // nucleus = protons and nuclei

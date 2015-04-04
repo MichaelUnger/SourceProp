@@ -116,7 +116,6 @@ namespace prop {
         save->cd();
       }
       TH1D& hGen = *(fGenMap[Aprim]);
-//    hGen.Fill(lgEprim, w);
       hGen.Fill(lgEprim, 1);
       for (const auto& secondary : event.GetSecondaries()) {
         const unsigned int Asec = secondary.GetMass();
@@ -159,6 +158,17 @@ namespace prop {
       fIsNormalized = true;
     }
     return fPropMatrices;
+  }
+
+  inline
+  double
+  SimpleEvolution(const double z, const double m)
+  {
+    const double z0 = 2;
+    if (z < z0)
+      return pow(1+z, m);
+    else
+      return pow(1+z0, m) * exp(-(z-z0));
   }
 
   double
@@ -225,6 +235,24 @@ namespace prop {
       else
         return 0;
     }
+    case eM10:
+      return SimpleEvolution(z, 1.0);
+    case eM15:
+      return SimpleEvolution(z, 1.5);
+    case eM20:
+      return SimpleEvolution(z, 2.0);
+    case eM25:
+      return SimpleEvolution(z, 2.5);
+    case eM30:
+      return SimpleEvolution(z, 3.0);
+    case eM35:
+      return SimpleEvolution(z, 3.5);
+    case eM40:
+      return SimpleEvolution(z, 4.0);
+    case eM45:
+      return SimpleEvolution(z, 4.5);
+    case eM50:
+      return SimpleEvolution(z, 5.0);
     }
     return 0;
   }
