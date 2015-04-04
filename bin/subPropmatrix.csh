@@ -1,8 +1,8 @@
-#!/bin/tcsh -x
+#!/bin/tcsh 
 
-set options = "eUniform eUniformCutAt3 eAGN eSFR2 eAAGHRW05 eM10 eM15 eM20 eM25 eM30 eM35 eM40 eM45 eM50"
+set options = "uniform uniformCutAt3 AGN SFR2 AAGHRW05 M10 M15 M20 M25 M30 M35 M40 M45 M50"
 
-set options = "eUniform"
+#set options = "uniform"
 
 setenv BASEDIR  /afs/cern.ch/work/u/unger/crp
 setenv PIONFILE $BASEDIR/pionDecay.root
@@ -17,6 +17,6 @@ foreach option ($options)
   setenv EVOLUTION $option
   set jName = mc$counter
   set logName = $OUTDIR/logs/${PHOTONFIELD}_${option}
-  bsub -q $queue -oo $logName.lsf.out -eo $logName.lsf.err -J $jName runProp.csh
+  bsub -q $queue -oo $logName.lsf.out -eo $logName.lsf.err -J $jName $PWD/bin/runProp.csh
   @ counter ++
 end
