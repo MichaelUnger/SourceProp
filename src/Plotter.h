@@ -60,7 +60,6 @@ namespace prop {
     void SetXRange(const double x1, const double x2);
     TCanvas* GetCanvas() { return fCanvas; }
 
-  private:
     template<class T>
     void DrawSpectrum(const std::map<T, TMatrixD>& specMap,
                       const std::vector<MassGroup>& mGroups,
@@ -70,6 +69,7 @@ namespace prop {
                       const unsigned int specPad,
                       const bool drawTot = true);
 
+  private:
     template<class T>
     void DrawLnA(const std::map<T, TMatrixD>& specMap,
                  const unsigned int n, const double x1, const double x2);

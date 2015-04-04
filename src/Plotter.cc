@@ -23,11 +23,12 @@ namespace prop {
     gStyle->SetPadTopMargin(0.1);
     gStyle->SetPadLeftMargin(.16);
     gStyle->SetTitleOffset(1.3, "Y");
-    if (!fCanvas)
+    if (!fCanvas) {
       fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 600);
-    fCanvas->SetBottomMargin(0.2);
-    fCanvas->SetBorderMode(1);
-    fCanvas->Divide(3, 2);
+      fCanvas->SetBottomMargin(0.2);
+      fCanvas->SetBorderMode(1);
+      fCanvas->Divide(3, 2);
+    }
   }
 
   void

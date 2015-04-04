@@ -2,6 +2,7 @@
 #include <Fitter.h>
 #include <Neutrinos.h>
 #include <Plotter.h>
+#include <Particles.h>
 #include <utl/Units.h>
 #include <utl/PhysicalConstants.h>
 
@@ -233,8 +234,22 @@ fit(string fitFilename = "Standard", bool fit = true)
 
   Neutrinos neutrinos(fitData.fSpectrum,
                       opt.GetPropmatrixNuFilename());
+  TCanvas* neutrinoCanvas = new TCanvas("neutrino");
+  Plotter neutrinoPlot(neutrinoCanvas, 2, 2);
+  vector<MassGroup> nuMassGroups;
+  nuMassGroups.push_back(MassGroup(eElectronNeutrino, eElectronNeutrino,
+                                   eElectronNeutrino, kRed, 2));
+  nuMassGroups.push_back(MassGroup(eAntiElectronNeutrino, eAntiElectronNeutrino,
+                                   eAntiElectronNeutrino, kRed, 1));
+  nuMassGroups.push_back(MassGroup(eMuonNeutrino, eMuonNeutrino,
+                                   eMuonNeutrino, kBlue, 2));
+  nuMassGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
+                                   eAntiMuonNeutrino, kBlue, 1));
+  nuMassGroups.push_back(MassGroup(1,1,1, kMagenta, 1));
 
 
+  neutrinoPlot.DrawSpectrum(neutrinos.GetFlux(), nuMassGroups, 1,
+                            "hNeutrino", 100, 12., 22., 1);
 
 }
 
