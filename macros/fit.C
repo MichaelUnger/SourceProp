@@ -100,7 +100,7 @@ DrawValues(const FitData& fitData,
   const double textSize = 0.06;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
-  const double yStart = 0.9;
+  const double yStart = 0.94;
   double y = yStart;
   const double dy = 0.08;
   const double x = 0.;
@@ -131,6 +131,16 @@ DrawValues(const FitData& fitData,
   l.DrawLatex(x, y, photonString.str().c_str());
   y -= dy;
 
+  l.SetTextColor(fixColor);
+  stringstream sys;
+  sys << "#DeltalgE_{sys} = ";
+  if (fitOptions.GetEnergyBinShift() > 0)
+    sys << "+";
+  cout << fitOptions.GetEnergyBinShift()  << endl;
+  sys << fitOptions.GetEnergyBinShift() * 0.1;
+  l.DrawLatex(x, y, sys.str().c_str());
+  y -= dy;
+
   l.SetTextColor(freeColor);
   stringstream chi2String;
   chi2String << "#chi^{2}/ndf = " << fitData.GetChi2Tot() << "/"
@@ -138,9 +148,10 @@ DrawValues(const FitData& fitData,
   l.DrawLatex(x, y, chi2String.str().c_str());
   y -= dy;
 
-  y -= dy/4;
+  y -= dy/5;
   l.SetTextColor(freeColor);
-  l.DrawLatex(x, y, ("source evolution: " + fitOptions.GetEvolution()).c_str());
+  l.DrawLatex(x, y, ("source evolution: " + fitOptions.GetEvolution() +
+                     ", IRB: " + fitOptions.GetIRB()).c_str());
 
   vector<double> fractions(fitData.fMasses.size());
   vector<double> zeta;
@@ -188,6 +199,7 @@ DrawValues(const FitData& fitData,
   const double eSun = mSun * kSpeedOfLight * kSpeedOfLight;
   cout << " eSun " << eSun / erg << " erg " << endl;
   l.SetTextColor(freeColor);
+
   stringstream powerString;
   powerString << "#dot{#varepsilon}_{" << lgEmin << "} = "
               << setprecision(2) << showpoint << edot;
@@ -202,7 +214,7 @@ DrawValues(const FitData& fitData,
 
 
 void
-fit(string fitFilename = "Standard", bool fit = true)
+fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 {
   FitOptions opt("FitFiles/" + fitFilename + ".txt");
   Fitter fitter(opt);
@@ -232,25 +244,14 @@ fit(string fitFilename = "Standard", bool fit = true)
 
   can->Print(("FitFiles/" + fitFilename + ".pdf").c_str());
 
+  if (!neutrino)
+    return;
+
   Neutrinos neutrinos(fitData.fSpectrum,
                       opt.GetPropmatrixNuFilename());
   TCanvas* neutrinoCanvas = new TCanvas("neutrino");
-  Plotter neutrinoPlot(neutrinoCanvas, 2, 2);
-  vector<MassGroup> nuMassGroups;
-  nuMassGroups.push_back(MassGroup(eElectronNeutrino, eElectronNeutrino,
-                                   eElectronNeutrino, kRed, 2));
-  nuMassGroups.push_back(MassGroup(eAntiElectronNeutrino, eAntiElectronNeutrino,
-                                   eAntiElectronNeutrino, kRed, 1));
-  nuMassGroups.push_back(MassGroup(eMuonNeutrino, eMuonNeutrino,
-                                   eMuonNeutrino, kBlue, 2));
-  nuMassGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
-                                   eAntiMuonNeutrino, kBlue, 1));
-  nuMassGroups.push_back(MassGroup(1,1,1, kMagenta, 1));
-
-
-  neutrinoPlot.DrawSpectrum(neutrinos.GetFlux(), nuMassGroups, 1,
-                            "hNeutrino", 100, 12., 22., 1);
-
+  Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
+  neutrinoPlot.DrawNeutrinoPlot(neutrinos.GetFlux(), 2, 100, 12., 22.);
 }
 
 

@@ -17,7 +17,8 @@ namespace prop {
     enum ENucleonType {
       eRemnant,
       eKnockOutPD,
-      eKnockOutPP
+      eKnockOutPP,
+      ePionPP
     };
 
     enum ECutoffType {
@@ -97,6 +98,7 @@ namespace prop {
                        const VSource::EProcess p) const;
     double NucleusFlux(const double Ainj, const double A_i,
                        const double E) const;
+    double PionFlux(const double Ainj, const double E) const;
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 

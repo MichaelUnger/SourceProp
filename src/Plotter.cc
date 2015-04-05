@@ -2,20 +2,29 @@
 #include "Spectrum.h"
 #include "VSource.h"
 #include "Propagator.h"
+#include "Particles.h"
+
+#include <utl/Units.h>
 
 #include <TCanvas.h>
 #include <TStyle.h>
 #include <TLatex.h>
 #include <TLegend.h>
 #include <TLine.h>
+#include <TGraph.h>
 #include <TH1D.h>
+#include <TF1.h>
 
 #include <sstream>
+#include <fstream>
 using namespace std;
+using namespace utl;
 
 namespace prop {
 
-  Plotter::Plotter(TCanvas* c, const double gammaSource, const double gammaEarth) :
+  Plotter::Plotter(TCanvas* c, const double gammaSource, const double gammaEarth,
+                   const EFluxUnits units) :
+    fUnits(units),
     fCanvas(c),
     fGammaSource(gammaSource),
     fGammaEarth(gammaEarth)
@@ -284,6 +293,183 @@ namespace prop {
       fHists[i]->SetLineWidth(1);
       fHists[i]->Draw("CSAME");
     }
+  }
+
+
+  double
+  iceFunc(double* x, double* p)
+  {
+    const double gamma = -p[1];
+    const double norm = p[0];
+    const double nSigma = p[2];
+    const double normVar = pow(p[3], 2);
+    const double gammaVar = pow(p[4], 2);
+    const double E = pow(10, *x);
+    const double E14 = E/1e14;
+    const double w = pow(E/1e9, p[5]);
+
+    const double flux = p[0]*pow(E14, gamma);
+
+    const double var =
+      pow(E14, 2*gamma)*normVar + pow(norm*gamma, 2)*pow(E14, 2*gamma) * pow(log(E14),2) * gammaVar;
+
+    return w * (flux + nSigma * sqrt(var));
+  }
+
+  void
+  Plotter::DrawNeutrinoPlot(const map<unsigned int, TMatrixD>& specMap,
+                            const double gamma,
+                            const unsigned int n, const double x1, const double x2)
+  {
+    vector<MassGroup> mGroups;
+    mGroups.push_back(MassGroup(eElectronNeutrino, eElectronNeutrino,
+                                eElectronNeutrino, kRed, 2, "#nu_{e}"));
+    mGroups.push_back(MassGroup(eAntiElectronNeutrino, eAntiElectronNeutrino,
+                                eAntiElectronNeutrino, kRed, 1, "#bar{#nu}_{e}"));
+    mGroups.push_back(MassGroup(eMuonNeutrino, eMuonNeutrino,
+                                eMuonNeutrino, kBlue, 2, "#nu_{#mu}"));
+    mGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
+                                eAntiMuonNeutrino, kBlue, 1, "#bar{#nu}_{#mu}"));
+
+    const string& nameBase = "hNeutrino";
+    const unsigned int iFirst = fHists.size();
+    for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
+      stringstream title;
+      unsigned int color;
+      unsigned int style;
+      if (i < mGroups.size()) {
+        color = mGroups[i].fColor;
+        style = mGroups[i].fLineStyle;
+        title << mGroups[i].fName;
+      }
+      else {
+        color = kBlack;
+        style = 1;
+        title << "total flux";
+      }
+      stringstream name;
+      name << nameBase << i;
+      fHists.push_back(new TH1D(name.str().c_str(),
+                                title.str().c_str(),
+                                n, x1, x2));
+      fHists.back()->SetLineColor(color);
+      fHists.back()->SetLineStyle(style);
+      fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
+      fHists.back()->GetXaxis()->CenterTitle();
+      fHists.back()->GetYaxis()->CenterTitle();
+      stringstream yTit;
+      if (gamma == 1)
+        yTit << "E";
+      else if (gamma != 0)
+        yTit << "E^{" << gamma << "}";
+      yTit << " J(E) [";
+      const string energyUnit = (fUnits == eKmYrSrEv ? "eV" : "GeV");
+      if (gamma != 1)
+        yTit << energyUnit;
+
+      if (gamma == 2)
+        yTit << " ";
+      else if (gamma != 1)
+        yTit << "^{" << gamma-1<< "}";
+
+      if (fUnits == eKmYrSrEv)
+        yTit << "km^{-2} sr^{-1} yr^{-1}]";
+      else
+        yTit << "cm^{-2} sr^{-1} s^{-1}]";
+      fHists.back()->GetYaxis()->SetTitle(yTit.str().c_str());
+    }
+
+    TH1D* histTot = fHists.back();
+    for (auto& iter : specMap) {
+      const unsigned int A = iter.first;
+      const TMatrixD& m = iter.second;
+      int histIndex = -1;
+      for (unsigned int i = 0; i < mGroups.size(); ++i) {
+        if (A >= mGroups[i].fFirst && A <= mGroups[i].fLast) {
+          histIndex = iFirst + i;
+          break;
+        }
+      }
+      if (histIndex == -1)
+        continue;
+      TH1D* hist = fHists[histIndex];
+      for (unsigned int i = 0; i < n; ++i) {
+        const double sumMass = hist->GetBinContent(i+1) + m[i][0];
+        hist->SetBinContent(i + 1, sumMass);
+        const double sumTot = histTot->GetBinContent(i+1) + m[i][0];
+        histTot->SetBinContent(i + 1, sumTot);
+      }
+    }
+
+    for (unsigned int i = 0; i < n; ++i) {
+      const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
+      const double w = pow(pow(10, lgE), gamma);
+      double units = 1;
+      if (fUnits != eKmYrSrEv) {
+        units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, gamma);
+      }
+      for (unsigned int j = iFirst; j < fHists.size(); ++j)
+        fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w * units);
+    }
+
+    TLegend* leg = new TLegend(0.75, 0.55, 0.98, 0.83, NULL, "brNDCARC");
+    leg->SetFillColor(0);
+    leg->SetTextFont(42);
+    leg->SetFillStyle(0);
+    leg->SetBorderSize(0);
+    leg->AddEntry(histTot, histTot->GetTitle(), "L");
+
+
+    histTot->Draw("C");
+    histTot->SetLineWidth(2);
+
+    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
+      fHists[i]->SetLineWidth(1);
+      fHists[i]->Draw("CSAME");
+      leg->AddEntry(fHists[i], fHists[i]->GetTitle(), "L");
+    }
+
+    if (fUnits == eCmSecSrGeV) {
+      const double lgIceMin =  log10(25e12);
+      const double lgIceMax =  log10(1.4e15);
+      const double flavorMult = 3;
+      TF1* iceFluxDefault = new TF1("ice", iceFunc , lgIceMin, lgIceMax, 6);
+      iceFluxDefault->SetParameters(2.06e-18*flavorMult, 2.46, 0, 0.3e-18, 0.12, gamma);
+      iceFluxDefault->Draw("SAME");
+      iceFluxDefault->SetLineColor(kGreen+1);
+      TF1* iceFluxUp = new TF1("iceUp", iceFunc , lgIceMin, lgIceMax, 6);
+      iceFluxUp->SetParameters(2.06e-18*flavorMult, 2.46, +1, 0.35e-18*flavorMult, 0.12, gamma);
+      iceFluxUp->SetLineStyle(2);
+      iceFluxUp->SetLineColor(kGreen+1);
+      iceFluxUp->Draw("SAME");
+      TF1* iceFluxLo = new TF1("iceLo", iceFunc , lgIceMin, lgIceMax, 6);
+      iceFluxLo->SetParameters(2.06e-18*flavorMult, 2.46, -1, 0.26e-18*flavorMult, 0.12, gamma);
+      iceFluxLo->SetLineStyle(2);
+      iceFluxLo->SetLineColor(kGreen+1);
+      iceFluxLo->Draw("SAME");
+
+      histTot->GetXaxis()->SetRangeUser(13, 20);
+      leg->AddEntry(iceFluxUp, "IC2014 (fit)", "L");
+      fCanvas->SetLogy(1);
+      ifstream in("macros/iceCube2012Limits.txt");
+      double x, y;
+      TGraph* iceLimits = new TGraph();
+      int i = 0;
+      while (in >> x >> y) {
+        iceLimits->SetPoint(i, x+9, y*pow(pow(10,x), gamma)/pow(pow(10,x), 2));
+        ++i;
+      }
+      iceLimits->SetLineColor(kGreen+1);
+      iceLimits->SetLineWidth(2);
+      iceLimits->Draw("SAME");
+      leg->AddEntry(iceLimits, "IC2012 (limit)", "L");
+      histTot->GetYaxis()->SetRangeUser(fmin(1e-22*pow(1e4,gamma),
+                                             1e-27*pow(1e9,gamma)),
+                                        fmax(iceFluxUp->Eval(lgIceMin)*1.5,
+                                             iceLimits->Eval(19)));
+    }
+
+    leg->Draw();
   }
 
 

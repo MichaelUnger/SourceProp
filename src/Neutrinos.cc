@@ -43,10 +43,7 @@ namespace prop {
 
     map<unsigned int, TMatrixD> escFluxResized;
 
-
-
     // fill nuclei
-
     for (const auto& escMap : escFlux) {
       if (escMap.first == 1)
         continue;
@@ -58,22 +55,26 @@ namespace prop {
     }
 
     // fill nucleons
-   const map<unsigned int, TMatrixD>& escMapN =
+    const map<unsigned int, TMatrixD>& escMapN =
       spectrum.GetNucleonFlux();
 
     const TMatrixD& mRemnant = escMapN.find(Spectrum::eRemnant)->second;
     const TMatrixD& mPD = escMapN.find(Spectrum::eKnockOutPD)->second;
     const TMatrixD& mPP = escMapN.find(Spectrum::eKnockOutPP)->second;
+    const TMatrixD& mPiPP = escMapN.find(Spectrum::ePionPP)->second;
 
     TMatrixD& mP = escFluxResized[1];
     mP.ResizeTo(nProp, 1);
     TMatrixD& mN = escFluxResized[eNeutron];
     mN.ResizeTo(nProp, 1);
+    TMatrixD& mPion = escFluxResized[ePionPlus];
+    mPion.ResizeTo(nProp, 1);
 
     for (unsigned int i = 0; i < nEsc; ++i) {
       const double knockOut = mPD(i, 0) + mPP(i, 0);
       mP(i + deltaIndex, 0) = mRemnant(i ,0) + knockOut*0.5;
       mN(i + deltaIndex, 0) = knockOut*0.5;
+      mPion(i + deltaIndex, 0) = mPiPP(i, 0)*0.5;
     }
     fPropagator->Propagate(escFluxResized);
   }
@@ -81,6 +82,7 @@ namespace prop {
   Neutrinos::~Neutrinos() {
     delete fPropagator;
   }
+
 
   const std::map<unsigned int, TMatrixD>&
   Neutrinos::GetFlux()

@@ -46,6 +46,9 @@ namespace prop {
     const std::string& GetEvolution() const
     { return fEvolution; }
 
+    const std::string& GetIRB() const
+    { return fIRB; }
+
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
     std::string GetPhotIntFilename() const;
@@ -81,6 +84,7 @@ namespace prop {
     std::map<EPar, StartValues> fStartValues;
     std::map<unsigned int, StartValues> fMassValues;
     std::string fEvolution;
+    std::string fIRB;
     std::string fEps0;
     std::string fBeta;
     std::string fAlpha;

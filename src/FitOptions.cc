@@ -12,6 +12,7 @@ namespace prop {
   {
     // default options
     fEvolution = "SFR2";
+    fIRB = "Kneiske04";
     fEps0 = "0.03";
     fBeta = "2.0";
     fAlpha = "32";
@@ -64,6 +65,10 @@ namespace prop {
       else if (keyword == "evolution") {
         if (!(line >> fEvolution))
           throw runtime_error("error decoding evolution");
+      }
+      else if (keyword == "IRB") {
+        if (!(line >> fIRB))
+          throw runtime_error("error decoding IRB");
       }
       else if (keyword == "eps0") {
         if (!(line >> fEps0))
@@ -162,13 +167,13 @@ namespace prop {
   std::string FitOptions::GetPropmatrixFilename()
     const
   {
-    return "ROOT/propMatrix_" + fEvolution + ".root";
+    return "ROOT/" + fIRB + "_" + fEvolution + ".root";
   }
 
   std::string FitOptions::GetPropmatrixNuFilename()
     const
   {
-    return "ROOT/propMatrix_" + fEvolution + "_nu.root";
+    return "ROOT/" + fIRB + "_" + fEvolution + "_nu.root";
   }
 
   std::string FitOptions::GetPhotIntFilename()

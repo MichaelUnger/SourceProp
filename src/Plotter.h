@@ -22,18 +22,21 @@ namespace prop {
               unsigned int lastA = 0,
               unsigned int repA = 0,
               unsigned int color = 0,
-              unsigned int lineStyle = 1) :
+              unsigned int lineStyle = 1,
+              std::string name = "") :
       fFirst(firstA),
       fLast(lastA),
       fRepA(repA),
       fColor(color),
-      fLineStyle(lineStyle) {}
+      fLineStyle(lineStyle),
+      fName(name) {}
 
     unsigned int fFirst;
     unsigned int fLast;
     unsigned int fRepA;
     unsigned int fColor;
     unsigned int fLineStyle;
+    std::string fName;
 
   };
 
@@ -49,10 +52,16 @@ namespace prop {
       eNCanvas
     };
 
+    enum EFluxUnits {
+      eKmYrSrEv,
+      eCmSecSrGeV
+    };
+
   public:
     Plotter(TCanvas* c = nullptr,
             const double gammaSource = 2,
-            const double gammaEarth = 3);
+            const double gammaEarth = 3,
+            const EFluxUnits units = eKmYrSrEv);
     void Draw(const prop::Spectrum& spectrum,
               const prop::Propagator& prop,
               const std::vector<prop::MassGroup>& mGroups,
@@ -60,6 +69,11 @@ namespace prop {
     void SetXRange(const double x1, const double x2);
     TCanvas* GetCanvas() { return fCanvas; }
 
+    void DrawNeutrinoPlot(const std::map<unsigned int, TMatrixD>& specMap,
+                          const double gamma,
+                          const unsigned int n, const double x1, const double x2);
+
+  private:
     template<class T>
     void DrawSpectrum(const std::map<T, TMatrixD>& specMap,
                       const std::vector<MassGroup>& mGroups,
@@ -68,8 +82,6 @@ namespace prop {
                       const unsigned int n, const double x1, const double x2,
                       const unsigned int specPad,
                       const bool drawTot = true);
-
-  private:
     template<class T>
     void DrawLnA(const std::map<T, TMatrixD>& specMap,
                  const unsigned int n, const double x1, const double x2);
@@ -81,6 +93,7 @@ namespace prop {
 
     void DrawLabels(const std::vector<MassGroup>& mGroups);
 
+    EFluxUnits fUnits;
     TCanvas* fCanvas;
     double fGammaSource;
     double fGammaEarth;
