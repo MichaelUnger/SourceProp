@@ -216,7 +216,7 @@ DrawValues(const FitData& fitData,
 void
 fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 {
-  FitOptions opt("FitFiles/" + fitFilename + ".txt");
+  FitOptions opt("fitFiles/" + fitFilename + ".txt");
   Fitter fitter(opt);
   if (fit)
     fitter.Fit();
@@ -242,7 +242,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   DrawData(fitData, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
-  can->Print(("FitFiles/" + fitFilename + ".pdf").c_str());
+  can->Print(("fitFiles/" + fitFilename + ".pdf").c_str());
 
   if (!neutrino)
     return;

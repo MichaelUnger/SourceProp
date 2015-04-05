@@ -1,0 +1,25 @@
+#
+# standard fit
+#
+par gammaInj           -1 0.1 0 0 1
+par lgRmax    1.85738e+01 0.1 0 0 0
+par lgResc    2.53056e+00 0.1 0 0 0
+par deltaEsc           -1 0.1 0 0 1
+par fGal      5.38975e-01 0.1 0 0 0
+par gammaGal  -4.26786    0.1 0 0 0
+par fNoPhoton           0 0.1 0 0 1
+mass  1 0.001 0
+mass  4 0.001 0
+mass 14 0.001 0
+mass 28 0.945 0
+mass 56 0    0
+evolution SFR2
+eps0 0.03
+alpha 32
+beta 2.0
+fitComposition 1
+rejectOutliers 1
+minLgEFlux 17
+minLgECompo 17
+interactionModel eposLHC
+cutoffType exponential

@@ -38,7 +38,7 @@ gammaEmaxScan() {
       ++iFit;
       cout << "\n\n   >>>>>>> " << iFit
            << " of " << nR*nGamma << "\n" << endl;
-      FitOptions opt("FitFiles/GammaEmaxScanPD.txt");
+      FitOptions opt("fitFiles/GammaEmaxScanPD.txt");
       opt.SetStartValue(eGamma, gamma);
       opt.SetStartValue(eLgEmax, lgEmax);
       Fitter fitter(opt);
