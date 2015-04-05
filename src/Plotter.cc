@@ -451,7 +451,7 @@ namespace prop {
       histTot->GetXaxis()->SetRangeUser(13, 20);
       leg->AddEntry(iceFluxUp, "IC2014 (fit)", "L");
       fCanvas->SetLogy(1);
-      ifstream in("macros/iceCube2012Limits.txt");
+      ifstream in("data/iceCube2012Limits.txt");
       double x, y;
       TGraph* iceLimits = new TGraph();
       int i = 0;

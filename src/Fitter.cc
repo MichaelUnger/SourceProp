@@ -302,7 +302,7 @@ namespace prop {
   Fitter::ReadData()
   {
     // spectrum
-    ifstream in("macros/auger_icrc2013.dat");
+    ifstream in("data/auger_icrc2013.dat");
     while (true) {
       FluxData flux;
       double eyDown, eyUp, N;
