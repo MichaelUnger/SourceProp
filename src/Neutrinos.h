@@ -18,10 +18,12 @@ namespace prop {
     ~Neutrinos();
 
     const std::map<unsigned int, TMatrixD>& GetFlux() const;
+    const std::map<unsigned int, TMatrixD>& GetOscillatedFlux() const;
 
   private:
+    bool fDoOscillation;
     Propagator* fPropagator;
-
+    std::map<unsigned int, TMatrixD> fOscillatedFlux;
   };
 
 }

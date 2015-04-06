@@ -311,7 +311,8 @@ namespace prop {
     const double flux = p[0]*pow(E14, gamma);
 
     const double var =
-      pow(E14, 2*gamma)*normVar + pow(norm*gamma, 2)*pow(E14, 2*gamma) * pow(log(E14),2) * gammaVar;
+      pow(E14, 2*gamma)*normVar +
+      pow(norm*gamma, 2)*pow(E14, 2*gamma) * pow(log(E14),2) * gammaVar;
 
     return w * (flux + nSigma * sqrt(var));
   }
@@ -330,6 +331,10 @@ namespace prop {
                                 eMuonNeutrino, kBlue, 2, "#nu_{#mu}"));
     mGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
                                 eAntiMuonNeutrino, kBlue, 1, "#bar{#nu}_{#mu}"));
+    mGroups.push_back(MassGroup(eTauNeutrino, eTauNeutrino,
+                                eTauNeutrino, kMagenta+1, 2, "#nu_{#tau}"));
+    mGroups.push_back(MassGroup(eAntiTauNeutrino, eAntiTauNeutrino,
+                                eAntiTauNeutrino, kMagenta+1, 1, "#bar{#nu}_{#tau}"));
 
     const string& nameBase = "hNeutrino";
     const unsigned int iFirst = fHists.size();
@@ -470,6 +475,7 @@ namespace prop {
     }
 
     leg->Draw();
+    gPad->RedrawAxis();
   }
 
 

@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <sstream>
+#include <stdexcept>
 #include <iomanip>
 
 #include <TCanvas.h>
@@ -97,12 +98,12 @@ DrawValues(const FitData& fitData,
 
   can->cd(Plotter::eCompEsc);
   TLatex l;
-  const double textSize = 0.06;
+  const double textSize = 0.055;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
   const double yStart = 0.94;
   double y = yStart;
-  const double dy = 0.08;
+  const double dy = 0.077;
   const double x = 0.;
   const vector<FitParameter>& fitParameters = fitData.fFitParameters;
   for (unsigned int i = 0; i < eNpars; ++i) {
@@ -150,7 +151,7 @@ DrawValues(const FitData& fitData,
 
   y -= dy/5;
   l.SetTextColor(freeColor);
-  l.DrawLatex(x, y, ("source evolution: " + fitOptions.GetEvolution() +
+  l.DrawLatex(x, y, ("evolution: " + fitOptions.GetEvolution() +
                      ", IRB: " + fitOptions.GetIRB()).c_str());
 
   vector<double> fractions(fitData.fMasses.size());
@@ -188,28 +189,32 @@ DrawValues(const FitData& fitData,
 
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
+
   const double lgEmin = 17.5;
-  const double edot =
-    fitData.GetTotalPower(pow(10, lgEmin)) / ( erg / (pow(Mpc, 3) * year));
-  //  const double P =  fitData.fSpectrum.InjectedPower(pow(10, lgEmin), 1);
-  //  const double edot = fitData.fQ0 * P / ( erg / (pow(Mpc, 3) * year));
-
-  cout << " edot: " << setprecision(10) << edot << endl;
-  const double mSun = 1.98855e30*kg;
-  const double eSun = mSun * kSpeedOfLight * kSpeedOfLight;
-  cout << " eSun " << eSun / erg << " erg " << endl;
-  l.SetTextColor(freeColor);
-
+  double edot = -1;
   stringstream powerString;
-  powerString << "#dot{#varepsilon}_{" << lgEmin << "} = "
-              << setprecision(2) << showpoint << edot;
-  const double xEdot = 0.47;
-  l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
-  l.SetTextSize(textSize*0.7);
-  l.DrawLatex(xEdot+0.38, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
-  l.SetTextSize(textSize);
-  y -= dy;
-
+  try {
+    edot =
+      fitData.GetTotalPower(pow(10, lgEmin)) / ( erg / (pow(Mpc, 3) * year));
+    //  const double P =  fitData.fSpectrum.InjectedPower(pow(10, lgEmin), 1);
+    //  const double edot = fitData.fQ0 * P / ( erg / (pow(Mpc, 3) * year));
+    cout << " edot: " << setprecision(10) << edot << endl;
+    const double mSun = 1.98855e30*kg;
+    const double eSun = mSun * kSpeedOfLight * kSpeedOfLight;
+    cout << " eSun " << eSun / erg << " erg " << endl;
+    l.SetTextColor(freeColor);
+    powerString << "#dot{#varepsilon}_{" << lgEmin << "} = "
+                << setprecision(2) << showpoint << edot;
+    const double xEdot = 0.47;
+    l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
+    l.SetTextSize(textSize*0.7);
+    l.DrawLatex(xEdot+0.38, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
+    l.SetTextSize(textSize);
+    y -= dy;
+  }
+  catch (runtime_error& a) {
+    cout << a.what() << endl;
+  }
 }
 
 
@@ -251,7 +256,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
                       opt.GetPropmatrixNuFilename());
   TCanvas* neutrinoCanvas = new TCanvas("neutrino");
   Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
-  neutrinoPlot.DrawNeutrinoPlot(neutrinos.GetFlux(), 2, 100, 12., 22.);
+  neutrinoPlot.DrawNeutrinoPlot(neutrinos.GetOscillatedFlux(), 2, 100, 12., 22.);
 }
 
 

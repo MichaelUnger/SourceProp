@@ -3,6 +3,7 @@
 #include "Propagator.h"
 #include "Particles.h"
 #include "PropMatrixFile.h"
+#include "NeutrinoOscillator.h"
 
 #include <map>
 #include <stdexcept>
@@ -77,6 +78,36 @@ namespace prop {
       mPion(i + deltaIndex, 0) = mPiPP(i, 0)*0.5;
     }
     fPropagator->Propagate(escFluxResized);
+
+    NeutrinoOscillator osci;
+
+    const map<unsigned int, TMatrixD>& fluxAtEarth =
+      fPropagator->GetFluxAtEarth();
+
+    const unsigned int nC = 2;
+    const unsigned int nF = 3;
+    const unsigned int nuIds[nC][nF] = {
+      {eElectronNeutrino, eMuonNeutrino, eTauNeutrino},
+      {eAntiElectronNeutrino, eAntiMuonNeutrino, eAntiTauNeutrino}
+    };
+
+    for (unsigned int iC = 0; iC < nC; ++iC) {
+      for (unsigned int iF = 0; iF < nF; ++iF) {
+        const unsigned int id = nuIds[iC][iF];
+        if (fluxAtEarth.find(id) == fluxAtEarth.end())
+          fPropagator->AddComponent(id, TMatrixD(nProp, 1));
+        fOscillatedFlux[id].ResizeTo(fluxAtEarth.find(id)->second);
+        fOscillatedFlux[id] = fluxAtEarth.find(id)->second;
+      }
+    }
+
+    for (unsigned int iC = 0; iC < nC; ++iC) {
+      TMatrixD& nuE = fOscillatedFlux[nuIds[iC][0]];
+      TMatrixD& nuMu = fOscillatedFlux[nuIds[iC][1]];
+      TMatrixD& nuTau = fOscillatedFlux[nuIds[iC][2]];
+      for (unsigned int i = 0; i < nProp; ++i)
+        osci.Oscillate(nuE(i, 0), nuMu(i, 0), nuTau(i, 0));
+    }
   }
 
   Neutrinos::~Neutrinos() {
@@ -89,6 +120,13 @@ namespace prop {
     const
   {
     return fPropagator->GetFluxAtEarth();
+  }
+
+  const std::map<unsigned int, TMatrixD>&
+  Neutrinos::GetOscillatedFlux()
+    const
+  {
+    return fOscillatedFlux;
   }
 
 }

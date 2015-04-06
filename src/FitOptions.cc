@@ -179,13 +179,13 @@ namespace prop {
   std::string FitOptions::GetPhotIntFilename()
     const
   {
-    return "SzaboProtheroe_" + fEps0 + "_" + fBeta + "_" + fAlpha;
+    return fEps0 + "_" + fBeta + "_" + fAlpha;
   }
 
   std::string FitOptions::GetPhotIntDirname()
     const
   {
-    return "/ssd/munger/Mag/CRPropa3-data/data";
+    return "./data";
   }
 
   double
