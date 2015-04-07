@@ -33,5 +33,23 @@ main()
        << nuTau << "\n" << endl;
 
 
+  nuE = 1;
+  nuMu = 1;
+  nuTau = 0;
+  cout << " at source: " << nuE << ":" << nuMu << ":" << nuTau << endl;
+  o.Oscillate(nuE, nuMu, nuTau);
+  cout << " at Earth: " << nuE << ":" << nuMu << ":"
+       << nuTau << "\n" << endl;
+
+  nuE = 0;
+  nuMu = 1;
+  nuTau = 0;
+  cout << " at source: " << nuE << ":" << nuMu << ":" << nuTau << endl;
+  o.Oscillate(nuE, nuMu, nuTau);
+  cout << " at Earth: " << nuE << ":" << nuMu << ":"
+       << nuTau << "\n" << endl;
+
+
+
   return 0;
 }

@@ -52,15 +52,18 @@ pp()
   dole->SetMarkerColor(kRed);  dole->SetMarkerStyle(20);
 
 
-
-
   TGraph* stecker = lambdaGraph(dir + "ppp_IRB_Stecker05.txt");
   stecker->Draw("P");
   stecker->SetMarkerColor(kMagenta);  stecker->SetMarkerStyle(25);
 
+  TGraph* franceschini = lambdaGraph(dir + "ppp_IRB_Franceschini08.txt");
+  franceschini->Draw("P");
+  franceschini->SetMarkerColor(kBlue);  stecker->SetMarkerStyle(21);
+
   leg->AddEntry(k04, "Kneiske04", "P");
   leg->AddEntry(stecker, "Stecker05", "P");
   leg->AddEntry(dole, "Dole06", "P");
+  leg->AddEntry(franceschini, "Francescini08", "P");
   leg->AddEntry(k10, "Kneiske10", "P");
 
 
