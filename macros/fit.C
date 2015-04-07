@@ -255,8 +255,9 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   Neutrinos neutrinos(fitData.fSpectrum,
                       opt.GetPropmatrixNuFilename());
   TCanvas* neutrinoCanvas = new TCanvas("neutrino");
+  neutrinoCanvas->Divide(2, 1);
   Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
-  neutrinoPlot.DrawNeutrinoPlot(neutrinos.GetOscillatedFlux(), 2, 100, 12., 22.);
+  neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, 100, 12., 22.);
 }
 
 

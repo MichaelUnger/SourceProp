@@ -17,6 +17,10 @@ namespace prop {
   {
     const PropMatrixFile pmf(propMatrixFilename);
     const PropMatrices& pm = pmf.GetPropMatrices();
+    fLgEmin = pm.GetLgEmin();
+    fLgEmax = pm.GetLgEmax();
+    fN = pm.GetN();
+
     fPropagator = new Propagator(pm);
 
     const double lgEminEsc = spectrum.GetLgEmin();
@@ -105,8 +109,9 @@ namespace prop {
       TMatrixD& nuE = fOscillatedFlux[nuIds[iC][0]];
       TMatrixD& nuMu = fOscillatedFlux[nuIds[iC][1]];
       TMatrixD& nuTau = fOscillatedFlux[nuIds[iC][2]];
-      for (unsigned int i = 0; i < nProp; ++i)
+      for (unsigned int i = 0; i < nProp; ++i) {
         osci.Oscillate(nuE(i, 0), nuMu(i, 0), nuTau(i, 0));
+      }
     }
   }
 
@@ -129,4 +134,20 @@ namespace prop {
     return fOscillatedFlux;
   }
 
+  double
+  Neutrinos::GetOscillatedFlux(const unsigned int id, const double lgE)
+    const
+  {
+    const double dlgE = (fLgEmax - fLgEmin) / fN;
+    const int bin = (lgE - fLgEmin) / dlgE;
+    if (bin < 0 || bin >= fN) {
+      cerr << "Neutrinos::GetOscillatedFlux() out of bound" << endl;
+      return 0;
+    }
+    const auto& iter = fOscillatedFlux.find(id);
+    if (iter == fOscillatedFlux.end())
+      throw runtime_error("unknown particle id");
+
+    return iter->second(bin, 0);
+  }
 }

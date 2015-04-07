@@ -14,7 +14,7 @@ mass 14 0.001 0
 mass 28 0.945 0
 mass 56 0    0
 evolution SFR2
-eps0 0.03
+eps0 0.07
 alpha 32
 beta 2.0
 fitComposition 1

@@ -3,6 +3,8 @@
 #include "VSource.h"
 #include "Propagator.h"
 #include "Particles.h"
+#include "Neutrinos.h"
+#include "IceCubeAcceptance.h"
 
 #include <utl/Units.h>
 
@@ -318,23 +320,30 @@ namespace prop {
   }
 
   void
-  Plotter::DrawNeutrinoPlot(const map<unsigned int, TMatrixD>& specMap,
+  Plotter::DrawNeutrinoPlot(const Neutrinos& neutrinos,
                             const double gamma,
                             const unsigned int n, const double x1, const double x2)
   {
+
+    const map<unsigned int, TMatrixD>& specMap = neutrinos.GetOscillatedFlux();
+
+    const int electronColor = kRed;
+    const int muonColor = kGreen+1;
+    const int tauColor = kBlue;
+
     vector<MassGroup> mGroups;
     mGroups.push_back(MassGroup(eElectronNeutrino, eElectronNeutrino,
-                                eElectronNeutrino, kRed, 2, "#nu_{e}"));
+                                eElectronNeutrino, electronColor, 2, " #nu_{e}"));
     mGroups.push_back(MassGroup(eAntiElectronNeutrino, eAntiElectronNeutrino,
-                                eAntiElectronNeutrino, kRed, 1, "#bar{#nu}_{e}"));
+                                eAntiElectronNeutrino, electronColor, 1, " #bar{#nu}_{e}"));
     mGroups.push_back(MassGroup(eMuonNeutrino, eMuonNeutrino,
-                                eMuonNeutrino, kBlue, 2, "#nu_{#mu}"));
+                                eMuonNeutrino, muonColor, 2, " #nu_{#mu}"));
     mGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
-                                eAntiMuonNeutrino, kBlue, 1, "#bar{#nu}_{#mu}"));
+                                eAntiMuonNeutrino, muonColor, 1, " #bar{#nu}_{#mu}"));
     mGroups.push_back(MassGroup(eTauNeutrino, eTauNeutrino,
-                                eTauNeutrino, kMagenta+1, 2, "#nu_{#tau}"));
+                                eTauNeutrino, tauColor, 2, " #nu_{#tau}"));
     mGroups.push_back(MassGroup(eAntiTauNeutrino, eAntiTauNeutrino,
-                                eAntiTauNeutrino, kMagenta+1, 1, "#bar{#nu}_{#tau}"));
+                                eAntiTauNeutrino, tauColor, 1, " #bar{#nu}_{#tau}"));
 
     const string& nameBase = "hNeutrino";
     const unsigned int iFirst = fHists.size();
@@ -350,7 +359,7 @@ namespace prop {
       else {
         color = kBlack;
         style = 1;
-        title << "total flux";
+        title << " sum";
       }
       stringstream name;
       name << nameBase << i;
@@ -358,6 +367,7 @@ namespace prop {
                                 title.str().c_str(),
                                 n, x1, x2));
       fHists.back()->SetLineColor(color);
+      fHists.back()->SetMarkerColor(color);
       fHists.back()->SetLineStyle(style);
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
       fHists.back()->GetXaxis()->CenterTitle();
@@ -417,7 +427,7 @@ namespace prop {
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w * units);
     }
 
-    TLegend* leg = new TLegend(0.75, 0.55, 0.98, 0.83, NULL, "brNDCARC");
+    TLegend* leg = new TLegend(0.75, 0.379, 0.98, 0.843, NULL, "brNDCARC");
     leg->SetFillColor(0);
     leg->SetTextFont(42);
     leg->SetFillStyle(0);
@@ -425,13 +435,24 @@ namespace prop {
     leg->AddEntry(histTot, histTot->GetTitle(), "L");
 
 
+    fCanvas->cd(1)->SetLogy(1);
     histTot->Draw("C");
     histTot->SetLineWidth(2);
 
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
-      fHists[i]->SetLineWidth(1);
+      fHists[i]->SetLineWidth(2);
       fHists[i]->Draw("CSAME");
-      leg->AddEntry(fHists[i], fHists[i]->GetTitle(), "L");
+      if (string(fHists[i]->GetTitle()).find("#mu") != string::npos) {
+        if (string(fHists[i]->GetTitle()).find("bar") != string::npos)
+          fHists[i]->SetMarkerStyle(20);
+        else
+          fHists[i]->SetMarkerStyle(21);
+        fHists[i]->SetMarkerSize(0.8);
+        fHists[i]->Draw("PSAME");
+        leg->AddEntry(fHists[i], fHists[i]->GetTitle(), "PL");
+      }
+      else
+        leg->AddEntry(fHists[i], fHists[i]->GetTitle(), "L");
     }
 
     if (fUnits == eCmSecSrGeV) {
@@ -439,23 +460,25 @@ namespace prop {
       const double lgIceMax =  log10(1.4e15);
       const double flavorMult = 3;
       TF1* iceFluxDefault = new TF1("ice", iceFunc , lgIceMin, lgIceMax, 6);
-      iceFluxDefault->SetParameters(2.06e-18*flavorMult, 2.46, 0, 0.3e-18, 0.12, gamma);
+      iceFluxDefault->SetParameters(2.06e-18*flavorMult,
+                                    2.46, 0, 0.3e-18, 0.12, gamma);
       iceFluxDefault->Draw("SAME");
-      iceFluxDefault->SetLineColor(kGreen+1);
+      iceFluxDefault->SetLineColor(kMagenta+1);
       TF1* iceFluxUp = new TF1("iceUp", iceFunc , lgIceMin, lgIceMax, 6);
-      iceFluxUp->SetParameters(2.06e-18*flavorMult, 2.46, +1, 0.35e-18*flavorMult, 0.12, gamma);
+      iceFluxUp->SetParameters(2.06e-18*flavorMult,
+                               2.46, +1, 0.35e-18*flavorMult, 0.12, gamma);
       iceFluxUp->SetLineStyle(2);
-      iceFluxUp->SetLineColor(kGreen+1);
+      iceFluxUp->SetLineColor(kMagenta+1);
       iceFluxUp->Draw("SAME");
       TF1* iceFluxLo = new TF1("iceLo", iceFunc , lgIceMin, lgIceMax, 6);
-      iceFluxLo->SetParameters(2.06e-18*flavorMult, 2.46, -1, 0.26e-18*flavorMult, 0.12, gamma);
+      iceFluxLo->SetParameters(2.06e-18*flavorMult,
+                               2.46, -1, 0.26e-18*flavorMult, 0.12, gamma);
       iceFluxLo->SetLineStyle(2);
-      iceFluxLo->SetLineColor(kGreen+1);
+      iceFluxLo->SetLineColor(kMagenta+1);
       iceFluxLo->Draw("SAME");
 
       histTot->GetXaxis()->SetRangeUser(13, 20);
-      leg->AddEntry(iceFluxUp, "IC2014 (fit)", "L");
-      fCanvas->SetLogy(1);
+      leg->AddEntry(iceFluxUp, " IC2014", "L");
       ifstream in("data/iceCube2012Limits.txt");
       double x, y;
       TGraph* iceLimits = new TGraph();
@@ -464,19 +487,102 @@ namespace prop {
         iceLimits->SetPoint(i, x+9, y*pow(pow(10,x), gamma)/pow(pow(10,x), 2));
         ++i;
       }
-      iceLimits->SetLineColor(kGreen+1);
+      iceLimits->SetLineColor(kMagenta+1);
       iceLimits->SetLineWidth(2);
       iceLimits->Draw("SAME");
-      leg->AddEntry(iceLimits, "IC2012 (limit)", "L");
-      histTot->GetYaxis()->SetRangeUser(fmin(1e-22*pow(1e4,gamma),
-                                             1e-27*pow(1e9,gamma)),
+      leg->AddEntry(iceLimits, " IC2013", "L");
+      histTot->GetYaxis()->SetRangeUser(fmin(1e-21*pow(1e4,gamma),
+                                             1e-25*pow(1e9,gamma)),
                                         fmax(iceFluxUp->Eval(lgIceMin)*1.5,
                                              iceLimits->Eval(19)));
     }
 
     leg->Draw();
     gPad->RedrawAxis();
-  }
+
+    fCanvas->cd(2);
+    const unsigned int nX = 45;
+    const double hx1 = 14.5;
+    const double hx2 = 19;
+    TH1D* eventsE = new TH1D("eventsE", "", nX, hx1, hx2);
+    TH1D* eventsMu = new TH1D("eventsMu", "", nX, hx1, hx2);
+    TH1D* eventsTau = new TH1D("eventsTau", "", nX, hx1, hx2);
+    TH1D* eventsTot = new TH1D("eventsTot", "", nX, hx1, hx2);
+    eventsTot->GetXaxis()->SetTitle("lg(E/eV)");
+    eventsTot->GetYaxis()->SetTitle("events per 0.1 lg(E) per 10 IC86-years");
+    eventsTot->GetXaxis()->CenterTitle();
+    eventsTot->GetYaxis()->CenterTitle();
+    eventsE->SetLineColor(electronColor);
+    eventsMu->SetLineColor(muonColor);
+    eventsTau->SetLineColor(tauColor);
+
+    fHists.push_back(eventsE);
+    fHists.push_back(eventsMu);
+    fHists.push_back(eventsTau);
+    fHists.push_back(eventsTot);
+
+
+    const double nYear = 10;
+    IceCubeAcceptance acc;
+    double nEvents = 0;
+    for (unsigned int iBin = 0; iBin < nX; ++iBin) {
+      double sumE = 0;
+      double sumM = 0;
+      double sumT = 0;
+      const double nSub = 10;
+      const double dlgE =
+        (eventsE->GetXaxis()->GetBinUpEdge(iBin+1) -
+         eventsE->GetXaxis()->GetBinLowEdge(iBin+1)) / nSub;
+      double lgE = eventsE->GetXaxis()->GetBinLowEdge(iBin+1);
+      for (unsigned int iSub = 0; iSub < nSub; ++iSub) {
+        const double lgECenter = lgE + dlgE/2;
+        const double E1 = pow(10, lgE);
+        const double E2 = pow(10, lgE + dlgE);
+        const double dE = (E2 - E1);
+        const double m2Tokm2  = 1e-6;
+        const double accE = acc(eElectronNeutrino, lgECenter) * m2Tokm2 * dE;
+        const double accEbar = acc(eAntiElectronNeutrino, lgECenter) * m2Tokm2 * dE;
+        const double accMu = acc(eMuonNeutrino, lgECenter) * m2Tokm2 * dE;
+        const double accTau = acc(eTauNeutrino, lgECenter) * m2Tokm2 * dE;
+        sumE += neutrinos.GetOscillatedFlux(eElectronNeutrino, lgECenter) * accE;
+        sumE += neutrinos.GetOscillatedFlux(eAntiElectronNeutrino, lgECenter) * accEbar;
+        sumM += (neutrinos.GetOscillatedFlux(eMuonNeutrino, lgECenter) +
+                 neutrinos.GetOscillatedFlux(eAntiMuonNeutrino, lgECenter)) * accMu;
+        sumT += (neutrinos.GetOscillatedFlux(eTauNeutrino, lgECenter) +
+                 neutrinos.GetOscillatedFlux(eAntiTauNeutrino, lgECenter)) * accTau;
+        lgE += dlgE;
+      }
+      eventsE->SetBinContent(iBin+1, sumE*nYear);
+      eventsMu->SetBinContent(iBin+1, sumM*nYear);
+      eventsTau->SetBinContent(iBin+1, sumT*nYear);
+      eventsTot->SetBinContent(iBin+1, (sumE + sumM + sumT)*nYear);
+      nEvents += (sumE + sumM + sumT)*nYear;
+    }
+    eventsTot->Draw();
+    eventsE->Draw("SAME");
+    eventsMu->Draw("SAME");
+    eventsTau->Draw("SAME");
+
+    TLegend* leg2 = new TLegend(0.706, 0.53, 0.93, 0.78, NULL, "brNDCARC");
+    leg2->SetFillColor(0);
+    leg2->SetTextFont(42);
+    leg2->SetFillStyle(0);
+    leg2->SetBorderSize(0);
+    leg2->AddEntry(eventsTot, " sum", "L");
+    leg2->AddEntry(eventsE, " #nu_{e} + #bar{#nu}_{e}", "L");
+    leg2->AddEntry(eventsMu, " #nu_{#mu} + #bar{#nu}_{#mu}", "L");
+    leg2->AddEntry(eventsTau, " #nu_{#tau} + #bar{#nu}_{#tau}", "L");
+    leg2->Draw();
+
+
+    TLatex l;
+    l.SetTextAlign(23); l.SetTextSize(0.05);
+    l.SetTextFont(42); l.SetNDC(true);
+    stringstream events;
+    events << "#Sigma events = " << int(nEvents*10)/10.;
+    cout << " adsf " << nEvents << endl;
+    l.DrawLatex(0.78, 0.88, events.str().c_str());
+ }
 
 
   template<class T>

@@ -11,6 +11,7 @@ class TH1D;
 
 namespace prop {
 
+  class Neutrinos;
   class Spectrum;
   class VSource;
   class Propagator;
@@ -69,7 +70,7 @@ namespace prop {
     void SetXRange(const double x1, const double x2);
     TCanvas* GetCanvas() { return fCanvas; }
 
-    void DrawNeutrinoPlot(const std::map<unsigned int, TMatrixD>& specMap,
+    void DrawNeutrinoPlot(const Neutrinos& neutrinos,
                           const double gamma,
                           const unsigned int n, const double x1, const double x2);
 

@@ -25,7 +25,7 @@ namespace utl {
   const double kPi      = 3.1415926535897932384626;
   const double kPiOnTwo = 0.5*kPi;
   const double kTwoPi   = 2*kPi;
-  const double kFourPi  = 2*kPi;
+  const double kFourPi  = 4*kPi;
   const double kE       = 2.7182818284590452353602;
   const double kLn10    = 2.3025850929940456840180;
   const double kSqrt2   = 1.4142135623730950488017;
