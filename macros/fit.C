@@ -139,8 +139,11 @@ DrawValues(const FitData& fitData,
   sys << "#DeltalgE_{sys} = ";
   if (fitOptions.GetEnergyBinShift() > 0)
     sys << "+";
-  cout << fitOptions.GetEnergyBinShift()  << endl;
   sys << fitOptions.GetEnergyBinShift() * 0.1;
+  sys << ", n_{sys}(X_{max}) = ";
+  if (fitOptions.GetXmaxSigmaShift() > 0)
+    sys << "+";
+  sys << fitOptions.GetXmaxSigmaShift() << " #sigma";
   l.DrawLatex(x, y, sys.str().c_str());
   y -= dy;
 

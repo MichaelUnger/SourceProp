@@ -25,3 +25,5 @@ minLgEFlux 17
 minLgECompo 17
 interactionModel eposLHC
 cutoffType exponential
+energyBinShift 0
+xmaxSigmaShift 0

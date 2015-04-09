@@ -4,11 +4,13 @@
 #include "Spectrum.h"
 #include "PropMatrixFile.h"
 #include "Propagator.h"
+#include "LnACalculator.h"
 #include "Particles.h"
 
 #include <TMinuit.h>
 #include <TFile.h>
 #include <TGraphErrors.h>
+#include <TGraphAsymmErrors.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -303,6 +305,9 @@ namespace prop {
   void
   Fitter::ReadData()
   {
+
+    const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift();
+
     // spectrum
     ifstream in("data/auger_icrc2013.dat");
     while (true) {
@@ -324,7 +329,7 @@ namespace prop {
           (flux.fLgE > 18 && flux.fLgE < 18.2);
 
       // syst shift?
-      flux.fLgE += (.1 * fOptions.GetEnergyBinShift());
+      flux.fLgE += deltaLgESys;
 
 
       fFitData.fAllFluxData.push_back(flux);
@@ -336,26 +341,44 @@ namespace prop {
          << ", nFit = " <<  fFitData.fFluxData.size() << endl;
 
     TFile* erFile =
-      TFile::Open("/home/munger/TeX/svn/xmaxLongPaper/ROOT/files/elongationRate.root");
+      TFile::Open("data/elongationRate.root");
     if (erFile) {
-      TGraphErrors* lnAGraph =
-        (TGraphErrors*) erFile->Get(("lnA/lnA_"
-                                          + fOptions.GetInteractionModel()).c_str());
-      TGraphErrors* vLnAGraph =
-        (TGraphErrors*) erFile->Get(("lnA/lnAVariance_"
-                                          + fOptions.GetInteractionModel()).c_str());
-      if (lnAGraph && vLnAGraph) {
-        for (int i = 0; i < lnAGraph->GetN(); ++i) {
-          CompoData comp;
-          comp.fLgE = log10(*(lnAGraph->GetX()+i));
-          comp.fLnA = *(lnAGraph->GetY()+i);
-          comp.fVlnA = *(vLnAGraph->GetY()+i);
-          comp.fLnAErr = *(lnAGraph->GetEY()+i);
-          comp.fVlnAErr = *(vLnAGraph->GetEY()+i);
-          fFitData.fAllCompoData.push_back(comp);
-          if (comp.fLgE > fOptions.GetMinCompLgE())
-            fFitData.fCompoData.push_back(comp);
-        }
+      const TGraphErrors& xmaxGraph =
+        *((TGraphErrors*) erFile->Get("elongXmaxFinal"));
+      const TGraphErrors& sigmaGraph =
+        *((TGraphErrors*) erFile->Get("elongSigmaFinal"));
+      const TGraphAsymmErrors& xmaxSysGraph =
+        *((TGraphAsymmErrors*) erFile->Get("elongXmaxFinalSys"));
+
+      LnACalculator lnAcalc;
+      const LnACalculator::EModel model =
+        LnACalculator::GetModel(fOptions.GetInteractionModel());
+
+      for (int i = 0; i < xmaxGraph.GetN(); ++i) {
+
+        const double lgE = log10(xmaxGraph.GetX()[i]) + deltaLgESys;
+        const double E = pow(10, lgE);
+        double xMax = xmaxGraph.GetY()[i];
+        const double sigmaSys = fOptions.GetXmaxSigmaShift();
+        if (sigmaSys > 0)
+          xMax += sigmaSys * xmaxSysGraph.GetEYhigh()[i];
+        else if (sigmaSys < 0)
+          xMax += sigmaSys * xmaxSysGraph.GetEYlow()[i];
+        const double sigma = sigmaGraph.GetY()[i];
+        const double xMaxErr = xmaxGraph.GetEY()[i];
+        const double sigmaErr = sigmaGraph.GetEY()[i];
+
+        CompoData comp;
+        comp.fLgE = lgE;
+        comp.fLnA = lnAcalc.GetMeanLnA(xMax, E, model);
+        comp.fVlnA = lnAcalc.GetLnAVariance(xMax, sigma, E, model);
+        comp.fLnAErr = lnAcalc.GetMeanLnAError(xMaxErr, E, model);
+        comp.fVlnAErr = lnAcalc.GetLnAVarianceError(xMax, sigma,
+                                                    xMaxErr, sigmaErr,
+                                                    E, model);
+        fFitData.fAllCompoData.push_back(comp);
+        if (comp.fLgE > fOptions.GetMinCompLgE())
+          fFitData.fCompoData.push_back(comp);
       }
     }
 

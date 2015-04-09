@@ -73,6 +73,9 @@ namespace prop {
     int GetEnergyBinShift() const
     { return fEnergyBinShift; }
 
+    double GetXmaxSigmaShift() const
+    { return fXmaxSigmaShift; }
+
     unsigned int GetGalacticMass() const
     { return fGalMass; }
 
@@ -96,6 +99,7 @@ namespace prop {
     double fMinFluxLgE;
     double fMinCompLgE;
     int fEnergyBinShift;
+    double fXmaxSigmaShift;
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
     unsigned int fGalMass;

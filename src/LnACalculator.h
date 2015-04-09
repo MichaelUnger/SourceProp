@@ -2,6 +2,7 @@
 #define _LnACalculator_h_
 
 #include <string>
+#include <stdexcept>
 #include <TGraphErrors.h>
 #include <TGraphAsymmErrors.h>
 
@@ -15,7 +16,8 @@ public:
     eNModels
   };
 
-  static std::string GetModelName(EModel m)
+  static
+  std::string GetModelName(EModel m)
   {
     switch (m) {
     case eSibyll21:
@@ -27,6 +29,19 @@ public:
     default:
       return "unknown";
     }
+  }
+
+  static
+  EModel GetModel(const std::string modelName)
+  {
+    if (modelName ==  "sibyll21")
+      return eSibyll21;
+    else if (modelName == "eposLHC")
+      return eEPOSLHC;
+    else if (modelName == "qgsjetII04")
+      return eQGSJetII04;
+    else
+      throw std::runtime_error("unknown model" + modelName);
   }
 
   TGraphErrors GetMeanLnA(const TGraphErrors& meanXmax, const EModel m) const;
@@ -43,9 +58,6 @@ public:
 
   double GetMeanXmax(const double E, const EModel m, const double A) const;
   double GetXmaxVariance(const double E, const EModel m, const double A) const;
-
-
-private:
   double GetMeanLnA(const double, const double, const EModel) const;
   double GetMeanLnAError(const double, const double, const EModel) const;
   double GetLnAVariance(const double, const double, const double, const EModel) const;
