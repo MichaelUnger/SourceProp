@@ -22,14 +22,15 @@ namespace prop {
     fMinCompLgE = 17;
     fEnergyBinShift = 0;
     fInteractionModel = "eposLHC";
-    fStartValues[eGamma] = StartValues(-2.54, 0.1 ,0, 0, 0);
-    fStartValues[eLgEmax] = StartValues(21.5, 0.1 ,0, 0, 0);
+    fStartValues[eGamma] = StartValues(-1, 0.1 ,0, 0, 1);
+    fStartValues[eLgEmax] = StartValues(18.5, 0.1 ,0, 0, 0);
     fStartValues[eLgEscFac] = StartValues(2.62056e+00, 0.1 ,0, 0, 0);
-    fStartValues[eEscGamma] = StartValues(-1, 0.1 ,0, 0, 0);
+    fStartValues[eEscGamma] = StartValues(-1, 0.1 ,0, 0, 1);
     fStartValues[eFGal] = StartValues(0.6, 0.1, 0, 1, 0);
     fStartValues[eGammaGal] = StartValues(-4.17e+00, 0.1, 0, 0, 0);
     fStartValues[eNoPhoton] = StartValues(0, 0.1, 0, 0, 1);
     fCutoffType = Spectrum::eExponential;
+    fGalMass = 56;
 
     ifstream optionsFile(filename.c_str());
     while (true) {
@@ -65,6 +66,10 @@ namespace prop {
       else if (keyword == "evolution") {
         if (!(line >> fEvolution))
           throw runtime_error("error decoding evolution");
+      }
+      else if (keyword == "galacticMass") {
+        if (!(line >> fGalMass))
+          throw runtime_error("error reading galactic mass");
       }
       else if (keyword == "IRB") {
         if (!(line >> fIRB))
@@ -125,7 +130,11 @@ namespace prop {
 
     // zeta here
     if (fMassValues.empty()) {
-      fMassValues[1] = StartValues(-2.54, 0.1 ,0, 0, 0);
+      fMassValues[1] = StartValues(0.2, 0.05 ,0, 0, 0);
+      fMassValues[4] = StartValues(0.2, 0.05 ,0, 0, 0);
+      fMassValues[14] = StartValues(0.2, 0.05 ,0, 0, 0);
+      fMassValues[26] = StartValues(0.2, 0.05 ,0, 0, 0);
+      fMassValues[56] = StartValues(0.2, 0.05 ,0, 0, 0);
     }
 
   }

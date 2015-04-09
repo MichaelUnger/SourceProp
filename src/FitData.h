@@ -68,6 +68,7 @@ namespace prop {
     double fChi2VlnA;
     double fQ0;
     double fQ0Err;
+    unsigned int fGalMass;
     std::vector<FitParameter> fFitParameters;
 
   };

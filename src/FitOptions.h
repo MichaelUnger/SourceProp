@@ -73,7 +73,10 @@ namespace prop {
     int GetEnergyBinShift() const
     { return fEnergyBinShift; }
 
-    const std::string GetInteractionModel() const
+    unsigned int GetGalacticMass() const
+    { return fGalMass; }
+
+   const std::string GetInteractionModel() const
     { return fInteractionModel; }
 
     Spectrum::ECutoffType GetCutoffType() const
@@ -95,6 +98,7 @@ namespace prop {
     int fEnergyBinShift;
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
+    unsigned int fGalMass;
   };
 }
 

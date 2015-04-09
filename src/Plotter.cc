@@ -35,7 +35,7 @@ namespace prop {
     gStyle->SetPadLeftMargin(.16);
     gStyle->SetTitleOffset(1.3, "Y");
     if (!fCanvas) {
-      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 600);
+      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 700);
       fCanvas->SetBottomMargin(0.2);
       fCanvas->SetBorderMode(1);
       fCanvas->Divide(3, 2);
@@ -104,7 +104,7 @@ namespace prop {
     double yMin = -1;
     const double xMax = 21;
     for (auto& m : mGroups) {
-      if (m.fRepA > 56)
+      if (m.fRepA > kGalacticOffset)
         continue;
       stringstream name;
       name << "lambdaInt" << m.fRepA;
@@ -176,8 +176,8 @@ namespace prop {
     double xMass = 0.24;
     for (const auto& m : mGroups) {
       stringstream title;
-      if (m.fFirst > 56)
-        title << "galactic Fe";
+      if (m.fFirst >= kGalacticOffset)
+        title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
       else
         title << m.fFirst << " #leq A #leq " << m.fLast;
       l.SetTextColor(m.fColor);
@@ -334,17 +334,16 @@ namespace prop {
     vector<MassGroup> mGroups;
     mGroups.push_back(MassGroup(eElectronNeutrino, eElectronNeutrino,
                                 eElectronNeutrino, electronColor, 2, " #nu_{e}"));
-    mGroups.push_back(MassGroup(eAntiElectronNeutrino, eAntiElectronNeutrino,
-                                eAntiElectronNeutrino, electronColor, 1, " #bar{#nu}_{e}"));
     mGroups.push_back(MassGroup(eMuonNeutrino, eMuonNeutrino,
                                 eMuonNeutrino, muonColor, 2, " #nu_{#mu}"));
-    mGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
-                                eAntiMuonNeutrino, muonColor, 1, " #bar{#nu}_{#mu}"));
     mGroups.push_back(MassGroup(eTauNeutrino, eTauNeutrino,
                                 eTauNeutrino, tauColor, 2, " #nu_{#tau}"));
+    mGroups.push_back(MassGroup(eAntiElectronNeutrino, eAntiElectronNeutrino,
+                                eAntiElectronNeutrino, electronColor, 1, " #bar{#nu}_{e}"));
+    mGroups.push_back(MassGroup(eAntiMuonNeutrino, eAntiMuonNeutrino,
+                                eAntiMuonNeutrino, muonColor, 1, " #bar{#nu}_{#mu}"));
     mGroups.push_back(MassGroup(eAntiTauNeutrino, eAntiTauNeutrino,
                                 eAntiTauNeutrino, tauColor, 1, " #bar{#nu}_{#tau}"));
-
     const string& nameBase = "hNeutrino";
     const unsigned int iFirst = fHists.size();
     for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
@@ -377,7 +376,7 @@ namespace prop {
         yTit << "E";
       else if (gamma != 0)
         yTit << "E^{" << gamma << "}";
-      yTit << " J(E) [";
+      yTit << " #Phi(E) [";
       const string energyUnit = (fUnits == eKmYrSrEv ? "eV" : "GeV");
       if (gamma != 1)
         yTit << energyUnit;
@@ -427,14 +426,6 @@ namespace prop {
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w * units);
     }
 
-    TLegend* leg = new TLegend(0.75, 0.379, 0.98, 0.843, NULL, "brNDCARC");
-    leg->SetFillColor(0);
-    leg->SetTextFont(42);
-    leg->SetFillStyle(0);
-    leg->SetBorderSize(0);
-    leg->AddEntry(histTot, histTot->GetTitle(), "L");
-
-
     fCanvas->cd(1)->SetLogy(1);
     histTot->Draw("C");
     histTot->SetLineWidth(2);
@@ -449,10 +440,7 @@ namespace prop {
           fHists[i]->SetMarkerStyle(21);
         fHists[i]->SetMarkerSize(0.8);
         fHists[i]->Draw("PSAME");
-        leg->AddEntry(fHists[i], fHists[i]->GetTitle(), "PL");
       }
-      else
-        leg->AddEntry(fHists[i], fHists[i]->GetTitle(), "L");
     }
 
     if (fUnits == eCmSecSrGeV) {
@@ -477,8 +465,7 @@ namespace prop {
       iceFluxLo->SetLineColor(kMagenta+1);
       iceFluxLo->Draw("SAME");
 
-      histTot->GetXaxis()->SetRangeUser(13, 20);
-      leg->AddEntry(iceFluxUp, " IC2014", "L");
+      histTot->GetXaxis()->SetRangeUser(13, 19);
       ifstream in("data/iceCube2012Limits.txt");
       double x, y;
       TGraph* iceLimits = new TGraph();
@@ -488,16 +475,33 @@ namespace prop {
         ++i;
       }
       iceLimits->SetLineColor(kMagenta+1);
-      iceLimits->SetLineWidth(2);
+      iceLimits->SetLineWidth(1502);
+      iceLimits->SetFillStyle(3005);
+      iceLimits->SetFillColor(kMagenta+1);
       iceLimits->Draw("SAME");
-      leg->AddEntry(iceLimits, " IC2013", "L");
-      histTot->GetYaxis()->SetRangeUser(fmin(1e-21*pow(1e4,gamma),
-                                             1e-25*pow(1e9,gamma)),
+      histTot->GetYaxis()->SetRangeUser(fmin(1e-20*pow(1e4,gamma),
+                                             1e-24*pow(1e9,gamma)),
                                         fmax(iceFluxUp->Eval(lgIceMin)*1.5,
                                              iceLimits->Eval(19)));
+      TLegend* leg = new TLegend(0.207, 0.91, 0.97, 0.997, NULL, "brNDCARC");
+      leg->SetNColumns(5);
+      leg->SetFillColor(0);
+      leg->SetTextFont(42);
+      leg->SetFillStyle(0);
+      leg->SetBorderSize(0);
+      leg->AddEntry(fHists[iFirst], fHists[iFirst]->GetTitle(), "L");
+      leg->AddEntry(fHists[iFirst+1], fHists[iFirst+1]->GetTitle(), "PL");
+      leg->AddEntry(fHists[iFirst+2], fHists[iFirst+2]->GetTitle(), "L");
+      leg->AddEntry(histTot, histTot->GetTitle(), "L");
+      leg->AddEntry(iceLimits, " IC2013", "F");
+      leg->AddEntry(fHists[iFirst+3], fHists[iFirst+3]->GetTitle(), "L");
+      leg->AddEntry(fHists[iFirst+4], fHists[iFirst+4]->GetTitle(), "PL");
+      leg->AddEntry(fHists[iFirst+5], fHists[iFirst+5]->GetTitle(), "L");
+      leg->AddEntry("", "", "");
+      leg->AddEntry(iceFluxUp, " IC2014", "L");
+      leg->Draw();
     }
 
-    leg->Draw();
     gPad->RedrawAxis();
 
     fCanvas->cd(2);
@@ -558,20 +562,23 @@ namespace prop {
       eventsTot->SetBinContent(iBin+1, (sumE + sumM + sumT)*nYear);
       nEvents += (sumE + sumM + sumT)*nYear;
     }
+    eventsTot->GetYaxis()->SetRangeUser(0, eventsTot->GetMaximum()*1.2);
+
     eventsTot->Draw();
     eventsE->Draw("SAME");
     eventsMu->Draw("SAME");
     eventsTau->Draw("SAME");
 
-    TLegend* leg2 = new TLegend(0.706, 0.53, 0.93, 0.78, NULL, "brNDCARC");
+    TLegend* leg2 = new TLegend(0.156, 0.937, 0.964, 0.982, NULL, "brNDCARC");
     leg2->SetFillColor(0);
     leg2->SetTextFont(42);
     leg2->SetFillStyle(0);
     leg2->SetBorderSize(0);
-    leg2->AddEntry(eventsTot, " sum", "L");
+    leg2->SetNColumns(4);
     leg2->AddEntry(eventsE, " #nu_{e} + #bar{#nu}_{e}", "L");
     leg2->AddEntry(eventsMu, " #nu_{#mu} + #bar{#nu}_{#mu}", "L");
     leg2->AddEntry(eventsTau, " #nu_{#tau} + #bar{#nu}_{#tau}", "L");
+    leg2->AddEntry(eventsTot, " sum", "L");
     leg2->Draw();
 
 
@@ -580,8 +587,7 @@ namespace prop {
     l.SetTextFont(42); l.SetNDC(true);
     stringstream events;
     events << "#Sigma events = " << int(nEvents*10)/10.;
-    cout << " adsf " << nEvents << endl;
-    l.DrawLatex(0.78, 0.88, events.str().c_str());
+    l.DrawLatex(0.35, 0.88, events.str().c_str());
  }
 
 

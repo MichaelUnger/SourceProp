@@ -72,8 +72,10 @@ DrawData(const FitData& fitData,
   for (unsigned int i = 0; i < fluxData.size(); ++i) {
     fitLnA->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
     fitLnA->SetPointError(i, 0, compData[i].fLnAErr);
+
     fitVlnA->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
     fitVlnA->SetPointError(i, 0, compData[i].fVlnAErr);
+
   }
   fitLnA->SetLineColor(kRed);
   fitLnA->SetMarkerColor(kRed);
@@ -230,9 +232,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   massGroups.push_back(MassGroup(1, 2, 1, kRed));
   massGroups.push_back(MassGroup(3, 6, 4, kOrange));
   massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
-  massGroups.push_back(MassGroup(20, 40, 28, kAzure+10));
+  massGroups.push_back(MassGroup(20, 40, 26, kAzure+10));
   massGroups.push_back(MassGroup(41, 56, 56, kBlue));
-  massGroups.push_back(MassGroup(57, 57, 57, kMagenta+2, 2));
+  const unsigned int Agal = opt.GetGalacticMass() + kGalacticOffset;
+  massGroups.push_back(MassGroup(Agal, Agal, Agal,
+                                 kMagenta+2, 2));
 
   const double gammaScaleSource = 2;
   const double gammaScaleEarth = 3;
@@ -247,17 +251,27 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   DrawData(fitData, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
-  can->Print(("fitFiles/" + fitFilename + ".pdf").c_str());
+  can->Print(("pdfs/" + fitFilename + ".pdf").c_str());
 
   if (!neutrino)
     return;
 
   Neutrinos neutrinos(fitData.fSpectrum,
                       opt.GetPropmatrixNuFilename());
-  TCanvas* neutrinoCanvas = new TCanvas("neutrino");
-  neutrinoCanvas->Divide(2, 1);
+  TCanvas* neutrinoCanvas;
+  bool singleSlide = false;
+  if (singleSlide) {
+   neutrinoCanvas = new TCanvas("neutrino");
+   neutrinoCanvas->Divide(2, 1);
+  }
+  else {
+    neutrinoCanvas = new TCanvas("neutrino", " ", 800, 20, 300, 700);
+    neutrinoCanvas->Divide(1, 2);
+  }
   Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
   neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, 100, 12., 22.);
+  neutrinoCanvas->Print(("pdfs/" + fitFilename + "_nu.pdf").c_str());
+
 }
 
 

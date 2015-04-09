@@ -9,14 +9,10 @@ par fGal              0. 0.1 0 0 1
 par gammaGal        -4.17 0.1 0 0 1
 par fNoPhoton           0 0.1 0 0 1
 mass  1 0.9999 1
-evolution SFR2 AAGHRW05
-eps0 0.03
-alpha 32
-beta 2.0
+evolution AAGHRW05
 fitComposition 0
 rejectOutliers 1
-minLgEFlux 18
+minLgEFlux 17
 minLgECompo 17
-interactionModel eposLHC
 cutoffType heavyside
 energyBinShift 1

@@ -4,6 +4,7 @@
 #include "Spectrum.h"
 #include "PropMatrixFile.h"
 #include "Propagator.h"
+#include "Particles.h"
 
 #include <TMinuit.h>
 #include <TFile.h>
@@ -122,7 +123,7 @@ namespace prop {
         galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
         lgE += dlgE;
       }
-      data.fPropagator->AddComponent(57, galactic);
+      data.fPropagator->AddComponent(data.fGalMass + kGalacticOffset, galactic);
     }
 
     const pair<double, double> norm = calcNorm(data);
@@ -168,6 +169,7 @@ namespace prop {
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
+    fFitData.fGalMass = fOptions.GetGalacticMass();
 
     ReadData();
     cout << " reading prop matrix from "

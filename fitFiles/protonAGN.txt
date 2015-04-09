@@ -1,0 +1,11 @@
+#
+# proton only
+#
+par gammaInj   -2.5 0.1 0 0 0
+par lgRmax    19 1 0 0 0
+par lgResc    -10 0.1 0 0 1
+par fGal              0. 0.1 0 0 1
+par gammaGal        -4.17 0.1 0 0 1
+mass  1 0.9999 1
+evolution AGN
+fitComposition 0

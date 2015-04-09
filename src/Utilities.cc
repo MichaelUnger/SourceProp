@@ -1,4 +1,5 @@
 #include "Utilities.h"
+#include "Particles.h"
 #include <TMatrixD.h>
 #include <cmath>
 
@@ -11,8 +12,8 @@ namespace prop {
     double sumFluxLnA = 0;
     double sumFluxLnA2 = 0;
     double sumFlux = 0;
-    for (auto& iter : specMap) {
-      const unsigned int lnA = log(iter.first);
+    for (const auto& iter : specMap) {
+      const double lnA = log(iter.first % kGalacticOffset);
       const TMatrixD& m = iter.second;
       const double flux = m[index][0];
       sumFlux += flux;
@@ -27,4 +28,5 @@ namespace prop {
     else
       return std::pair<double, double>(-1, -1);
   }
+
 }

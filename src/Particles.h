@@ -23,4 +23,7 @@ IsNucleus(const unsigned int A)
   return A < eNeutron;
 }
 
+// offset for galactic component
+const unsigned int kGalacticOffset = 100000;
+
 #endif
