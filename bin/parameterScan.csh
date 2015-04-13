@@ -13,6 +13,7 @@ set standard = 0
 set photonfield = 0
 set escape = 0
 set irb = 1
+set massScan = 0
 
 
 if ($photonfield) then
@@ -66,7 +67,8 @@ endif
 
 
 if ($irb) then
-  set irbs = "Kneiske04 Stecker05 Kneiske04G4"
+  set irbs = "Kneiske04 Stecker05 Kneiske04G4 Kneiske10"
+  set irbs = "Kneiske04G4"
   foreach irb ($irbs)
     setenv FITOPTION IRB$irb
     sed -e 's/@IRB@/'$irb'/' $fitDir/IRB.txt.in > \
@@ -75,6 +77,21 @@ if ($irb) then
     mv $fitDir/$FITOPTION.txt $outDir
   end
 endif
+
+if ($massScan) then
+  set irb = "Kneiske04"
+  set masses = "23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40"
+  foreach mass ($masses)
+    setenv FITOPTION MASS${irb}_${mass}_NP
+    sed -e 's/@IRB@/'$irb'/;s/@MASS@/'$mass'/' $fitDir/MASS.txt.in > \
+      $fitDir/$FITOPTION.txt
+    $rootCmd |& tee $outDir/$FITOPTION.log
+    mv $fitDir/$FITOPTION.txt $outDir
+  end
+  grep FCN pdfs/MASS${irb}_*_NP.log | awk -F FROM '{print $1}'
+endif
+
+
 
 if ($escape) then
 
@@ -107,6 +124,30 @@ endif
 if ($systematics) then
   setenv FITOPTION Systematics00
   sed -e 's/@ESHIFT@/0/;s/@XMAXSHIFT@/0/' $fitDir/Systematics.txt.in > \
+    $fitDir/$FITOPTION.txt
+  $rootCmd |& tee $outDir/$FITOPTION.log
+  mv $fitDir/$FITOPTION.txt $outDir
+
+  setenv FITOPTION Systematics0N
+  sed -e 's/@ESHIFT@/0/;s/@XMAXSHIFT@/-1/' $fitDir/Systematics.txt.in > \
+    $fitDir/$FITOPTION.txt
+  $rootCmd |& tee $outDir/$FITOPTION.log
+  mv $fitDir/$FITOPTION.txt $outDir
+
+  setenv FITOPTION Systematics0P
+  sed -e 's/@ESHIFT@/0/;s/@XMAXSHIFT@/1/' $fitDir/Systematics.txt.in > \
+    $fitDir/$FITOPTION.txt
+  $rootCmd |& tee $outDir/$FITOPTION.log
+  mv $fitDir/$FITOPTION.txt $outDir
+
+  setenv FITOPTION SystematicsN0
+  sed -e 's/@ESHIFT@/-1/;s/@XMAXSHIFT@/0/' $fitDir/Systematics.txt.in > \
+    $fitDir/$FITOPTION.txt
+  $rootCmd |& tee $outDir/$FITOPTION.log
+  mv $fitDir/$FITOPTION.txt $outDir
+
+  setenv FITOPTION SystematicsP0
+  sed -e 's/@ESHIFT@/1/;s/@XMAXSHIFT@/0/' $fitDir/Systematics.txt.in > \
     $fitDir/$FITOPTION.txt
   $rootCmd |& tee $outDir/$FITOPTION.log
   mv $fitDir/$FITOPTION.txt $outDir
