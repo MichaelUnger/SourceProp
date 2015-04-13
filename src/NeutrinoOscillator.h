@@ -8,7 +8,7 @@ namespace prop {
   class NeutrinoOscillator {
 
   public:
-    NeutrinoOscillator(const double thetaSolar = 33.9*utl::degree) :
+    NeutrinoOscillator(const double thetaSolar = 33.57*utl::degree) :
       fSinSquareTwoTheta(pow(sin(2*thetaSolar),2)) {}
 
     // L. A. Anchordoqui et al., arXiv:1312.6587 [astro-ph.HE]

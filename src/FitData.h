@@ -23,12 +23,18 @@ namespace prop {
 
   struct CompoData {
     CompoData() :
-      fLgE(0), fLnA(0), fVlnA(0), fLnAErr(0), fVlnAErr(0) {}
+      fLgE(0), fLnA(0), fVlnA(0), fLnAErr(0), fVlnAErr(0),
+      fLnASysUp(0), fLnASysLow(0), fVlnASysUp(0), fVlnASysLow(0)
+    {}
     double fLgE;
     double fLnA;
     double fVlnA;
     double fLnAErr;
     double fVlnAErr;
+    double fLnASysUp;
+    double fLnASysLow;
+    double fVlnASysUp;
+    double fVlnASysLow;
   };
 
   struct FitParameter {

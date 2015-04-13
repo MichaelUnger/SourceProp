@@ -24,7 +24,11 @@ namespace prop {
     enum ECutoffType {
       eExponential,
       eBrokenExponential,
-      eHeavyside
+      eHeavyside,
+      eDeltaGamma1,
+      eDeltaGamma2,
+      eDeltaGamma3,
+      eDeltaGamma4
     };
 
     typedef std::map<unsigned int, TMatrixD> SpecMap;

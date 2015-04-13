@@ -112,7 +112,7 @@ namespace prop {
     if (fGal > 0) {
       const double lgE0 = 17.55;
       const double E0 = pow(10, lgE0);
-      const double emaxGal = 1e22; // infinity for now
+      const double emaxGal = 2e19; // infinity for now
       const double gammaGal = par[eGammaGal];
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
       const double sE = exp(-E0/emaxGal);
@@ -220,7 +220,8 @@ namespace prop {
         fFitData.fFitParameters[i].fIsFixed = false;
 
       cout << setw(2) << i << setw(10) << GetParName(par)
-           << setw(11) << scientific << setprecision(3) << fOptions.GetStartValue(par)
+           << setw(11) << scientific << setprecision(3)
+           << fOptions.GetStartValue(par)
            << setw(11) << fOptions.GetStep(par)
            << setw(11) << fOptions.GetMin(par)
            << setw(11) << fOptions.GetMax(par)
@@ -317,6 +318,10 @@ namespace prop {
       if (!in.good())
         break;
       // cout << "ReadData() :" << flux.fLgE << " " <<  flux.fFlux  << endl;
+      //#warning AAAAAAAAAAAAAAAAAAAAAAAAAAAa
+        //   flux.fFluxErr = fmax(0.1*flux.fFlux,(eyUp+eyDown)/2) ;
+      //  flux.fFluxErrUp = fmax(0.1*flux.fFlux,eyUp);
+      // flux.fFluxErrLow = fmax(0.1*flux.fFlux,eyDown);
       flux.fFluxErr = (eyUp+eyDown)/2 ;
       flux.fFluxErrUp = eyUp;
       flux.fFluxErrLow = eyDown;
@@ -349,10 +354,19 @@ namespace prop {
         *((TGraphErrors*) erFile->Get("elongSigmaFinal"));
       const TGraphAsymmErrors& xmaxSysGraph =
         *((TGraphAsymmErrors*) erFile->Get("elongXmaxFinalSys"));
+      const TGraphAsymmErrors& sigmaXmaxSysGraph =
+        *((TGraphAsymmErrors*) erFile->Get("elongSigmaFinalSys"));
 
       LnACalculator lnAcalc;
       const LnACalculator::EModel model =
         LnACalculator::GetModel(fOptions.GetInteractionModel());
+
+      const double energyScaleUncertainty = 0.14;
+      TGraphAsymmErrors lnASys =
+        lnAcalc.GetMeanLnASys(xmaxSysGraph, energyScaleUncertainty, model);
+      TGraphAsymmErrors lnAVarianceSys =
+        lnAcalc.GetLnAVarianceSys(xmaxSysGraph, sigmaXmaxSysGraph,
+                                        energyScaleUncertainty, model);
 
       for (int i = 0; i < xmaxGraph.GetN(); ++i) {
 
@@ -376,6 +390,10 @@ namespace prop {
         comp.fVlnAErr = lnAcalc.GetLnAVarianceError(xMax, sigma,
                                                     xMaxErr, sigmaErr,
                                                     E, model);
+        comp.fLnASysLow = lnASys.GetEYlow()[i];
+        comp.fLnASysUp = lnASys.GetEYhigh()[i];
+        comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
+        comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
         fFitData.fAllCompoData.push_back(comp);
         if (comp.fLgE > fOptions.GetMinCompLgE())
           fFitData.fCompoData.push_back(comp);

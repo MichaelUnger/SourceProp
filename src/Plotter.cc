@@ -109,13 +109,13 @@ namespace prop {
       stringstream name;
       name << "lambdaInt" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";lg(E/eV);#lambda [a.u.]",
+                                ";lg(E/eV);#tau [a.u.]",
                                 n, x1, x2));
       TH1D* hInt = fHists.back();
       name.str("");
       name << "lambdaEsc" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";#lambda [a.u.]; lg(E/eV)",
+                                ";#tau [a.u.]; lg(E/eV)",
                                 n, x1, x2));
       TH1D* hEsc = fHists.back();
       hEsc->SetLineStyle(2);
@@ -166,7 +166,9 @@ namespace prop {
     fCanvas->cd(eFluxEsc);
     l.DrawLatex(0.5, 0.98, "   escaping");
     fCanvas->cd(eFluxEarth);
-    l.DrawLatex(0.5, 0.98, " at Earth");
+    l.DrawLatex(0.5, 0.98, " flux at Earth");
+    fCanvas->cd(eCompEarth);
+    l.DrawLatex(0.5, 0.98, " composition at Earth");
 
     fCanvas->cd();
     l.SetTextAlign(12);
@@ -186,11 +188,13 @@ namespace prop {
     }
 
     fCanvas->cd(eCompEarth);
+    /*
     l.SetTextSize(0.05);
     l.SetTextColor(kRed);
     l.DrawLatex(0.25, 0.85, "#LTlnA#GT");
     l.SetTextColor(kGray+3);
     l.DrawLatex(0.37, 0.85, "V(lnA)");
+    */
 
     fCanvas->cd(eCompInj);
     TLine* inj = new TLine();
@@ -198,6 +202,8 @@ namespace prop {
     TLine* esc = new TLine();
     esc->SetLineStyle(2);
     esc->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
+    l.SetTextSize(0.05);
+    l.SetTextColor(kBlack);
     l.DrawLatex(0.68, 0.85, "interaction");
     l.DrawLatex(0.68, 0.78, "escape");
 
@@ -208,7 +214,8 @@ namespace prop {
   Plotter::SetXRange(const double x1, const double x2)
   {
     for (auto& h : fHists) {
-      h->GetXaxis()->SetRangeUser(x1, x2);
+      if (string(h->GetName()) != "hLnA")
+        h->GetXaxis()->SetRangeUser(x1, x2);
     }
   }
 
@@ -249,7 +256,10 @@ namespace prop {
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
       stringstream yTit;
       if (specPad != eFluxEarth)
-        yTit << "E^{" << gamma << "}  n_{0} dN/dE/dt [a.u.]";
+        if (gamma == 1)
+          yTit << " n_{0} dN/dlgE/dt [a.u.]";
+        else
+          yTit << "E^{" << gamma << "}  n_{0} dN/dE/dt [a.u.]";
       else
         yTit << "E^{" << gamma << "} J(E) [eV^{" << gamma-1
              << "} km^{-2} sr^{-1} yr^{-1}]";
@@ -606,13 +616,14 @@ namespace prop {
       lnA->SetBinContent(i+1, lmm.first);
       vlnA->SetBinContent(i+1, lmm.second);
     }
-    lnA->GetYaxis()->SetRangeUser(-0.05, 4.1);
+    lnA->GetYaxis()->SetRangeUser(-0.05, 4.7);
     lnA->SetLineColor(kRed);
     lnA->GetXaxis()->SetTitle("lg(E/eV)");
     vlnA->SetLineColor(kGray+3);
-    //    lnA->GetYaxis()->SetTitle("#LTln A#GT, V(ln A)");
+    lnA->GetYaxis()->SetTitle("#LTln A#GT, V(ln A)");
 
     fCanvas->cd(eCompEarth);
+    lnA->GetXaxis()->SetRangeUser(17.8, 19.85);
     lnA->Draw("C");
     vlnA->Draw("CSAME");
     lnA->SetLineWidth(2);

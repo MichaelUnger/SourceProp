@@ -124,6 +124,14 @@ namespace prop {
           fCutoffType = Spectrum::eExponential;
         else if (type == "brokenExponential")
           fCutoffType = Spectrum::eBrokenExponential;
+        else if (type == "deltaGamma1")
+          fCutoffType = Spectrum::eDeltaGamma1;
+        else if (type == "deltaGamma2")
+          fCutoffType = Spectrum::eDeltaGamma2;
+        else if (type == "deltaGamma3")
+          fCutoffType = Spectrum::eDeltaGamma3;
+        else if (type == "deltaGamma4")
+          fCutoffType = Spectrum::eDeltaGamma4;
         else if (type == "heavyside")
           fCutoffType = Spectrum::eHeavyside;
         else

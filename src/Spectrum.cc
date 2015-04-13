@@ -249,17 +249,42 @@ namespace prop {
   Spectrum::InjectedFlux(const double E, const double A)
     const
   {
-    const double zEmax = fEmax * aToZ(A);
+    const double E0 = GetE0();
+    const double zEmax = fEmax *  aToZ(A);
     if (fCutoffType == eExponential)
-      return pow(E / GetE0(), fGamma) * exp(-E/zEmax);
+      return pow(E / E0, fGamma) * exp(-E/zEmax);
     else if (fCutoffType == eBrokenExponential) {
       if (E > zEmax)
-        return  pow(E / GetE0(), fGamma) * exp(1 - E/zEmax);
+        return  pow(E / E0, fGamma) * exp(1 - E/zEmax);
       else
-        return pow(E / GetE0(), fGamma);
+        return pow(E / E0, fGamma);
+    }
+    else if (fCutoffType == eDeltaGamma1) {
+      if (E > zEmax)
+        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 1);
+      else
+        return pow(E / E0, fGamma);
+    }
+    else if (fCutoffType == eDeltaGamma2) {
+      if (E > zEmax)
+        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 2);
+      else
+        return pow(E / E0, fGamma);
+    }
+    else if (fCutoffType == eDeltaGamma3) {
+      if (E > zEmax)
+        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 3);
+      else
+        return pow(E / E0, fGamma);
+    }
+    else if (fCutoffType == eDeltaGamma4) {
+      if (E > zEmax)
+        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 4);
+      else
+        return pow(E / E0, fGamma);
     }
     else if (fCutoffType == eHeavyside)
-      return E > zEmax ? 0 :pow(E / GetE0(), fGamma);
+      return E > zEmax ? 0 :pow(E / E0, fGamma);
     else
       throw runtime_error("cutoff type not implemented");
   }
@@ -274,8 +299,6 @@ namespace prop {
       const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / zEmax);
       return pow(GetE0(), 2) * pow(zEmax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
     }
-    else if (fCutoffType == eBrokenExponential)
-      throw runtime_error("integral for eBrokenExponential not implemented");
     else if (fCutoffType == eHeavyside) {
       const double energy1 = fmin(E1, zEmax);
       const double energy2 = fmin(E2, zEmax);
@@ -286,7 +309,7 @@ namespace prop {
                                                pow(energy1 / GetE0(), fGamma+2));
     }
     else
-      throw runtime_error("cutoff type not implemented");
+      throw runtime_error("integral not implemented for this cutoff");
   }
 
   double
