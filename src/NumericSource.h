@@ -14,17 +14,24 @@ namespace prop {
   public:
 
     NumericSource(const std::string& type,
-                  const std::string& directory) :
-      fType(type), fDirectory(directory) {}
+                  const std::string& directory, const bool singleNucleon = true) :
+      fType(type), fDirectory(directory), fSingleNucleon(singleNucleon) {}
 
     virtual ~NumericSource();
 
     double
-    LambdaInt(const double E, const double A) const;
+    LambdaInt(const double E, const int A) const;
 
     double
-    GetProcessFraction(const double E, const double A,
+    LambdaInt(const double E, const int A, const EProcess p) const;
+
+    double
+    GetProcessFraction(const double E, const int A,
                        const EProcess p) const;
+
+    double
+    GetBranchingRatio(const double E, const int Asec, const int Aprim) const;
+
 
   private:
     NumericSource& operator=(const NumericSource&);
@@ -36,6 +43,7 @@ namespace prop {
     mutable std::map<unsigned int, const TGraph*> fPhotoPionProduction;
     const std::string fType;
     const std::string fDirectory;
+    const bool fSingleNucleon;
   };
 }
 

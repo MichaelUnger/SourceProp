@@ -113,6 +113,7 @@ namespace prop {
         while (iss >> lInv) {
           const double kappa = lossLength ? 1./(Z+N) : 1;
           lambdaInv.push_back(1/(TMath::Max(lInv,1e-99)*kappa));
+          // todo: implement  nuclear mass
           lgGammaVec.push_back(lgGamma+log10(Z*gProtonMass+N*gNeutronMass));
           lgGamma += dLgGamma;
         }
@@ -174,6 +175,7 @@ namespace prop {
       }
       else {
         lInv = Z  * lInvP + N * lInvN;
+        // todo: implement  nuclear mass
         lgE = lgGamma+log10(Z*gProtonMass+N*gNeutronMass);
         kappa = lossLength ? 1./ (Z+N) : 1;
       }
@@ -188,7 +190,7 @@ namespace prop {
   }
 
   double
-  NumericSource::LambdaInt(const double E, const double A)
+  NumericSource::LambdaInt(const double E, const int A)
     const
   {
     const double lgE = log10(E);
@@ -200,8 +202,44 @@ namespace prop {
   }
 
   double
+  NumericSource::GetBranchingRatio(const double /*E*/, const int Asec,
+                                   const int Aprim)
+    const
+  {
+    if (fSingleNucleon) {
+      if (Asec == 1)
+        return 1;
+      else if (Asec == Aprim - 1)
+        return 1;
+      else
+        return 0;
+    }
+    else {
+      throw runtime_error("multi-nucleon emission not implemented");
+    }
+  }
+
+
+  double
+  NumericSource::LambdaInt(const double E, const int A, const EProcess p)
+    const
+  {
+    const double lgE = log10(E);
+    if (p == ePP) {
+      const TGraph& ppp = GetPPP(A);
+      return EvalFast(ppp, lgE);
+    }
+    else {
+      if (A == 1)
+        return 1e99;
+      const TGraph& pd = GetPD(A);
+      return EvalFast(pd, lgE);
+    }
+  }
+
+  double
   NumericSource::GetProcessFraction(const double E,
-                                    const double A,
+                                    const int A,
                                     const EProcess p)
     const
   {

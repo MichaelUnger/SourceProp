@@ -33,12 +33,12 @@ namespace prop {
 
     virtual
     double
-    LambdaInt(const double /*E*/, const double /*A*/)
+    LambdaInt(const double /*E*/, const int /*A*/)
       const = 0;
 
     virtual
     double
-    GetProcessFraction(const double E, const double A,
+    GetProcessFraction(const double E, const int A,
                        const EProcess p)
       const = 0;
 

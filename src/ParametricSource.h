@@ -13,8 +13,8 @@ namespace prop {
     {}
 
     ParametricSource(const double escFac, const double escGamma,
-           const double eps0, const double alpha,
-           const double beta) :
+                     const double eps0, const double alpha,
+                     const double beta) :
       VSource(escFac, escGamma),
       fEps0(eps0), fAlpha(alpha), fBeta(beta),
       fNoInteraction(false)
@@ -34,14 +34,14 @@ namespace prop {
     }
 
     double
-    LambdaInt(const double E, const double A)
+    LambdaInt(const double E, const int A)
       const
     {
       if (fNoInteraction)
         return 1e99;
 
       const double epsilonGDR = A >= 4 ?
-        42.65e6*pow(A,-0.21) :
+        42.65e6*pow(A, -0.21) :
         0.925e6*pow(A, 2.433);
       const double mP = 938.272046e6;
       const double E0 = epsilonGDR / (2 * fEps0 / (A*mP));
@@ -55,7 +55,7 @@ namespace prop {
     }
 
     double
-    GetProcessFraction(const double /*E*/, const double /*A*/,
+    GetProcessFraction(const double /*E*/, const int /*A*/,
                        const EProcess /*p*/) const
     { return .5; }
 
