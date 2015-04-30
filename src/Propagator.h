@@ -16,7 +16,7 @@ namespace prop {
     Propagator(const PropMatrices& m) :
       fPropMatrices(m) {}
 
-    void Propagate(const std::map<unsigned int, TMatrixD>& spectrum);
+    void Propagate(const std::map<int, TMatrixD>& spectrum);
 
     double GetFluxSum(const unsigned int i) const;
     double GetFluxSum(const double lgE) const;
@@ -25,7 +25,7 @@ namespace prop {
     std::pair<double, double> GetLnAMoments(const unsigned int i) const;
     std::pair<double, double> GetLnAMoments(const double lgE) const;
 
-    const std::map<unsigned int, TMatrixD>& GetFluxAtEarth() const
+    const std::map<int, TMatrixD>& GetFluxAtEarth() const
     { return fResult; }
 
     void Rescale(const double f);
@@ -38,7 +38,7 @@ namespace prop {
     unsigned int LgEtoIndex(const double lgE) const;
 
     const PropMatrices& fPropMatrices;
-    std::map<unsigned int, TMatrixD> fResult;
+    std::map<int, TMatrixD> fResult;
     TMatrixD fSum;
     ClassDefNV(Propagator, 1)
 

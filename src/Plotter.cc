@@ -109,13 +109,13 @@ namespace prop {
       stringstream name;
       name << "lambdaInt" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";lg(E/eV);c #tau [Mpc]",
+                                ";lg(E/eV);c #tau  [Mpc]",
                                 n, x1, x2));
       TH1D* hInt = fHists.back();
       name.str("");
       name << "lambdaEsc" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";c #tau [Mpc]; lg(E/eV)",
+                                ";c #tau  [Mpc]; lg(E/eV)",
                                 n, x1, x2));
       TH1D* hEsc = fHists.back();
       hEsc->SetLineStyle(2);
@@ -335,7 +335,7 @@ namespace prop {
                             const unsigned int n, const double x1, const double x2)
   {
 
-    const map<unsigned int, TMatrixD>& specMap = neutrinos.GetOscillatedFlux();
+    const map<int, TMatrixD>& specMap = neutrinos.GetOscillatedFlux();
 
     const int electronColor = kRed;
     const int muonColor = kGreen+1;

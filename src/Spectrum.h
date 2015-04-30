@@ -57,9 +57,9 @@ namespace prop {
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions);
 
-    const SpecMap& GetInjFlux();
-    const SpecMap& GetEscFlux();
-    const SpecMap& GetNucleonFlux();
+    const SpecMap& GetInjFlux() const;
+    const SpecMap& GetEscFlux() const;
+    const SpecMap& GetNucleonFlux() const;
 
     void AddEscComponent(const unsigned int A, const TMatrixD& flux);
 
@@ -85,7 +85,7 @@ namespace prop {
     double InjectedPower(const double E1, const double A) const;
 
   private:
-    void CalculateSpectrum();
+    void CalculateSpectrum() const;
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
@@ -97,9 +97,9 @@ namespace prop {
     double fLgEmin;
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
-    SpecMap fInj;
-    SpecMap fEscape;
-    SpecMap fNucleons;
+    mutable SpecMap fInj;
+    mutable SpecMap fEscape;
+    mutable SpecMap fNucleons;
   };
 }
 #endif

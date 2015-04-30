@@ -9,13 +9,13 @@ using namespace std;
 
 namespace prop {
   void
-  Propagator::Propagate(const map<unsigned int, TMatrixD>& spectrum)
+  Propagator::Propagate(const map<int, TMatrixD>& spectrum)
   {
 
     fResult.clear();
     fSum.ResizeTo(0, 0);
     for (const auto& iter : spectrum) {
-      const unsigned int Aprim = iter.first;
+      const int Aprim = iter.first;
       const TMatrixD& sourceSpectrum = iter.second;
       if (!fPropMatrices.HasPrimary(Aprim)) {
         stringstream errMsg;

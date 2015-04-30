@@ -40,13 +40,13 @@ main(int argc, char** argv)
     spectrum2[i][0] = pow(E/1e18, gammaSource);
   }
 
-  map<unsigned int, TMatrixD> proton;
+  map<int, TMatrixD> proton;
   proton[1].ResizeTo(spectrum1);
   proton[1] = spectrum1;
   p.Propagate(proton);
   const TMatrixD propProton = p.GetSum();
 
-  map<unsigned int, TMatrixD> iron;
+  map<int, TMatrixD> iron;
   iron[nucleonTest].ResizeTo(spectrum2);
   iron[nucleonTest] = spectrum2;
   p.Propagate(iron);

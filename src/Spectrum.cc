@@ -19,6 +19,7 @@ namespace prop {
   const
   Spectrum::SpecMap&
   Spectrum::GetEscFlux()
+    const
   {
     if (fEscape.empty())
       CalculateSpectrum();
@@ -29,6 +30,7 @@ namespace prop {
   const
   Spectrum::SpecMap&
   Spectrum::GetNucleonFlux()
+    const
   {
     if (fNucleons.empty())
       CalculateSpectrum();
@@ -38,6 +40,7 @@ namespace prop {
   const
   Spectrum::SpecMap&
   Spectrum::GetInjFlux()
+    const
   {
     if (!fInj.empty())
       return fInj;
@@ -55,8 +58,8 @@ namespace prop {
       for (unsigned int iE = 0; iE < fN; ++iE) {
         const double flux =
           frac * InjectedFlux(pow(10, lgE), Ainj);
-          m[iE][0] += flux;
-          lgE += dlgE;
+        m[iE][0] += flux;
+        lgE += dlgE;
       }
     }
 
@@ -240,12 +243,11 @@ namespace prop {
   {
     const TAxis& axis = *h.GetXaxis();
     const int iBin = axis.FindFixBin(xx);
-    cout << iBin << endl;
-    cout << axis.GetXmin() << endl;
-    if (iBin == 0 || iBin == axis.GetNbins() + 1) {
+    if (iBin <= 0 || iBin >= axis.GetNbins() + 1) {
       cerr << " LogEval(): outside TH1 range, "
-           << xx << " < " << axis.GetXmin() << " "
-           << axis.GetXmax() << endl;
+           << xx << ", " << axis.GetXmin() << ", "
+           << axis.GetXmax() << ", "
+           << iBin << ", " << axis.GetNbins() << endl;
       return 0;
     }
 
@@ -283,18 +285,34 @@ namespace prop {
 
   void
   Spectrum::CalculateSpectrum()
+    const
   {
+
+    TMatrixD& mRemnant = fNucleons[eRemnant];
+    if (!mRemnant.GetNoElements())
+      mRemnant.ResizeTo(fN, 1);
+    TMatrixD& mPD = fNucleons[eKnockOutPD];
+    if (!mPD.GetNoElements())
+      mPD.ResizeTo(fN, 1);
+    TMatrixD& mPP = fNucleons[eKnockOutPP];
+    if (!mPP.GetNoElements())
+      mPP.ResizeTo(fN, 1);
+    TMatrixD& mPion = fNucleons[ePionPP];
+    if (!mPion.GetNoElements())
+      mPion.ResizeTo(fN, 1);
+
+    const double Emax  = pow(10, fLgEmax);
+
     TDirectory* save = gDirectory;
     gROOT->cd();
 
     const double dlgE = (fLgEmax - fLgEmin) / fN;
-
     for (const auto& iter : fFractions) {
       const int Ainj = iter.first;
       const double frac = iter.second;
 
       vector<TH1D*> prodSpectrum;
-      for (int i = 0; i < Ainj; ++i) {
+      for (int i = 0; i <= Ainj; ++i) {
         stringstream tit;
         tit << "prodSpec" << i;
         prodSpectrum.push_back(new TH1D(tit.str().c_str(), "",
@@ -304,17 +322,66 @@ namespace prop {
       TH1D& h = *prodSpectrum[Ainj];
       double lgE = fLgEmin + dlgE / 2;
       for (unsigned int iE = 0; iE < fN; ++iE) {
-        const double injectedFlux = InjectedFlux(pow(10, lgE), Ainj);
-#warning TODO
+        const double E = pow(10, lgE);
+        const double injectedFlux = frac * InjectedFlux(E, Ainj);
         h.SetBinContent(iE + 1, injectedFlux);
         lgE += dlgE;
       }
-      for (TH1D* h : prodSpectrum)
-        delete h;
+
+      for (int Asec = Ainj - 1; Asec > 0; --Asec) {
+        TH1D& hSec = *prodSpectrum[Asec];
+        lgE = fLgEmin + dlgE / 2;
+        for (unsigned int iE = 0; iE < fN; ++iE) {
+          const double E = pow(10, lgE);
+          for (int Aprim = Asec + 1; Aprim <= Ainj; ++Aprim) {
+            const TH1D& hPrim = *prodSpectrum[Aprim];
+            const double jacobi = double(Aprim) / Asec;
+            const double Eprim = jacobi * E;
+            if (Eprim < Emax) {
+              const double b = fSource->GetBranchingRatio(Eprim, Asec, Aprim);
+              if (b > 0) {
+                const double Qprim =  LogEval(hPrim, log10(Eprim));
+                const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
+                const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
+                const double fInt = lambdaE / (lambdaE + lambdaI);
+                hSec.Fill(lgE, fInt * b * jacobi * Qprim);
+              }
+            }
+          }
+          lgE += dlgE;
+        }
+      }
+
+      for (int i = 0; i <= Ainj; ++i) {
+        if (i > 0) {
+          TH1D& h = *prodSpectrum[i];
+          TMatrixD& m = fEscape[i];
+          if (!m.GetNoElements())
+            m.ResizeTo(fN, 1);
+          for (unsigned int iE = 0; iE < fN; ++iE) {
+            const double flux = h.GetBinContent(iE + 1);
+            m[iE][0] += flux;
+          }
+        }
+        delete prodSpectrum[i];
+      }
+    }
+
+    for (auto& iter : fEscape) {
+      const int A = iter.first;
+      TMatrixD& m = iter.second;
+      double lgE = fLgEmin + dlgE / 2;
+      for (unsigned int iE = 0; iE < fN; ++iE) {
+        const double E = pow(10, lgE);
+        const double lambdaI = fSource->LambdaInt(E, A);
+        const double lambdaE = fSource->LambdaEsc(E, A);
+        const double fEsc = lambdaI / (lambdaE + lambdaI);
+        m[iE][0] *= fEsc;
+        lgE += dlgE;
+      }
     }
 
     save->cd();
   }
-
 
 }

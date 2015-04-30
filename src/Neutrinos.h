@@ -17,8 +17,8 @@ namespace prop {
               const std::string& propMatrixFilename);
     ~Neutrinos();
 
-    const std::map<unsigned int, TMatrixD>& GetFlux() const;
-    const std::map<unsigned int, TMatrixD>& GetOscillatedFlux() const;
+    const std::map<int, TMatrixD>& GetFlux() const;
+    const std::map<int, TMatrixD>& GetOscillatedFlux() const;
     double GetOscillatedFlux(const unsigned int id, const double lgE) const;
 
   private:
@@ -26,7 +26,7 @@ namespace prop {
     double fLgEmax;
     double fN;
     Propagator* fPropagator;
-    std::map<unsigned int, TMatrixD> fOscillatedFlux;
+    std::map<int, TMatrixD> fOscillatedFlux;
   };
 
 }

@@ -43,10 +43,10 @@ namespace prop {
       throw runtime_error("nEsc > nProp");
     const unsigned int deltaIndex = nProp - nEsc;
 
-    const map<unsigned int, TMatrixD> escFlux =
+    const map<int, TMatrixD> escFlux =
       spectrum.GetEscFlux();
 
-    map<unsigned int, TMatrixD> escFluxResized;
+    map<int, TMatrixD> escFluxResized;
 
     // fill nuclei
     for (const auto& escMap : escFlux) {
@@ -60,7 +60,7 @@ namespace prop {
     }
 
     // fill nucleons
-    const map<unsigned int, TMatrixD>& escMapN =
+    const map<int, TMatrixD>& escMapN =
       spectrum.GetNucleonFlux();
 
     const TMatrixD& mRemnant = escMapN.find(Spectrum::eRemnant)->second;
@@ -85,7 +85,7 @@ namespace prop {
 
     NeutrinoOscillator osci;
 
-    const map<unsigned int, TMatrixD>& fluxAtEarth =
+    const map<int, TMatrixD>& fluxAtEarth =
       fPropagator->GetFluxAtEarth();
 
     const unsigned int nC = 2;
@@ -120,14 +120,14 @@ namespace prop {
   }
 
 
-  const std::map<unsigned int, TMatrixD>&
+  const std::map<int, TMatrixD>&
   Neutrinos::GetFlux()
     const
   {
     return fPropagator->GetFluxAtEarth();
   }
 
-  const std::map<unsigned int, TMatrixD>&
+  const std::map<int, TMatrixD>&
   Neutrinos::GetOscillatedFlux()
     const
   {

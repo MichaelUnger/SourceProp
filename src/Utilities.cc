@@ -6,7 +6,7 @@
 namespace prop {
 
   std::pair<double, double>
-  logMassMoments(const std::map<unsigned int, TMatrixD>& specMap,
+  logMassMoments(const std::map<int, TMatrixD>& specMap,
                  unsigned int index)
   {
     double sumFluxLnA = 0;
