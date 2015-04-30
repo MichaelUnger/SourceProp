@@ -1,4 +1,4 @@
-#include "Spectrum.h"
+#include "SpectrumSingleNucleon.h"
 #include "VSource.h"
 #include "Utilities.h"
 
@@ -12,8 +12,8 @@ using namespace std;
 namespace prop {
 
   const
-  Spectrum::SpecMap&
-  Spectrum::GetEscFlux()
+  SpectrumSingleNucleon::SpecMap&
+  SpectrumSingleNucleon::GetEscFlux()
     const
   {
     if (!fEscape.empty())
@@ -72,8 +72,8 @@ namespace prop {
 
 
   const
-  Spectrum::SpecMap&
-  Spectrum::GetNucleonFlux()
+  SpectrumSingleNucleon::SpecMap&
+  SpectrumSingleNucleon::GetNucleonFlux()
     const
   {
     if (fNucleons.empty())
@@ -83,8 +83,8 @@ namespace prop {
 
 
   const
-  Spectrum::SpecMap&
-  Spectrum::GetInjFlux()
+  SpectrumSingleNucleon::SpecMap&
+  SpectrumSingleNucleon::GetInjFlux()
     const
   {
     if (!fInj.empty())
@@ -113,7 +113,7 @@ namespace prop {
   }
 
   unsigned int
-  Spectrum::LgEtoIndex(const double lgE)
+  SpectrumSingleNucleon::LgEtoIndex(const double lgE)
     const
   {
     const double dlgE = (fLgEmax - fLgEmin) / fN;
@@ -121,18 +121,18 @@ namespace prop {
   }
 
   double
-  Spectrum::GetFluxSum(const double lgE)
+  SpectrumSingleNucleon::GetFluxSum(const double lgE)
     const
   {
     return GetFluxSum(LgEtoIndex(lgE));
   }
 
   double
-  Spectrum::GetFluxSum(const unsigned int i)
+  SpectrumSingleNucleon::GetFluxSum(const unsigned int i)
     const
   {
     if (i >= fN) {
-      std::cerr << " Spectrum::GetFluxSum() - "
+      std::cerr << " SpectrumSingleNucleon::GetFluxSum() - "
                 << i << " is out of bound " << std::endl;
       return 0;
     }
@@ -148,7 +148,7 @@ namespace prop {
   }
 
   void
-  Spectrum::Rescale(const double f)
+  SpectrumSingleNucleon::Rescale(const double f)
   {
     if (fInj.empty())
       GetInjFlux();
@@ -165,7 +165,7 @@ namespace prop {
   }
 
   double
-  Spectrum::NucleonFlux(const double Ainj, const double E,
+  SpectrumSingleNucleon::NucleonFlux(const double Ainj, const double E,
                         const VSource::EProcess p)
     const
   {
@@ -188,7 +188,7 @@ namespace prop {
   }
 
   double
-  Spectrum::PionFlux(const double Ainj, const double E)
+  SpectrumSingleNucleon::PionFlux(const double Ainj, const double E)
     const
   {
     const double kappa = 0.2;
@@ -210,7 +210,7 @@ namespace prop {
   }
 
   double
-  Spectrum::NucleusFlux(const double Ainj, const double A_i,
+  SpectrumSingleNucleon::NucleusFlux(const double Ainj, const double A_i,
                         const double E)
     const
   {
@@ -233,7 +233,7 @@ namespace prop {
 
 
   void
-  Spectrum::AddEscComponent(const unsigned int A,
+  SpectrumSingleNucleon::AddEscComponent(const unsigned int A,
                             const TMatrixD& flux)
   {
     if (fNucleons.empty())
@@ -246,7 +246,7 @@ namespace prop {
 
 
   double
-  Spectrum::InjectedFlux(const double E, const double A)
+  SpectrumSingleNucleon::InjectedFlux(const double E, const double A)
     const
   {
     const double E0 = GetE0();
@@ -290,7 +290,7 @@ namespace prop {
   }
 
   double
-  Spectrum::InjectedPower(const double E1, const double E2, const double A)
+  SpectrumSingleNucleon::InjectedPower(const double E1, const double E2, const double A)
     const
   {
     const double zEmax = fEmax * aToZ(A);
@@ -313,7 +313,7 @@ namespace prop {
   }
 
   double
-  Spectrum::InjectedPower(const double E1, const double A)
+  SpectrumSingleNucleon::InjectedPower(const double E1, const double A)
     const
   {
     const double zEmax = fEmax * aToZ(A);

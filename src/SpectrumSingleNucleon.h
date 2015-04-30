@@ -1,5 +1,5 @@
-#ifndef _Spectrum_h_
-#define _Spectrum_h_
+#ifndef _SpectrumSingleNucleon_h_
+#define _SpectrumSingleNucleon_h_
 
 #include <map>
 #include <TMatrixD.h>
@@ -11,7 +11,7 @@ namespace prop {
 
   class VSource;
 
-  class Spectrum {
+  class SpectrumSingleNucleon {
 
   public:
     enum ENucleonType {
@@ -33,8 +33,8 @@ namespace prop {
 
     typedef std::map<unsigned int, TMatrixD> SpecMap;
   public:
-    Spectrum() : fCutoffType(eExponential) { }
-    Spectrum(const VSource* s, const double gamma,
+    SpectrumSingleNucleon() : fCutoffType(eExponential) { }
+    SpectrumSingleNucleon(const VSource* s, const double gamma,
              const double Emax, const double nE,
              const double lgEmin, const double lgEmax,
              const std::map<unsigned int, double>& fractions,

@@ -2,7 +2,12 @@
 #include "VSource.h"
 #include "Utilities.h"
 
+#include <TH1D.h>
+#include <TDirectory.h>
+#include <TROOT.h>
+
 #include <cmath>
+#include <sstream>
 #include <limits>
 #include <iostream>
 #include <stdexcept>
@@ -14,59 +19,9 @@ namespace prop {
   const
   Spectrum::SpecMap&
   Spectrum::GetEscFlux()
-    const
   {
-    if (!fEscape.empty())
-      return fEscape;
-
-    const double dlgE = (fLgEmax - fLgEmin) / fN;
-    for (const auto& iter : fFractions) {
-      const unsigned int Ainj = iter.first;
-      const double frac = iter.second;
-
-      for (unsigned int Asec = 1; Asec <= Ainj; ++Asec) {
-        TMatrixD& m = fEscape[Asec];
-        if (!m.GetNoElements())
-          m.ResizeTo(fN, 1);
-
-        double lgE = fLgEmin + dlgE / 2;
-        for (unsigned int iE = 0; iE < fN; ++iE) {
-          const double flux =
-            frac * NucleusFlux(Ainj, Asec, pow(10, lgE));
-          m[iE][0] += flux;
-          if (Asec == 1) {
-            TMatrixD& mRemnant = fNucleons[eRemnant];
-            if (!mRemnant.GetNoElements())
-              mRemnant.ResizeTo(fN, 1);
-            mRemnant[iE][0] += flux;
-          }
-          lgE += dlgE;
-        }
-      }
-
-      TMatrixD& m = fEscape[1];
-      TMatrixD& mPD = fNucleons[eKnockOutPD];
-      if (!mPD.GetNoElements())
-        mPD.ResizeTo(fN, 1);
-      TMatrixD& mPP = fNucleons[eKnockOutPP];
-      if (!mPP.GetNoElements())
-        mPP.ResizeTo(fN, 1);
-      TMatrixD& mPion = fNucleons[ePionPP];
-      if (!mPion.GetNoElements())
-        mPion.ResizeTo(fN, 1);
-
-      double lgE = fLgEmin + dlgE / 2;
-      for (unsigned int iE = 0; iE < fN; ++iE) {
-        const double E = pow(10, lgE);
-        const double pdFlux = frac * NucleonFlux(Ainj, E, VSource::ePD);
-        const double ppFlux = frac * NucleonFlux(Ainj, E, VSource::ePP);
-        m[iE][0] += (pdFlux + ppFlux);
-        mPD[iE][0] += pdFlux;
-        mPP[iE][0] += ppFlux;
-        mPion[iE][0] += frac * PionFlux(Ainj, E);
-        lgE += dlgE;
-      }
-    }
+    if (fEscape.empty())
+      CalculateSpectrum();
     return fEscape;
   }
 
@@ -74,18 +29,15 @@ namespace prop {
   const
   Spectrum::SpecMap&
   Spectrum::GetNucleonFlux()
-    const
   {
     if (fNucleons.empty())
-      GetEscFlux();
+      CalculateSpectrum();
     return fNucleons;
   }
-
 
   const
   Spectrum::SpecMap&
   Spectrum::GetInjFlux()
-    const
   {
     if (!fInj.empty())
       return fInj;
@@ -122,14 +74,12 @@ namespace prop {
 
   double
   Spectrum::GetFluxSum(const double lgE)
-    const
   {
     return GetFluxSum(LgEtoIndex(lgE));
   }
 
   double
   Spectrum::GetFluxSum(const unsigned int i)
-    const
   {
     if (i >= fN) {
       std::cerr << " Spectrum::GetFluxSum() - "
@@ -154,83 +104,11 @@ namespace prop {
       GetInjFlux();
     for (auto& iter : fInj)
       iter.second *= f;
-
-    if (fEscape.empty())
-      GetEscFlux();
     for (auto& iter : fEscape)
       iter.second *= f;
     for (auto& iter : fNucleons)
       iter.second *= f;
-
   }
-
-  double
-  Spectrum::NucleonFlux(const double Ainj, const double E,
-                        const VSource::EProcess p)
-    const
-  {
-    const double kappa = (p == VSource::ePP ? 0.8 : 1);
-    double nucleonSum = 0;
-    for (unsigned int A_i = 2; A_i <= Ainj; ++A_i) {
-      double prod = 1;
-      for (unsigned int A_j = A_i; A_j <= Ainj; ++A_j) {
-        const double Eprime = E * A_j / kappa;
-        const double lambdaI = fSource->LambdaInt(Eprime, A_j);
-        const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
-        prod *= lambdaE / (lambdaE + lambdaI);
-      }
-      const double Eprime = E * A_i / kappa;
-      const double procFrac = fSource->GetProcessFraction(Eprime, A_i, p);
-      nucleonSum += procFrac * prod;
-    }
-    nucleonSum *= (Ainj / kappa) * InjectedFlux(E*Ainj/kappa, Ainj);
-    return nucleonSum;
-  }
-
-  double
-  Spectrum::PionFlux(const double Ainj, const double E)
-    const
-  {
-    const double kappa = 0.2;
-    double pionSum = 0;
-    for (unsigned int A_i = 2; A_i <= Ainj; ++A_i) {
-      double prod = 1;
-      for (unsigned int A_j = A_i; A_j <= Ainj; ++A_j) {
-        const double Eprime = E * A_j / kappa;
-        const double lambdaI = fSource->LambdaInt(Eprime, A_j);
-        const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
-        prod *= lambdaE / (lambdaE + lambdaI);
-      }
-      const double Eprime = E * A_i / kappa;
-      const double procFrac = fSource->GetProcessFraction(Eprime, A_i, VSource::ePP);
-      pionSum += procFrac * prod;
-    }
-    pionSum *= (Ainj / kappa) * InjectedFlux(E*Ainj/kappa, Ainj);
-    return pionSum;
-  }
-
-  double
-  Spectrum::NucleusFlux(const double Ainj, const double A_i,
-                        const double E)
-    const
-  {
-    double prod = Ainj/A_i * InjectedFlux(E * Ainj / A_i, Ainj);
-    for (unsigned int A_j = A_i + 1; A_j <= Ainj; ++A_j) {
-      const double Eprime = E * A_j / A_i;
-      const double lambdaI = fSource->LambdaInt(Eprime, A_j);
-      const double lambdaE = fSource->LambdaEsc(Eprime, A_j);
-      prod *= lambdaE / (lambdaE + lambdaI);
-    }
-#warning no p interactions
-    if (A_i > 1) {
-      const double lambdaI = fSource->LambdaInt(E, A_i);
-      const double lambdaE = fSource->LambdaEsc(E, A_i);
-      return prod * lambdaI / (lambdaE + lambdaI);
-    }
-    else
-      return prod;
-  }
-
 
   void
   Spectrum::AddEscComponent(const unsigned int A,
@@ -337,4 +215,106 @@ namespace prop {
     else
       throw runtime_error("cutoff type not implemented");
   }
+
+  void
+  Spectrum::SetParameters(const VSource* s, const double gamma,
+                          const double Emax, const double nE,
+                          const double lgEmin, const double lgEmax,
+                          const std::map<unsigned int, double>& fractions)
+  {
+    fEscape.clear();
+    fInj.clear();
+    fNucleons.clear();
+    fEmax = Emax;
+    fGamma = gamma;
+    fSource = s;
+    fN = nE;
+    fLgEmin = lgEmin;
+    fLgEmax = lgEmax;
+    fFractions = fractions;
+  }
+
+
+  double
+  LogEval(const TH1D& h, const double xx)
+  {
+    const TAxis& axis = *h.GetXaxis();
+    const int iBin = axis.FindFixBin(xx);
+    cout << iBin << endl;
+    cout << axis.GetXmin() << endl;
+    if (iBin == 0 || iBin == axis.GetNbins() + 1) {
+      cerr << " LogEval(): outside TH1 range, "
+           << xx << " < " << axis.GetXmin() << " "
+           << axis.GetXmax() << endl;
+      return 0;
+    }
+
+    int i1, i2;
+    if (iBin == 1) {
+      i1 = 1;
+      i2 = 2;
+    }
+    else if (iBin == axis.GetNbins()) {
+      i1 = iBin - 1;
+      i2 = iBin;
+    }
+    else if (xx > axis.GetBinCenter(iBin)) {
+      i1 = iBin;
+      i2 = iBin + 1;
+    }
+    else {
+      i1 = iBin - 1;
+      i2 = iBin;
+    }
+
+    const double xLow = axis.GetBinCenter(i1);
+    const double xUp = axis.GetBinCenter(i2);
+    const double y1 = h.GetBinContent(i1);
+    const double y2 = h.GetBinContent(i2);
+    if (y1 == 0 || y2 == 0)
+      return 0;
+    const double yLow = log(y1);
+    const double yUp = log(y2);
+
+    const double yn = xx*(yLow - yUp) + xLow*yUp - xUp*yLow;
+    return exp(yn / (xLow - xUp));
+  }
+
+
+  void
+  Spectrum::CalculateSpectrum()
+  {
+    TDirectory* save = gDirectory;
+    gROOT->cd();
+
+    const double dlgE = (fLgEmax - fLgEmin) / fN;
+
+    for (const auto& iter : fFractions) {
+      const int Ainj = iter.first;
+      const double frac = iter.second;
+
+      vector<TH1D*> prodSpectrum;
+      for (int i = 0; i < Ainj; ++i) {
+        stringstream tit;
+        tit << "prodSpec" << i;
+        prodSpectrum.push_back(new TH1D(tit.str().c_str(), "",
+                                        fN, fLgEmin, fLgEmax));
+      }
+
+      TH1D& h = *prodSpectrum[Ainj];
+      double lgE = fLgEmin + dlgE / 2;
+      for (unsigned int iE = 0; iE < fN; ++iE) {
+        const double injectedFlux = InjectedFlux(pow(10, lgE), Ainj);
+#warning TODO
+        h.SetBinContent(iE + 1, injectedFlux);
+        lgE += dlgE;
+      }
+      for (TH1D* h : prodSpectrum)
+        delete h;
+    }
+
+    save->cd();
+  }
+
+
 }

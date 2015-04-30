@@ -31,7 +31,7 @@ namespace prop {
       eDeltaGamma4
     };
 
-    typedef std::map<unsigned int, TMatrixD> SpecMap;
+    typedef std::map<int, TMatrixD> SpecMap;
   public:
     Spectrum() : fCutoffType(eExponential) { }
     Spectrum(const VSource* s, const double gamma,
@@ -55,29 +55,16 @@ namespace prop {
     void SetParameters(const VSource* s, const double gamma,
                        const double Emax, const double nE,
                        const double lgEmin, const double lgEmax,
-                       const std::map<unsigned int, double>& fractions)
-    {
-      Reset();
-      fEmax = Emax;
-      fGamma = gamma;
-      fSource = s;
-      fN = nE;
-      fLgEmin = lgEmin;
-      fLgEmax = lgEmax;
-      fFractions = fractions;
-    }
+                       const std::map<unsigned int, double>& fractions);
 
-    void Reset()
-    { fEscape.clear(); fInj.clear(); fNucleons.clear(); }
-
-    const SpecMap& GetInjFlux() const;
-    const SpecMap& GetEscFlux() const;
-    const SpecMap& GetNucleonFlux() const;
+    const SpecMap& GetInjFlux();
+    const SpecMap& GetEscFlux();
+    const SpecMap& GetNucleonFlux();
 
     void AddEscComponent(const unsigned int A, const TMatrixD& flux);
 
-    double GetFluxSum(const unsigned int i) const;
-    double GetFluxSum(const double lgE) const;
+    double GetFluxSum(const unsigned int i);
+    double GetFluxSum(const double lgE);
 
     double GetN() const
     { return fN; }
@@ -98,11 +85,7 @@ namespace prop {
     double InjectedPower(const double E1, const double A) const;
 
   private:
-    double NucleonFlux(const double Ainj, const double E,
-                       const VSource::EProcess p) const;
-    double NucleusFlux(const double Ainj, const double A_i,
-                       const double E) const;
-    double PionFlux(const double Ainj, const double E) const;
+    void CalculateSpectrum();
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
@@ -114,9 +97,9 @@ namespace prop {
     double fLgEmin;
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
-    mutable SpecMap fInj;
-    mutable SpecMap fEscape;
-    mutable SpecMap fNucleons;
+    SpecMap fInj;
+    SpecMap fEscape;
+    SpecMap fNucleons;
   };
 }
 #endif
