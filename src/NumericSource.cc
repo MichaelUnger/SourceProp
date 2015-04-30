@@ -112,7 +112,7 @@ namespace prop {
         double lInv;
         while (iss >> lInv) {
           const double kappa = lossLength ? 1./(Z+N) : 1;
-          lambdaInv.push_back(1/(TMath::Max(lInv,1e-200)*kappa));
+          lambdaInv.push_back(1/(TMath::Max(lInv,1e-99)*kappa));
           lgGammaVec.push_back(lgGamma+log10(Z*gProtonMass+N*gNeutronMass));
           lgGamma += dLgGamma;
         }
@@ -177,7 +177,7 @@ namespace prop {
         lgE = lgGamma+log10(Z*gProtonMass+N*gNeutronMass);
         kappa = lossLength ? 1./ (Z+N) : 1;
       }
-      lambdaInv.push_back(1/(lInv*kappa));
+      lambdaInv.push_back(1/(TMath::Max(lInv, 1e-99)*kappa));
       lgGammaVec.push_back(lgE);
     }
     graph = new TGraph(lambdaInv.size(),
