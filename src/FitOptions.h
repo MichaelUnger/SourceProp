@@ -28,6 +28,14 @@ namespace prop {
   class FitOptions {
 
   public:
+
+    enum EPhotonFieldType {
+      eUnknown,
+      eBrokenPowerlaw,
+      eBlackBody
+    };
+
+  public:
     FitOptions(const std::string& filename);
     unsigned int GetNmass() const { return fMassValues.size(); }
     double GetStartValue(const EPar par) const;
@@ -57,6 +65,8 @@ namespace prop {
     double GetEps0() const;
     double GetAlpha() const;
     double GetBeta() const;
+    double GetBBTemperature() const;
+    double GetBBSigma() const;
 
     bool DoCompositionFit() const
     { return fFitCompo; }
@@ -85,6 +95,8 @@ namespace prop {
     Spectrum::ECutoffType GetCutoffType() const
     { return fCutoffType; }
 
+    EPhotonFieldType GetPhotonFieldType() const
+    { return fPhotonFieldType; }
 
   private:
     std::map<EPar, StartValues> fStartValues;
@@ -94,6 +106,8 @@ namespace prop {
     std::string fEps0;
     std::string fBeta;
     std::string fAlpha;
+    std::string fBBTemperature;
+    std::string fBBSigma;
     bool fFitCompo;
     bool fRejectOutliers;
     double fMinFluxLgE;
@@ -103,6 +117,7 @@ namespace prop {
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
     unsigned int fGalMass;
+    EPhotonFieldType fPhotonFieldType;
   };
 }
 

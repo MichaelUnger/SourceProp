@@ -13,6 +13,8 @@
 
 #include <TCanvas.h>
 #include <TLatex.h>
+#include <TStyle.h>
+#include <TLegend.h>
 #include <TMath.h>
 #include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
@@ -65,28 +67,88 @@ DrawData(const FitData& fitData,
   allSpectrum->Draw("P");
   fitSpectrum->Draw("P");
 
+  TLegend* legSpec = new TLegend(0.454, 0.77, 0.92, 0.89, NULL, "brNDCARC");
+  legSpec->SetFillColor(0);
+  legSpec->SetTextFont(42);
+  legSpec->SetFillStyle(0);
+  legSpec->SetBorderSize(0);
+  legSpec->SetTextSize(0.05);
+  legSpec->AddEntry(fitSpectrum, " Auger 2013 prel.","PE");
+  legSpec->AddEntry(fitSpectrum, " model","l");
+  legSpec->Draw();
 
   TGraphErrors* fitLnA = new TGraphErrors();
+  TGraph* fitLnA2 = new TGraph();
   TGraphErrors* fitVlnA = new TGraphErrors();
+  TGraphAsymmErrors* fitLnASys = new TGraphAsymmErrors();
+  TGraphAsymmErrors* fitVlnASys = new TGraphAsymmErrors();
   const vector<CompoData>& compData = fitData.fCompoData;
+  const double dlgE = 0.05;
   for (unsigned int i = 0; i < fluxData.size(); ++i) {
     fitLnA->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
+    fitLnA2->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
     fitLnA->SetPointError(i, 0, compData[i].fLnAErr);
+    fitLnASys->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
+    fitLnASys->SetPointEYlow(i, compData[i].fLnASysLow);
+    fitLnASys->SetPointEYhigh(i, compData[i].fLnASysUp);
+    fitLnASys->SetPointEXlow(i, dlgE);
+    fitLnASys->SetPointEXhigh(i, dlgE);
 
     fitVlnA->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
     fitVlnA->SetPointError(i, 0, compData[i].fVlnAErr);
-
+    fitVlnASys->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
+    fitVlnASys->SetPointEYlow(i, compData[i].fVlnASysLow);
+    fitVlnASys->SetPointEYhigh(i, compData[i].fVlnASysUp);
+    fitVlnASys->SetPointEXlow(i, dlgE);
+    fitVlnASys->SetPointEXhigh(i, dlgE);
   }
   fitLnA->SetLineColor(kRed);
   fitLnA->SetMarkerColor(kRed);
+  fitLnASys->SetLineColor(kRed);
   fitVlnA->SetLineColor(kGray+3);
   fitVlnA->SetMarkerColor(kGray+3);
-  fitVlnA->SetMarkerStyle(24);
+  fitVlnA->SetMarkerStyle(21);
+  fitVlnASys->SetLineColor(kGray+3);
+  fitLnA2->SetMarkerStyle(24);
+  fitLnA2->SetLineColor(kBlack);
 
   can->cd(Plotter::eCompEarth);
-  fitLnA->Draw("P");
-  fitVlnA->Draw("P");
+  fitVlnASys->Draw("5");
+  TGraphAsymmErrors* fitVlnASys2 =
+    (TGraphAsymmErrors*) fitVlnASys->Clone("fitVlnASys2");
+  fitLnASys->Draw("5");
+  fitLnASys->SetFillColor(kRed-10);
+  fitLnASys->SetFillStyle(1001);
+  fitVlnASys->SetFillColor(kGray);
+  fitVlnASys->SetFillStyle(1001);
+  fitVlnASys2->SetFillStyle(0);
+  //  fitVlnASys2->SetLineColor(kGray+3);
+  fitVlnASys2->SetLineColor(kGray+3);
+  fitVlnASys2->Draw("5");
+  TH1D* lnA;
+  TH1D* vlnA;
+  gROOT->GetObject("hLnA", lnA);
+  lnA->Draw("CSAME");
+  gROOT->GetObject("hvLnA", vlnA);
+  vlnA->Draw("CSAME");
+  fitLnA->Draw("PZ");
+  fitVlnA->Draw("PZ");
+  fitLnA2->Draw("P");
 
+
+  TLegend* leg = new TLegend(0.21, 0.82, 0.78, 0.90, NULL, "brNDCARC");
+  leg->SetNColumns(5);
+  leg->SetFillColor(0);
+  leg->SetTextFont(42);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->AddEntry(fitLnA, " #LTln A#GT", "PL");
+  leg->AddEntry(fitVlnA, " V(ln A)", "PL");
+  leg->Draw();
+  TLatex l;
+  l.SetTextAlign(23); l.SetTextSize(0.05);
+  l.SetTextFont(42); l.SetNDC(true);
+  l.DrawLatex(0.8, 0.8688, "Auger 2014");
 }
 
 void
@@ -123,16 +185,25 @@ DrawValues(const FitData& fitData,
 
   const double eps0Y = y;
   stringstream photonString;
-  photonString << "#varepsilon_{0} = " << fitOptions.GetEps0() << " eV";
-  l.SetTextColor(fixColor);
-  l.DrawLatex(x, y, photonString.str().c_str());
-  y -= dy;
-  photonString.str("");
-  photonString << "#alpha="
-               << fitOptions.GetAlpha() << ", beta="
-               << fitOptions.GetBeta();
-  l.DrawLatex(x, y, photonString.str().c_str());
-  y -= dy;
+  if (fitOptions.GetPhotonFieldType() == FitOptions::eBrokenPowerlaw) {
+    photonString << "#varepsilon_{0} = " << fitOptions.GetEps0() << " eV";
+    l.SetTextColor(fixColor);
+    l.DrawLatex(x, y, photonString.str().c_str());
+    y -= dy;
+    photonString.str("");
+    photonString << "#alpha="
+                 << fitOptions.GetAlpha() << ", #beta="
+                 << fitOptions.GetBeta();
+    l.DrawLatex(x, y, photonString.str().c_str());
+    y -= dy;
+  }
+  else if (fitOptions.GetPhotonFieldType() == FitOptions::eBlackBody) {
+    photonString << "T ="
+                 << fitOptions.GetBBTemperature() << " K, #sigma ="
+                 << fitOptions.GetBBSigma();
+    l.DrawLatex(x, y, photonString.str().c_str());
+    y -= dy;
+  }
 
   l.SetTextColor(fixColor);
   stringstream sys;
@@ -236,12 +307,12 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   massGroups.push_back(MassGroup(3, 6, 4, kOrange));
   massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
   massGroups.push_back(MassGroup(20, 40, 26, kAzure+10));
-  massGroups.push_back(MassGroup(41, 56, 56, kBlue));
+  massGroups.push_back(MassGroup(40, 56, 56, kBlue));
   const unsigned int Agal = opt.GetGalacticMass() + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
                                  kMagenta+2, 2));
 
-  const double gammaScaleSource = 2;
+  const double gammaScaleSource = 1;
   const double gammaScaleEarth = 3;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
@@ -249,20 +320,27 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17.5, 20.7);
+  plot.SetXRange(17.5, 20.5);
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
   can->Print(("pdfs/" + fitFilename + ".pdf").c_str());
-
+  /*
+  can->cd(1)->Print(("pdfs/" + fitFilename + "Injected.pdf").c_str());
+  can->cd(2)->Print(("pdfs/" + fitFilename + "Escape.pdf").c_str());
+  can->cd(3)->Print(("pdfs/" + fitFilename + "Earth.pdf").c_str());
+  can->cd(4)->Print(("pdfs/" + fitFilename + "Lambda.pdf").c_str());
+  can->cd(5)->Print(("pdfs/" + fitFilename + "Parameters.pdf").c_str());
+  can->cd(6)->Print(("pdfs/" + fitFilename + "Composition.pdf").c_str());
+  */
   if (!neutrino)
     return;
 
   Neutrinos neutrinos(fitData.fSpectrum,
                       opt.GetPropmatrixNuFilename());
   TCanvas* neutrinoCanvas;
-  bool singleSlide = false;
+  bool singleSlide = true;
   if (singleSlide) {
    neutrinoCanvas = new TCanvas("neutrino");
    neutrinoCanvas->Divide(2, 1);

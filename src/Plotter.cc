@@ -109,13 +109,13 @@ namespace prop {
       stringstream name;
       name << "lambdaInt" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";lg(E/eV);#tau [a.u.]",
+                                ";lg(E/eV);c #tau [Mpc]",
                                 n, x1, x2));
       TH1D* hInt = fHists.back();
       name.str("");
       name << "lambdaEsc" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";#tau [a.u.]; lg(E/eV)",
+                                ";c #tau [Mpc]; lg(E/eV)",
                                 n, x1, x2));
       TH1D* hEsc = fHists.back();
       hEsc->SetLineStyle(2);
@@ -145,7 +145,7 @@ namespace prop {
     fCanvas->cd(eCompInj)->SetLogy(1);
     for (unsigned int i = firstHist; i < fHists.size(); ++i) {
       if (i == firstHist) {
-        fHists[i]->GetYaxis()->SetRangeUser(yMin*0.5, yMax*2);
+        fHists[i]->GetYaxis()->SetRangeUser(yMin*0.5, fmin(1e3, yMax*2));
         fHists[i]->Draw("C");
       }
       else
