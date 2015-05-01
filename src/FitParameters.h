@@ -11,6 +11,7 @@ namespace prop {
     eEscGamma,
     eFGal,
     eGammaGal,
+    eLgEmaxGal,
     eNoPhoton,
     eNpars
   };

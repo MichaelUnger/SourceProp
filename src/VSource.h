@@ -43,7 +43,7 @@ namespace prop {
 
     virtual
     double
-    GetBranchingRatio(const double /*E*/, const int /*Asec*/, const int /*Aprim*/)
+    GetPDBranchingRatio(const double /*E*/, const int /*Asec*/, const int /*Aprim*/)
       const = 0;
 
     virtual

@@ -340,7 +340,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   Neutrinos neutrinos(fitData.fSpectrum,
                       opt.GetPropmatrixNuFilename());
   TCanvas* neutrinoCanvas;
-  bool singleSlide = true;
+  bool singleSlide = false;
   if (singleSlide) {
    neutrinoCanvas = new TCanvas("neutrino");
    neutrinoCanvas->Divide(2, 1);

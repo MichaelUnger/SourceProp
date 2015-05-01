@@ -112,7 +112,7 @@ namespace prop {
     if (fGal > 0) {
       const double lgE0 = 17.55;
       const double E0 = pow(10, lgE0);
-      const double emaxGal = 2e19; // infinity for now
+      const double emaxGal = pow(10, par[eLgEmaxGal]);
       const double gammaGal = par[eGammaGal];
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
       const double sE = exp(-E0/emaxGal);

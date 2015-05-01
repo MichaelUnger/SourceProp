@@ -103,8 +103,8 @@ namespace prop {
       for (unsigned int iE = 0; iE < fN; ++iE) {
         const double flux =
           frac * InjectedFlux(pow(10, lgE), Ainj);
-          m[iE][0] += flux;
-          lgE += dlgE;
+        m[iE][0] += flux;
+        lgE += dlgE;
       }
     }
 
@@ -166,7 +166,7 @@ namespace prop {
 
   double
   SpectrumSingleNucleon::NucleonFlux(const double Ainj, const double E,
-                        const VSource::EProcess p)
+                                     const VSource::EProcess p)
     const
   {
     const double kappa = (p == VSource::ePP ? 0.8 : 1);
@@ -211,7 +211,7 @@ namespace prop {
 
   double
   SpectrumSingleNucleon::NucleusFlux(const double Ainj, const double A_i,
-                        const double E)
+                                     const double E)
     const
   {
     double prod = Ainj/A_i * InjectedFlux(E * Ainj / A_i, Ainj);
@@ -234,7 +234,7 @@ namespace prop {
 
   void
   SpectrumSingleNucleon::AddEscComponent(const unsigned int A,
-                            const TMatrixD& flux)
+                                         const TMatrixD& flux)
   {
     if (fNucleons.empty())
       GetEscFlux();
