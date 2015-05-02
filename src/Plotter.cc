@@ -29,7 +29,8 @@ namespace prop {
     fUnits(units),
     fCanvas(c),
     fGammaSource(gammaSource),
-    fGammaEarth(gammaEarth)
+    fGammaEarth(gammaEarth),
+    fNNeutrino(0)
   {
     gStyle->SetPadTopMargin(0.1);
     gStyle->SetPadLeftMargin(.16);
@@ -598,6 +599,7 @@ namespace prop {
     stringstream events;
     events << "#Sigma events = " << int(nEvents*10)/10.;
     l.DrawLatex(0.35, 0.88, events.str().c_str());
+    fNNeutrino = nEvents;
  }
 
 

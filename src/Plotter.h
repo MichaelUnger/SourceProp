@@ -73,6 +73,8 @@ namespace prop {
     void DrawNeutrinoPlot(const Neutrinos& neutrinos,
                           const double gamma,
                           const unsigned int n, const double x1, const double x2);
+    double GetNNeutrinos() const
+    { return fNNeutrino; }
 
   private:
     template<class T>
@@ -99,6 +101,7 @@ namespace prop {
     double fGammaSource;
     double fGammaEarth;
     std::vector<TH1D*> fHists;
+    double fNNeutrino;
   };
 }
 

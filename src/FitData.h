@@ -65,6 +65,7 @@ namespace prop {
     double fLgEmax;
     std::vector<double> fMasses;
     std::vector<FluxData> fFluxData;
+    std::vector<FluxData> fLowEFluxData;
     std::vector<CompoData> fCompoData;
     std::vector<FluxData> fAllFluxData;
     std::vector<CompoData> fAllCompoData;

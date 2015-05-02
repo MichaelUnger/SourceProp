@@ -342,6 +342,40 @@ namespace prop {
         fFitData.fFluxData.push_back(flux);
     }
 
+    // Table 3 from  Astroparticle Physics 36 (2012) 183–194
+    // energy in eV
+    // flux in m-2 s-1 sr-1 GeV-1
+    if (false) {
+      ifstream inKG("data/KascadeGrande2012.txt");
+      while (true) {
+        FluxData flux;
+        double energy, flx, ferr, ferrUp, ferrLow;
+        inKG >> energy >> flx >> ferr >> ferrUp >> ferrLow;
+        if (!inKG.good())
+          break;
+        const double fac = 1e6*365*24*3600./1e9;
+        flx *= fac;
+        ferr *= fac;
+        ferrUp *= fac;
+        ferrLow *= fac;
+        flux.fFluxErr = ferr; //(ferrUp+ferrLow)/2 ;
+        flux.fFluxErrUp = ferr; //ferrUp;
+        flux.fFluxErrLow = ferr; //ferrLow;
+        flux.fN = 100; // dummy
+        flux.fLgE = log10(energy);
+        flux.fFlux = flx;
+
+        // syst shift?
+        flux.fLgE += deltaLgESys;
+
+        fFitData.fAllFluxData.push_back(flux);
+        if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+          fFitData.fFluxData.push_back(flux);
+          fFitData.fLowEFluxData.push_back(flux);
+        }
+      }
+    }
+
     cout << " spectrum: nAll = " <<  fFitData.fAllFluxData.size()
          << ", nFit = " <<  fFitData.fFluxData.size() << endl;
 

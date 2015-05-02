@@ -72,14 +72,18 @@ namespace prop {
     mP.ResizeTo(nProp, 1);
     TMatrixD& mN = escFluxResized[eNeutron];
     mN.ResizeTo(nProp, 1);
-    TMatrixD& mPion = escFluxResized[ePionPlus];
-    mPion.ResizeTo(nProp, 1);
+    TMatrixD& mPionPlus = escFluxResized[ePionPlus];
+    mPionPlus.ResizeTo(nProp, 1);
+    TMatrixD& mPionMinus = escFluxResized[ePionMinus];
+    mPionMinus.ResizeTo(nProp, 1);
 
     for (unsigned int i = 0; i < nEsc; ++i) {
       const double knockOut = mPD(i, 0) + mPP(i, 0);
-      mP(i + deltaIndex, 0) = mRemnant(i ,0) + knockOut*0.5;
-      mN(i + deltaIndex, 0) = knockOut*0.5;
-      mPion(i + deltaIndex, 0) = mPiPP(i, 0)*0.5;
+      mP(i + deltaIndex, 0) = mRemnant(i, 0)*0.5 + knockOut*0.5;
+      mN(i + deltaIndex, 0) = mRemnant(i, 0)*0.5 + knockOut*0.5;
+      // 50% pi0, 50% charged pions
+      mPionPlus(i + deltaIndex, 0) = mPiPP(i, 0)*0.25;
+      mPionMinus(i + deltaIndex, 0) = mPiPP(i, 0)*0.25;
     }
     fPropagator->Propagate(escFluxResized);
 

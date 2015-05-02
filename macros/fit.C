@@ -3,8 +3,10 @@
 #include <Neutrinos.h>
 #include <Plotter.h>
 #include <Particles.h>
+#include <FitSummary.h>
 #include <utl/Units.h>
 #include <utl/PhysicalConstants.h>
+#include <utl/RootFile.h>
 
 #include <vector>
 #include <sstream>
@@ -40,6 +42,18 @@ DrawData(const FitData& fitData,
     fitSpectrum->SetPointEYlow(i, w*fluxData[i].fFluxErrLow);
   }
 
+  TGraphAsymmErrors* lowESpectrum = new TGraphAsymmErrors();
+  TGraph* lowESpectrum2 = new TGraph();
+  const vector<FluxData>& lowEFluxData = fitData.fLowEFluxData;
+  for (unsigned int i = 0; i < lowEFluxData.size(); ++i) {
+    const double w = pow(pow(10, lowEFluxData[i].fLgE), gammaScaleEarth);
+    lowESpectrum->SetPoint(i, lowEFluxData[i].fLgE, w*lowEFluxData[i].fFlux);
+    lowESpectrum->SetPointEYhigh(i, w*lowEFluxData[i].fFluxErrUp);
+    lowESpectrum->SetPointEYlow(i, w*lowEFluxData[i].fFluxErrLow);
+    lowESpectrum2->SetPoint(i, lowEFluxData[i].fLgE, w*lowEFluxData[i].fFlux);
+  }
+  lowESpectrum->SetMarkerColor(kGray);
+
   double maxY = 0;
   TGraphAsymmErrors* allSpectrum = new TGraphAsymmErrors();
   const vector<FluxData>& fluxDataAll = fitData.fAllFluxData;
@@ -66,6 +80,11 @@ DrawData(const FitData& fitData,
   can->cd(Plotter::eFluxEarth);
   allSpectrum->Draw("P");
   fitSpectrum->Draw("P");
+  if (lowESpectrum->GetN()) {
+    lowESpectrum->Draw("P");
+    lowESpectrum2->SetMarkerStyle(24);
+    lowESpectrum2->Draw("P");
+  }
 
   TLegend* legSpec = new TLegend(0.454, 0.77, 0.92, 0.89, NULL, "brNDCARC");
   legSpec->SetFillColor(0);
@@ -73,6 +92,8 @@ DrawData(const FitData& fitData,
   legSpec->SetFillStyle(0);
   legSpec->SetBorderSize(0);
   legSpec->SetTextSize(0.05);
+  if (lowESpectrum->GetN())
+    legSpec->AddEntry(lowESpectrum, " KG 2012","PE");
   legSpec->AddEntry(fitSpectrum, " Auger 2013 prel.","PE");
   legSpec->AddEntry(fitSpectrum, " model","l");
   legSpec->Draw();
@@ -334,24 +355,30 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   can->cd(5)->Print(("pdfs/" + fitFilename + "Parameters.pdf").c_str());
   can->cd(6)->Print(("pdfs/" + fitFilename + "Composition.pdf").c_str());
   */
-  if (!neutrino)
-    return;
 
-  Neutrinos neutrinos(fitData.fSpectrum,
-                      opt.GetPropmatrixNuFilename());
-  TCanvas* neutrinoCanvas;
-  bool singleSlide = false;
-  if (singleSlide) {
-   neutrinoCanvas = new TCanvas("neutrino");
-   neutrinoCanvas->Divide(2, 1);
+  RootOutFile<FitSummary> rootFile("pdfs/" + fitFilename + ".root");
+  FitSummary fitSummary;
+  fitSummary.Fill(fitData, opt);
+
+  if (neutrino) {
+    Neutrinos neutrinos(fitData.fSpectrum,
+                        opt.GetPropmatrixNuFilename());
+    TCanvas* neutrinoCanvas;
+    bool singleSlide = false;
+    if (singleSlide) {
+      neutrinoCanvas = new TCanvas("neutrino");
+      neutrinoCanvas->Divide(2, 1);
+    }
+    else {
+      neutrinoCanvas = new TCanvas("neutrino", " ", 800, 20, 300, 700);
+      neutrinoCanvas->Divide(1, 2);
+    }
+    Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
+    neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, 100, 12., 22.);
+    neutrinoCanvas->Print(("pdfs/" + fitFilename + "_nu.pdf").c_str());
+    fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
   }
-  else {
-    neutrinoCanvas = new TCanvas("neutrino", " ", 800, 20, 300, 700);
-    neutrinoCanvas->Divide(1, 2);
-  }
-  Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
-  neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, 100, 12., 22.);
-  neutrinoCanvas->Print(("pdfs/" + fitFilename + "_nu.pdf").c_str());
+  rootFile << fitSummary;
 
 }
 
