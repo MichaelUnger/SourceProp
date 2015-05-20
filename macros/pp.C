@@ -3,8 +3,8 @@ const double gNeutronMass = 939.565379e6;
 TGraph*
 GetPD(string filename)
 {
-  int Z = 14;
-  int N = 14;
+  int Z = 26;
+  int N = 30;
   bool lossLength = false;
   ifstream infile(filename.c_str());
   string line;
@@ -92,8 +92,9 @@ pp()
 {
 
   gStyle->SetOptLogy(1);
-  const string dir = "/ssd/munger/Mag/CRPropa3-data/data/";
-  TLegend* leg = new TLegend(0.2, 0.3, 0.5, 0.5,NULL,"brNDCARC");
+  const string dir = "/ssd/munger/Mag/CRPropa/install/share/crpropa/";
+  //  const string dir = "/ssd/munger/Mag/CRPropa3-data/data/";
+  TLegend* leg = new TLegend(0.69, 0.66, 0.98, 0.96,NULL,"brNDCARC");
   leg->SetFillColor(0);
   leg->SetTextFont(42);
   leg->SetFillStyle(0);
@@ -102,6 +103,8 @@ pp()
   TGraph* k04 = GetPD(dir + "pd_IRB_Kneiske04.txt");
   k04->GetYaxis()->SetRangeUser(9, 1e6);
   k04->GetXaxis()->SetRangeUser(17, 20.5);
+  k04->GetYaxis()->CenterTitle();
+  k04->GetXaxis()->CenterTitle();
   k04->Draw("AP");
   k04->SetTitle(";lg(E/eV);interaction length [Mpc]");
   k04->SetMarkerColor(kBlack);  k04->SetMarkerStyle(20);

@@ -172,6 +172,8 @@ namespace prop {
 
     // no A = 5 in CRPropa
     const int A = mass == 5 ? 4 : mass;
+    //    #warning AAAAAAAAAAAAAAAA
+    //    const int A = AA == 28 ? 29 : AA;
 
     const TGraph* graph = fPhotoDissociation[A];
     if (graph)
@@ -300,6 +302,9 @@ namespace prop {
                                      const int Aprim)
     const
   {
+    //    #warning AAAAAAAAAAAAAAAA
+    // const int Aprim = AAprim == 28 ? 29 : AAprim;
+
     if (fSingleNucleon) {
       if (Asec == 1)
         return 1;

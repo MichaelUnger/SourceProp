@@ -41,6 +41,8 @@ namespace prop {
     const PropMatrices& GetPropMatrices() const;
     void PrintSummary() const;
 
+    static double DistributionWeight(const double z,
+                                     const ESourceDistribution sd);
   private:
     double DistributionWeight(const double z) const;
 

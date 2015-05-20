@@ -86,7 +86,7 @@ DrawData(const FitData& fitData,
     lowESpectrum2->Draw("P");
   }
 
-  TLegend* legSpec = new TLegend(0.454, 0.77, 0.92, 0.89, NULL, "brNDCARC");
+  TLegend* legSpec = new TLegend(0.528704, 0.769522, 0.994, 0.89, NULL, "brNDCARC");
   legSpec->SetFillColor(0);
   legSpec->SetTextFont(42);
   legSpec->SetFillStyle(0);
@@ -157,7 +157,7 @@ DrawData(const FitData& fitData,
   fitLnA2->Draw("P");
 
 
-  TLegend* leg = new TLegend(0.21, 0.82, 0.78, 0.90, NULL, "brNDCARC");
+  TLegend* leg = new TLegend(0.21, 0.81, 0.64, 0.87, NULL, "brNDCARC");
   leg->SetNColumns(5);
   leg->SetFillColor(0);
   leg->SetTextFont(42);
@@ -327,7 +327,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   massGroups.push_back(MassGroup(1, 2, 1, kRed));
   massGroups.push_back(MassGroup(3, 6, 4, kOrange));
   massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
-  massGroups.push_back(MassGroup(20, 40, 26, kAzure+10));
+  massGroups.push_back(MassGroup(20, 39, 26, kAzure+10));
   massGroups.push_back(MassGroup(40, 56, 56, kBlue));
   const unsigned int Agal = opt.GetGalacticMass() + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
@@ -370,7 +370,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
       neutrinoCanvas->Divide(2, 1);
     }
     else {
-      neutrinoCanvas = new TCanvas("neutrino", " ", 800, 20, 300, 700);
+      neutrinoCanvas = new TCanvas("neutrino", " ", 1200, 10, 400, 600);
       neutrinoCanvas->Divide(1, 2);
     }
     Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);

@@ -175,7 +175,14 @@ namespace prop {
   PropMatrixBuilder::DistributionWeight(const double z)
     const
   {
-    switch (fSourceDistribution) {
+    return DistributionWeight(z, fSourceDistribution);
+  }
+
+  double
+  PropMatrixBuilder::DistributionWeight(const double z,
+                                        const ESourceDistribution sd)
+  {
+    switch (sd) {
     case eUniform:
       return 1;
     case eUniformCutAt3:

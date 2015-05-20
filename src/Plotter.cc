@@ -36,7 +36,7 @@ namespace prop {
     gStyle->SetPadLeftMargin(.16);
     gStyle->SetTitleOffset(1.3, "Y");
     if (!fCanvas) {
-      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 700);
+      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 1190, 600);
       fCanvas->SetBottomMargin(0.2);
       fCanvas->SetBorderMode(1);
       fCanvas->Divide(3, 2);
@@ -56,10 +56,10 @@ namespace prop {
     const unsigned int n = spectrum.GetN();
     const double x1 = spectrum.GetLgEmin();
     const double x2 = spectrum.GetLgEmax();
-    DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
-                 n, x1, x2, eFluxInj);
     DrawSpectrum(spectrum.GetEscFlux(), mGroups, fGammaSource, "hEsc",
                  n, x1, x2, eFluxEsc);
+    DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
+                 n, x1, x2, eFluxInj);
 
     vector<MassGroup> nucleonGroups;
     nucleonGroups.push_back(MassGroup(Spectrum::eKnockOutPD,
@@ -110,13 +110,13 @@ namespace prop {
       stringstream name;
       name << "lambdaInt" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";lg(E/eV);c #tau  [Mpc]",
+                                ";lg(E/eV);c #tau  [a.u.]",
                                 n, x1, x2));
       TH1D* hInt = fHists.back();
       name.str("");
       name << "lambdaEsc" << m.fRepA;
       fHists.push_back(new TH1D(name.str().c_str(),
-                                ";c #tau  [Mpc]; lg(E/eV)",
+                                ";c #tau  [a.u.]; lg(E/eV)",
                                 n, x1, x2));
       TH1D* hEsc = fHists.back();
       hEsc->SetLineStyle(2);
@@ -165,22 +165,43 @@ namespace prop {
     fCanvas->cd(eFluxInj);
     l.DrawLatex(0.5, 0.98, "   injected");
     fCanvas->cd(eFluxEsc);
-    l.DrawLatex(0.5, 0.98, "   escaping");
+    l.DrawLatex(0.5, 0.98, "");
     fCanvas->cd(eFluxEarth);
-    l.DrawLatex(0.5, 0.98, " flux at Earth");
+    l.DrawLatex(0.5, 0.98, " ");
     fCanvas->cd(eCompEarth);
-    l.DrawLatex(0.5, 0.98, " composition at Earth");
+    l.DrawLatex(0.5, 0.98, "");
 
-    fCanvas->cd();
+    fCanvas->cd(eFluxEarth);
     l.SetTextAlign(12);
-    l.SetTextSize(0.023);
-    const double yMass = 0.502;
-    const double dxMass = 0.1;
-    double xMass = 0.24;
+    l.SetTextSize(0.035);
+    double yMass = 0.98;
+    double dxMass = 0.14;
+    double xMass = 0.1;
     for (const auto& m : mGroups) {
       stringstream title;
-      if (m.fFirst >= kGalacticOffset)
+      if (m.fFirst >= kGalacticOffset) {
+        // continue;
         title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
+      }
+      else
+        title << m.fFirst << " #leq A #leq " << m.fLast;
+      l.SetTextColor(m.fColor);
+      l.DrawLatex(xMass, yMass, title.str().c_str());
+      xMass += dxMass;
+    }
+
+    fCanvas->cd(eFluxEsc);
+    l.SetTextAlign(12);
+    l.SetTextSize(0.035);
+    yMass = 0.87;
+    dxMass = 0.14;
+    xMass = 0.25;
+    for (const auto& m : mGroups) {
+      stringstream title;
+      if (m.fFirst >= kGalacticOffset) {
+        continue;
+        title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
+      }
       else
         title << m.fFirst << " #leq A #leq " << m.fLast;
       l.SetTextColor(m.fColor);
@@ -269,6 +290,7 @@ namespace prop {
     }
 
     TH1D* histTot = fHists.back();
+
     for (auto& iter : specMap) {
       const unsigned int A = iter.first;
       const TMatrixD& m = iter.second;
@@ -305,6 +327,15 @@ namespace prop {
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
       fHists[i]->SetLineWidth(1);
       fHists[i]->Draw("CSAME");
+    }
+
+    if (specPad == eFluxInj) {
+      fCanvas->cd(eFluxEsc);
+      fHists.push_back((TH1D*)histTot->Clone("escSuperimpose"));
+      fHists.back()->SetLineStyle(2);
+      fHists.back()->SetLineWidth(2);
+      fHists.back()->SetLineColor(kBlack);
+      fHists.back()->Draw("CSAME");
     }
   }
 
@@ -442,8 +473,9 @@ namespace prop {
     histTot->SetLineWidth(2);
 
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
-      fHists[i]->SetLineWidth(2);
+      //      fHists[i]->SetLineWidth(2);
       fHists[i]->Draw("CSAME");
+      /*
       if (string(fHists[i]->GetTitle()).find("#mu") != string::npos) {
         if (string(fHists[i]->GetTitle()).find("bar") != string::npos)
           fHists[i]->SetMarkerStyle(20);
@@ -452,6 +484,7 @@ namespace prop {
         fHists[i]->SetMarkerSize(0.8);
         fHists[i]->Draw("PSAME");
       }
+      */
     }
 
     if (fUnits == eCmSecSrGeV) {
@@ -501,12 +534,12 @@ namespace prop {
       leg->SetFillStyle(0);
       leg->SetBorderSize(0);
       leg->AddEntry(fHists[iFirst], fHists[iFirst]->GetTitle(), "L");
-      leg->AddEntry(fHists[iFirst+1], fHists[iFirst+1]->GetTitle(), "PL");
+      leg->AddEntry(fHists[iFirst+1], fHists[iFirst+1]->GetTitle(), "L");
       leg->AddEntry(fHists[iFirst+2], fHists[iFirst+2]->GetTitle(), "L");
       leg->AddEntry(histTot, histTot->GetTitle(), "L");
       leg->AddEntry(iceLimits, " IC2013", "F");
       leg->AddEntry(fHists[iFirst+3], fHists[iFirst+3]->GetTitle(), "L");
-      leg->AddEntry(fHists[iFirst+4], fHists[iFirst+4]->GetTitle(), "PL");
+      leg->AddEntry(fHists[iFirst+4], fHists[iFirst+4]->GetTitle(), "L");
       leg->AddEntry(fHists[iFirst+5], fHists[iFirst+5]->GetTitle(), "L");
       leg->AddEntry("", "", "");
       leg->AddEntry(iceFluxUp, " IC2014", "L");
@@ -524,7 +557,7 @@ namespace prop {
     TH1D* eventsTau = new TH1D("eventsTau", "", nX, hx1, hx2);
     TH1D* eventsTot = new TH1D("eventsTot", "", nX, hx1, hx2);
     eventsTot->GetXaxis()->SetTitle("lg(E/eV)");
-    eventsTot->GetYaxis()->SetTitle("events per 0.1 lg(E) per 10 IC86-years");
+    eventsTot->GetYaxis()->SetTitle("events / 0.1 lg(E) / 10 IC86-years");
     eventsTot->GetXaxis()->CenterTitle();
     eventsTot->GetYaxis()->CenterTitle();
     eventsE->SetLineColor(electronColor);
@@ -618,7 +651,7 @@ namespace prop {
       lnA->SetBinContent(i+1, lmm.first);
       vlnA->SetBinContent(i+1, lmm.second);
     }
-    lnA->GetYaxis()->SetRangeUser(-0.05, 4.7);
+    lnA->GetYaxis()->SetRangeUser(-0.39, 4.8);
     lnA->SetLineColor(kRed);
     lnA->GetXaxis()->SetTitle("lg(E/eV)");
     vlnA->SetLineColor(kGray+3);

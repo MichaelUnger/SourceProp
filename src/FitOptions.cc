@@ -34,10 +34,13 @@ namespace prop {
     fStartValues[eLgEmaxGal] = StartValues(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValues(0, 0.1, 0, 0, 1);
     fCutoffType = Spectrum::eExponential;
-    fGalMass = 40;
+    fGalMass = 56;
     fPhotonFieldType = eUnknown;
 
     ifstream optionsFile(filename.c_str());
+    if (!optionsFile)
+      throw runtime_error("error reading " + filename);
+
     while (true) {
       string buffer;
       getline(optionsFile, buffer);
@@ -71,6 +74,7 @@ namespace prop {
       else if (keyword == "evolution") {
         if (!(line >> fEvolution))
           throw runtime_error("error decoding evolution");
+        cout << " read evolution " << fEvolution << endl;
       }
       else if (keyword == "galacticMass") {
         if (!(line >> fGalMass))
@@ -241,7 +245,7 @@ namespace prop {
     if (fPhotonFieldType == eBlackBody)
       return "BB_" + fBBTemperature + "_" + fBBSigma;
     else if (fPhotonFieldType == eBrokenPowerlaw)
-      return fEps0 + "_" + fBeta + "_" + fAlpha;
+      return "SP_" + fEps0 + "_" + fBeta + "_" + fAlpha;
     else
       throw runtime_error("unknown photon field type");
   }

@@ -12,9 +12,36 @@ set outliers = 0
 set standard = 0
 set photonfield = 0
 set escape = 0
-set irb = 1
+set irb = 0
 set massScan = 0
+set bigScan = 1
 
+if ($bigScan) then
+  set temperatures = "80 100 120 140 160 180 200 220 240 260 280 300 320 340 360 380 400"
+  set temperatures = "150"
+  set masses = "20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35"
+  set gammas = "1 1.5 2"
+  set deltas = "1 0.66667 0.333333"
+  set gammas = "1"
+  set deltas = "1"
+  set nTot = 2448
+  set nCurr = 0
+  foreach temperature ($temperatures)
+    foreach mass ($masses)
+      foreach gamma ($gammas)
+        foreach delta ($deltas)
+           @ nCurr ++
+           echo "\n----------- $nCurr of $nTot"
+           setenv FITOPTION BigScan_${temperature}_${mass}_${gamma}_${delta}
+           sed -e 's/@TEMP@/'$temperature'/g;s/@MASS@/'$mass'/g;s/@GAMMA@/'$gamma'/g;s/@DELTA@/'$delta'/g' \
+           $fitDir/BigScan.txt.in > $fitDir/$FITOPTION.txt
+           time $rootCmd |& tee $outDir/$FITOPTION.log
+           mv $fitDir/$FITOPTION.txt $outDir
+        end
+      end
+    end
+  end
+endif
 
 if ($photonfield) then
   set eps0 = "0.03"
