@@ -43,11 +43,12 @@ namespace prop {
     double GetMin(const EPar par) const;
     double GetMax(const EPar par) const;
     bool IsFixed(const EPar par) const;
+    unsigned int GetNFree() const;
 
     void SetStartValue(const EPar par, const double val)
     { fStartValues[par].fStart = val; }
 
-    const std::map<unsigned int, StartValues>&
+    const std::map<unsigned int, prop::StartValues>&
     GetMasses() const
     { return fMassValues; }
 
@@ -99,8 +100,8 @@ namespace prop {
     { return fPhotonFieldType; }
 
   private:
-    std::map<EPar, StartValues> fStartValues;
-    std::map<unsigned int, StartValues> fMassValues;
+    std::map<EPar, prop::StartValues> fStartValues;
+    std::map<unsigned int, prop::StartValues> fMassValues;
     std::string fEvolution;
     std::string fIRB;
     std::string fEps0;
@@ -118,6 +119,7 @@ namespace prop {
     Spectrum::ECutoffType fCutoffType;
     unsigned int fGalMass;
     EPhotonFieldType fPhotonFieldType;
+    ClassDefNV(FitOptions, 1);
   };
 }
 

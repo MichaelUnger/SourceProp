@@ -17,6 +17,8 @@ namespace prop {
     const FitData& GetFitData()
     { return fFitData; }
 
+    double CalcChi2(const std::vector<double>& par);
+
   private:
     void Init();
     void ReadData();
@@ -28,6 +30,7 @@ namespace prop {
     FitOptions fOptions;
     static FitData fFitData;
     TMinuit fMinuit;
+    ClassDefNV(Fitter, 1);
   };
 }
 #endif

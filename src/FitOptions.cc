@@ -296,6 +296,19 @@ namespace prop {
     return stod(fBBSigma);
   }
 
+  unsigned int
+  FitOptions::GetNFree()
+    const
+  {
+    int nFree = 0;
+    for (const auto& p : fStartValues)
+      if (!p.second.fIsFixed)
+        ++nFree;
+    for (const auto& m : fMassValues)
+      if (!m.second.fIsFixed)
+        ++nFree;
+    return nFree;
+  }
 
 
 }

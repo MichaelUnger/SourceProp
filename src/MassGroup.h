@@ -1,5 +1,6 @@
 #ifndef _MassGroup_h_
 #define _MassGroup_h_
+#include <string>
 namespace prop {
   class MassGroup {
 

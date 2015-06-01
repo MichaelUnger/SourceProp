@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <fstream>
 #include <sstream>
+#include <stdexcept>
 
 #include <utl/Units.h>
 #include <utl/PhysicalConstants.h>
@@ -450,4 +451,20 @@ namespace prop {
 
   }
 
+  double
+  Fitter::CalcChi2(const vector<double>& par)
+  {
+    int nPar = par.size();
+    if (nPar != eNpars) {
+      stringstream errMsg;
+      errMsg << " nPar = " << nPar << " != eNpars = " << eNpars;
+      throw runtime_error(errMsg.str());
+    }
+
+    double dummy = 0;
+    double chi2 = 0;
+    int iFlag = 0;
+    FitFunc(nPar, &dummy, chi2, const_cast<double* const>(&par.front()), iFlag);
+    return chi2;
+  }
 }
