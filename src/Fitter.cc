@@ -428,6 +428,17 @@ namespace prop {
         comp.fLnASysUp = lnASys.GetEYhigh()[i];
         comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
         comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
+
+        /*
+        cout << scientific << setprecision(3) << setw(12)
+             << setw(12) << comp.fLgE << setw(12) << comp.fLnA
+             << setw(12)<< comp.fVlnA << setw(12) << comp.fLnAErr
+             << setw(12) << comp.fVlnAErr << setw(12)
+             << comp.fLnASysLow << setw(12)<< comp.fLnASysUp
+             << setw(12) << comp.fVlnASysLow  << setw(12)
+             << comp.fVlnASysUp << endl;
+        */
+
         fFitData.fAllCompoData.push_back(comp);
         if (comp.fLgE > fOptions.GetMinCompLgE())
           fFitData.fCompoData.push_back(comp);

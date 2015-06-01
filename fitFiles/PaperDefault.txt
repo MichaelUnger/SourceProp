@@ -1,9 +1,9 @@
 par gammaInj   -1 0.1 0 0 1
-par lgRmax    19 0.1 0 0 0
-par lgResc    2.43832e+00 0.1 0 0 0
+par lgRmax    1.84707e+01 0.1 0 0 0
+par lgResc    2.43829e+00 0.1 0 0 0
 par deltaEsc   -1 0.1 0 0 1
-par fGal       0.6 0.1 0 0 0
-par gammaGal  -3.3 0.1 0 0 0
+par fGal       5.57893e-01 0.1 0 0 0
+par gammaGal  -4.18383e+00 0.1 0 0 0
 par lgEmaxGal   19 0.1 0 0 1
 par fNoPhoton    0 0.1 0 0 1
 mass 28 0.1 0

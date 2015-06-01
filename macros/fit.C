@@ -1,9 +1,11 @@
+#define _PAPER_
 #include <FitOptions.h>
 #include <Fitter.h>
 #include <Neutrinos.h>
 #include <Plotter.h>
 #include <Particles.h>
 #include <FitSummary.h>
+#include <LnACalculator.h>
 #include <utl/Units.h>
 #include <utl/PhysicalConstants.h>
 #include <utl/RootFile.h>
@@ -12,11 +14,13 @@
 #include <sstream>
 #include <stdexcept>
 #include <iomanip>
+#include <fstream>
 
 #include <TCanvas.h>
 #include <TLatex.h>
 #include <TStyle.h>
 #include <TLegend.h>
+#include <TColor.h>
 #include <TMath.h>
 #include <TGraphAsymmErrors.h>
 #include <TGraphErrors.h>
@@ -27,11 +31,65 @@ using namespace std;
 using namespace prop;
 
 void
+ReadGlobus(const FitOptions& fitOptions,
+           const double gammaScaleEarth,
+           TGraph* globusFlux,
+           TGraph* globusLnA,
+           TGraph* globusVlnA)
+{
+  ifstream globusFluxFile("data/globus2.txt");
+  int i = 0;
+  while (true) {
+    double lgE, lgF;
+    globusFluxFile >> lgE >> lgF;
+    if (!globusFluxFile.good())
+      break;
+    const double E = pow(10, lgE);
+    const double w = pow(E, gammaScaleEarth) / pow(E, 2.7);
+    const double unitFac = 1e6*365*24*3600;
+    globusFlux->SetPoint(i+1, lgE, pow(10, lgF)*w*unitFac);
+    ++i;
+  }
+
+  TGraph xmax("data/globusXmax.txt");
+  TGraph rms("data/globusRMS.txt");
+  LnACalculator lnACalc;
+  const LnACalculator::EModel model =
+    LnACalculator::GetModel(fitOptions.GetInteractionModel());
+
+  const double lgEMin = fitOptions.GetMinCompLgE();
+  const double lgEMax = 21;
+  const double dLgE = 0.1;
+  double lgE = lgEMin;
+  i = 0;
+  while (lgE <= lgEMax) {
+    const double E = pow(10, lgE);
+    const double meanXmax = xmax.Eval(lgE);
+    globusLnA->SetPoint(i, lgE, lnACalc.GetMeanLnA(meanXmax,
+                                                   E, model));
+    globusVlnA->SetPoint(i, lgE, lnACalc.GetLnAVariance(meanXmax,
+                                                        rms.Eval(lgE),
+                                                        E, model));
+    cout << lgE << " " << lnACalc.GetMeanLnA(meanXmax,
+                                             E, model) << " "
+         << lnACalc.GetLnAVariance(meanXmax,
+                                                      rms.Eval(lgE),
+                                                      E, model)
+         << endl;
+    ++i;
+    lgE += dLgE;
+  }
+}
+
+void
 DrawData(const FitData& fitData,
+         const FitOptions& fitOptions,
          const double gammaScaleEarth,
          const unsigned int nMassGroups,
          TCanvas* can)
 {
+
+  bool showGlobus = true;
 
   TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
   const vector<FluxData>& fluxData = fitData.fFluxData;
@@ -71,6 +129,11 @@ DrawData(const FitData& fitData,
   stringstream histTit;
   histTit << "hEarth" << nMassGroups;
   TH1D* fluxTotAtEarth = (TH1D*) gROOT->FindObject(histTit.str().c_str());
+#ifdef _PAPER_
+  fluxTotAtEarth->SetLineWidth(1);
+#else
+  fluxTotAtEarth->SetLineWidth(2);
+#endif
   if (fluxTotAtEarth)
     fluxTotAtEarth->GetYaxis()->SetRangeUser(0, maxY*1.1);
   else
@@ -86,17 +149,47 @@ DrawData(const FitData& fitData,
     lowESpectrum2->Draw("P");
   }
 
-  TLegend* legSpec = new TLegend(0.528704, 0.769522, 0.994, 0.89, NULL, "brNDCARC");
+  TGraph* globusFlux = new TGraph();
+  TGraph* globusLnA = new TGraph();
+  TGraph* globusVlnA = new TGraph();
+  const unsigned int globusWidth = 2;
+  const unsigned int globusStyle = 2;
+  if (showGlobus) {
+    ReadGlobus(fitOptions, gammaScaleEarth,
+               globusFlux, globusLnA, globusVlnA);
+    globusFlux->Draw("L");
+    globusFlux->SetLineStyle(globusStyle);
+    globusFlux->SetLineWidth(globusWidth);
+    globusFlux->SetLineColor(kBlack);
+  }
+
+#ifdef _PAPER_
+  TLegend* legSpec;
+  legSpec = new TLegend(0.590596, 0.816871, 0.90813, 0.889714, NULL, "brNDCARC");
+#else
+  TLegend* legSpec = new TLegend(0.43, 0.7697, 0.896, 0.890, NULL, "brNDCARC");
+#endif
   legSpec->SetFillColor(0);
   legSpec->SetTextFont(42);
   legSpec->SetFillStyle(0);
   legSpec->SetBorderSize(0);
   legSpec->SetTextSize(0.05);
   if (lowESpectrum->GetN())
-    legSpec->AddEntry(lowESpectrum, " KG 2012","PE");
-  legSpec->AddEntry(fitSpectrum, " Auger 2013 prel.","PE");
-  legSpec->AddEntry(fitSpectrum, " model","l");
+    legSpec->AddEntry(lowESpectrum, "KG 2012","PE");
+  legSpec->AddEntry(fitSpectrum, "Auger 2013 prel.","PE");
   legSpec->Draw();
+
+  if (showGlobus) {
+    legSpec = new TLegend(0.78, 0.623834, 1.07, 0.77, NULL, "brNDCARC");
+     legSpec->SetFillColor(0);
+     legSpec->SetTextFont(42);
+     legSpec->SetFillStyle(0);
+     legSpec->SetBorderSize(0);
+     legSpec->SetTextSize(0.05);
+     legSpec->AddEntry(fluxTotAtEarth, " UFA","l");
+     legSpec->AddEntry(globusFlux, " GAP","l");
+     legSpec->Draw();
+  }
 
   TGraphErrors* fitLnA = new TGraphErrors();
   TGraph* fitLnA2 = new TGraph();
@@ -126,50 +219,76 @@ DrawData(const FitData& fitData,
   fitLnA->SetLineColor(kRed);
   fitLnA->SetMarkerColor(kRed);
   fitLnASys->SetLineColor(kRed);
-  fitVlnA->SetLineColor(kGray+3);
-  fitVlnA->SetMarkerColor(kGray+3);
+  fitVlnA->SetLineColor(kBlue);
+  fitVlnA->SetMarkerColor(kBlue);
   fitVlnA->SetMarkerStyle(21);
-  fitVlnASys->SetLineColor(kGray+3);
+  fitVlnASys->SetLineColor(kGray);
   fitLnA2->SetMarkerStyle(24);
   fitLnA2->SetLineColor(kBlack);
 
-  can->cd(Plotter::eCompEarth);
+  can->cd(Plotter::eCompEarth)->cd(2);
   fitVlnASys->Draw("5");
   TGraphAsymmErrors* fitVlnASys2 =
     (TGraphAsymmErrors*) fitVlnASys->Clone("fitVlnASys2");
+  can->cd(Plotter::eCompEarth)->cd(1);
   fitLnASys->Draw("5");
   fitLnASys->SetFillColor(kRed-10);
   fitLnASys->SetFillStyle(1001);
-  fitVlnASys->SetFillColor(kGray);
+  fitVlnASys->SetFillColor(TColor::GetColorBright(kGray));
   fitVlnASys->SetFillStyle(1001);
   fitVlnASys2->SetFillStyle(0);
   //  fitVlnASys2->SetLineColor(kGray+3);
-  fitVlnASys2->SetLineColor(kGray+3);
+  fitVlnASys2->SetLineColor(kGray);
+  can->cd(Plotter::eCompEarth)->cd(2);
   fitVlnASys2->Draw("5");
   TH1D* lnA;
   TH1D* vlnA;
   gROOT->GetObject("hLnA", lnA);
+  lnA->SetLineColor(kBlack);
+  can->cd(Plotter::eCompEarth)->cd(1);
   lnA->Draw("CSAME");
-  gROOT->GetObject("hvLnA", vlnA);
-  vlnA->Draw("CSAME");
   fitLnA->Draw("PZ");
-  fitVlnA->Draw("PZ");
   fitLnA2->Draw("P");
+  gPad->RedrawAxis();
 
+  can->cd(Plotter::eCompEarth)->cd(2);
+  gROOT->GetObject("hvLnA", vlnA);
+  vlnA->SetLineColor(kBlack);
+  vlnA->Draw("CSAME");
+  vlnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+  fitVlnA->Draw("PZ");
+  gPad->RedrawAxis();
 
-  TLegend* leg = new TLegend(0.21, 0.81, 0.64, 0.87, NULL, "brNDCARC");
-  leg->SetNColumns(5);
+  TLegend* leg = new TLegend(0.2, 0.81, 0.82, 0.875, NULL, "brNDCARC");
+  leg->SetNColumns(2);
   leg->SetFillColor(0);
   leg->SetTextFont(42);
+  leg->SetTextSize(0.05);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
-  leg->AddEntry(fitLnA, " #LTln A#GT", "PL");
-  leg->AddEntry(fitVlnA, " V(ln A)", "PL");
+  leg->AddEntry(fitLnA, "", "PE");
+  leg->AddEntry(fitVlnA, "  Auger 2014 + EPOS-LHC", "PE");
+  can->cd(Plotter::eCompEarth)->cd(1);
   leg->Draw();
   TLatex l;
   l.SetTextAlign(23); l.SetTextSize(0.05);
   l.SetTextFont(42); l.SetNDC(true);
-  l.DrawLatex(0.8, 0.8688, "Auger 2014");
+  //  l.DrawLatex(0.8, 0.8688, "Auger 2014");
+
+  if (showGlobus) {
+    can->cd(Plotter::eCompEarth)->cd(1);
+    globusLnA->Draw("L");
+    globusLnA->SetLineStyle(globusStyle);
+    globusLnA->SetLineWidth(globusWidth);
+    globusLnA->SetLineColor(kBlack);
+    can->cd(Plotter::eCompEarth)->cd(2);
+    globusVlnA->Draw("L");
+    globusVlnA->SetLineStyle(globusStyle);
+    globusVlnA->SetLineWidth(globusWidth);
+    globusVlnA->SetLineColor(kBlack);
+  }
+  gPad->RedrawAxis();
+
 }
 
 void
@@ -181,7 +300,7 @@ DrawValues(const FitData& fitData,
   int fixColor = kGray+1;
   int freeColor = kBlack;
 
-  can->cd(Plotter::eCompEsc);
+  can->cd(Plotter::eCompEsc)->cd(1);
   TLatex l;
   const double textSize = 0.055;
   l.SetTextAlign(13); l.SetTextSize(textSize);
@@ -197,6 +316,8 @@ DrawValues(const FitData& fitData,
     parString << GetParLatexName(par) << " = " << showpoint
               << setprecision(3) << fitParameters[i].fValue;
     l.SetTextColor(fitParameters[i].fIsFixed ? fixColor : freeColor);
+    if ((par == eLgEmaxGal || par == eNoPhoton) && fitParameters[i].fIsFixed)
+      continue;
     if (!fitParameters[i].fIsFixed)
       parString << "#pm" << noshowpoint
                 << setprecision(1) << fitParameters[i].fError;
@@ -239,14 +360,26 @@ DrawValues(const FitData& fitData,
   l.DrawLatex(x, y, sys.str().c_str());
   y -= dy;
 
-  l.SetTextColor(freeColor);
+  l.SetTextColor(kBlue+1);
   stringstream chi2String;
-  chi2String << "#chi^{2}/ndf = " << fitData.GetChi2Tot() << "/"
+  chi2String << "#chi^{2}/ndf = "
+             << fitData.GetChi2Tot() << "/"
              << fitData.GetNdfTot();
   l.DrawLatex(x, y, chi2String.str().c_str());
   y -= dy;
+  chi2String.str("");
+  l.SetTextSize(textSize*0.8);
+  chi2String << "spec: " << fitData.fChi2Spec << "/"
+             << fitData.fFluxData.size() << ", "
+             << "lnA: " << fitData.fChi2LnA << "/"
+             << fitData.fCompoData.size() << ", "
+             << "VLnA: " << fitData.fChi2VlnA << "/"
+             << fitData.fCompoData.size();
+  l.SetTextColor(fixColor);
+  l.DrawLatex(x, y, chi2String.str().c_str());
+  l.SetTextSize(textSize);
+  y -= dy;
 
-  y -= dy/5;
   l.SetTextColor(freeColor);
   l.DrawLatex(x, y, ("evolution: " + fitOptions.GetEvolution() +
                      ", IRB: " + fitOptions.GetIRB()).c_str());
@@ -305,7 +438,11 @@ DrawValues(const FitData& fitData,
     const double xEdot = 0.47;
     l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
     l.SetTextSize(textSize*0.7);
+#ifdef _PAPER_
+    l.DrawLatex(xEdot+0.28, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
+#else
     l.DrawLatex(xEdot+0.38, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
+#endif
     l.SetTextSize(textSize);
     y -= dy;
   }
@@ -325,13 +462,13 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 
   vector<MassGroup> massGroups;
   massGroups.push_back(MassGroup(1, 2, 1, kRed));
-  massGroups.push_back(MassGroup(3, 6, 4, kOrange));
+  massGroups.push_back(MassGroup(3, 6, 4, kOrange-2));
   massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
   massGroups.push_back(MassGroup(20, 39, 26, kAzure+10));
   massGroups.push_back(MassGroup(40, 56, 56, kBlue));
   const unsigned int Agal = opt.GetGalacticMass() + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
-                                 kMagenta+2, 2));
+                                 kMagenta+2, 3));
 
   const double gammaScaleSource = 1;
   const double gammaScaleEarth = 3;
@@ -343,14 +480,13 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
             massGroups);
   plot.SetXRange(17.5, 20.5);
   TCanvas* can = plot.GetCanvas();
-  DrawData(fitData, gammaScaleEarth, massGroups.size(), can);
+  DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
   can->Print(("pdfs/" + fitFilename + ".pdf").c_str());
   /*
   can->cd(1)->Print(("pdfs/" + fitFilename + "Injected.pdf").c_str());
   can->cd(2)->Print(("pdfs/" + fitFilename + "Escape.pdf").c_str());
-  can->cd(3)->Print(("pdfs/" + fitFilename + "Earth.pdf").c_str());
   can->cd(4)->Print(("pdfs/" + fitFilename + "Lambda.pdf").c_str());
   can->cd(5)->Print(("pdfs/" + fitFilename + "Parameters.pdf").c_str());
   can->cd(6)->Print(("pdfs/" + fitFilename + "Composition.pdf").c_str());
@@ -370,7 +506,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
       neutrinoCanvas->Divide(2, 1);
     }
     else {
+#ifdef _PAPER_
       neutrinoCanvas = new TCanvas("neutrino", " ", 1200, 10, 400, 600);
+#else
+      neutrinoCanvas = new TCanvas("neutrino", " ", 800, 20, 300, 700);
+#endif
       neutrinoCanvas->Divide(1, 2);
     }
     Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);

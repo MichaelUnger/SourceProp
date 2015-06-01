@@ -1,42 +1,65 @@
+#include "src/MassGroup.h"
+#include <TLatex.h>
+#include <TFile.h>
+#include <TH2D.h>
+#include <TStyle.h>
+#include <TCanvas.h>
+#include <TAxis.h>
+
+#include <sstream>
+using namespace std;
+using namespace prop;
+
 void
-distancePlot()
+distancePlot(unsigned int Aprim=28)
 {
   const double zMax = 0.5;
 
+  vector<MassGroup> massGroups;
+  massGroups.push_back(MassGroup(1, 2, 1, kRed));
+  massGroups.push_back(MassGroup(3, 6, 4, kOrange-2));
+  massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
+  massGroups.push_back(MassGroup(20, 39, 26, kAzure+10));
+  massGroups.push_back(MassGroup(40, 56, 56, kBlue));
+
+  gStyle->SetPadRightMargin(0.1);
+  gStyle->SetPadTopMargin(0.1);
+
+  TFile* file = TFile::Open("distancePlot.root");
+  TCanvas* c  = new TCanvas("c", "", 900, 300);
+  c->Divide(massGroups.size(), 1);
+
   TLatex l;
   l.SetTextAlign(23);
-  l.SetTextSize(0.05);
+  l.SetTextSize(0.06);
   l.SetTextFont(42);
   l.SetTextColor(kBlack);
   l.SetNDC(true);
 
-  gStyle->SetPadRightMargin(0.1);
-  TFile::Open("distancePlot.root");
-  TCanvas* c  = new TCanvas("c", "", 900, 600);
-  c->Divide(3, 2);
+  for (unsigned int i = 0; i < massGroups.size(); ++i) {
+    c->cd(i+1);
+    stringstream title;
+    title << "hGen1_" << Aprim << "_"
+          << massGroups[i].fFirst << "to" << massGroups[i].fLast;
+    TH2D* gen = (TH2D*) file->Get(title.str().c_str());
+    gen->GetXaxis()->CenterTitle();
+    gen->GetXaxis()->SetTitle("lg(E_{#oplus}/eV)");
+    gen->GetYaxis()->CenterTitle();
+    gen->Draw("COLZ");
+    gen->GetZaxis()->SetRangeUser(0, zMax);
+    title.str("");
+    title << massGroups[i].fFirst << " #leq A #leq " << massGroups[i].fLast;
+    l.DrawLatex(0.7, 0.88, title.str().c_str());
+  }
+
+  stringstream header;
+  header << "primary mass: " << Aprim;
   c->cd(1);
-  hGen2_1->Draw("COLZ");
-  hGen2_1->GetZaxis()->SetRangeUser(0, zMax);
-  l.DrawLatex(0.8, 0.95, "A=1");
-  c->cd(2);
-  hGen2_4->Draw("COLZ");
-  hGen2_4->GetZaxis()->SetRangeUser(0, zMax);
-  l.DrawLatex(0.8, 0.95, "A=4");
-  c->cd(3);
-  hGen2_14->Draw("COLZ");
-  hGen2_14->GetZaxis()->SetRangeUser(0, zMax);
-  l.DrawLatex(0.8, 0.95, "A=14");
-  c->cd(4);
-  hGen2_28->Draw("COLZ");
-  hGen2_28->GetZaxis()->SetRangeUser(0, zMax);
-  l.DrawLatex(0.8, 0.95, "A=28");
-  c->cd(5);
-  hGen2_56->Draw("COLZ");
-  hGen2_56->GetZaxis()->SetRangeUser(0, zMax);
-  l.DrawLatex(0.8, 0.95, "A=56");
-  c->cd(6);
-  hGen2_1012->Draw("COLZ");
-  hGen2_1012->GetZaxis()->SetRangeUser(0, zMax);
-  l.DrawLatex(0.8, 0.95, "#nu");
+  l.SetTextSize(0.07);
+  l.DrawLatex(0.3, 0.97, header.str().c_str());
+
+  stringstream pdf;
+  pdf << "distance" << Aprim << ".pdf";
+  c->Print(pdf.str().c_str());
 
 }

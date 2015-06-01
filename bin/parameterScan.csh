@@ -18,8 +18,10 @@ set bigScan = 1
 
 if ($bigScan) then
   set temperatures = "80 100 120 140 160 180 200 220 240 260 280 300 320 340 360 380 400"
-  set temperatures = "150"
+  set temperatures = "50 100 150 200 250 300 350 400 450 500 550 600 650"
+#  set temperatures = "300 350 400 450 500 550"
   set masses = "20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35"
+#  set masses = "28"
   set gammas = "1 1.5 2"
   set deltas = "1 0.66667 0.333333"
   set gammas = "1"

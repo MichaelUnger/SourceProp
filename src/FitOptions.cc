@@ -17,7 +17,7 @@ namespace prop {
     fBeta = "2.0";
     fAlpha = "32";
     fBBTemperature = "100";
-    fBBSigma = "2";
+    fBBSigma = "0";
     fFitCompo = 1;
     fRejectOutliers = 1;
     fMinFluxLgE = 17;

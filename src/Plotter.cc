@@ -1,3 +1,4 @@
+#define _PAPER_
 #include "Plotter.h"
 #include "Spectrum.h"
 #include "VSource.h"
@@ -32,14 +33,21 @@ namespace prop {
     fGammaEarth(gammaEarth),
     fNNeutrino(0)
   {
+    gStyle->SetLineScalePS(1);
     gStyle->SetPadTopMargin(0.1);
     gStyle->SetPadLeftMargin(.16);
-    gStyle->SetTitleOffset(1.3, "Y");
     if (!fCanvas) {
+#ifdef _PAPER_
+      gStyle->SetTitleOffset(0.9, "Y");
       fCanvas = new TCanvas("plotter", "fit result", 10, 10, 1190, 600);
+#else
+      gStyle->SetTitleOffset(1.3, "Y");
+      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 700);
+#endif
       fCanvas->SetBottomMargin(0.2);
       fCanvas->SetBorderMode(1);
       fCanvas->Divide(3, 2);
+      fCanvas->cd(eCompEarth)->Divide(2, 1, 0.01);
     }
   }
 
@@ -100,6 +108,7 @@ namespace prop {
                       const unsigned int n, const double x1, const double x2,
                       const bool drawProtonLines)
   {
+    const bool showRatio = true;
     unsigned int firstHist = fHists.size();
     double yMax = -1;
     double yMin = -1;
@@ -107,38 +116,64 @@ namespace prop {
     for (auto& m : mGroups) {
       if (m.fRepA > kGalacticOffset)
         continue;
-      stringstream name;
-      name << "lambdaInt" << m.fRepA;
-      fHists.push_back(new TH1D(name.str().c_str(),
-                                ";lg(E/eV);c #tau  [a.u.]",
-                                n, x1, x2));
-      TH1D* hInt = fHists.back();
-      name.str("");
-      name << "lambdaEsc" << m.fRepA;
-      fHists.push_back(new TH1D(name.str().c_str(),
-                                ";c #tau  [a.u.]; lg(E/eV)",
-                                n, x1, x2));
-      TH1D* hEsc = fHists.back();
-      hEsc->SetLineStyle(2);
+      TH1D* hInt = NULL;
+      TH1D* hEsc = NULL;
+      TH1D* hRatio = NULL;
+      if (!showRatio) {
+        stringstream name;
+        name << "lambdaInt" << m.fRepA;
+        fHists.push_back(new TH1D(name.str().c_str(),
+                                  ";lg(E/eV);c #tau  [a.u.]",
+                                  n, x1, x2));
+        hInt = fHists.back();
+        name.str("");
+        name << "lambdaEsc" << m.fRepA;
+        fHists.push_back(new TH1D(name.str().c_str(),
+                                  ";lg(E/eV);c #tau  [a.u.]",
+                                  n, x1, x2));
+        hEsc = fHists.back();
+        hEsc->SetLineStyle(2);
+      }
+      else {
+        stringstream name;
+        name << "lambdaRatio" << m.fRepA;
+        fHists.push_back(new TH1D(name.str().c_str(),
+                                  ";lg(E/eV);#tau_{esc}/#tau_{int}",
+                                  n, x1, x2));
+        hRatio = fHists.back();
+      }
 
       for (unsigned int i = 0; i < n; ++i) {
         if (drawProtonLines || m.fRepA != 1) {
-          const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
-          const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
-          if (lgE < xMax && (yMax < 0 || lInt > yMax))
-            yMax = lInt;
-          if (lgE < xMax && (yMin < 0 || lInt < yMin))
-            yMin = lInt;
-          hInt->SetBinContent(i+1, lInt);
-          hInt->SetLineColor(m.fColor);
-
-          const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
-          if (lgE < xMax && (yMax < 0 || lEsc > yMax))
-            yMax = lEsc;
-          if (lgE < xMax && (yMin < 0 || lEsc < yMin))
-            yMin = lEsc;
-          hEsc->SetBinContent(i+1, lEsc);
-          hEsc->SetLineColor(m.fColor);
+          if (showRatio) {
+            const double lgE = hRatio->GetXaxis()->GetBinCenter(i+1);
+            const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
+            const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
+            const double ratio = fmax(1e-4,lEsc / lInt);
+            if (lgE < xMax && (yMax < 0 || ratio > yMax))
+              yMax = ratio;
+            if (lgE < xMax && (yMin < 0 || ratio < yMin))
+              yMin = ratio;
+            hRatio->SetBinContent(i+1, ratio);
+            hRatio->SetLineColor(m.fColor);
+          }
+          else {
+            const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
+            const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
+            const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
+            if (lgE < xMax && (yMax < 0 || lInt > yMax))
+              yMax = lInt;
+            if (lgE < xMax && (yMin < 0 || lInt < yMin))
+              yMin = lInt;
+            hInt->SetBinContent(i+1, lInt);
+            hInt->SetLineColor(m.fColor);
+            if (lgE < xMax && (yMax < 0 || lEsc > yMax))
+              yMax = lEsc;
+            if (lgE < xMax && (yMin < 0 || lEsc < yMin))
+              yMin = lEsc;
+            hEsc->SetBinContent(i+1, lEsc);
+            hEsc->SetLineColor(m.fColor);
+          }
         }
       }
     }
@@ -146,12 +181,32 @@ namespace prop {
     fCanvas->cd(eCompInj)->SetLogy(1);
     for (unsigned int i = firstHist; i < fHists.size(); ++i) {
       if (i == firstHist) {
-        fHists[i]->GetYaxis()->SetRangeUser(yMin*0.5, fmin(1e3, yMax*2));
+        if (!showRatio)
+          fHists[i]->GetYaxis()->SetRangeUser(yMin*0.5, fmin(1e3, yMax*2));
+        else
+          fHists[i]->GetYaxis()->SetRangeUser(yMin*1.01, fmin(1e3, yMax*2));
         fHists[i]->Draw("C");
       }
       else
         fHists[i]->Draw("CSAME");
     }
+
+    if (!showRatio) {
+      fCanvas->cd(eCompInj);
+      TLine* inj = new TLine();
+      inj->DrawLineNDC(0.58, 0.85, 0.64, 0.85);
+      TLine* esc = new TLine();
+      esc->SetLineStyle(2);
+      esc->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
+      TLatex l;
+      l.SetTextAlign(23); l.SetTextSize(0.06);
+      l.SetTextFont(42); l.SetNDC(true);
+      l.SetTextSize(0.05);
+      l.SetTextColor(kBlack);
+      l.DrawLatex(0.68, 0.85, "interaction");
+      l.DrawLatex(0.68, 0.78, "escape");
+    }
+
   }
 
 
@@ -168,14 +223,15 @@ namespace prop {
     l.DrawLatex(0.5, 0.98, "");
     fCanvas->cd(eFluxEarth);
     l.DrawLatex(0.5, 0.98, " ");
-    fCanvas->cd(eCompEarth);
+    fCanvas->cd(eCompEarth)->cd(1);
     l.DrawLatex(0.5, 0.98, "");
 
+#ifdef _PAPER_
     fCanvas->cd(eFluxEarth);
     l.SetTextAlign(12);
     l.SetTextSize(0.035);
     double yMass = 0.98;
-    double dxMass = 0.14;
+    double dxMass = 0.13;
     double xMass = 0.1;
     for (const auto& m : mGroups) {
       stringstream title;
@@ -188,6 +244,10 @@ namespace prop {
       l.SetTextColor(m.fColor);
       l.DrawLatex(xMass, yMass, title.str().c_str());
       xMass += dxMass;
+      if (m.fFirst > 9)
+        xMass += 0.01;
+      if (m.fLast > 9)
+        xMass += 0.01;
     }
 
     fCanvas->cd(eFluxEsc);
@@ -209,8 +269,8 @@ namespace prop {
       xMass += dxMass;
     }
 
-    fCanvas->cd(eCompEarth);
     /*
+    fCanvas->cd(eCompEarth)->cd(1);
     l.SetTextSize(0.05);
     l.SetTextColor(kRed);
     l.DrawLatex(0.25, 0.85, "#LTlnA#GT");
@@ -218,16 +278,25 @@ namespace prop {
     l.DrawLatex(0.37, 0.85, "V(lnA)");
     */
 
-    fCanvas->cd(eCompInj);
-    TLine* inj = new TLine();
-    inj->DrawLineNDC(0.58, 0.85, 0.64, 0.85);
-    TLine* esc = new TLine();
-    esc->SetLineStyle(2);
-    esc->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
-    l.SetTextSize(0.05);
-    l.SetTextColor(kBlack);
-    l.DrawLatex(0.68, 0.85, "interaction");
-    l.DrawLatex(0.68, 0.78, "escape");
+#else
+    fCanvas->cd();
+    l.SetTextAlign(12);
+    l.SetTextSize(0.023);
+    const double yMass = 0.502;
+    const double dxMass = 0.1;
+    double xMass = 0.24;
+    for (const auto& m : mGroups) {
+      stringstream title;
+      if (m.fFirst >= kGalacticOffset)
+        title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
+      else
+        title << m.fFirst << " #leq A #leq " << m.fLast;
+      l.SetTextColor(m.fColor);
+      l.DrawLatex(xMass, yMass, title.str().c_str());
+      xMass += dxMass;
+    }
+
+#endif
 
   }
 
@@ -284,7 +353,7 @@ namespace prop {
           yTit << "E^{" << gamma << "}  n_{0} dN/dE/dt [a.u.]";
       else
         yTit << "E^{" << gamma << "} J(E) [eV^{" << gamma-1
-             << "} km^{-2} sr^{-1} yr^{-1}]";
+             << "} km^{-2} sr^{-1} yr^{-1}#kern[0.3]{]}";
 
       fHists.back()->GetYaxis()->SetTitle(yTit.str().c_str());
     }
@@ -470,8 +539,11 @@ namespace prop {
 
     fCanvas->cd(1)->SetLogy(1);
     histTot->Draw("C");
+#ifdef _PAPER_
+    histTot->SetLineWidth(1);
+#else
     histTot->SetLineWidth(2);
-
+#endif
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
       //      fHists[i]->SetLineWidth(2);
       fHists[i]->Draw("CSAME");
@@ -651,18 +723,60 @@ namespace prop {
       lnA->SetBinContent(i+1, lmm.first);
       vlnA->SetBinContent(i+1, lmm.second);
     }
-    lnA->GetYaxis()->SetRangeUser(-0.39, 4.8);
+    lnA->GetYaxis()->SetRangeUser(-0.39, 4);
+    vlnA->GetYaxis()->SetRangeUser(-0.39, 4);
+
+    lnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+    vlnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+
     lnA->SetLineColor(kRed);
     lnA->GetXaxis()->SetTitle("lg(E/eV)");
-    vlnA->SetLineColor(kGray+3);
-    lnA->GetYaxis()->SetTitle("#LTln A#GT, V(ln A)");
+    lnA->GetXaxis()->SetNdivisions(505);
+    vlnA->GetXaxis()->SetTitle("lg(E/eV)");
+    vlnA->GetXaxis()->SetNdivisions(505);
+    vlnA->SetLineColor(kBlue);
+    lnA->GetYaxis()->SetTitle("#LTln A#GT");
+    vlnA->GetYaxis()->SetTitle("V(ln A)");
+    lnA->GetXaxis()->SetTitleOffset(0.8);
+    vlnA->GetXaxis()->SetTitleOffset(.8);
+    lnA->GetYaxis()->SetTitleOffset(1.02);
+    vlnA->GetYaxis()->SetTitleOffset(1.02);
+    lnA->GetYaxis()->SetTickLength(0.02);
+    vlnA->GetYaxis()->SetTickLength(0.02);
+    lnA->GetXaxis()->SetTickLength(0.02);
+    vlnA->GetXaxis()->SetTickLength(0.02);
 
-    fCanvas->cd(eCompEarth);
-    lnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+    const double scale = 1.4;
+    lnA->GetXaxis()->SetTitleSize(scale*lnA->GetXaxis()->GetTitleSize());
+    lnA->GetYaxis()->SetTitleSize(scale*lnA->GetYaxis()->GetTitleSize());
+    vlnA->GetXaxis()->SetTitleSize(scale*vlnA->GetXaxis()->GetTitleSize());
+    vlnA->GetYaxis()->SetTitleSize(scale*vlnA->GetYaxis()->GetTitleSize());
+    lnA->GetXaxis()->SetLabelSize(scale*lnA->GetXaxis()->GetLabelSize());
+    lnA->GetYaxis()->SetLabelSize(scale*lnA->GetYaxis()->GetLabelSize());
+    vlnA->GetXaxis()->SetLabelSize(scale*vlnA->GetXaxis()->GetLabelSize());
+    vlnA->GetYaxis()->SetLabelSize(scale*vlnA->GetYaxis()->GetLabelSize());
+    vlnA->GetYaxis()->SetLabelOffset(0.017);
+
+    TVirtualPad* c21 = fCanvas->cd(eCompEarth)->cd(1);
+    c21->SetLeftMargin(0.17);
+    c21->SetRightMargin(0.005);
+    c21->SetTicks(1, 1);
+
     lnA->Draw("C");
-    vlnA->Draw("CSAME");
+
+    TVirtualPad* c22 = fCanvas->cd(eCompEarth)->cd(2);
+    c22->SetLeftMargin(0.005);
+    c22->SetRightMargin(0.17);
+    c22->SetTicks(1, 1);
+    vlnA->Draw("CY+");
+    vlnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+#ifdef _PAPER_
+    lnA->SetLineWidth(1);
+    vlnA->SetLineWidth(1);
+#else
     lnA->SetLineWidth(2);
     vlnA->SetLineWidth(2);
+#endif
   }
 
 }
