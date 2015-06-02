@@ -6,7 +6,7 @@ par fGal       5.57893e-01 0.1 0 0 0
 par gammaGal  -4.18383e+00 0.1 0 0 0
 par lgEmaxGal   19 0.1 0 0 1
 par fNoPhoton    0 0.1 0 0 1
-mass 28 0.1 0
+mass 28 0.1 1
 galacticMass 56
 evolution SFR2
 IRB Kneiske04

@@ -52,6 +52,10 @@ namespace prop {
     GetMasses() const
     { return fMassValues; }
 
+    const std::map<prop::EPar, prop::StartValues>&
+    GetStartValues() const
+    { return fStartValues; }
+
     const std::string& GetEvolution() const
     { return fEvolution; }
 

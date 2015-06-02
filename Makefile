@@ -10,7 +10,7 @@ LIB_DIR = lib
 BIN_DIR = bin
 
 CINT = rootcint
-CXXFLAGS += -std=c++0x -O2 -Wall -Wextra -fPIC
+CXXFLAGS += -std=c++0x -O3 -Wall -Wextra -fPIC
 CXXFLAGS += $(shell root-config --cflags)
 CXXFLAGS += -I$(SRC_DIR) -I.
 LDFLAGS  += -fPIC -ggdb3 -Wall

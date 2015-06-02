@@ -13,8 +13,11 @@ namespace prop {
 class FitSummary {
 public:
   void Fill(const prop::FitData& fitData, const prop::FitOptions& fitOptions);
-  void SetNNeutrinos(double n)
+  void SetNNeutrinos(const double n)
   { fNNeutrinos = n; }
+  void SetMCMCInfo(const unsigned int walkerId, const unsigned int step)
+  { fWalkerId = walkerId; fStep = step; }
+
 private:
   double fChi2Tot;
   unsigned int fNdfTot;
@@ -45,6 +48,9 @@ private:
   double fBBSigma;
 
   double fNNeutrinos;
+
+  unsigned int fWalkerId;
+  unsigned int fStep;
 
   ClassDefNV(FitSummary, 1);
 };

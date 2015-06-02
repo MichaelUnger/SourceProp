@@ -55,6 +55,8 @@ main(int argc, char** argv)
       continue;
     }
 
+    const bool lgZ = false;
+
     ROOTEvent event;
     ROOTEvent* eventPtr = &event;
     eventTree->SetBranchAddress("fEvent.", &eventPtr);
@@ -64,7 +66,7 @@ main(int argc, char** argv)
       if (!IsNucleus(Aprim) && event.GetMass() != eElectronNeutrino)
         continue;
       const double lgEprim = log10(event.GetEnergy()) + 18;
-      if (lgEprim > 120)
+      if (lgEprim > 20)
         continue;
       const double z = event.GetRedShift();
       const double d = event.GetLightDistance()/1e3;
@@ -77,7 +79,9 @@ main(int argc, char** argv)
           outFile.cd();
           genMap1[Aprim].push_back(new TH2D(title.str().c_str(), ";lg(Eearth);lg(z)",
                                             40, 17, 20,
-                                            100, -2, 2));
+                                            100, lgZ ? -2 : 0, lgZ ? 2 : 20));
+          if (!lgZ)
+            genMap1[Aprim].back()->GetYaxis()->SetTitle("redshift z");
           title.str("");
           title << "hGen2_" << Aprim << "_" << m.fFirst << "to" << m.fLast;
           outFile.cd();
@@ -101,7 +105,7 @@ main(int argc, char** argv)
         }
         if (iHist < 0)
           continue;
-        hGen1[iHist]->Fill(lgEsec, fmax(fmin(log10(z), 1.999), -1.9999), w);
+        hGen1[iHist]->Fill(lgEsec, lgZ ? fmax(fmin(log10(z), 1.999), -1.9999) : z, w);
         hGen2[iHist]->Fill(lgEsec, d, w);
       }
     }

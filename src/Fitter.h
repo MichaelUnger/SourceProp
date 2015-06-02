@@ -14,7 +14,9 @@ namespace prop {
 
     Fitter(const FitOptions& opt);
     void Fit();
-    const FitData& GetFitData()
+    const FitData& GetFitData() const
+    { return fFitData; }
+    FitData& GetFitData()
     { return fFitData; }
 
     double CalcChi2(const std::vector<double>& par);
