@@ -9,11 +9,11 @@
 
 namespace prop {
 
-  struct StartValues {
-    StartValues() :
+  struct StartValue {
+    StartValue() :
       fStart(0), fStep(0), fMinVal(0), fMaxVal(0), fIsFixed(0) {}
 
-    StartValues(const double start, const double step,
+    StartValue(const double start, const double step,
                 const double minVal, const double maxVal,
                 const bool fixed) :
       fStart(start), fStep(step), fMinVal(minVal), fMaxVal(maxVal),
@@ -23,6 +23,25 @@ namespace prop {
     double fMinVal;
     double fMaxVal;
     bool fIsFixed;
+  };
+
+  struct MassValue {
+    MassValue() :
+      fStartMass(0), fStartFraction(0), fMassMinVal(0), fMassMaxVal(0),
+      fMassIsFixed(0), fFractionIsFixed(0) {}
+
+    MassValue(const double startMass, const double startFraction,
+              const double minMassVal, const double maxMassVal,
+              const bool massFixed, const bool fractionFixed) :
+      fStartMass(startMass), fStartFraction(startFraction),
+      fMassMinVal(minMassVal), fMassMaxVal(maxMassVal),
+      fMassIsFixed(massFixed), fFractionIsFixed(fractionFixed) {}
+      double fStartMass;
+      double fStartFraction;
+      double fMassMinVal;
+      double fMassMaxVal;
+      double fMassIsFixed;
+      double fFractionIsFixed;
   };
 
   class FitOptions {
@@ -48,11 +67,11 @@ namespace prop {
     void SetStartValue(const EPar par, const double val)
     { fStartValues[par].fStart = val; }
 
-    const std::map<unsigned int, prop::StartValues>&
+    const std::vector<prop::MassValue>&
     GetMasses() const
     { return fMassValues; }
 
-    const std::map<prop::EPar, prop::StartValues>&
+    const std::map<prop::EPar, prop::StartValue>&
     GetStartValues() const
     { return fStartValues; }
 
@@ -91,7 +110,7 @@ namespace prop {
     double GetXmaxSigmaShift() const
     { return fXmaxSigmaShift; }
 
-    unsigned int GetGalacticMass() const
+    MassValue GetGalacticMass() const
     { return fGalMass; }
 
    const std::string GetInteractionModel() const
@@ -104,8 +123,8 @@ namespace prop {
     { return fPhotonFieldType; }
 
   private:
-    std::map<EPar, prop::StartValues> fStartValues;
-    std::map<unsigned int, prop::StartValues> fMassValues;
+    std::map<EPar, prop::StartValue> fStartValues;
+    std::vector<prop::MassValue> fMassValues;
     std::string fEvolution;
     std::string fIRB;
     std::string fEps0;
@@ -121,7 +140,7 @@ namespace prop {
     double fXmaxSigmaShift;
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
-    unsigned int fGalMass;
+    MassValue fGalMass;
     EPhotonFieldType fPhotonFieldType;
     ClassDefNV(FitOptions, 1);
   };

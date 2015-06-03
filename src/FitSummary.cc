@@ -26,8 +26,11 @@ FitSummary::Fill(const prop::FitData& fitData,
   fLgEmaxGal = fitData.fFitParameters[eLgEmaxGal].fValue;
   fNoPhoton = fitData.fFitParameters[eNoPhoton].fValue;
 
-  fMasses = fitData.fMasses;
-  fFractions.resize(fitData.fMasses.size());
+  const unsigned int nMass = fitData.GetNMass();
+  fMasses.clear();
+  for (unsigned int i = 0; i < nMass; ++i)
+    fMasses.push_back(fitData.fFitParameters[eNpars + nMass - 1 + i].fValue);
+  fFractions.resize(nMass);
   vector<double> zeta;
   for (unsigned int i = 0; i < fFractions.size() - 1; ++i)
     zeta.push_back(pow(10, fitData.fFitParameters[eNpars + i].fValue));

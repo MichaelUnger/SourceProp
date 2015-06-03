@@ -45,6 +45,7 @@ namespace prop {
         ++iFree;
       }
     }
+#warning add mass
     const double logLike = -0.5 * fFitter.CalcChi2(allPar);
 
 
@@ -71,9 +72,12 @@ namespace prop {
     for (const auto& p : fFitOptions.GetStartValues())
       if (!p.second.fIsFixed)
         par.push_back(p.second.fStart);
-    for (const auto& m : fFitOptions.GetMasses())
-      if (!m.second.fIsFixed)
-        par.push_back(m.second.fStart);
+    for (const auto& m : fFitOptions.GetMasses()) {
+      if (!m.fFractionIsFixed)
+        par.push_back(m.fStartFraction);
+      if (!m.fMassIsFixed)
+        par.push_back(m.fStartMass);
+    }
     return par;
   }
 

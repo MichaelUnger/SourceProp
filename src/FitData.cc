@@ -27,7 +27,6 @@ namespace prop {
     fIteration = 0;
     delete fPropagator;
     delete fSource;
-    fMasses.clear();
     fFluxData.clear();
     fCompoData.clear();
     fAllFluxData.clear();
@@ -42,6 +41,13 @@ namespace prop {
     if (fFitCompo)
       chi2 += fChi2LnA + fChi2VlnA;
     return chi2;
+  }
+
+
+  unsigned int
+  FitData::GetNMass() const
+  {
+    return (fFitParameters.size() - eNpars + 1) / 2;
   }
 
   unsigned int
@@ -63,7 +69,10 @@ namespace prop {
   FitData::GetTotalPower(const double Elow)
     const
   {
-    vector<double> fractions(fMasses.size());
+#warning FIXME
+    return 0;
+    /*
+    vector<double> fractions(GetNMass());
     vector<double> zeta;
     for (unsigned int i = 0; i < fractions.size() - 1; ++i)
       zeta.push_back(pow(10, fFitParameters[eNpars + i].fValue));
@@ -72,6 +81,7 @@ namespace prop {
     for (unsigned int i = 0; i < fractions.size(); ++i)
       powerSum += fSpectrum.InjectedPower(Elow, fMasses[i]);
     return fQ0 * powerSum;
+    */
   }
 
 

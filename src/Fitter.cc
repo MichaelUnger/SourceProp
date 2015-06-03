@@ -6,6 +6,7 @@
 #include "Propagator.h"
 #include "LnACalculator.h"
 #include "Particles.h"
+#include "DoubleMass.h"
 
 #include <TMinuit.h>
 #include <TFile.h>
@@ -56,11 +57,11 @@ namespace prop {
   Fitter::GetNParameters()
     const
   {
-    return eNpars + fOptions.GetNmass() - 1;
+    return eNpars + 2 * fOptions.GetNmass() - 1;
   }
 
   void
-  Fitter::FitFunc(int& /*npar*/, double* const /*gin*/,
+  Fitter::FitFunc(int& /*nPar*/, double* const /*gin*/,
                   double& chi2, double* const par,
                   const int /*iFlag*/)
   {
@@ -78,14 +79,20 @@ namespace prop {
 
 
     map<unsigned int, double> fractions;
-    const unsigned int nMass = data.fMasses.size();
+    const unsigned int nMass = data.GetNMass();
     double frac[nMass];
     double zeta[nMass-1];
     for (unsigned int i = 0; i < nMass - 1; ++i)
       zeta[i] = pow(10, *(par + eNpars + i));
     zetaToFraction(nMass, zeta, frac);
-    for (unsigned int i = 0; i < nMass; ++i)
-      fractions[data.fMasses[i]] = frac[i];
+    for (unsigned int i = 0; i < nMass; ++i) {
+      const double m = *(par + eNpars + nMass - 1 + i);
+      const DoubleMass dm(m);
+      if (dm.GetFrac1() > 0)
+        fractions[dm.GetMass1()] += dm.GetFrac1()*frac[i];
+      if (dm.GetFrac2() > 0)
+        fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
+    }
 
     Spectrum& spectrum = data.fSpectrum;
     spectrum.SetParameters(source,
@@ -172,7 +179,7 @@ namespace prop {
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
-    fFitData.fGalMass = fOptions.GetGalacticMass();
+    fFitData.fGalMass = fOptions.GetGalacticMass().fStartMass;
 
     ReadData();
     cout << " reading prop matrix from "
@@ -230,52 +237,85 @@ namespace prop {
     }
 
     vector<double> fraction;
-    vector<bool> fixed;
+    vector<double> massIndex;
+    vector<bool> fixedFraction;
     // first the fixed fractions ...
-    for (const auto& iter : fOptions.GetMasses()) {
-      const unsigned int A = iter.first;
-      const StartValues& sv = iter.second;
-      if (sv.fIsFixed) {
-        fraction.push_back(sv.fStart);
-        fFitData.fMasses.push_back(A);
-        fixed.push_back(true);
+    int iMass = 0;
+    for (const auto& m : fOptions.GetMasses()) {
+      if (m.fFractionIsFixed) {
+        massIndex.push_back(iMass);
+        fraction.push_back(m.fStartFraction);
+        fixedFraction.push_back(true);
       }
+      ++iMass;
     }
+
     //  ... then the variable ones
-    for (const auto& iter : fOptions.GetMasses()) {
-      const unsigned int A = iter.first;
-      const StartValues& sv = iter.second;
-      if (!sv.fIsFixed) {
-        fraction.push_back(sv.fStart);
-        fFitData.fMasses.push_back(A);
-        fixed.push_back(false);
+    iMass = 0;
+    for (const auto& m : fOptions.GetMasses()) {
+      if (!m.fFractionIsFixed) {
+        massIndex.push_back(iMass);
+        fraction.push_back(m.fStartFraction);
+        fixedFraction.push_back(false);
       }
+      ++iMass;
     }
+
     const unsigned int nMass = fOptions.GetNmass();
     vector<double> zeta(nMass - 1);
     fractionToZeta(nMass - 1, &fraction.front(), &zeta.front());
+    unsigned int iPar = eNpars;
     for (unsigned int i = 0; i < zeta.size(); ++i) {
       stringstream parName;
       parName << "zeta" << i;
       const double step = 0.1;
       const double minZeta = -7;
       const double maxZeta = 1e-14;
-      fMinuit.mnparm(eNpars + i, parName.str().c_str(), log10(zeta[i]),
-                    step, minZeta, maxZeta, ierflag);
-      if (fixed[i]) {
-        fMinuit.FixParameter(eNpars + i);
-        fFitData.fFitParameters[eNpars + i].fIsFixed = true;
+      fMinuit.mnparm(iPar, parName.str().c_str(), log10(zeta[i]),
+                     step, minZeta, maxZeta, ierflag);
+      if (fixedFraction[i]) {
+        fMinuit.FixParameter(iPar);
+        fFitData.fFitParameters[iPar].fIsFixed = true;
       }
       else
-        fFitData.fFitParameters[eNpars + i].fIsFixed = false;
+        fFitData.fFitParameters[iPar].fIsFixed = false;
 
-      cout << setw(2) << eNpars + i << setw(10) << parName.str()
+      cout << setw(2) << iPar << setw(10) << parName.str()
            << setw(11) << scientific << setprecision(3) << log10(zeta[i])
            << setw(11) << step
            << setw(11) << minZeta
            << setw(11) << maxZeta
-           << setw(7) << (fixed[i] ? "fixed" : "free") << endl;
+           << setw(7) << (fixedFraction[i] ? "fixed" : "free") << endl;
+      ++iPar;
     }
+
+    // ... and then the masses
+    const vector<MassValue>& masses = fOptions.GetMasses();
+    for (unsigned int i = 0; i < masses.size(); ++i) {
+      stringstream parName;
+      parName << "mass" << i;
+      const MassValue& m = masses[i];
+      const double step = 1;
+      const double minMass = masses[i].fMassMinVal;
+      const double maxMass = masses[i].fMassMaxVal;
+      fMinuit.mnparm(iPar, parName.str().c_str(), m.fStartMass,
+                     step, minMass, maxMass, ierflag);
+      if (m.fMassIsFixed) {
+        fMinuit.FixParameter(iPar);
+        fFitData.fFitParameters[iPar].fIsFixed = true;
+      }
+      else
+        fFitData.fFitParameters[iPar].fIsFixed = false;
+
+      cout << setw(2) << iPar << setw(10) << parName.str()
+           << setw(11) << scientific << setprecision(3) << m.fStartMass
+           << setw(11) << step
+           << setw(11) << minMass
+           << setw(11) << maxMass
+           << setw(7) << (m.fMassIsFixed ? "fixed" : "free") << endl;
+      ++iPar;
+    }
+
     cout << separator << endl;
 
     vector<double> p;

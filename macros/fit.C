@@ -70,12 +70,6 @@ ReadGlobus(const FitOptions& fitOptions,
     globusVlnA->SetPoint(i, lgE, lnACalc.GetLnAVariance(meanXmax,
                                                         rms.Eval(lgE),
                                                         E, model));
-    cout << lgE << " " << lnACalc.GetMeanLnA(meanXmax,
-                                             E, model) << " "
-         << lnACalc.GetLnAVariance(meanXmax,
-                                                      rms.Eval(lgE),
-                                                      E, model)
-         << endl;
     ++i;
     lgE += dLgE;
   }
@@ -89,7 +83,7 @@ DrawData(const FitData& fitData,
          TCanvas* can)
 {
 
-  bool showGlobus = true;
+  bool showGlobus = false;
 
   TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
   const vector<FluxData>& fluxData = fitData.fFluxData;
@@ -384,7 +378,8 @@ DrawValues(const FitData& fitData,
   l.DrawLatex(x, y, ("evolution: " + fitOptions.GetEvolution() +
                      ", IRB: " + fitOptions.GetIRB()).c_str());
 
-  vector<double> fractions(fitData.fMasses.size());
+  const unsigned int nMass = fitData.GetNMass();
+  vector<double> fractions(nMass);
   vector<double> zeta;
   for (unsigned int i = 0; i < fractions.size() - 1; ++i)
     zeta.push_back(pow(10, fitParameters[eNpars + i].fValue));
@@ -394,8 +389,9 @@ DrawValues(const FitData& fitData,
   unsigned int nFix = 0;
   for (unsigned int i = 0; i < fractions.size(); ++i) {
     stringstream parString;
-    parString << "f(" << fitData.fMasses[i] << ")"
-              << (fitData.fMasses[i] < 10 ? "  = " : "= ")
+    const double m = fitData.fFitParameters[eNpars + nMass - 1 + i].fValue;
+    parString << "f(" << m << ")"
+              << (m < 10 ? "  = " : "= ")
               << scientific << setprecision(1)
               << fractions[i];
 
@@ -466,7 +462,8 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
   massGroups.push_back(MassGroup(20, 39, 26, kAzure+10));
   massGroups.push_back(MassGroup(40, 56, 56, kBlue));
-  const unsigned int Agal = opt.GetGalacticMass() + kGalacticOffset;
+#warning FIXME mass
+  const unsigned int Agal = opt.GetGalacticMass().fStartMass + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
                                  kMagenta+2, 3));
 

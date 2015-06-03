@@ -55,6 +55,7 @@ namespace prop {
     double GetChi2Tot() const;
     unsigned int GetNdfTot() const;
     double GetTotalPower(const double Elow) const;
+    unsigned int GetNMass() const;
 
     unsigned int fIteration;
     NumericSource* fSource;
@@ -63,7 +64,6 @@ namespace prop {
     unsigned int fNLgE;
     double fLgEmin;
     double fLgEmax;
-    std::vector<double> fMasses;
     std::vector<FluxData> fFluxData;
     std::vector<FluxData> fLowEFluxData;
     std::vector<CompoData> fCompoData;
@@ -75,7 +75,7 @@ namespace prop {
     double fChi2VlnA;
     double fQ0;
     double fQ0Err;
-    unsigned int fGalMass;
+    double fGalMass;
     std::vector<FitParameter> fFitParameters;
 
   };

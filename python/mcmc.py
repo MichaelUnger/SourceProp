@@ -9,9 +9,9 @@ from rootext import ToNumpy
 
 ROOT.gSystem.Load("libProp.so")
 
-nwalkers = 50
-nsteps = 500
-options = "fitFiles/PaperDefault.txt"
+nwalkers = 20
+nsteps = 10
+options = "fitFiles/MCMC.txt"
 output = "mcmc.root"
 interface = ROOT.prop.MCMCInterface(nwalkers, options, output)
 
@@ -25,7 +25,7 @@ def logProb(par):
 startVals = ToNumpy(interface.GetFreeParStartValues())
 ndim = startVals.size
 pos = [startVals + 1e-3*startVals*np.random.randn(ndim) for i in range(nwalkers)]
-sampler = emcee.EnsembleSampler(nwalkers, ndim, logProb)
+sampler = emcee.EnsembleSampler(nwalkers, ndim, logProb, threads=1)
 
 print("Running MCMC...")
 sampler.run_mcmc(pos, nsteps, rstate0 = np.random.get_state(), storechain = False)

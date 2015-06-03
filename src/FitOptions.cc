@@ -25,16 +25,16 @@ namespace prop {
     fEnergyBinShift = 0;
     fXmaxSigmaShift = 0;
     fInteractionModel = "eposLHC";
-    fStartValues[eGamma] = StartValues(-1, 0.1 ,0, 0, 1);
-    fStartValues[eLgEmax] = StartValues(18.5, 0.1 ,0, 0, 0);
-    fStartValues[eLgEscFac] = StartValues(2.62056e+00, 0.1 ,0, 0, 0);
-    fStartValues[eEscGamma] = StartValues(-1, 0.1 ,0, 0, 1);
-    fStartValues[eFGal] = StartValues(0.6, 0.1, 0, 1, 0);
-    fStartValues[eGammaGal] = StartValues(-4.17e+00, 0.1, 0, 0, 0);
-    fStartValues[eLgEmaxGal] = StartValues(19.1, 0.1, 0, 0, 1);
-    fStartValues[eNoPhoton] = StartValues(0, 0.1, 0, 0, 1);
+    fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
+    fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,0, 0, 0);
+    fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,0, 0, 0);
+    fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
+    fStartValues[eFGal] = StartValue(0.6, 0.1, 0, 1, 0);
+    fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, 0, 0, 0);
+    fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
+    fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fCutoffType = Spectrum::eExponential;
-    fGalMass = 56;
+    fGalMass = MassValue(56, 1, 1, 56, 1, 1);
     fPhotonFieldType = eUnknown;
 
     ifstream optionsFile(filename.c_str());
@@ -59,16 +59,15 @@ namespace prop {
         if (!(line >> parName))
           throw runtime_error("error decoding " + keyword);
         const EPar par = GetPar(parName);
-        StartValues& s = fStartValues[par];
+        StartValue& s = fStartValues[par];
         if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
           throw runtime_error("error decoding " + keyword);
       }
       else if (keyword == "mass") {
-        int A;
-        if (!(line >> A))
-          throw runtime_error("error decoding " + keyword);
-        StartValues& s = fMassValues[A];
-        if (!(line >> s.fStart >> s.fIsFixed))
+        fMassValues.push_back(MassValue());
+        MassValue& m = fMassValues.back();
+        if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
+              m.fMassMaxVal >> m.fMassIsFixed >> m.fFractionIsFixed))
           throw runtime_error("error decoding mass parameters");
       }
       else if (keyword == "evolution") {
@@ -77,7 +76,9 @@ namespace prop {
         cout << " read evolution " << fEvolution << endl;
       }
       else if (keyword == "galacticMass") {
-        if (!(line >> fGalMass))
+        if (!(line >> fGalMass.fStartMass >>
+              fGalMass.fMassMinVal >> fGalMass.fMassMaxVal >>
+              fGalMass.fMassIsFixed))
           throw runtime_error("error reading galactic mass");
       }
       else if (keyword == "IRB") {
@@ -182,13 +183,12 @@ namespace prop {
         throw runtime_error("unknown keyword " + keyword);
     }
 
-    // zeta here
     if (fMassValues.empty()) {
-      fMassValues[1] = StartValues(0.1, 0.05 ,0, 0, 0);
-      fMassValues[4] = StartValues(0.1, 0.05 ,0, 0, 0);
-      fMassValues[14] = StartValues(0.1, 0.05 ,0, 0, 0);
-      fMassValues[26] = StartValues(0.6, 0.05 ,0, 0, 0);
-      fMassValues[56] = StartValues(0.1, 0.05 ,0, 0, 0);
+      fMassValues.push_back(MassValue(1, 0.1, 1, 56, 1, 0));
+      fMassValues.push_back(MassValue(4, 0.1, 1, 56, 1, 0));
+      fMassValues.push_back(MassValue(14, 0.1, 1, 56, 1, 0));
+      fMassValues.push_back(MassValue(28, 0.6, 1, 56, 1, 0));
+      fMassValues.push_back(MassValue(56, 0.1, 1, 56, 1, 1));
     }
 
   }
@@ -304,9 +304,12 @@ namespace prop {
     for (const auto& p : fStartValues)
       if (!p.second.fIsFixed)
         ++nFree;
-    for (const auto& m : fMassValues)
-      if (!m.second.fIsFixed)
+    for (const auto& m : fMassValues) {
+      if (!m.fMassIsFixed)
         ++nFree;
+      if (!m.fFractionIsFixed)
+        ++nFree;
+    }
     return nFree;
   }
 
