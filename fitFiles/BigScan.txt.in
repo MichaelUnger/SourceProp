@@ -1,0 +1,23 @@
+par gammaInj   -@GAMMA@ 0.1 0 0 1
+par lgRmax    18.5 0.1 0 0 0
+par lgResc    2.43 0.1 0 0 0
+par deltaEsc   -@DELTA@ 0.1 0 0 1
+par fGal       0.6 0.1 0 0 0
+par gammaGal  -3.3 0.1 0 0 0
+par lgEmaxGal   19 0.1 0 0 1
+par fNoPhoton    0 0.1 0 0 1
+mass @MASS@ 0.1 0
+galacticMass 56
+evolution SFR2
+IRB Kneiske10
+BBTemperature @TEMP@
+#eps0 0.05
+#alpha 52
+fitComposition 1
+rejectOutliers 0
+minLgEFlux 17.
+minLgECompo 17.
+interactionModel eposLHC
+cutoffType exponential
+energyBinShift 1
+xmaxSigmaShift -1
