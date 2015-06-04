@@ -356,7 +356,8 @@ namespace prop {
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                   const double fInt = lambdaE / (lambdaE + lambdaI);
                   const double Qprim = LogEval(hPrim, log10(Eprim));
-                  const double pdFrac = fSource->GetProcessFraction(Eprim, Aprim, VSource::ePD);
+                  const double pdFrac =
+                    fSource->GetProcessFraction(Eprim, Aprim, VSource::ePD);
                   const double flux = pdFrac * fInt * bPD * jacobi * Qprim;
                   hSec.Fill(lgE, flux);
                   if (Asec == 1)
@@ -378,7 +379,8 @@ namespace prop {
                     const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                     const double fInt = lambdaE / (lambdaE + lambdaI);
                     const double Qprim = LogEval(hPrim, log10(Eprim));
-                    const double ppFrac = fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
+                    const double ppFrac =
+                      fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                     const double flux = ppFrac * fInt * jacobi * Qprim;
                     hSec.Fill(lgE, flux);
                     pp.Fill(lgE, flux);
@@ -394,7 +396,8 @@ namespace prop {
                     const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                     const double fInt = lambdaE / (lambdaE + lambdaI);
                     const double Qprim = LogEval(hPrim, log10(Eprim));
-                    const double ppFrac = fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
+                    const double ppFrac =
+                      fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                     const double flux = ppFrac * fInt * jacobi * Qprim;
                     hSec.Fill(lgE, flux);
                     pion.Fill(lgE, flux);
@@ -410,7 +413,8 @@ namespace prop {
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                   const double fInt = lambdaE / (lambdaE + lambdaI);
                   const double Qprim = LogEval(hPrim, log10(Eprim));
-                  const double ppFrac = fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
+                  const double ppFrac =
+                    fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                   const double flux = ppFrac * fInt * jacobi * Qprim;
                   hSec.Fill(lgE, flux);
                 }
@@ -449,18 +453,52 @@ namespace prop {
 
     for (auto& iter : fEscape) {
       const int A = iter.first;
-#warning no p interactions
-      if (A == 1)
-        continue;
       TMatrixD& m = iter.second;
-      double lgE = fLgEmin + dlgEOrig / 2;
-      for (unsigned int iE = 0; iE < fN; ++iE) {
-        const double E = pow(10, lgE);
-        const double lambdaI = fSource->LambdaInt(E, A);
-        const double lambdaE = fSource->LambdaEsc(E, A);
-        const double fEsc = lambdaI / (lambdaE + lambdaI);
-        m[iE][0] *= fEsc;
-        lgE += dlgEOrig;
+      if (A == 1) {
+        // p energy loss
+        const double kappa = 0.8;
+        if (1+log10(kappa)/dlgEOrig > 0.05) {
+          stringstream errMsg;
+          errMsg << " proton interaction only implemented for kappa ~ dlgE"
+                 << kappa << " " << dlgEOrig;
+          throw runtime_error(errMsg.str().c_str());
+        }
+
+        double lgE = fLgEmin + dlgEOrig / 2;
+        for (unsigned int iE = 0; iE < fN; ++iE) {
+          double sum = 0;
+          double prod = 1;
+          double lgEprim = lgE;
+          for (int jE = 0; jE < fN - iE; ++jE) {
+            const double kE = iE + jE;
+            sum += 0.5 * m[kE][0] * pow(kappa, -jE) * prod;
+            const double Eprim = pow(10, lgEprim);
+            const double lambdaI = fSource->LambdaInt(Eprim, A);
+            const double lambdaE = fSource->LambdaEsc(Eprim, A);
+            const double fInt = lambdaE / (lambdaE + lambdaI);
+            prod *= fInt;
+            lgEprim += dlgEOrig;
+          }
+
+          const double E = pow(10, lgE);
+          const double lambdaI = fSource->LambdaInt(E, A);
+          const double lambdaE = fSource->LambdaEsc(E, A);
+          const double fEsc = lambdaI / (lambdaE + lambdaI);
+          const double qEsc = 0.5 * m[iE][0] + fEsc * sum;
+          m[iE][0] = qEsc;
+          lgE += dlgEOrig;
+        }
+      }
+      else {
+        double lgE = fLgEmin + dlgEOrig / 2;
+        for (unsigned int iE = 0; iE < fN; ++iE) {
+          const double E = pow(10, lgE);
+          const double lambdaI = fSource->LambdaInt(E, A);
+          const double lambdaE = fSource->LambdaEsc(E, A);
+          const double fEsc = lambdaI / (lambdaE + lambdaI);
+          m[iE][0] *= fEsc;
+          lgE += dlgEOrig;
+        }
       }
     }
 

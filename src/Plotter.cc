@@ -69,6 +69,7 @@ namespace prop {
     DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
                  n, x1, x2, eFluxInj);
 
+    /*
     vector<MassGroup> nucleonGroups;
     nucleonGroups.push_back(MassGroup(Spectrum::eKnockOutPD,
                                       Spectrum::eKnockOutPD,
@@ -80,7 +81,7 @@ namespace prop {
                                       kRed, 3));
     DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource, "hNucl",
                  n, x1, x2, eFluxEsc, false);
-
+    */
     DrawSpectrum(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
                  n, x1, x2, eFluxEarth);
 

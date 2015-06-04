@@ -9,6 +9,5 @@
     cout << "fit.so loaded!" << endl;
   else
     cout << "failed compiling fit.C" << endl;
-
   gStyle->SetOptStat(0);
 }

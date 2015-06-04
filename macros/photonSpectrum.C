@@ -10,9 +10,10 @@ MBB(double* x, double* p)
   const double T = 150; // K
   const double kT = T * kBB; // eV
 
-  const double beta = 2;
+  const double beta = p[0];
   return pow(eps, 2) / (exp(eps/kT) - 1) * pow(eps/eps0, beta)*500/0.975;
 }
+
 
 double
 BPL(double* x, double* p)
@@ -29,8 +30,9 @@ BPL(double* x, double* p)
 void
 photonSpectrum()
 {
+  const double xmin = -3;
   gStyle->SetOptLogy(1);
-  TF1* bpl = new TF1("bpl", BPL, -2, 0, 0);
+  TF1* bpl = new TF1("bpl", BPL, xmin, 0, 0);
   bpl->SetNpx(1000);
   bpl->Draw();
   bpl->SetLineColor(kRed);
@@ -38,10 +40,17 @@ photonSpectrum()
   bpl->GetYaxis()->SetTitle("dn/d#varepsilon [a.u.]");
   bpl->GetXaxis()->CenterTitle();
   bpl->GetYaxis()->CenterTitle();
-  TF1* mbb = new TF1("mbb", MBB, -2.5, 0, 0);
+  TF1* mbb = new TF1("mbb", MBB, xmin, 0, 1);
+  mbb->SetParameter(0, 2);
   mbb->SetNpx(1000);
   mbb->Draw("SAME");
   mbb->SetLineColor(kBlue);
+
+  TF1* bb = new TF1("bb", MBB, xmin, 0, 1);
+  bb->SetParameter(0, 0);
+  bb->SetNpx(1000);
+  bb->Draw("SAME");
+  bb->SetLineColor(kBlack);
 
   TLegend* leg = new TLegend(0.58, 0.81, 0.91, 0.95,NULL,"brNDCARC");
   leg->SetFillColor(0);
