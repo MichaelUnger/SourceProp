@@ -39,11 +39,19 @@ FitSummary::Fill(const prop::FitData& fitData,
   fEvolution = fitOptions.GetEvolution();
   fIRB = fitOptions.GetIRB();
 
-  fPhotonFieldType = fitOptions.GetPhotonFieldType();
-  fEps0 = fitOptions.GetEps0();
-  fAlpha = fitOptions.GetAlpha();
-  fBeta = fitOptions.GetBeta();
-  fBBTemperature = fitOptions.GetBBTemperature();
-  fBBSigma = fitOptions.GetBBSigma();
+  fPhotonFieldType.clear();
+  fEps0.clear();
+  fAlpha.clear();
+  fBeta.clear();
+  fBBTemperature.clear();
+  fBBSigma.clear();
+  for (unsigned int i = 0; i < fitOptions.GetNPhotonFields(); ++i) {
+    fPhotonFieldType.push_back(fitOptions.GetPhotonFieldType(i));
+    fEps0.push_back(fitOptions.GetEps0(i));
+    fAlpha.push_back(fitOptions.GetAlpha(i));
+    fBeta.push_back(fitOptions.GetBeta(i));
+    fBBTemperature.push_back(fitOptions.GetBBTemperature(i));
+    fBBSigma.push_back(fitOptions.GetBBSigma(i));
+  }
 
 }

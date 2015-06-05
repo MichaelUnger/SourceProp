@@ -109,7 +109,7 @@ namespace prop {
                       const unsigned int n, const double x1, const double x2,
                       const bool drawProtonLines)
   {
-    const bool showRatio = true;
+    const bool showRatio = false;
     unsigned int firstHist = fHists.size();
     double yMax = -1;
     double yMin = -1;

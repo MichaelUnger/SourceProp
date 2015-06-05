@@ -38,11 +38,6 @@ namespace prop {
 
     virtual
     double
-    LambdaInt(const double /*E*/, const int /*A*/, const EProcess /*p*/)
-      const = 0;
-
-    virtual
-    double
     GetPDBranchingRatio(const double /*E*/, const int /*Asec*/, const int /*Aprim*/)
       const = 0;
 

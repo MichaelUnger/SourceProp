@@ -13,6 +13,7 @@ namespace prop {
     eGammaGal,
     eLgEmaxGal,
     eNoPhoton,
+    eLgPhotonFieldFac,
     eNpars
   };
 

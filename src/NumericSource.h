@@ -14,17 +14,13 @@ namespace prop {
 
   public:
 
-    NumericSource(const std::string& type,
-                  const std::string& directory, const bool singleNucleon = false) :
-      fType(type), fDirectory(directory), fSingleNucleon(singleNucleon) {}
+    NumericSource(const std::vector<std::string>& fields,
+                  const std::string& directory);
 
     virtual ~NumericSource();
 
     double
     LambdaInt(const double E, const int A) const;
-
-    double
-    LambdaInt(const double E, const int A, const EProcess p) const;
 
     double
     GetProcessFraction(const double E, const int A,
@@ -33,18 +29,25 @@ namespace prop {
     double
     GetPDBranchingRatio(const double E, const int Asec, const int Aprim) const;
 
+    void SetPhotonScaleFactors(const std::vector<double>& f)
+    { fFieldScaleFactors = f; }
+
   private:
     NumericSource& operator=(const NumericSource&);
     NumericSource(NumericSource&);
-    void ReadBranch() const;
-    const TGraph& GetPD(const int A) const;
-    const TGraph& GetPPP(const int A) const;
-    mutable std::map<unsigned int, const TGraph*> fPhotoDissociation;
-    mutable std::map<unsigned int, const TGraph*> fPhotoPionProduction;
-    mutable std::map<unsigned int, std::map<unsigned int, TH1D*> > fBranchingRatio;
-    const std::string fType;
+    void ReadBranch();
+    void ReadPD();
+    void ReadPPP();
+
+    typedef std::map<unsigned int, TGraph*> Lambda;
+    const TGraph& FindGraph(const Lambda& lambda, const unsigned int A) const;
+    std::vector<Lambda> fPhotoDissociations;
+    std::vector<Lambda> fPhotoPionProductions;
+    typedef std::map<unsigned int, std::map<unsigned int, TH1D*> > BranchingRatio;
+    std::vector<BranchingRatio> fBranchingRatios;
+    std::vector<double> fFieldScaleFactors;
+    const std::vector<std::string> fFields;
     const std::string fDirectory;
-    const bool fSingleNucleon;
   };
 }
 

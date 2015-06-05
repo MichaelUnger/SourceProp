@@ -12,7 +12,7 @@ namespace prop {
       {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
        "lg(R_{esc}^{ Fe19})","#delta_{esc}",
        "f_{gal}", "#gamma_{gal}", "lg(E_{max}^{gal}/eV)",
-       "f_{noPhot}"};
+       "f_{noPhot}", "lg(fphot)"};
     return parNames[p];
   }
 
@@ -22,7 +22,7 @@ namespace prop {
     static const string parNames[eNpars] =
       {"gammaInj", "lgRmax", "lgResc",
        "deltaEsc", "fGal", "gammaGal", "lgEmaxGal",
-       "fNoPhoton"};
+       "fNoPhoton", "lgfPhoton"};
     return parNames[p];
   }
 
@@ -35,10 +35,8 @@ namespace prop {
         return par;
     }
 
-    throw runtime_error("unknown par" + parName);
+    throw runtime_error("unknown par " + parName);
 
   }
-
-
 
 }

@@ -13,11 +13,6 @@ namespace prop {
     // default options
     fEvolution = "SFR2";
     fIRB = "Kneiske04";
-    fEps0 = "0.03";
-    fBeta = "2.0";
-    fAlpha = "32";
-    fBBTemperature = "100";
-    fBBSigma = "0";
     fFitCompo = 1;
     fRejectOutliers = 1;
     fMinFluxLgE = 17;
@@ -33,9 +28,9 @@ namespace prop {
     fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, 0, 0, 0);
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
+    fStartValues[eLgPhotonFieldFac] = StartValue(1, 0.1, 0, 1, 1);
     fCutoffType = Spectrum::eExponential;
     fGalMass = MassValue(56, 1, 1, 56, 1, 1);
-    fPhotonFieldType = eUnknown;
 
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
@@ -85,50 +80,27 @@ namespace prop {
         if (!(line >> fIRB))
           throw runtime_error("error decoding IRB");
       }
-      else if (keyword == "eps0") {
-        if (fPhotonFieldType == eUnknown || fPhotonFieldType == eBrokenPowerlaw) {
-          if (!(line >> fEps0))
-            throw runtime_error("error decoding eps0");
-          fPhotonFieldType = eBrokenPowerlaw;
-        }
-        else
-          throw runtime_error("photon type mismatch (eps0)");
+      else if (keyword == "PhotonBPL") {
+        fPhotonFieldType.push_back(eBrokenPowerlaw);
+        string eps0, alpha, beta;
+        if (!(line >> eps0 >> alpha >> beta))
+            throw runtime_error("error decoding PhotonBPL");
+        fEps0.push_back(eps0);
+        fAlpha.push_back(alpha);
+        fBeta.push_back(beta);
+        fBBTemperature.push_back("n/a");
+        fBBSigma.push_back("n/a");
       }
-      else if (keyword == "beta") {
-        if (fPhotonFieldType == eUnknown || fPhotonFieldType == eBrokenPowerlaw) {
-          if (!(line >> fBeta))
-            throw runtime_error("error decoding beta");
-          fPhotonFieldType = eBrokenPowerlaw;
-        }
-        else
-          throw runtime_error("photon type mismatch (beta)");
-      }
-      else if (keyword == "alpha") {
-        if (fPhotonFieldType == eUnknown || fPhotonFieldType == eBrokenPowerlaw) {
-          if (!(line >> fAlpha))
-            throw runtime_error("error decoding alpha");
-          fPhotonFieldType = eBrokenPowerlaw;
-        }
-        else
-          throw runtime_error("photon type mismatch (alpha)");
-      }
-      else if (keyword == "BBTemperature") {
-        if (fPhotonFieldType == eUnknown || fPhotonFieldType == eBlackBody) {
-          if (!(line >> fBBTemperature))
-            throw runtime_error("error decoding BBTemperature");
-          fPhotonFieldType = eBlackBody;
-        }
-        else
-          throw runtime_error("photon type mismatch (T)");
-      }
-      else if (keyword == "BBSigma") {
-        if (fPhotonFieldType == eUnknown || fPhotonFieldType == eBlackBody) {
-          if (!(line >> fBBSigma))
-            throw runtime_error("error decoding BBSigma");
-          fPhotonFieldType = eBlackBody;
-        }
-        else
-          throw runtime_error("photon type mismatch (sigma)");
+      else if (keyword == "PhotonBB") {
+        fPhotonFieldType.push_back(eBlackBody);
+        string T, s;
+        if (!(line >> T >> s))
+          throw runtime_error("error decoding PhotonBB");
+        fBBTemperature.push_back(T);
+        fBBSigma.push_back(s);
+        fEps0.push_back("n/a");
+        fAlpha.push_back("n/a");
+        fBeta.push_back("n/a");
       }
       else if (keyword == "interactionModel") {
         if (!(line >> fInteractionModel))
@@ -191,6 +163,14 @@ namespace prop {
       fMassValues.push_back(MassValue(56, 0.1, 1, 56, 1, 1));
     }
 
+    if (fBBTemperature.empty()) {
+      fPhotonFieldType.push_back(eBlackBody);
+      fBBTemperature.push_back("100");
+      fBBSigma.push_back("0");
+      fEps0.push_back("n/a");
+      fAlpha.push_back("n/a");
+      fBeta.push_back("n/a");
+    }
   }
 
   double
@@ -239,15 +219,19 @@ namespace prop {
     return "ROOT/" + fIRB + "_" + fEvolution + "_nu.root";
   }
 
-  std::string FitOptions::GetPhotIntFilename()
+  vector<string> FitOptions::GetPhotIntFilenames()
     const
   {
-    if (fPhotonFieldType == eBlackBody)
-      return "BB_" + fBBTemperature + "_" + fBBSigma;
-    else if (fPhotonFieldType == eBrokenPowerlaw)
-      return "SP_" + fEps0 + "_" + fBeta + "_" + fAlpha;
-    else
-      throw runtime_error("unknown photon field type");
+    vector<string> filenames;
+    for (unsigned int i = 0; i < fBBTemperature.size(); ++i) {
+      if (fPhotonFieldType[i] == eBlackBody)
+        filenames.push_back("BB_" + fBBTemperature[i] + "_" + fBBSigma[i]);
+      else if (fPhotonFieldType[i] == eBrokenPowerlaw)
+        filenames.push_back("SP_" + fEps0[i] + "_" + fBeta[i] + "_" + fAlpha[i]);
+      else
+        throw runtime_error("unknown photon field type");
+    }
+    return filenames;
   }
 
   std::string FitOptions::GetPhotIntDirname()
@@ -257,43 +241,59 @@ namespace prop {
   }
 
   double
-  FitOptions::GetEps0()
+  FitOptions::GetEps0(unsigned int i)
     const
   {
-    return stod(fEps0);
+    if (fPhotonFieldType[i] == eBrokenPowerlaw)
+      return stod(fEps0[i]);
+    else
+      return numeric_limits<double>::quiet_NaN();
   }
 
   double
-  FitOptions::GetAlpha()
+  FitOptions::GetAlpha(unsigned int i)
     const
   {
-    if (fAlpha.size() != 2) {
-      cerr << "FitOptions::GetAlpha() unexpected string format for alpha " << endl;
-      return 0;
+    if (fPhotonFieldType[i] == eBrokenPowerlaw) {
+      if (fAlpha[i].size() != 2) {
+        cerr << "FitOptions::GetAlpha() unexpected string format for alpha " << endl;
+        return numeric_limits<double>::quiet_NaN();
+      }
+      return stod(fAlpha[i].substr(0, 1), nullptr) /
+        stod(fAlpha[i].substr(1, 1), nullptr);
     }
-    return stod(fAlpha.substr(0, 1), nullptr) /
-      stod(fAlpha.substr(1, 1), nullptr);
+    else
+      return numeric_limits<double>::quiet_NaN();
   }
 
   double
-  FitOptions::GetBeta()
+  FitOptions::GetBeta(unsigned int i)
     const
   {
-    return -stod(fBeta);
+    if (fPhotonFieldType[i] == eBrokenPowerlaw)
+      return -stod(fBeta[i]);
+    else
+      return numeric_limits<double>::quiet_NaN();
   }
 
   double
-  FitOptions::GetBBTemperature()
+  FitOptions::GetBBTemperature(const unsigned int i)
     const
   {
-    return stod(fBBTemperature);
-  }
+    if (fPhotonFieldType[i] == eBlackBody)
+      return stod(fBBTemperature[i]);
+    else
+      return numeric_limits<double>::quiet_NaN();
+ }
 
   double
-  FitOptions::GetBBSigma()
+  FitOptions::GetBBSigma(const unsigned int i)
     const
   {
-    return stod(fBBSigma);
+    if (fPhotonFieldType[i] == eBlackBody)
+      return stod(fBBSigma[i]);
+    else
+      return numeric_limits<double>::quiet_NaN();
   }
 
   unsigned int
@@ -313,5 +313,11 @@ namespace prop {
     return nFree;
   }
 
+  unsigned int
+  FitOptions::GetNPhotonFields()
+    const
+  {
+    return fBBTemperature.size();
+  }
 
 }

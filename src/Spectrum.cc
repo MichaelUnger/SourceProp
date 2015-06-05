@@ -451,10 +451,16 @@ namespace prop {
       }
     }
 
+    // restore arXiv v1: set to false
+    const bool protonInteractions = true;
+
     for (auto& iter : fEscape) {
       const int A = iter.first;
       TMatrixD& m = iter.second;
       if (A == 1) {
+#warning proton interactions are off
+        if (!protonInteractions)
+          continue;
         // p energy loss
         const double kappa = 0.8;
         if (1+log10(kappa)/dlgEOrig > 0.05) {

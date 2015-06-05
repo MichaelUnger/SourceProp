@@ -45,6 +45,15 @@ namespace prop {
         ++iFree;
       }
     }
+
+    /*
+    for (unsigned int i = 0; i < nMass - 1; ++i) {
+      const unsigned int iPar = eNpars + i;
+      zeta[i] = pow(10, *(par + iPar));
+    zetaToFraction(nMass, zeta, frac);
+    for (unsigned int i = 0; i < nMass; ++i) {
+      const double m = *(par + eNpars + nMass - 1 + i);
+    */
 #warning add mass
     const double logLike = -0.5 * fFitter.CalcChi2(allPar);
 

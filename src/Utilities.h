@@ -1,9 +1,10 @@
 #ifndef _Utilities_h_
 #define _Utilities_h_
 
-#include <iostream>
+#include <sstream>
 #include <map>
 #include <utility>
+#include <stdexcept>
 #include <TMatrixDfwd.h>
 
 namespace prop {
@@ -37,11 +38,21 @@ namespace prop {
   logMassMoments(const std::map<int, TMatrixD>& specMap,
                  unsigned int index);
 
+  namespace {
+    const unsigned int gAmax = 56;
+  }
+
   inline
-  double aToZ(const unsigned int A)
+  unsigned int
+  GetMaxA() {
+    return gAmax;
+  }
+
+  inline
+  double
+  aToZ(const unsigned int A)
   {
-    const unsigned int Amax = 56;
-    const double zTable[Amax] =
+    const double zTable[gAmax] =
       {
         1,  // H
         1,  // D
@@ -101,10 +112,10 @@ namespace prop {
         26};
 
 
-    if (A > Amax || A == 0) {
-      std::cerr << " aToZ(): Error -- A out of range "
-                << A << std::endl;
-      return 0;
+    if (A > gAmax || A == 0) {
+      std::ostringstream errMsg;
+      errMsg << " aToZ(): Error -- A out of range " << A;
+      throw std::runtime_error(errMsg.str());
     }
     else
       return zTable[A-1];

@@ -296,10 +296,10 @@ DrawValues(const FitData& fitData,
 
   can->cd(Plotter::eCompEsc)->cd(1);
   TLatex l;
-  const double textSize = 0.055;
+  const double textSize = 0.045;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
-  const double yStart = 0.94;
+  const double yStart = 0.98;
   double y = yStart;
   const double dy = 0.077;
   const double x = 0.;
@@ -320,25 +320,29 @@ DrawValues(const FitData& fitData,
   }
 
   const double eps0Y = y;
-  stringstream photonString;
-  if (fitOptions.GetPhotonFieldType() == FitOptions::eBrokenPowerlaw) {
-    photonString << "#varepsilon_{0} = " << fitOptions.GetEps0() << " eV";
-    l.SetTextColor(fixColor);
-    l.DrawLatex(x, y, photonString.str().c_str());
-    y -= dy;
-    photonString.str("");
-    photonString << "#alpha="
-                 << fitOptions.GetAlpha() << ", #beta="
-                 << fitOptions.GetBeta();
-    l.DrawLatex(x, y, photonString.str().c_str());
-    y -= dy;
-  }
-  else if (fitOptions.GetPhotonFieldType() == FitOptions::eBlackBody) {
-    photonString << "T ="
-                 << fitOptions.GetBBTemperature() << " K, #sigma ="
-                 << fitOptions.GetBBSigma();
-    l.DrawLatex(x, y, photonString.str().c_str());
-    y -= dy;
+  for (unsigned int i = 0; i < fitOptions.GetNPhotonFields(); ++i) {
+    stringstream photonString;
+    if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBrokenPowerlaw) {
+      l.SetTextColor(fixColor);
+      photonString << "#varepsilon_{0} = " << fitOptions.GetEps0(i) << " eV";
+      /*
+        l.DrawLatex(x, y, photonString.str().c_str());
+        y -= dy;
+        photonString.str("");
+      */
+      photonString << ", #alpha="
+                   << fitOptions.GetAlpha(i) << ", #beta="
+                   << fitOptions.GetBeta(i);
+      l.DrawLatex(x, y, photonString.str().c_str());
+      y -= dy;
+    }
+    else if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBlackBody) {
+      photonString << "T ="
+                   << fitOptions.GetBBTemperature(i) << " K, #sigma ="
+                   << fitOptions.GetBBSigma(i);
+      l.DrawLatex(x, y, photonString.str().c_str());
+      y -= dy;
+    }
   }
 
   l.SetTextColor(fixColor);

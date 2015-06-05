@@ -44,6 +44,7 @@ namespace prop {
       double fFractionIsFixed;
   };
 
+
   class FitOptions {
 
   public:
@@ -83,14 +84,17 @@ namespace prop {
 
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
-    std::string GetPhotIntFilename() const;
+    std::vector<std::string> GetPhotIntFilenames() const;
     std::string GetPhotIntDirname() const;
 
-    double GetEps0() const;
-    double GetAlpha() const;
-    double GetBeta() const;
-    double GetBBTemperature() const;
-    double GetBBSigma() const;
+    unsigned int GetNPhotonFields() const;
+    double GetEps0(const unsigned i) const;
+    double GetAlpha(const unsigned i) const;
+    double GetBeta(const unsigned i) const;
+    double GetBBTemperature(const unsigned i) const;
+    double GetBBSigma(const unsigned i) const;
+    EPhotonFieldType GetPhotonFieldType(const unsigned i) const
+    { return fPhotonFieldType[i]; }
 
     bool DoCompositionFit() const
     { return fFitCompo; }
@@ -119,19 +123,17 @@ namespace prop {
     Spectrum::ECutoffType GetCutoffType() const
     { return fCutoffType; }
 
-    EPhotonFieldType GetPhotonFieldType() const
-    { return fPhotonFieldType; }
-
   private:
     std::map<EPar, prop::StartValue> fStartValues;
     std::vector<prop::MassValue> fMassValues;
     std::string fEvolution;
     std::string fIRB;
-    std::string fEps0;
-    std::string fBeta;
-    std::string fAlpha;
-    std::string fBBTemperature;
-    std::string fBBSigma;
+    std::vector<EPhotonFieldType> fPhotonFieldType;
+    std::vector<std::string> fEps0;
+    std::vector<std::string> fBeta;
+    std::vector<std::string> fAlpha;
+    std::vector<std::string> fBBTemperature;
+    std::vector<std::string> fBBSigma;
     bool fFitCompo;
     bool fRejectOutliers;
     double fMinFluxLgE;
@@ -141,7 +143,6 @@ namespace prop {
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
     MassValue fGalMass;
-    EPhotonFieldType fPhotonFieldType;
     ClassDefNV(FitOptions, 1);
   };
 }

@@ -68,15 +68,18 @@ namespace prop {
 
     FitData& data = fFitData;
 
-    ++data.fIteration;
-
     NumericSource* source = data.fSource;
     source->SetEscFac(1);
     source->SetEscGamma(par[eEscGamma]);
+
+    vector<double> photonScale;
+    photonScale.push_back(pow(10, par[eLgPhotonFieldFac]));
+    photonScale.push_back(1);
+    source->SetPhotonScaleFactors(photonScale);
+
     const double lambdaI = source->LambdaInt(1e19, 56);
     const double lambdaE = source->LambdaEsc(1e19, 56);
     source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
-
 
     map<unsigned int, double> fractions;
     const unsigned int nMass = data.GetNMass();
@@ -164,13 +167,20 @@ namespace prop {
 
     chi2 = data.GetChi2Tot();
 
-    if (!(data.fIteration%10))
+    if (!(data.fIteration%10)) {
       cout << scientific << setprecision(2)
            << " iter " << setw(5) << data.fIteration
            << ", chi2: tot = " << data.GetChi2Tot()
            << ", spec = " << data.fChi2Spec
            << ", lnA = " << data.fChi2LnA
            << ", V(lnA) = " << data.fChi2VlnA << endl;
+      /*
+      for (unsigned int i = 0; i < eNpars; ++i)
+        cout << scientific << setprecision(2) << setw(5) << par[i] << " ";
+      cout << endl;
+      */
+    }
+    ++data.fIteration;
   }
 
   void
@@ -193,9 +203,12 @@ namespace prop {
 
     fFitData.fPropagator = new Propagator(fPropMatrices);
 
-    cout << " interaction lengths: "
-         << fOptions.GetPhotIntFilename() << endl;
-    fFitData.fSource = new NumericSource(fOptions.GetPhotIntFilename(),
+    const vector<string> filenames = fOptions.GetPhotIntFilenames();
+    cout << " interaction lengths: \n";
+    for (const auto f : filenames)
+      cout << " " << fOptions.GetPhotIntDirname() << "/" << f << endl;
+
+    fFitData.fSource = new NumericSource(fOptions.GetPhotIntFilenames(),
                                          fOptions.GetPhotIntDirname());
 
 

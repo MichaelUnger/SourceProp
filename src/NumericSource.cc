@@ -63,15 +63,32 @@ namespace prop {
   }
 
 
+  NumericSource::NumericSource(const std::vector<std::string>& fields,
+                               const std::string& directory)  :
+    fFields(fields), fDirectory(directory)
+  {
+    if (fFields.empty())
+      throw runtime_error("no photon fields given");
+    ReadBranch();
+    ReadPD();
+    ReadPPP();
+  }
+
+
   NumericSource::~NumericSource()
   {
-    for (auto iter : fPhotoDissociation)
-      delete iter.second;
-    for (auto iter : fPhotoPionProduction)
-      delete iter.second;
-    for (auto iter1 : fBranchingRatio)
-      for (auto iter2 : iter1.second)
-        delete iter2.second;
+    for (auto lambdaMap : fPhotoDissociations)
+      for (auto iter : lambdaMap)
+        delete iter.second;
+
+    for (auto lambdaMap : fPhotoPionProductions)
+      for (auto iter : lambdaMap)
+        delete iter.second;
+
+    for (auto& br : fBranchingRatios)
+      for (auto& iter2 : br)
+        for (auto iter3 : iter2.second)
+          delete iter3.second;
   }
 
   inline
@@ -80,289 +97,304 @@ namespace prop {
     return (value % (d * 10)) / d;
   }
 
-
   void
   NumericSource::ReadBranch()
-    const
   {
+    cout << " initializing branching ratios " << endl;
     const double lgmin = 6; // minimum log10(Lorentz-factor)
     const double lgmax = 14; // maximum log10(Lorentz-factor)
     const size_t nlg = 201; // number of Lorentz-factor steps
 
-    const string filename = fDirectory + "/pd_branching_" + fType + ".txt";
+    for (const auto& field: fFields) {
 
-    ifstream infile(filename.c_str());
-    string line;
-    while (getline(infile, line)) {
-      if (line[0] == '#')
-        continue;
+      fBranchingRatios.push_back(BranchingRatio());
+      BranchingRatio& branchingRatio = fBranchingRatios.back();
 
-      stringstream lineStream(line);
+      const string filename = fDirectory + "/pd_branching_" + field + ".txt";
 
-      int Z, N;
-      lineStream >> Z;
-      lineStream >> N;
-      const int A = Z + N;
+      ifstream infile(filename.c_str());
+      string line;
+      while (getline(infile, line)) {
+        if (line[0] == '#')
+          continue;
 
-      const int ZZ = aToZ(A);
-      if (Z != ZZ)
-        continue;
+        stringstream lineStream(line);
 
-      unsigned int channel;
-      lineStream >> channel;
+        int Z, N;
+        lineStream >> Z;
+        lineStream >> N;
+        const int A = Z + N;
 
-      const unsigned int nNeutron = digit(channel, 100000);
-      const unsigned int nProton = digit(channel, 10000);
-      const unsigned int nH2 = digit(channel, 1000);
-      const unsigned int nH3 = digit(channel, 100);
-      const unsigned int nHe3 = digit(channel, 10);
-      const unsigned int nHe4 = digit(channel, 1);
-      const unsigned int dA =
-        nNeutron + nProton + 2 * nH2 + 3 * nH3 + 3 * nHe3 + 4 * nHe4;
-      const int remnantA = A - dA;
+        const int ZZ = aToZ(A);
+        if (Z != ZZ)
+          continue;
 
-      map<int, int> secondaryMap;
+        unsigned int channel;
+        lineStream >> channel;
 
-      int nNucleon = nNeutron + nProton;
+        const unsigned int nNeutron = digit(channel, 100000);
+        const unsigned int nProton = digit(channel, 10000);
+        const unsigned int nH2 = digit(channel, 1000);
+        const unsigned int nH3 = digit(channel, 100);
+        const unsigned int nHe3 = digit(channel, 10);
+        const unsigned int nHe4 = digit(channel, 1);
+        const unsigned int dA =
+          nNeutron + nProton + 2 * nH2 + 3 * nH3 + 3 * nHe3 + 4 * nHe4;
+        const int remnantA = A - dA;
 
-      if (remnantA == 1)
-        nNucleon += 1;
-      else if (remnantA > 1)
-        secondaryMap[remnantA] = 1;
+        map<int, int> secondaryMap;
 
-      if (nNucleon)
-        secondaryMap[1] = nNucleon;
-      if (nH2)
-        secondaryMap[2] = nH2;
-      if (nH3 + nHe3)
-        secondaryMap[3] = nH3 + nHe3;
-      if (nHe4)
-        secondaryMap[4] = nHe4;
+        int nNucleon = nNeutron + nProton;
 
+        if (remnantA == 1)
+          nNucleon += 1;
+        else if (remnantA > 1)
+          secondaryMap[remnantA] = 1;
 
-      map<unsigned int, TH1D*>& secondaryTable = fBranchingRatio[A];
-      double r;
-      for (size_t i = 0; i < nlg; i++) {
-        lineStream >> r;
-        for (const auto secondaryIter : secondaryMap) {
-          const int Asec = secondaryIter.first;
-          const int n = secondaryIter.second;
-          TH1D* hist;
-          auto tableIter = secondaryTable.find(Asec);
-          if (tableIter != secondaryTable.end())
-            hist = tableIter->second;
-          else {
-            stringstream histName;
-            histName << "branch" << A << "_" << Asec;
-            hist = new TH1D(histName.str().c_str(), "", nlg, lgmin, lgmax);
-            secondaryTable[Asec] = hist;
+        if (nNucleon)
+          secondaryMap[1] = nNucleon;
+        if (nH2)
+          secondaryMap[2] = nH2;
+        if (nH3 + nHe3)
+          secondaryMap[3] = nH3 + nHe3;
+        if (nHe4)
+          secondaryMap[4] = nHe4;
+
+        map<unsigned int, TH1D*>& secondaryTable = branchingRatio[A];
+        double r;
+        for (size_t i = 0; i < nlg; i++) {
+          lineStream >> r;
+          for (const auto secondaryIter : secondaryMap) {
+            const int Asec = secondaryIter.first;
+            const int n = secondaryIter.second;
+            TH1D* hist;
+            auto tableIter = secondaryTable.find(Asec);
+            if (tableIter != secondaryTable.end())
+              hist = tableIter->second;
+            else {
+              stringstream histName;
+              histName << "branch_" << field << "_" << A << "_" << Asec;
+              hist = new TH1D(histName.str().c_str(), "", nlg, lgmin, lgmax);
+              secondaryTable[Asec] = hist;
+            }
+            hist->SetBinContent(i+1, hist->GetBinContent(i+1) + n*r);
           }
-          hist->SetBinContent(i+1, hist->GetBinContent(i+1) + n*r);
         }
       }
+      infile.close();
     }
-    infile.close();
   }
 
-  const
-  TGraph&
-  NumericSource::GetPD(const int mass)
-    const
+  void
+  NumericSource::ReadPD()
   {
+    cout << " initializing PD tables " << endl;
 
-    // no A = 5 in CRPropa
-    const int A = mass == 5 ? 4 : mass;
-    //    #warning AAAAAAAAAAAAAAAA
-    //    const int A = AA == 28 ? 29 : AA;
+    for (const auto& field: fFields) {
 
-    const TGraph* graph = fPhotoDissociation[A];
-    if (graph)
-      return *graph;
+      fPhotoDissociations.push_back(Lambda());
+      Lambda& lambdaGraphs = fPhotoDissociations.back();
 
-    const int Z = aToZ(A);
-    const int N = A - Z;
-    const bool lossLength = false;
+      const string filename = fDirectory + "/pd_" + field + ".txt";
+      ifstream infile(filename.c_str());
+      if (!infile.good()) {
+        stringstream errMsg;
+        errMsg << " error opening " << filename;
+        throw runtime_error(errMsg.str());
+      }
 
-    const string filename = fDirectory + "/pd_" + fType + ".txt";
-    ifstream infile(filename.c_str());
-    if (!infile.good()) {
-      stringstream errMsg;
-      errMsg << " error opening " << filename;
-      throw runtime_error(errMsg.str());
+      string line;
+      // two header lines
+      getline(infile, line);
+      getline(infile, line);
+      while (getline(infile, line)) {
+        std::istringstream iss(line);
+        int ZZ, NN;
+        if (!(iss >> ZZ >> NN))
+          break;
+        const unsigned int AA = ZZ + NN;
+        if (AA > GetMaxA())
+          break;
+        const int Z = aToZ(AA);
+        if (ZZ == Z) {
+          vector<double> lambdaInv;
+          vector<double> lgGammaVec;
+          double lgGamma = 6;
+          const double dLgGamma = (14-6)/200.;
+          double lInv;
+          while (iss >> lInv) {
+            lambdaInv.push_back(1/(TMath::Max(lInv,1e-99)));
+            // todo: implement  nuclear mass
+            lgGammaVec.push_back(lgGamma+log10(Z*gProtonMass+NN*gNeutronMass));
+            lgGamma += dLgGamma;
+          }
+          TGraph* lambdaGraph = new TGraph(lambdaInv.size(),
+                                           &lgGammaVec.front(),
+                                           &lambdaInv.front());
+          CheckEqualSpacing(*lambdaGraph);
+          lambdaGraphs[AA] = lambdaGraph;
+        }
+      }
+      if (lambdaGraphs.size() != GetMaxA() - 2) { // -2 because no A=1 and 5
+        ostringstream errMsg;
+        errMsg << "incomplete PD table! N = " << lambdaGraphs.size()
+               << ", expect N = " << GetMaxA() - 2;
+        throw runtime_error(errMsg.str());
+      }
     }
+  }
 
-    string line;
-    // two header lines
-    getline(infile, line);
-    getline(infile, line);
-    while (getline(infile, line)) {
-      std::istringstream iss(line);
-      int ZZ, NN;
-      if (!(iss >> ZZ >> NN))
-        break;
-      if (ZZ == Z && NN == N) {
-        vector<double> lambdaInv;
-        vector<double> lgGammaVec;
-        double lgGamma = 6;
-        const double dLgGamma = (14-6)/200.;
-        double lInv;
-        while (iss >> lInv) {
-          const double kappa = lossLength ? 1./(Z+N) : 1;
-          lambdaInv.push_back(1/(TMath::Max(lInv,1e-99)*kappa));
+  void
+  NumericSource::ReadPPP()
+  {
+    cout << " initializing PP tables " << endl;
+
+    for (const auto& field: fFields) {
+
+      fPhotoPionProductions.push_back(Lambda());
+      Lambda& lambdaGraphs = fPhotoPionProductions.back();
+
+      const string filename = fDirectory + "/ppp_" + field + ".txt";
+      ifstream infile(filename.c_str());
+      if (!infile.good()) {
+        stringstream errMsg;
+        errMsg << " error opening " << filename;
+        throw runtime_error(errMsg.str());
+      }
+      string line;
+      // two header lines
+      getline(infile, line);
+      getline(infile, line);
+
+      int i = 0;
+      while (getline(infile, line)) {
+        std::istringstream iss(line);
+        double lgGamma, lInvP, lInvN;
+        if (!(iss >> lgGamma >> lInvP >> lInvN))
+          break;
+        for (unsigned int A = 1; A <= GetMaxA(); ++A) {
+          TGraph* lambdaGraph = lambdaGraphs[A];
+          if (!lambdaGraph) {
+            lambdaGraph = new TGraph();
+            lambdaGraphs[A] = lambdaGraph;
+          }
+          const int Z = aToZ(A);
+          const double lInv = Z  * lInvP + (A-Z) * lInvN;
           // todo: implement  nuclear mass
-          lgGammaVec.push_back(lgGamma+log10(Z*gProtonMass+N*gNeutronMass));
-          lgGamma += dLgGamma;
+          const double lgE = lgGamma + log10(Z * gProtonMass + (A-Z) * gNeutronMass);
+          lambdaGraph->SetPoint(i, lgE, 1/(TMath::Max(lInv, 1e-99)));
         }
-        graph = new TGraph(lambdaInv.size(),
-                           &lgGammaVec.front(), &lambdaInv.front());
-        CheckEqualSpacing(*graph);
-        fPhotoDissociation[A] = graph;
-        return *graph;
+        ++i;
       }
+      if (lambdaGraphs.size() != GetMaxA())
+        throw runtime_error("incomplete PP table!");
+      for (const auto g : lambdaGraphs)
+        CheckEqualSpacing(*g.second);
     }
-    stringstream errMsg;
-    errMsg << "could not find table " << A << " " << N << " " << Z;
-    throw runtime_error(errMsg.str());
   }
 
-
-  const
-  TGraph&
-  NumericSource::GetPPP(const int A)
+  const TGraph&
+  NumericSource::FindGraph(const Lambda& lambda, const unsigned int A)
     const
   {
+    Lambda::const_iterator iter = lambda.find(A);
+    if (iter == lambda.end() && A == 5) // no A = 5 in CRPropa
+      iter = lambda.find(4);
 
-    const TGraph* graph = fPhotoPionProduction[A];
-    if (graph)
-      return *graph;
-
-    const int Z = aToZ(A);
-    const int N = A - Z;
-    const bool lossLength = false;
-
-    const string filename = fDirectory + "/ppp_" + fType + ".txt";
-    ifstream infile(filename.c_str());
-    if (!infile.good()) {
+    if (iter == lambda.end()) {
       stringstream errMsg;
-      errMsg << " error opening " << filename;
+      errMsg << " graph for A= " << A << " not found";
       throw runtime_error(errMsg.str());
     }
-    string line;
-    // two header lines
-    getline(infile, line);
-    getline(infile, line);
-    vector<double> lambdaInv;
-    vector<double> lgGammaVec;
-    while (getline(infile, line)) {
-      std::istringstream iss(line);
-      double lgGamma, lInvP, lInvN;
-      if (!(iss >> lgGamma >> lInvP >> lInvN))
-        break;
-      double lInv, lgE, kappa;
-      if (Z == 1 && N == 0) {
-        lInv = lInvP;
-        lgE = lgGamma+log10(gProtonMass);
-        kappa = lossLength ? 0.2 : 1;
-      }
-      else if (Z == 0 && N == 1) {
-        lInv = lInvN;
-        lgE = lgGamma+log10(gNeutronMass);
-        kappa = lossLength ? 0.2 : 1;
-      }
-      else {
-        lInv = Z  * lInvP + N * lInvN;
-        // todo: implement  nuclear mass
-        lgE = lgGamma+log10(Z*gProtonMass+N*gNeutronMass);
-        kappa = lossLength ? 1./ (Z+N) : 1;
-      }
-      lambdaInv.push_back(1/(TMath::Max(lInv, 1e-99)*kappa));
-      lgGammaVec.push_back(lgE);
-    }
-    graph = new TGraph(lambdaInv.size(),
-                       &lgGammaVec.front(), &lambdaInv.front());
-    CheckEqualSpacing(*graph);
-    fPhotoPionProduction[A] = graph;
-    return *graph;
+    else
+      return *iter->second;
   }
+
 
   double
   NumericSource::LambdaInt(const double E, const int A)
     const
   {
+    if (fFieldScaleFactors.size() < fPhotoDissociations.size()) {
+      ostringstream errMsg;
+      errMsg << " size mismatch, N(scale) = " << fFieldScaleFactors.size()
+             << ", N(field) = " << fPhotoDissociations.size();
+      throw runtime_error(errMsg.str());
+    }
+
     const double lgE = log10(E);
-    const TGraph& ppp = GetPPP(A);
-    if (A == 1)
-      return EvalFast(ppp, lgE);
-    const TGraph& pd = GetPD(A);
-    return 1./(1/EvalFast(pd, lgE) + 1/EvalFast(ppp, lgE));
+    double lambda = 0;
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      const double f = fFieldScaleFactors[i];
+      const double lambdaPP =
+        f * EvalFast(FindGraph(fPhotoPionProductions[i], A),
+                     lgE);
+      if (lambda == 0)
+        lambda = lambdaPP;
+      else
+        lambda = (lambda * lambdaPP) / (lambda + lambdaPP);
+      if (A == 1)
+        continue;
+      const double lambdaPD =
+        f * EvalFast(FindGraph(fPhotoDissociations[i], A), lgE);
+      lambda = (lambda * lambdaPD) / (lambda + lambdaPD);
+    }
+    return lambda;
   }
 
   double
-  NumericSource::GetPDBranchingRatio(const double E, const int Asec,
+  NumericSource::GetPDBranchingRatio(const double E,
+                                     const int Asec,
                                      const int Aprim)
     const
   {
-    //    #warning AAAAAAAAAAAAAAAA
-    // const int Aprim = AAprim == 28 ? 29 : AAprim;
-
-    if (fSingleNucleon) {
-      if (Asec == 1)
-        return 1;
-      else if (Asec == Aprim - 1)
+    // no A = 5 in CRPropa
+    if (Aprim == 5) {
+      if (Asec == 4 || Asec == 1)
         return 1;
       else
         return 0;
     }
     else {
-      // no A = 5 in CRPropa
-      if (Aprim == 5) {
-        if (Asec == 4 || Asec == 1)
-          return 1;
-        else
-          return 0;
-      }
-      else {
-        if (fBranchingRatio.empty())
-          ReadBranch();
-
-        const auto& primaryIter = fBranchingRatio.find(Aprim);
-        if (primaryIter == fBranchingRatio.end())
+      double lambdaSum = 0;
+      vector<double> lambdaVec;
+      vector<double> branchVal;
+      for (unsigned int i = 0; i < fFields.size(); ++i) {
+        const BranchingRatio& branchingRatio = fBranchingRatios[i];
+        const auto& primaryIter = branchingRatio.find(Aprim);
+        if (primaryIter == branchingRatio.end())
           throw runtime_error("cannot find branching ratios");
         const map<unsigned int, TH1D*>& branchMap = primaryIter->second;
         const auto& secondaryIter = branchMap.find(Asec);
-        if (secondaryIter == branchMap.end())
-          return 0;
-        else {
+        if (secondaryIter != branchMap.end()) {
           const TH1D& hist = *secondaryIter->second;
-          // todo: implement  nuclear mass
-          const double M = (gProtonMass + gNeutronMass) / 2;
+          // restore arXiv v1: remove Aprim
+          const double M = Aprim * (gProtonMass + gNeutronMass) / 2;
           const double lgGamma = log10(E / M);
           const int iBin = hist.FindFixBin(lgGamma);
           if (iBin == 0 || iBin == hist.GetNbinsX() + 1) {
-            cerr << " energy out of range " << E << " " << Aprim << " " << Asec << endl;
+            cerr << " energy out of range " << E << " "
+                 << Aprim << " " << Asec << endl;
             return 0;
           }
-          else
-            return hist.GetBinContent(iBin);
+          else {
+            const double f = fFieldScaleFactors[i];
+            const double lgE = log10(E);
+            const double lambdaPD =
+              f * EvalFast(FindGraph(fPhotoDissociations[i], Aprim), lgE);
+            lambdaVec.push_back(lambdaPD);
+            branchVal.push_back(hist.GetBinContent(iBin));
+            if (lambdaSum == 0)
+              lambdaSum = lambdaPD;
+            else
+              lambdaSum =  lambdaPD * lambdaSum / (lambdaPD + lambdaSum);
+          }
         }
       }
-    }
-  }
-
-  double
-  NumericSource::LambdaInt(const double E, const int A, const EProcess p)
-    const
-  {
-    const double lgE = log10(E);
-    if (p == ePP) {
-      const TGraph& ppp = GetPPP(A);
-      return EvalFast(ppp, lgE);
-    }
-    else {
-      if (A == 1)
-        return 1e99;
-      const TGraph& pd = GetPD(A);
-      return EvalFast(pd, lgE);
+      double branchSum = 0;
+      for (unsigned int i = 0; i < lambdaVec.size(); ++i)
+        branchSum += lambdaSum / lambdaVec[i] * branchVal[i];
+      return branchSum;
     }
   }
 
@@ -377,9 +409,26 @@ namespace prop {
     if (A == 1)
       f = 1;
     else {
-      const double lPPP = GetPPP(A).Eval(lgE);
-      const double lPD = GetPD(A).Eval(lgE);
-      f = 1./(1+lPPP/lPD);
+      double lPP = 0;
+      double lPD = 0;
+      for (unsigned int i = 0; i < fFields.size(); ++i) {
+        const double f = fFieldScaleFactors[i];
+        const double lambdaPP =
+          f * EvalFast(FindGraph(fPhotoPionProductions[i], A),
+                       lgE);
+        if (lPP == 0)
+          lPP = lambdaPP;
+        else
+          lPP = (lPP * lambdaPP) / (lPP + lambdaPP);
+
+        const double lambdaPD =
+          f * EvalFast(FindGraph(fPhotoDissociations[i], A), lgE);
+        if (lPD == 0)
+          lPD = lambdaPD;
+        else
+          lPD = (lPD * lambdaPD) / (lPD + lambdaPD);
+      }
+      f = 1./(1+lPP/lPD);
     }
 
     if (p == ePP)

@@ -1,0 +1,5 @@
+IRB @IRB@
+mass @MASS@ 0.1 1
+par gammaInj           -1 0.1 0 0 1
+energyBinShift  -1
+xmaxSigmaShift  1

@@ -8,6 +8,7 @@
 namespace prop {
   class FitData;
   class FitOptions;
+  class PhotonField;
 }
 
 class FitSummary {
@@ -40,12 +41,12 @@ private:
   std::string fEvolution;
   std::string fIRB;
 
-  int fPhotonFieldType;
-  double fEps0;
-  double fAlpha;
-  double fBeta;
-  double fBBTemperature;
-  double fBBSigma;
+  std::vector<int> fPhotonFieldType;
+  std::vector<double> fEps0;
+  std::vector<double> fAlpha;
+  std::vector<double> fBeta;
+  std::vector<double> fBBTemperature;
+  std::vector<double> fBBSigma;
 
   double fNNeutrinos;
 
