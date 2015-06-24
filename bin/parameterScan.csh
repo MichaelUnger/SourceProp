@@ -1,6 +1,6 @@
 #!/bin/tcsh
 
-set rootCmd = "root -b -l -q -x macros/fitWrapper.C"
+set rootCmd = "root.exe -b -l -q -x macros/fitWrapper.C"
 set fitDir = fitFiles
 set outDir = pdfs
 
