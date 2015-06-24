@@ -458,7 +458,6 @@ namespace prop {
       const int A = iter.first;
       TMatrixD& m = iter.second;
       if (A == 1) {
-#warning proton interactions are off
         if (!protonInteractions)
           continue;
         // p energy loss

@@ -3,6 +3,7 @@
 #include "NumericSource.h"
 #include "Propagator.h"
 #include "Utilities.h"
+#include "DoubleMass.h"
 #include <vector>
 
 using namespace std;
@@ -69,19 +70,25 @@ namespace prop {
   FitData::GetTotalPower(const double Elow)
     const
   {
-#warning FIXME
-    return 0;
-    /*
-    vector<double> fractions(GetNMass());
-    vector<double> zeta;
-    for (unsigned int i = 0; i < fractions.size() - 1; ++i)
-      zeta.push_back(pow(10, fFitParameters[eNpars + i].fValue));
-    zetaToFraction(fractions.size(), &zeta.front(), &fractions.front());
+    map<unsigned int, double> fractions;
+    const unsigned int nMass = GetNMass();
+    double frac[nMass];
+    double zeta[nMass-1];
+    for (unsigned int i = 0; i < nMass - 1; ++i)
+      zeta[i] = pow(10, fFitParameters[eNpars + i].fValue);
+    zetaToFraction(nMass, zeta, frac);
+    for (unsigned int i = 0; i < nMass; ++i) {
+      const double m = fFitParameters[eNpars + nMass - 1 + i].fValue;
+      const DoubleMass dm(m);
+      if (dm.GetFrac1() > 0)
+        fractions[dm.GetMass1()] += dm.GetFrac1()*frac[i];
+      if (dm.GetFrac2() > 0)
+        fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
+    }
     double powerSum = 0;
-    for (unsigned int i = 0; i < fractions.size(); ++i)
-      powerSum += fSpectrum.InjectedPower(Elow, fMasses[i]);
+    for (auto iter : fractions)
+      powerSum += iter.second * fSpectrum.InjectedPower(Elow, iter.first);
     return fQ0 * powerSum;
-    */
   }
 
 
