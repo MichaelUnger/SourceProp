@@ -61,7 +61,7 @@ namespace prop {
         3,  // Li-5
         3,  // Li-6
         3,  // Li-7
-        4,  // Be-8
+        5,  // B-8 new CRPropa3
         4,  // Be-9
         5,  // B-10
         5,  // B-11
