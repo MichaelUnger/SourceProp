@@ -61,7 +61,7 @@ namespace prop {
   }
 
   void
-  Fitter::FitFunc(int& /*nPar*/, double* const /*gin*/,
+  Fitter::FitFunc(int& nPar, double* const /*gin*/,
                   double& chi2, double* const par,
                   const int /*iFlag*/)
   {
@@ -174,11 +174,10 @@ namespace prop {
            << ", spec = " << data.fChi2Spec
            << ", lnA = " << data.fChi2LnA
            << ", V(lnA) = " << data.fChi2VlnA << endl;
-      /*
-      for (unsigned int i = 0; i < eNpars; ++i)
-        cout << scientific << setprecision(2) << setw(5) << par[i] << " ";
+      for (unsigned int i = 0; i < eNpars + 1; ++i)
+        cout << i << " " << scientific << setprecision(2)
+             << setw(5) << par[i] << endl;
       cout << endl;
-      */
     }
     ++data.fIteration;
   }
