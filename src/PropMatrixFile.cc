@@ -16,8 +16,6 @@
 
 #include <utl/Units.h>
 
-#include <boost/lexical_cast.hpp>
-
 using namespace std;
 
 namespace prop {
@@ -53,8 +51,8 @@ namespace prop {
             splitname.push_back(line);
           if (splitname.size() != 3)
             throw runtime_error("cannot decode" + name.str());
-          const unsigned int Aprim = boost::lexical_cast<unsigned int>(splitname[1]);
-          const unsigned int Asec = boost::lexical_cast<unsigned int>(splitname[2]);
+          const unsigned int Aprim = stoi(splitname[1]);
+          const unsigned int Asec = stoi(splitname[2]);
           TMatrixD& m = fPropMatrices.GetMatrix(Aprim, Asec);
           m.ResizeTo(h->GetNbinsY(), h->GetNbinsX());
           fPropMatrices.SetEnergyRange(h->GetXaxis()->GetXmin(),
