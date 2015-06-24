@@ -238,7 +238,9 @@ namespace prop {
       if (lambdaGraphs.size() != GetMaxA() - 2) { // -2 because no A=1 and 5
         ostringstream errMsg;
         errMsg << "incomplete PD table! N = " << lambdaGraphs.size()
-               << ", expect N = " << GetMaxA() - 2;
+               << ", expect N = " << GetMaxA() - 2 << "\n";
+        for (auto iter : lambdaGraphs)
+          errMsg << iter.first << ", ";
         throw runtime_error(errMsg.str());
       }
     }
