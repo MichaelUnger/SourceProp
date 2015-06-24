@@ -1,4 +1,4 @@
-.PHONY: Make-depend
+#.PHONY: Make-depend
 
 LD            := $(CXX)
 
@@ -29,7 +29,7 @@ EXE = $(patsubst $(PROG_DIR)/%.cc, $(BIN_DIR)/%, $(wildcard $(PROG_DIR)/*.cc))
 CLIBS = $(LIB_DIR)/libProp.so
 
 
-all: Make-depend $(CLIBS) $(EXE)
+all: $(CLIBS) $(EXE)
 
 $(BIN_DIR)/%: $(PROG_DIR)/%.cc
 	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp

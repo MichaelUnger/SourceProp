@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/bash
 
 module load NYUAD/2.0
 module load devel
