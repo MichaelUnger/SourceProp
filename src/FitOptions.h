@@ -52,7 +52,8 @@ namespace prop {
     enum EPhotonFieldType {
       eUnknown,
       eBrokenPowerlaw,
-      eBlackBody
+      eBlackBody,
+      eUserField
     };
 
   public:
@@ -134,6 +135,7 @@ namespace prop {
     std::vector<std::string> fAlpha;
     std::vector<std::string> fBBTemperature;
     std::vector<std::string> fBBSigma;
+    std::vector<std::string> fUserPhotonfieldName;
     bool fFitCompo;
     bool fRejectOutliers;
     double fMinFluxLgE;

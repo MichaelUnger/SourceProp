@@ -80,6 +80,18 @@ namespace prop {
         if (!(line >> fIRB))
           throw runtime_error("error decoding IRB");
       }
+      else if (keyword == "PhotonField") {
+        fPhotonFieldType.push_back(eUserField);
+        string name;
+        if (!(line >> name))
+          throw runtime_error("error decoding PhotonField");
+        fUserPhotonfieldName.push_back(name);
+        fBBTemperature.push_back("n/a");
+        fBBSigma.push_back("n/a");
+        fEps0.push_back("n/a");
+        fAlpha.push_back("n/a");
+        fBeta.push_back("n/a");
+      }
       else if (keyword == "PhotonBPL") {
         fPhotonFieldType.push_back(eBrokenPowerlaw);
         string eps0, alpha, beta;
@@ -90,6 +102,7 @@ namespace prop {
         fBeta.push_back(beta);
         fBBTemperature.push_back("n/a");
         fBBSigma.push_back("n/a");
+        fUserPhotonfieldName.push_back("n/a");
       }
       else if (keyword == "PhotonBB") {
         fPhotonFieldType.push_back(eBlackBody);
@@ -101,6 +114,7 @@ namespace prop {
         fEps0.push_back("n/a");
         fAlpha.push_back("n/a");
         fBeta.push_back("n/a");
+        fUserPhotonfieldName.push_back("n/a");
       }
       else if (keyword == "interactionModel") {
         if (!(line >> fInteractionModel))
@@ -228,6 +242,8 @@ namespace prop {
         filenames.push_back("BB_" + fBBTemperature[i] + "_" + fBBSigma[i]);
       else if (fPhotonFieldType[i] == eBrokenPowerlaw)
         filenames.push_back("SP_" + fEps0[i] + "_" + fBeta[i] + "_" + fAlpha[i]);
+      else if (fPhotonFieldType[i] == eUserField)
+        filenames.push_back(fUserPhotonfieldName[i]);
       else
         throw runtime_error("unknown photon field type");
     }
