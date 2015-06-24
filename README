@@ -1,0 +1,4 @@
+module  load cmake/gnu/2.8.12
+module load python/gnu/2.7.5
+. /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
+
