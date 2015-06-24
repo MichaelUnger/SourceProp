@@ -187,6 +187,8 @@ namespace prop {
         else
           fHists[i]->GetYaxis()->SetRangeUser(yMin*1.01, fmin(1e3, yMax*2));
         fHists[i]->Draw("C");
+        //#warning TMMMMMMMMMMMMMMMMMMMMMMMP
+        //fHists[i]->GetYaxis()->SetRangeUser(1e-12, 1e-3);
       }
       else
         fHists[i]->Draw("CSAME");
@@ -204,8 +206,8 @@ namespace prop {
       l.SetTextFont(42); l.SetNDC(true);
       l.SetTextSize(0.05);
       l.SetTextColor(kBlack);
-      l.DrawLatex(0.68, 0.85, "interaction");
-      l.DrawLatex(0.68, 0.78, "escape");
+      l.DrawLatex(0.75, 0.865, "interaction");
+      l.DrawLatex(0.73, 0.795, "escape");
     }
 
   }
@@ -406,6 +408,14 @@ namespace prop {
       fHists.back()->SetLineWidth(2);
       fHists.back()->SetLineColor(kBlack);
       fHists.back()->Draw("CSAME");
+      TLegend* legEsc = new TLegend(0.73, 0.75, 0.98, 0.8,NULL,"brNDCARC");
+      legEsc->SetFillColor(0);
+      legEsc->SetTextFont(42);
+      legEsc->SetFillStyle(0);
+      legEsc->SetBorderSize(0);
+      legEsc->AddEntry(fHists.back(), " injected", "L");
+      legEsc->Draw();
+
     }
   }
 
