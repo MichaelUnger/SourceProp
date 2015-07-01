@@ -457,7 +457,7 @@ void
 fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 {
   gROOT->Clear();
-  FitOptions opt("fitFiles/" + fitFilename + ".txt");
+  FitOptions opt(fitFilename);
   Fitter fitter(opt);
   if (fit)
     fitter.Fit();
@@ -486,16 +486,9 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
-  can->Print(("pdfs/" + fitFilename + ".pdf").c_str());
-  /*
-  can->cd(1)->Print(("pdfs/" + fitFilename + "Injected.pdf").c_str());
-  can->cd(2)->Print(("pdfs/" + fitFilename + "Escape.pdf").c_str());
-  can->cd(4)->Print(("pdfs/" + fitFilename + "Lambda.pdf").c_str());
-  can->cd(5)->Print(("pdfs/" + fitFilename + "Parameters.pdf").c_str());
-  can->cd(6)->Print(("pdfs/" + fitFilename + "Composition.pdf").c_str());
-  */
+  can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
 
-  RootOutFile<FitSummary> rootFile("pdfs/" + fitFilename + ".root");
+  RootOutFile<FitSummary> rootFile(opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".root");
   FitSummary fitSummary;
   fitSummary.Fill(fitData, opt);
 
@@ -518,7 +511,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     }
     Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
     neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, opt.GetDataDirname(), 100, 12., 22.);
-    neutrinoCanvas->Print(("pdfs/" + fitFilename + "_nu.pdf").c_str());
+    neutrinoCanvas->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + "_nu.pdf").c_str());
     fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
   }
   rootFile << fitSummary;

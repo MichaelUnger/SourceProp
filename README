@@ -1,4 +1,57 @@
-module  load cmake/gnu/2.8.12
-module load python/gnu/2.7.5
+steering file parameters:
+------------------------
+
+* par [name] [startVal] [startStep] [min] [max] [fix]
+  - no bounds if min = max
+  - free if fix == 0
+  - names:
+     gammaInj
+     lgRmax
+     lgResc
+     deltaEsc
+     fGal
+     gammaGal
+     lgEmaxGal
+     fNoPhoton
+     lgfPhoton
+* mass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
+* galacticMass [startA] [Amin] [Amax] [massFix]
+* evolution:
+* IRB:
+* DataDir:
+   propagation matrix file [DataDir]/[IRB]_[evolution].root
+* OutDir
+* OutFile
+    - [OutDir]/[OutFile].root
+    - [OutDir]/[OutFile].pdf
+* PhotonMBB [temperature] [sigma]
+* PhotonBPL [eps0] [a] [b]
+  - eps0 in eV
+  - alpha = 5/2 --> a = 52 etc.
+  - beta = -2.0 --> b = 2.0
+* fitComposition 0/1
+* rejectOutliers 0/1
+* minLgEFlux [lgEmin]
+* minLgECompo [lgEmin]
+* interactionModel [type]
+  - eposLHC, qgsjetII04 or sibyll21
+* cutoffType [type]
+  - exponential, brokenExponential, heavyside, deltaGamma1..4
+* energyBinShift [n]
+  - e.g. -1 or +2 or 0
+* xmaxSigmaShift [nSigma]
+  - e.g. -1, 0, +1
+
+environment on butinah:
+-----------------------
+
+module load NYUAD/2.0
+module load devel
+module load gcc/4.9.1
+module load python/2.7.9
+module load openmpi/1.8.3
+module load gsl/1.16
+module load boost/1.57.0
+. bin/setvars_butinah.sh
 . /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
 

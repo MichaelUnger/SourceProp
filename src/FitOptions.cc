@@ -19,6 +19,7 @@ namespace prop {
     fEvolution = "SFR2";
     fIRB = "Kneiske04";
     fDataDirname = "./data";
+    fOutDirname = "./pdfs";
     fFitCompo = 1;
     fRejectOutliers = 1;
     fMinFluxLgE = 17;
@@ -89,6 +90,14 @@ namespace prop {
       else if (keyword == "DataDir") {
         if (!(line >> fDataDirname))
           throw runtime_error("DataDir");
+      }
+      else if (keyword == "OutDir") {
+        if (!(line >> fOutDirname))
+          throw runtime_error("OutDir");
+      }
+      else if (keyword == "OutFile") {
+        if (!(line >> fOutFilename))
+          throw runtime_error("OutFile");
       }
       else if (keyword == "PhotonField") {
         fPhotonFieldType.push_back(eUserField);
@@ -195,6 +204,16 @@ namespace prop {
       fAlpha.push_back("n/a");
       fBeta.push_back("n/a");
     }
+
+    // default output filename: base of fit file
+    if (fOutFilename.empty()) {
+      const size_t start = filename.find_last_of("/") + 1;
+      const size_t stop = filename.find(".txt");
+      if (start != string::npos && stop != string::npos && start < stop)
+        fOutFilename = filename.substr(start, stop - start);
+      else
+        fOutFilename = "fit";
+    }
   }
 
   double
@@ -234,13 +253,13 @@ namespace prop {
   std::string FitOptions::GetPropmatrixFilename()
     const
   {
-    return "ROOT/" + fIRB + "_" + fEvolution + ".root";
+    return GetDataDirname() + "/" + fIRB + "_" + fEvolution + ".root";
   }
 
   std::string FitOptions::GetPropmatrixNuFilename()
     const
   {
-    return "ROOT/" + fIRB + "_" + fEvolution + "_nu.root";
+    return GetDataDirname() + "/" + fIRB + "_" + fEvolution + "_nu.root";
   }
 
   vector<string> FitOptions::GetPhotIntFilenames()
@@ -264,6 +283,18 @@ namespace prop {
     const
   {
     return fDataDirname;
+  }
+
+  std::string FitOptions::GetOutDirname()
+    const
+  {
+    return fOutDirname;
+  }
+
+  std::string FitOptions::GetOutFilename()
+    const
+  {
+    return fOutFilename;
   }
 
   double

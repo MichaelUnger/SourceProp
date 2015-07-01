@@ -12,6 +12,8 @@ galacticMass 56 1 56 1
 evolution SFR2
 IRB Kneiske04
 DataDir ./data
+OutDir ./pdfs
+# OutFile Test
 PhotonMBB 150 2
 PhotonMBB 20 2
 fitComposition 1

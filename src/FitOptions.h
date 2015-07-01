@@ -87,6 +87,8 @@ namespace prop {
     std::string GetPropmatrixNuFilename() const;
     std::vector<std::string> GetPhotIntFilenames() const;
     std::string GetDataDirname() const;
+    std::string GetOutDirname() const;
+    std::string GetOutFilename() const;
 
     unsigned int GetNPhotonFields() const;
     double GetEps0(const unsigned i) const; // eV
@@ -130,6 +132,8 @@ namespace prop {
     std::string fEvolution;
     std::string fIRB;
     std::string fDataDirname;
+    std::string fOutDirname;
+    std::string fOutFilename;
     std::vector<EPhotonFieldType> fPhotonFieldType;
     std::vector<std::string> fEps0;
     std::vector<std::string> fBeta;
