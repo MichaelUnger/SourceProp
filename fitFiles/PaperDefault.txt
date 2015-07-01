@@ -10,6 +10,7 @@ mass 28 0.1 1 56 1 1
 galacticMass 56 1 56 1
 evolution SFR2
 IRB Kneiske04
+DataDir ./data
 PhotonBPL 0.05 52 2.0
 fitComposition 1
 rejectOutliers 0

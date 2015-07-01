@@ -7,7 +7,7 @@ using namespace prop;
 int
 main()
 {
-  IceCubeAcceptance a;
+  IceCubeAcceptance a("./data");
   cout << " acceptance at E = 8 GeV: " << endl;
   cout << a(eElectronNeutrino, 17) << ", "
        << a(eAntiElectronNeutrino, 17) << ", "

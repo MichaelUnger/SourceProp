@@ -48,6 +48,7 @@ namespace prop {
 
     void DrawNeutrinoPlot(const Neutrinos& neutrinos,
                           const double gamma,
+                          const std::string& dataDir,
                           const unsigned int n, const double x1, const double x2);
     double GetNNeutrinos() const
     { return fNNeutrino; }

@@ -9,12 +9,12 @@ using namespace utl;
 
 namespace prop {
 
-  IceCubeAcceptance::IceCubeAcceptance() :
+  IceCubeAcceptance::IceCubeAcceptance(const string& dataDirname) :
     // data IC86, Fig.6 middle panel, arXiv 1311.5238
-    fAreaNuE("data/iceCubeAreaNuE.txt"),
-    fAreaAntiNuE("data/iceCubeAreaNuAntiE.txt"),
-    fAreaNuMu("data/iceCubeAreaNuMu.txt"),
-    fAreaNuTau("data/iceCubeAreaNuTau.txt")
+    fAreaNuE((dataDirname + "/iceCubeAreaNuE.txt").c_str()),
+    fAreaAntiNuE((dataDirname + "/iceCubeAreaNuAntiE.txt").c_str()),
+    fAreaNuMu((dataDirname + "/iceCubeAreaNuMu.txt").c_str()),
+    fAreaNuTau((dataDirname + "/iceCubeAreaNuTau.txt").c_str())
   {
     if (fAreaNuE.IsZombie() || fAreaAntiNuE.IsZombie() ||
         fAreaNuMu.IsZombie() || fAreaNuTau.IsZombie())

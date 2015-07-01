@@ -216,6 +216,7 @@ namespace prop {
         if (AA > GetMaxA())
           break;
         const int Z = aToZ(AA);
+        //        cout << AA << " " << ZZ << " " << Z << endl;
         if (ZZ == Z) {
           vector<double> lambdaInv;
           vector<double> lgGammaVec;
@@ -329,8 +330,8 @@ namespace prop {
     for (unsigned int i = 0; i < fFields.size(); ++i) {
       const double f = fFieldScaleFactors[i];
       const double lambdaPP =
-        f * EvalFast(FindGraph(fPhotoPionProductions[i], A),
-                     lgE);
+        EvalFast(FindGraph(fPhotoPionProductions[i], A),
+                 lgE) / f;
       if (lambda == 0)
         lambda = lambdaPP;
       else
@@ -338,7 +339,7 @@ namespace prop {
       if (A == 1)
         continue;
       const double lambdaPD =
-        f * EvalFast(FindGraph(fPhotoDissociations[i], A), lgE);
+        EvalFast(FindGraph(fPhotoDissociations[i], A), lgE) / f;
       lambda = (lambda * lambdaPD) / (lambda + lambdaPD);
     }
     return lambda;
@@ -383,7 +384,7 @@ namespace prop {
             const double f = fFieldScaleFactors[i];
             const double lgE = log10(E);
             const double lambdaPD =
-              f * EvalFast(FindGraph(fPhotoDissociations[i], Aprim), lgE);
+              EvalFast(FindGraph(fPhotoDissociations[i], Aprim), lgE) / f;
             lambdaVec.push_back(lambdaPD);
             branchVal.push_back(hist.GetBinContent(iBin));
             if (lambdaSum == 0)
@@ -407,36 +408,36 @@ namespace prop {
     const
   {
     const double lgE = log10(E);
-    double f = 0;
+    double frac = 0;
     if (A == 1)
-      f = 1;
+      frac = 1;
     else {
       double lPP = 0;
       double lPD = 0;
       for (unsigned int i = 0; i < fFields.size(); ++i) {
         const double f = fFieldScaleFactors[i];
         const double lambdaPP =
-          f * EvalFast(FindGraph(fPhotoPionProductions[i], A),
-                       lgE);
+          EvalFast(FindGraph(fPhotoPionProductions[i], A),
+                       lgE) / f;
         if (lPP == 0)
           lPP = lambdaPP;
         else
           lPP = (lPP * lambdaPP) / (lPP + lambdaPP);
 
         const double lambdaPD =
-          f * EvalFast(FindGraph(fPhotoDissociations[i], A), lgE);
+          EvalFast(FindGraph(fPhotoDissociations[i], A), lgE) / f;
         if (lPD == 0)
           lPD = lambdaPD;
         else
           lPD = (lPD * lambdaPD) / (lPD + lambdaPD);
       }
-      f = 1./(1+lPP/lPD);
+      frac = 1./(1+lPP/lPD);
     }
 
     if (p == ePP)
-      return f;
+      return frac;
     else
-      return 1 - f;
+      return 1 - frac;
   }
 
 }

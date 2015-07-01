@@ -1,5 +1,10 @@
 #include "FitOptions.h"
 
+#include <utl/PhysicalConstants.h>
+#include <utl/Units.h>
+
+#include <gsl/gsl_sf_lambert.h>
+
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
@@ -13,6 +18,7 @@ namespace prop {
     // default options
     fEvolution = "SFR2";
     fIRB = "Kneiske04";
+    fDataDirname = "./data";
     fFitCompo = 1;
     fRejectOutliers = 1;
     fMinFluxLgE = 17;
@@ -28,7 +34,7 @@ namespace prop {
     fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, 0, 0, 0);
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
-    fStartValues[eLgPhotonFieldFac] = StartValue(1, 0.1, 0, 1, 1);
+    fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, 0, 0, 1);
     fCutoffType = Spectrum::eExponential;
     fGalMass = MassValue(56, 1, 1, 56, 1, 1);
 
@@ -80,6 +86,10 @@ namespace prop {
         if (!(line >> fIRB))
           throw runtime_error("error decoding IRB");
       }
+      else if (keyword == "DataDir") {
+        if (!(line >> fDataDirname))
+          throw runtime_error("DataDir");
+      }
       else if (keyword == "PhotonField") {
         fPhotonFieldType.push_back(eUserField);
         string name;
@@ -104,11 +114,11 @@ namespace prop {
         fBBSigma.push_back("n/a");
         fUserPhotonfieldName.push_back("n/a");
       }
-      else if (keyword == "PhotonBB") {
+      else if (keyword == "PhotonMBB") {
         fPhotonFieldType.push_back(eBlackBody);
         string T, s;
         if (!(line >> T >> s))
-          throw runtime_error("error decoding PhotonBB");
+          throw runtime_error("error decoding PhotonMBB");
         fBBTemperature.push_back(T);
         fBBSigma.push_back(s);
         fEps0.push_back("n/a");
@@ -239,9 +249,9 @@ namespace prop {
     vector<string> filenames;
     for (unsigned int i = 0; i < fBBTemperature.size(); ++i) {
       if (fPhotonFieldType[i] == eBlackBody)
-        filenames.push_back("BB_" + fBBTemperature[i] + "_" + fBBSigma[i]);
+        filenames.push_back("MBB_" + fBBTemperature[i] + "_" + fBBSigma[i]);
       else if (fPhotonFieldType[i] == eBrokenPowerlaw)
-        filenames.push_back("SP_" + fEps0[i] + "_" + fBeta[i] + "_" + fAlpha[i]);
+        filenames.push_back("BPL_" + fEps0[i] + "_" + fBeta[i] + "_" + fAlpha[i]);
       else if (fPhotonFieldType[i] == eUserField)
         filenames.push_back(fUserPhotonfieldName[i]);
       else
@@ -250,10 +260,10 @@ namespace prop {
     return filenames;
   }
 
-  std::string FitOptions::GetPhotIntDirname()
+  std::string FitOptions::GetDataDirname()
     const
   {
-    return "./data";
+    return fDataDirname;
   }
 
   double
@@ -262,6 +272,11 @@ namespace prop {
   {
     if (fPhotonFieldType[i] == eBrokenPowerlaw)
       return stod(fEps0[i]);
+    else if (fPhotonFieldType[i] == eBlackBody) {
+      const double b = GetBBSigma(i) + 2;
+      const double x = gsl_sf_lambert_W0(-exp(-b) * b) + b;
+      return x * (utl::kBoltzmann * GetBBTemperature(i)) / utl::eV;
+    }
     else
       return numeric_limits<double>::quiet_NaN();
   }

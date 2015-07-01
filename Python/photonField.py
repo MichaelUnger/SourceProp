@@ -94,31 +94,30 @@ class ModifiedBlackBody:
 
     def getEmax(self, z=0):
         """Maximum effective photon energy in [J]"""
-        return 100000 * eV
+        return 100 * eV
 
 
 class BrokenPowerLaw:
     """
-    Broken Power Law Photon Spectrum
+    Broken Power Law Photon Spectrum (eps0 in eV!!)
     """
     name = 'SP_0.05_2.0_52'
     info = 'SP_0.05_2.0_52'
     redshift = None
 
     def __init__(self, eps0 = 0.05, beta = -2, nom = 5, denom = 2) :
-        self.eps0 = eps0
+        self.eps0 = eps0 * eV
         self.beta = float(beta)
         self.alpha = float(nom) / denom
-        self.name = 'BPL_' + str(eps0/eV) + "_" + \
-                    str(abs(round(beta, 1))) + "_" + str(nom) + "/" + str(denom);
-        self.info = 'BPL, $\epsilon_0 = ' + str(eps0/eV) + \
+        self.name = 'BPL_' + str(eps0) + "_" + \
+                    str(abs(round(beta, 1))) + "_" + str(nom) + str(denom);
+        self.info = 'BPL, $\epsilon_0 = ' + str(eps0) + \
                     '$ eV, $\\alpha=' + str(nom) + "/" + str(denom) + \
                     "$, $\\beta=" + str(round(beta, 1)) + "$"
-        TBB = temperatureFromPeak(eps0, 0)
+        TBB = temperatureFromPeak(self.eps0, 0)
         integralBB = 8*np.pi / (c0 * h)**3 * (TBB*kB)**3 * zeta(3., 1) * \
                      sp.special.gamma(3.)
-        integralBPL = eps0 * ( 1. / (self.alpha + 1) - 1. / (self.beta + 1))
-        print integralBPL
+        integralBPL = self.eps0 * ( 1. / (self.alpha + 1) - 1. / (self.beta + 1))
         self.integralRatio = integralBB / integralBPL
 
 
@@ -138,7 +137,7 @@ class BrokenPowerLaw:
 
     def getEmax(self, z=0):
         """Maximum effective photon energy in [J]"""
-        return 100000 * eV
+        return 100 * eV
 
 
 
@@ -167,7 +166,7 @@ class BlackBody:
 
     def getEmax(self, z=0):
         """Maximum effective photon energy in [J]"""
-        return 100000 * eV
+        return 100 * eV
 
 class Elbaz2011:
     """
@@ -216,13 +215,13 @@ class Elbaz2011:
 
 if __name__ == '__main__':
     from pylab import *
-    eps = logspace(-4, -0.4, 200) * eV
+    eps = logspace(-4, 1, 200) * eV
     x  = eps / eV
-    eps0 = 0.05 * eV
+    eps0 = 0.15 * eV
     bb = ModifiedBlackBody.fromPeak(eps0, 0)
     mbb1 = ModifiedBlackBody.fromPeak(eps0, 1)
     mbb2 = ModifiedBlackBody.fromPeak(eps0, 2)
-    bpl = BrokenPowerLaw(eps0)
+    bpl = BrokenPowerLaw(eps0/eV)
     y1 = bb.getDensity(eps) / (1/eV) / (1/cm3)
     y2 = mbb1.getDensity(eps) / (1/eV) / (1/cm3)
     y3 = mbb2.getDensity(eps) / (1/eV) / (1/cm3)
@@ -234,7 +233,7 @@ if __name__ == '__main__':
     plot(x, y4, label=bpl.info)
 
     legend(loc='upper right')
-#    semilogx()
+    semilogx()
 #    loglog()
     ylim(ymin=0)
     ylabel('d$n/$d$\epsilon$ [eV$^{-1}\,$cm$^{-3}$]')

@@ -444,6 +444,7 @@ namespace prop {
   void
   Plotter::DrawNeutrinoPlot(const Neutrinos& neutrinos,
                             const double gamma,
+                            const string& dataDir,
                             const unsigned int n, const double x1, const double x2)
   {
 
@@ -593,7 +594,7 @@ namespace prop {
       iceFluxLo->Draw("SAME");
 
       histTot->GetXaxis()->SetRangeUser(13, 19);
-      ifstream in("data/iceCube2012Limits.txt");
+      ifstream in(dataDir + "/iceCube2012Limits.txt");
       double x, y;
       TGraph* iceLimits = new TGraph();
       int i = 0;
@@ -654,7 +655,7 @@ namespace prop {
 
 
     const double nYear = 10;
-    IceCubeAcceptance acc;
+    IceCubeAcceptance acc(dataDir);
     double nEvents = 0;
     for (unsigned int iBin = 0; iBin < nX; ++iBin) {
       double sumE = 0;

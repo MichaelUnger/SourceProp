@@ -86,10 +86,10 @@ namespace prop {
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
     std::vector<std::string> GetPhotIntFilenames() const;
-    std::string GetPhotIntDirname() const;
+    std::string GetDataDirname() const;
 
     unsigned int GetNPhotonFields() const;
-    double GetEps0(const unsigned i) const;
+    double GetEps0(const unsigned i) const; // eV
     double GetAlpha(const unsigned i) const;
     double GetBeta(const unsigned i) const;
     double GetBBTemperature(const unsigned i) const;
@@ -129,6 +129,7 @@ namespace prop {
     std::vector<prop::MassValue> fMassValues;
     std::string fEvolution;
     std::string fIRB;
+    std::string fDataDirname;
     std::vector<EPhotonFieldType> fPhotonFieldType;
     std::vector<std::string> fEps0;
     std::vector<std::string> fBeta;

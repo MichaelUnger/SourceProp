@@ -37,7 +37,8 @@ ReadGlobus(const FitOptions& fitOptions,
            TGraph* globusLnA,
            TGraph* globusVlnA)
 {
-  ifstream globusFluxFile("data/globus2.txt");
+  const string& datadir = fitOptions.GetDataDirname();
+  ifstream globusFluxFile((datadir + "/globus2.txt").c_str());
   int i = 0;
   while (true) {
     double lgE, lgF;
@@ -51,8 +52,8 @@ ReadGlobus(const FitOptions& fitOptions,
     ++i;
   }
 
-  TGraph xmax("data/globusXmax.txt");
-  TGraph rms("data/globusRMS.txt");
+  TGraph xmax((datadir + "/globusXmax.txt").c_str());
+  TGraph rms((datadir + "/globusRMS.txt").c_str());
   LnACalculator lnACalc;
   const LnACalculator::EModel model =
     LnACalculator::GetModel(fitOptions.GetInteractionModel());
@@ -455,6 +456,7 @@ DrawValues(const FitData& fitData,
 void
 fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 {
+  gROOT->Clear();
   FitOptions opt("fitFiles/" + fitFilename + ".txt");
   Fitter fitter(opt);
   if (fit)
@@ -515,7 +517,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
       neutrinoCanvas->Divide(1, 2);
     }
     Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
-    neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, 100, 12., 22.);
+    neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, opt.GetDataDirname(), 100, 12., 22.);
     neutrinoCanvas->Print(("pdfs/" + fitFilename + "_nu.pdf").c_str());
     fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
   }

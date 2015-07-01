@@ -3,12 +3,13 @@
 
 #include <TGraph.h>
 #include <map>
+#include <string>
 
 namespace prop {
 
   class IceCubeAcceptance {
   public:
-    IceCubeAcceptance();
+    IceCubeAcceptance(const std::string& dirname);
 
     // acceptance in [m^2 sr] given lg(E/eV)
     double operator()(unsigned int, const double lgE) const;

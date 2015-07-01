@@ -61,7 +61,7 @@ namespace prop {
   }
 
   void
-  Fitter::FitFunc(int& nPar, double* const /*gin*/,
+  Fitter::FitFunc(int& /*nPar*/, double* const /*gin*/,
                   double& chi2, double* const par,
                   const int /*iFlag*/)
   {
@@ -73,8 +73,8 @@ namespace prop {
     source->SetEscGamma(par[eEscGamma]);
 
     vector<double> photonScale;
-    photonScale.push_back(pow(10, par[eLgPhotonFieldFac]));
     photonScale.push_back(1);
+    photonScale.push_back(pow(10, par[eLgPhotonFieldFac]));
     source->SetPhotonScaleFactors(photonScale);
 
     const double lambdaI = source->LambdaInt(1e19, 56);
@@ -170,13 +170,17 @@ namespace prop {
     if (!(data.fIteration%10)) {
       cout << scientific << setprecision(2)
            << " iter " << setw(5) << data.fIteration
-           << ", chi2: tot = " << data.GetChi2Tot()
+           << ", chi2 = " << data.GetChi2Tot()
            << ", spec = " << data.fChi2Spec
            << ", lnA = " << data.fChi2LnA
-           << ", V(lnA) = " << data.fChi2VlnA << endl;
-      for (unsigned int i = 0; i < eNpars + 1; ++i)
-        cout << i << " " << scientific << setprecision(2)
+           << ", VlnA = " << data.fChi2VlnA << endl;
+      for (unsigned int i = 0; i < eNpars; ++i)
+        cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i))
+             << " " << setw(11) << scientific << setprecision(2)
              << setw(5) << par[i] << endl;
+      for (unsigned int i = 0; i < nMass; ++i)
+        cout << "m" << i << " " << setw(11) << scientific << setprecision(2)
+             << *(par + eNpars + nMass - 1 + i) << endl;
       cout << endl;
     }
     ++data.fIteration;
@@ -205,10 +209,10 @@ namespace prop {
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
     cout << " interaction lengths: \n";
     for (const auto f : filenames)
-      cout << " " << fOptions.GetPhotIntDirname() << "/" << f << endl;
+      cout << " " << fOptions.GetDataDirname() << "/" << f << endl;
 
     fFitData.fSource = new NumericSource(fOptions.GetPhotIntFilenames(),
-                                         fOptions.GetPhotIntDirname());
+                                         fOptions.GetDataDirname());
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
@@ -363,7 +367,7 @@ namespace prop {
     const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift();
 
     // spectrum
-    ifstream in("data/auger_icrc2013.dat");
+    ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
     while (true) {
       FluxData flux;
       double eyDown, eyUp, N;
@@ -399,7 +403,7 @@ namespace prop {
     // energy in eV
     // flux in m-2 s-1 sr-1 GeV-1
     if (false) {
-      ifstream inKG("data/KascadeGrande2012.txt");
+      ifstream inKG(fOptions.GetDataDirname() + "/KascadeGrande2012.txt");
       while (true) {
         FluxData flux;
         double energy, flx, ferr, ferrUp, ferrLow;
@@ -433,7 +437,7 @@ namespace prop {
          << ", nFit = " <<  fFitData.fFluxData.size() << endl;
 
     TFile* erFile =
-      TFile::Open("data/elongationRate.root");
+      TFile::Open((fOptions.GetDataDirname() + "/elongationRate.root").c_str());
     if (erFile) {
       const TGraphErrors& xmaxGraph =
         *((TGraphErrors*) erFile->Get("elongXmaxFinal"));
