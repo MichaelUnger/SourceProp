@@ -36,21 +36,32 @@ echo "OutDir $PWD" >> common.txt
 echo "DataDir $DATADIR" >> common.txt
 echo "evolution $EVO" >> common.txt
 echo "IRB $IRB" >> common.txt
-if [ "$T1" -ne "T2" ]
+if [ "$T1" -ne "$T2" ]
 then
     echo "par lgfPhoton    0 0.1 0 0 0" >> common.txt
+else
 fi
 
 
 export FITFILE=$PWD/Fit.txt
 
-cat common.txt > $FITFILE
-
-$rootCmd
-ls
-mv Fit.root $OUTDIR/${FILEBASE}.root
-mv Fit.pdf $OUTDIR/${FILEBASE}.pdf
-mv Fit_nu.pdf $OUTDIR/${FILEBASE}_nu.pdf
-mv $FITFILE $OUTDIR/${FILEBASE}.txt
+sigmas=("0"  "1" "2")
+for sigma in "${sigmas[@]}"
+do
+    echo "########################### MBB$sigma #######################"
+    cat common.txt > $FITFILE
+    echo "PhotonMBB $T1 $sigma" >> $FITFILE
+    suffix="MBB1_${T1}_${sigma}"
+    if [ "$T1" -ne "$T2" ]
+    then
+        echo "PhotonMBB $T2 $sigma" >> $FITFILE
+        suffix="MBB2_${T1}_${T2}_${sigma}"
+    fi
+    $rootCmd
+    mv Fit.root $OUTDIR/${FILEBASE}_${suffix}.root
+    mv Fit.pdf $OUTDIR/${FILEBASE}_${suffix}.pdf
+    mv Fit_nu.pdf $OUTDIR/${FILEBASE}_${suffix}_nu.pdf
+    mv $FITFILE $OUTDIR/${FILEBASE}_${suffix}.txt
+done
 rm common.txt
 rmdir $jobdir
