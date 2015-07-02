@@ -1,6 +1,12 @@
 #!/bin/bash
 #PBS -l nodes=1:ppn=1,walltime=1:00:00
 
+function calc() {
+    awk "BEGIN { print "$*" }"
+}
+#eps0_1=`calc $T1/1000`
+
+
 if [ "$HOSTNAME" != "bowman" ]
 then
     module load NYUAD/2.0
@@ -18,28 +24,29 @@ else
     cd /tmp/run
 fi
 
-echo executing at $PWD on $HOSTNAME
+echo executing $PBS_JOBNAME at $PWD on $HOSTNAME
 
 rootCmd="root.exe -b -l -q -x $EXEDIR/macros/fitWrapper.C"
 
-export FITFILE=$PWD/Fit.txt
-echo "# executing at $PWD on $HOSTNAME" > $FITFILE
-echo "OutDir $PWD" >> $FITFILE
-echo "DataDir $DATADIR" >> $FITFILE
-echo "evolution $EVO" >> $FITFILE
-echo "IRB $IRB" >> $FITFILE
+echo "# $FILEBASE $PBS_JOBNAME at $PWD on $HOSTNAME" > $common.txt
+echo "OutDir $PWD" >> $common.txt
+echo "DataDir $DATADIR" >> $common.txt
+echo "evolution $EVO" >> $common.txt
+echo "IRB $IRB" >> $common.txt
+if [ "$T1" -ne "T2" ]
+then
+    echo "par lgfPhoton    0 0.1 0 0 0" >> $common.txt
+fi
 
-#cd $EXEDIR
+
+export FITFILE=$PWD/Fit.txt
+
+cat common.txt > $FITFILE
+
 $rootCmd
 ls
 mv Fit.root $OUTDIR/${FILEBASE}.root
 mv Fit.pdf $OUTDIR/${FILEBASE}.pdf
 mv Fit_nu.pdf $OUTDIR/${FILEBASE}_nu.pdf
 mv $FITFILE $OUTDIR/${FILEBASE}.txt
-
-#source /afs/cern.ch/na61/Releases/SHINE/pro/scripts/env/lxplus_64bit_slc6.csh
-#setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/afs/cern.ch/user/m/munger/Prop/lib
-
-#$EXEDIR/bin/createPropMatrixFile $EVOLUTION $PIONFILE $INDIR/$PHOTONFIELD/*.root
-#mv propMatrix_${EVOLUTION}.root $OUTDIR/${PHOTONFIELD}_${EVOLUTION}.root
-#mv propMatrix_${EVOLUTION}_nu.root $OUTDIR/${PHOTONFIELD}_${EVOLUTION}_nu.root
+rm common.txt

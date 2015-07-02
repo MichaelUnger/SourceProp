@@ -1,10 +1,5 @@
 #!/bin/bash
 
-#function calc() {
-#    awk "BEGIN { print "$*" }"
-#}
-#eps0_1=`calc $T1/1000`
-
 temperatures=("10" "15" "20" "25" "30" "35" "40" "45" "50" "60" "70" "80" \
     "90" "100" "110" "120" "130" "140" "150" "175" "200" "225" "250" "275" \
     "300" "350" "400" "450" "500" "750")
@@ -12,18 +7,18 @@ temperatures=("10" "15" "20" "25" "30" "35" "40" "45" "50" "60" "70" "80" \
 temperatures=("10"  "150" "500")
 temperatures=("10")
 
-nTemperature=${#temperatures[@]}
-echo number of temperatures $nTemperature
-((nTemperature--))
-
 export EXEDIR=/home/mu495/Software/Prop
-export OUTDIR=/scratch/mu495/Fit
+export OUTDIR=/archive/mu495/Fit
 export DATADIR=$EXEDIR/Data
 export EVO=SFR2
 export IRB=G12
 export PRODNAME=Test_${EVO}_${IRB}
 
 queue=s48
+
+nTemperature=${#temperatures[@]}
+echo number of temperatures $nTemperature
+((nTemperature--))
 
 i=0
 for temperature in "${temperatures[@]}"
