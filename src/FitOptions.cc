@@ -29,10 +29,10 @@ namespace prop {
     fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,18, 22, 0);
-    fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,0, 0, 0);
+    fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,-10, 10, 0);
     fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eFGal] = StartValue(0.6, 0.1, 0, 1, 0);
-    fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, 0, 0, 0);
+    fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, -2, -10, 0);
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, 0, 0, 1);
