@@ -1,4 +1,5 @@
 #!/bin/bash
+#PBS -l nodes=1:ppn=1,walltime=15:00:00
 
 module load NYUAD/2.0
 module load devel
