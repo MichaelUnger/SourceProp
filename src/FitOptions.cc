@@ -28,7 +28,7 @@ namespace prop {
     fXmaxSigmaShift = 0;
     fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
-    fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,0, 0, 0);
+    fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,18, 22, 0);
     fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,0, 0, 0);
     fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eFGal] = StartValue(0.6, 0.1, 0, 1, 0);

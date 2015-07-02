@@ -1,3 +1,9 @@
+root.exe -n
+gSystem->SetIncludePath("-I$ROOTSYS/include -Isrc");
+gSystem->Load("lib/libProp.so")
+.L macros/fit.C+
+
+
 steering file parameters:
 ------------------------
 
