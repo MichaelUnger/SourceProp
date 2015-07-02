@@ -17,8 +17,11 @@ echo number of temperatures $nTemperature
 ((nTemperature--))
 
 export EXEDIR=/home/mu495/Software/Prop
-export OUTDIR=/scratch/mu495/Matrices
-export DATADIR=/scratch/mu495/
+export OUTDIR=/scratch/mu495/Fit
+export DATADIR=$EXEDIR/Data
+export EVO=SFR2
+export IRB=G12
+export PRODNAME=Test_${EVO}_${IRB}
 
 queue=s48
 
@@ -30,9 +33,10 @@ do
     export T1=$temperature
     export T2=${temperatures[$j]}
     echo $T1 $T2
-    logName=$OUTDIR/logs/${PHOTONFIELD}_${option}
-    echo qsub -q $queue -o $logName.out -e $logName.err $EXEDIR/bin/runProp.sh
-    qsub -V -q $queue -o $logName.out -e $logName.err $EXEDIR/bin/runProp.sh
+    export FILEBASE=${PRODNAME}_${T1}_${T2}
+    logName=$OUTDIR/$FILEBASE
+    echo qsub -q $queue -o $logName.out -e $logName.err $EXEDIR/bin/runFit.sh
+    qsub -V -q $queue -o $logName.out -e $logName.err $EXEDIR/bin/runFit.sh
   done
   ((i++))
 done

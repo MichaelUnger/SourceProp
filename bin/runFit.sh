@@ -1,7 +1,7 @@
 #!/bin/bash
 #PBS -l nodes=1:ppn=1,walltime=1:00:00
 
-if [ "$HOST" != "bowman" ]
+if [ "$HOSTNAME" != "bowman" ]
 then
     module load NYUAD/2.0
     module load devel
@@ -18,16 +18,24 @@ else
     cd /tmp/run
 fi
 
-echo executing at $PWD on $HOST
+echo executing at $PWD on $HOSTNAME
 
 rootCmd="root.exe -b -l -q -x $EXEDIR/macros/fitWrapper.C"
 
 export FITFILE=$PWD/Fit.txt
-echo "# executing at $PWD on $HOST" > $FITFILE
+echo "# executing at $PWD on $HOSTNAME" > $FITFILE
 echo "OutDir $PWD" >> $FITFILE
 echo "DataDir $DATADIR" >> $FITFILE
+echo "evolution $EVO" >> $FITFILE
+echo "IRB $IRB" >> $FITFILE
+
 #cd $EXEDIR
 $rootCmd
+ls
+mv Fit.root $OUTDIR/${FILEBASE}.root
+mv Fit.pdf $OUTDIR/${FILEBASE}.pdf
+mv Fit_nu.pdf $OUTDIR/${FILEBASE}_nu.pdf
+mv $FITFILE $OUTDIR/${FILEBASE}.txt
 
 #source /afs/cern.ch/na61/Releases/SHINE/pro/scripts/env/lxplus_64bit_slc6.csh
 #setenv LD_LIBRARY_PATH ${LD_LIBRARY_PATH}:/afs/cern.ch/user/m/munger/Prop/lib
