@@ -4,7 +4,6 @@
 function calc() {
     awk "BEGIN { print "$*" }"
 }
-#eps0_1=`calc $T1/1000`
 
 
 if [ "$HOSTNAME" != "bowman" ]
@@ -63,5 +62,25 @@ do
     mv Fit_nu.pdf $OUTDIR/${FILEBASE}_${suffix}_nu.pdf
     mv $FITFILE $OUTDIR/${FILEBASE}_${suffix}.txt
 done
+
+
+echo "########################### BPL #######################"
+cat common.txt > $FITFILE
+eps0_1=`calc $T1/1000`
+echo "PhotonBPL $eps0_1 52 2.0" >> $FITFILE
+suffix="BPL1_${T1}"
+if [ "$T1" -ne "$T2" ]
+then
+    eps0_0=`calc $T2/1000`
+    echo "PhotonBPL $eps0_2 52 2.0" >> $FITFILE
+    suffix="BPL2_${T1}_${T2}"
+fi
+$rootCmd
+mv Fit.root $OUTDIR/${FILEBASE}_${suffix}.root
+mv Fit.pdf $OUTDIR/${FILEBASE}_${suffix}.pdf
+mv Fit_nu.pdf $OUTDIR/${FILEBASE}_${suffix}_nu.pdf
+mv $FITFILE $OUTDIR/${FILEBASE}_${suffix}.txt
+
+
 rm common.txt
 rmdir $jobdir
