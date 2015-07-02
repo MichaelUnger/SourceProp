@@ -1,4 +1,5 @@
 #!/bin/bash
+#PBS -l nodes=1:ppn=1,walltime=1:00:00
 
 if [ "$HOST" != "bowman" ]
 then
