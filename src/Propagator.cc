@@ -83,7 +83,7 @@ namespace prop {
   Propagator::GetFluxSum(const unsigned int i)
     const
   {
-    if (i >=  fPropMatrices.GetN()) {
+    if (i >=  (unsigned int) fSum.GetNoElements()) {
       std::cerr << " Propagator::GetFluxSum() - "
                 << i << " is out of bound " << std::endl;
       return 0;

@@ -97,6 +97,18 @@ namespace prop {
         fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
     }
 
+    if (!(data.fIteration%10)) {
+      cout << "----------------------------------------" << endl;
+      for (unsigned int i = 0; i < eNpars; ++i)
+        cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i))
+             << " " << setw(11) << scientific << setprecision(5)
+             << setw(5) << par[i] << endl;
+      for (unsigned int i = 0; i < nMass; ++i)
+        cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
+             << *(par + eNpars + nMass - 1 + i) << endl;
+    }
+
+
     Spectrum& spectrum = data.fSpectrum;
     spectrum.SetParameters(source,
                            par[eGamma],
@@ -174,13 +186,6 @@ namespace prop {
            << ", spec = " << data.fChi2Spec
            << ", lnA = " << data.fChi2LnA
            << ", VlnA = " << data.fChi2VlnA << endl;
-      for (unsigned int i = 0; i < eNpars; ++i)
-        cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i))
-             << " " << setw(11) << scientific << setprecision(5)
-             << setw(5) << par[i] << endl;
-      for (unsigned int i = 0; i < nMass; ++i)
-        cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
-             << *(par + eNpars + nMass - 1 + i) << endl;
       cout << endl;
     }
     ++data.fIteration;
@@ -350,7 +355,7 @@ namespace prop {
     cout << " initial chi2 is " << chi2 << endl;
   }
 
-  void
+  bool
   Fitter::Fit()
   {
     int ierflag;
@@ -362,12 +367,12 @@ namespace prop {
     catch (const runtime_error& error) {
       cerr << error.what() << endl;
       fFitData.fFitFailed = true;
-      return;
+      return false;
     }
     if (ierflag) {
       cerr << " MINIMIZE failed " << ierflag << endl;
       fFitData.fFitFailed = true;
-      return;
+      return false;
     }
     else
       fFitData.fFitFailed = false;
@@ -383,7 +388,7 @@ namespace prop {
     fFitData.fFitStatus = icstat;
     fFitData.fFitEDM = edm;
 
-
+    return true;
   }
 
   void

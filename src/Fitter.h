@@ -13,7 +13,7 @@ namespace prop {
   public:
 
     Fitter(const FitOptions& opt);
-    void Fit();
+    bool Fit();
     const FitData& GetFitData() const
     { return fFitData; }
     FitData& GetFitData()

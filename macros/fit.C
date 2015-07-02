@@ -460,7 +460,8 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   FitOptions opt(fitFilename);
   Fitter fitter(opt);
   if (fit)
-    fitter.Fit();
+    if (!fitter.Fit())
+      return;
 
   vector<MassGroup> massGroups;
   massGroups.push_back(MassGroup(1, 2, 1, kRed));
