@@ -54,4 +54,9 @@ FitSummary::Fill(const prop::FitData& fitData,
     fBBSigma.push_back(fitOptions.GetBBSigma(i));
   }
 
+  fFitStatus = fitData.fFitStatus;
+  fFitFailed = fitData.fFitFailed;
+  fFitEDM = fitData.fFitEDM;
+  fNNan = fitData.fNNan;
+
 }

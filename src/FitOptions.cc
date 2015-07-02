@@ -21,7 +21,7 @@ namespace prop {
     fDataDirname = "./data";
     fOutDirname = "./pdfs";
     fFitCompo = 1;
-    fRejectOutliers = 1;
+    fRejectOutliers = 0;
     fMinFluxLgE = 17;
     fMinCompLgE = 17;
     fEnergyBinShift = 0;

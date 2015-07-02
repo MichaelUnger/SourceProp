@@ -11,8 +11,12 @@ using namespace std;
 namespace prop {
   FitData::FitData() :
     fIteration(0),
+    fNNan(0),
     fSource(nullptr),
-    fPropagator(nullptr)
+    fPropagator(nullptr),
+    fFitStatus(-1),
+    fFitFailed(false),
+    fFitEDM(-1)
   {
 
   }

@@ -184,6 +184,10 @@ namespace prop {
       cout << endl;
     }
     ++data.fIteration;
+    if (!isfinite(chi2))
+      ++data.fNNan;
+    if (data.fNNan > 10)
+      throw runtime_error("stuck NaN --> stop fitting");
   }
 
   void
@@ -352,12 +356,34 @@ namespace prop {
     int ierflag;
     double arglist[2] = {10000, 1.};
     fMinuit.SetPrintLevel(0);
-    fMinuit.mnexcm("MINIMIZE", arglist, 2, ierflag);
+    try {
+      fMinuit.mnexcm("MINIMIZE", arglist, 2, ierflag);
+    }
+    catch (const runtime_error& error) {
+      cerr << error.what() << endl;
+      fFitData.fFitFailed = true;
+      return;
+    }
+    if (ierflag) {
+      cerr << " MINIMIZE failed " << ierflag << endl;
+      fFitData.fFitFailed = true;
+      return;
+    }
+    else
+      fFitData.fFitFailed = false;
 
     for (unsigned int i = 0; i < GetNParameters(); ++i) {
       FitParameter& par = fFitData.fFitParameters[i];
       fMinuit.GetParameter(i, par.fValue, par.fError);
     }
+
+    double amin, edm, errdef;
+    int nvpar, nparx, icstat;
+    fMinuit.mnstat(amin, edm, errdef, nvpar, nparx, icstat);
+    fFitData.fFitStatus = icstat;
+    fFitData.fFitEDM = edm;
+
+
   }
 
   void

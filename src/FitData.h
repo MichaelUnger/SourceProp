@@ -58,6 +58,7 @@ namespace prop {
     unsigned int GetNMass() const;
 
     unsigned int fIteration;
+    unsigned int fNNan;
     NumericSource* fSource;
     Propagator* fPropagator;
     Spectrum fSpectrum;
@@ -77,7 +78,9 @@ namespace prop {
     double fQ0Err;
     double fGalMass;
     std::vector<FitParameter> fFitParameters;
-
+    int fFitStatus;
+    bool fFitFailed;
+    double fFitEDM;
   };
 }
 

@@ -53,6 +53,11 @@ private:
   unsigned int fWalkerId;
   unsigned int fStep;
 
+  int fNNan;
+  int fFitStatus;
+  bool fFitFailed;
+  double fFitEDM;
+
   ClassDefNV(FitSummary, 1);
 };
 #endif
