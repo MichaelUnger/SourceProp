@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=1,walltime=1:00:00
+#PBS -l nodes=1:ppn=1,walltime=5:00:00
 
 function calc() {
     awk "BEGIN { print "$*" }"
@@ -38,7 +38,6 @@ echo "IRB $IRB" >> common.txt
 if [ "$T1" -ne "$T2" ]
 then
     echo "par lgfPhoton    0 0.1 0 0 0" >> common.txt
-else
 fi
 
 
@@ -71,7 +70,7 @@ echo "PhotonBPL $eps0_1 52 2.0" >> $FITFILE
 suffix="BPL1_${T1}"
 if [ "$T1" -ne "$T2" ]
 then
-    eps0_0=`calc $T2/1000`
+    eps0_2=`calc $T2/1000`
     echo "PhotonBPL $eps0_2 52 2.0" >> $FITFILE
     suffix="BPL2_${T1}_${T2}"
 fi

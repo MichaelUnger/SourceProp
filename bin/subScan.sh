@@ -4,8 +4,7 @@ temperatures=("10" "15" "20" "25" "30" "35" "40" "45" "50" "60" "70" "80" \
     "90" "100" "110" "120" "130" "140" "150" "175" "200" "225" "250" "275" \
     "300" "350" "400" "450" "500" "750")
 
-temperatures=("10"  "150" "500")
-temperatures=("10")
+#temperatures=("10"  "150")
 
 export EXEDIR=/home/mu495/Software/Prop
 export OUTDIR=/scratch/mu495/Fit
@@ -28,8 +27,8 @@ do
     export T1=$temperature
     export T2=${temperatures[$j]}
     echo $T1 $T2
-    export FILEBASE=${PRODNAME}_${T1}_${T2}
-    logName=$OUTDIR/$FILEBASE
+    export FILEBASE=${PRODNAME}
+    logName=$OUTDIR/${FILEBASE}_${T1}_${T2}
     echo qsub -q $queue -o $logName.out -e $logName.err $EXEDIR/bin/runFit.sh
     qsub -V -q $queue -o $logName.out -e $logName.err $EXEDIR/bin/runFit.sh
   done
