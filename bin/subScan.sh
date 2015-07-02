@@ -8,7 +8,7 @@ temperatures=("10"  "150" "500")
 temperatures=("10")
 
 export EXEDIR=/home/mu495/Software/Prop
-export OUTDIR=/archive/mu495/Fit
+export OUTDIR=/scratch/mu495/Fit
 export DATADIR=$EXEDIR/Data
 export EVO=SFR2
 export IRB=G12

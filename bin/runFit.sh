@@ -24,18 +24,21 @@ else
     cd /tmp/run
 fi
 
-echo executing $PBS_JOBNAME at $PWD on $HOSTNAME
-
 rootCmd="root.exe -b -l -q -x $EXEDIR/macros/fitWrapper.C"
 
-echo "# $FILEBASE $PBS_JOBNAME at $PWD on $HOSTNAME" > $common.txt
-echo "OutDir $PWD" >> $common.txt
-echo "DataDir $DATADIR" >> $common.txt
-echo "evolution $EVO" >> $common.txt
-echo "IRB $IRB" >> $common.txt
+jobdir=/scratch/mu495/tmp/$PBS_JOBID
+mkdir $jobdir
+cd $jobdir
+
+echo executing $PBS_JOBID at $PWD on $HOSTNAME
+echo "# $FILEBASE $PBS_JOBID at $PWD on $HOSTNAME" > common.txt
+echo "OutDir $PWD" >> common.txt
+echo "DataDir $DATADIR" >> common.txt
+echo "evolution $EVO" >> common.txt
+echo "IRB $IRB" >> common.txt
 if [ "$T1" -ne "T2" ]
 then
-    echo "par lgfPhoton    0 0.1 0 0 0" >> $common.txt
+    echo "par lgfPhoton    0 0.1 0 0 0" >> common.txt
 fi
 
 
@@ -50,3 +53,4 @@ mv Fit.pdf $OUTDIR/${FILEBASE}.pdf
 mv Fit_nu.pdf $OUTDIR/${FILEBASE}_nu.pdf
 mv $FITFILE $OUTDIR/${FILEBASE}.txt
 rm common.txt
+rmdir $jobdir
