@@ -1,5 +1,5 @@
 #!/bin/bash
-#PBS -l nodes=1:ppn=1,walltime=15:00:00
+#PBS -l nodes=1:ppn=1,walltime=24:00:00
 
 function calc() {
     awk "BEGIN { print "$*" }"
@@ -39,6 +39,8 @@ do
     echo "DataDir $DATADIR" >> common.txt
     echo "evolution $EVO" >> common.txt
     echo "IRB $IRB" >> common.txt
+    echo "par gammaInj   -1.1 0.1 -3 -0.8 0" >> common.txt
+    echo "par deltaEsc   -0.9 0.1 -1.01 -0.2 0" >> common.txt
     echo "mass $mass 0.1 1 56 0 1" >> common.txt
 
     if [ "$T1" -ne "$T2" ]
