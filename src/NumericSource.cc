@@ -329,6 +329,8 @@ namespace prop {
     double lambda = 0;
     for (unsigned int i = 0; i < fFields.size(); ++i) {
       const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
       const double lambdaPP =
         EvalFast(FindGraph(fPhotoPionProductions[i], A),
                  lgE) / f;
@@ -382,6 +384,8 @@ namespace prop {
           }
           else {
             const double f = fFieldScaleFactors[i];
+            if (f <= 0)
+              continue;
             const double lgE = log10(E);
             const double lambdaPD =
               EvalFast(FindGraph(fPhotoDissociations[i], Aprim), lgE) / f;
@@ -416,6 +420,8 @@ namespace prop {
       double lPD = 0;
       for (unsigned int i = 0; i < fFields.size(); ++i) {
         const double f = fFieldScaleFactors[i];
+        if (f <=0)
+          continue;
         const double lambdaPP =
           EvalFast(FindGraph(fPhotoPionProductions[i], A),
                        lgE) / f;

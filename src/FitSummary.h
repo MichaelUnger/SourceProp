@@ -35,6 +35,18 @@ private:
   double fGammaGal;
   double fLgEmaxGal;
   double fNoPhoton;
+  double fLgPhotonField;
+
+  double fGammaErr;
+  double fLgEmaxErr;
+  double fLgEscFacErr;
+  double fEscGammaErr;
+  double fFGalErr;
+  double fGammaGalErr;
+  double fLgEmaxGalErr;
+  double fNoPhotonErr;
+  double fLgPhotonFieldErr;
+
   std::vector<double> fMasses;
   std::vector<double> fFractions;
 

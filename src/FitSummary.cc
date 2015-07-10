@@ -25,6 +25,17 @@ FitSummary::Fill(const prop::FitData& fitData,
   fGammaGal = fitData.fFitParameters[eGammaGal].fValue;
   fLgEmaxGal = fitData.fFitParameters[eLgEmaxGal].fValue;
   fNoPhoton = fitData.fFitParameters[eNoPhoton].fValue;
+  fLgPhotonField = fitData.fFitParameters[eLgPhotonFieldFac].fValue;
+
+  fGammaErr = fitData.fFitParameters[eGamma].fError;
+  fLgEmaxErr = fitData.fFitParameters[eLgEmax].fError;
+  fLgEscFacErr = fitData.fFitParameters[eLgEscFac].fError;
+  fEscGammaErr = fitData.fFitParameters[eEscGamma].fError;
+  fFGalErr = fitData.fFitParameters[eFGal].fError;
+  fGammaGalErr = fitData.fFitParameters[eGammaGal].fError;
+  fLgEmaxGalErr = fitData.fFitParameters[eLgEmaxGal].fError;
+  fNoPhotonErr = fitData.fFitParameters[eNoPhoton].fError;
+  fLgPhotonFieldErr = fitData.fFitParameters[eLgPhotonFieldFac].fError;
 
   const unsigned int nMass = fitData.GetNMass();
   fMasses.clear();

@@ -35,7 +35,7 @@ namespace prop {
     fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, -2, -10, 0);
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
-    fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, 0, 0, 1);
+    fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
     fCutoffType = Spectrum::eExponential;
     fGalMass = MassValue(56, 1, 1, 56, 1, 1);
 
@@ -191,7 +191,8 @@ namespace prop {
     if (fMassValues.empty())
       fMassValues.push_back(MassValue(28, 0.1, 1, 56, 0, 1));
 
-    if (fBBTemperature.empty()) {
+    // no photon field given --> black body
+    if (fPhotonFieldType.empty()) {
       fPhotonFieldType.push_back(eBlackBody);
       fBBTemperature.push_back("150");
       fBBSigma.push_back("2");
@@ -199,6 +200,23 @@ namespace prop {
       fAlpha.push_back("n/a");
       fBeta.push_back("n/a");
     }
+
+    // case of two BBs --> set starting value to 50:50
+    if (!fStartValues[eLgPhotonFieldFac].fIsFixed &&
+        fPhotonFieldType.size() == 2 &&
+        fPhotonFieldType[0] == eBlackBody &&
+        fPhotonFieldType[1] == eBlackBody) {
+      // all tables are normalized to BB integral (i.e. sigma=0)
+      const double T0 = GetBBTemperature(0);
+      const double T1 = GetBBTemperature(1);
+      // f * T0^3 = (1-f) * T1^3
+      // --> f = T1^3 / (T0^3 + T1^3)
+      const double f = pow(T1, 3) / (pow(T0, 3) + pow(T1, 3));
+      cout << " automatic start value for photon field, T0 = "
+           << T0 << ", T1=" << T1 << ", f=" << f << endl;
+      fStartValues[eLgPhotonFieldFac] = StartValue(log10(f), 0.1, log10(f)-5, 0, 0);
+    }
+
 
     // default output filename: base of fit file
     if (fOutFilename.empty()) {
@@ -209,6 +227,7 @@ namespace prop {
       else
         fOutFilename = "fit";
     }
+
   }
 
   double

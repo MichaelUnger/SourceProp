@@ -25,11 +25,13 @@ fi
 
 rootCmd="root.exe -b -l -q -x $EXEDIR/macros/fitWrapper.C"
 
-jobdir=/scratch/mu495/tmp/$PBS_JOBID
-mkdir $jobdir
+jobdir=$PBS_JOBTMP
+#jobdir=/scratch/mu495/tmp/$PBS_JOBID
+#mkdir $jobdir
 cd $jobdir
 
-masses=("56"  "40" "28" "14")
+#masses=("56"  "40" "28" "14")
+masses=("56")
 for mass in "${masses[@]}"
 do
     echo "########################## Astart = $mass #################"
@@ -39,9 +41,9 @@ do
     echo "DataDir $DATADIR" >> common.txt
     echo "evolution $EVO" >> common.txt
     echo "IRB $IRB" >> common.txt
-    echo "par gammaInj   -1.1 0.1 -3 -0.8 0" >> common.txt
-    echo "par deltaEsc   -0.9 0.1 -1.01 -0.2 0" >> common.txt
-    echo "mass $mass 0.1 1 56 0 1" >> common.txt
+#    echo "par gammaInj   -1.1 0.1 -3 -0.8 0" >> common.txt
+#    echo "par deltaEsc   -0.9 0.1 -1.01 -0.2 0" >> common.txt
+    echo "mass $mass 0.1 1 56 1 1" >> common.txt
 
     if [ "$T1" -ne "$T2" ]
     then
@@ -64,10 +66,10 @@ do
             suffix="MBB2_${T1}_${T2}_${sigma}_A${mass}"
         fi
         $rootCmd
-        mv Fit.root $OUTDIR/${FILEBASE}_${suffix}.root
-        mv Fit.pdf $OUTDIR/${FILEBASE}_${suffix}.pdf
-        mv Fit_nu.pdf $OUTDIR/${FILEBASE}_${suffix}_nu.pdf
-        mv $FITFILE $OUTDIR/${FILEBASE}_${suffix}.txt
+        mv Fit.root ${FILEBASE}_${suffix}.root
+        mv Fit.pdf ${FILEBASE}_${suffix}.pdf
+        mv Fit_nu.pdf ${FILEBASE}_${suffix}_nu.pdf
+        mv $FITFILE ${FILEBASE}_${suffix}.txt
     done
 
 
@@ -83,12 +85,13 @@ do
         suffix="BPL2_${T1}_${T2}_A${mass}"
     fi
     $rootCmd
-    mv Fit.root $OUTDIR/${FILEBASE}_${suffix}.root
-    mv Fit.pdf $OUTDIR/${FILEBASE}_${suffix}.pdf
-    mv Fit_nu.pdf $OUTDIR/${FILEBASE}_${suffix}_nu.pdf
-    mv $FITFILE $OUTDIR/${FILEBASE}_${suffix}.txt
-
-
+    mv Fit.root ${FILEBASE}_${suffix}.root
+    mv Fit.pdf ${FILEBASE}_${suffix}.pdf
+    mv Fit_nu.pdf ${FILEBASE}_${suffix}_nu.pdf
+    mv $FITFILE ${FILEBASE}_${suffix}.txt
     rm common.txt
 done
-rmdir $jobdir
+tarballName=${FILEBASE}_${T1}_${T2}.tar
+tar -cvf $tarballName *.root *.pdf *.txt
+mv $tarballName ${OUTDIR}/
+#rmdir $jobdir

@@ -73,8 +73,9 @@ namespace prop {
     source->SetEscGamma(par[eEscGamma]);
 
     vector<double> photonScale;
-    photonScale.push_back(1);
-    photonScale.push_back(pow(10, par[eLgPhotonFieldFac]));
+    const double fScale = pow(10, par[eLgPhotonFieldFac]);
+    photonScale.push_back(fScale);
+    photonScale.push_back((1-fScale));
     source->SetPhotonScaleFactors(photonScale);
 
     const double lambdaI = source->LambdaInt(1e19, 56);

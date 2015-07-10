@@ -1,12 +1,12 @@
 par gammaInj   -1 0.1 -0.8 -2.5 1
-par lgRmax    1.84707e+01 0.1 0 0 0
-par lgResc    2.43829e+00 0.1 0 0 0
+par lgRmax    1.87314e+01 0.1 0 0 0
+par lgResc    2.84435e+00 0.1 0 0 0
 par deltaEsc   -1 0.1 0 0 1
-par fGal       5.57893e-01 0.1 0 0 0
-par gammaGal  -4.18383e+00 0.1 0 0 0
+par fGal       6.28148e-01 0.1 0 0 0
+par gammaGal  -4.06816e+00 0.1 0 0 0
 par lgEmaxGal   19 0.1 0 0 1
 par fNoPhoton    0 0.1 0 0 1
-par lgfPhoton    0 0.1 0 0 0
+#par lgfPhoton    0 0.1 -5 0 0
 mass 56 0.1 1 56 1 1
 galacticMass 56 1 56 1
 evolution SFR2
@@ -14,8 +14,8 @@ IRB Kneiske04
 DataDir ./data
 OutDir ./pdfs
 # OutFile Test
-PhotonMBB 150 2
-PhotonMBB 20 2
+#PhotonMBB 9000 2
+PhotonMBB 350 2
 fitComposition 1
 rejectOutliers 0
 minLgEFlux 17.
@@ -24,3 +24,4 @@ interactionModel eposLHC
 cutoffType exponential
 energyBinShift 0
 xmaxSigmaShift 0
+# 2724.29
