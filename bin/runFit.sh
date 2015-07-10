@@ -25,9 +25,13 @@ fi
 
 rootCmd="root.exe -b -l -q -x $EXEDIR/macros/fitWrapper.C"
 
-jobdir=$PBS_JOBTMP
-#jobdir=/scratch/mu495/tmp/$PBS_JOBID
-#mkdir $jobdir
+#jobdir=$PBS_JOBTMP
+jobdir=/state/partition1/$PBS_JOBID
+mkdir $jobdir
+if [ $? -ne 0 ] ; then
+   echo cannot create $jobdir
+   exit 1
+fi
 cd $jobdir
 
 #masses=("56"  "40" "28" "14")
@@ -65,7 +69,7 @@ do
             echo "PhotonMBB $T2 $sigma" >> $FITFILE
             suffix="MBB2_${T1}_${T2}_${sigma}_A${mass}"
         fi
-        $rootCmd
+        $rootCmd > ${FILEBASE}_${suffix}.log 2>&1
         mv Fit.root ${FILEBASE}_${suffix}.root
         mv Fit.pdf ${FILEBASE}_${suffix}.pdf
         mv Fit_nu.pdf ${FILEBASE}_${suffix}_nu.pdf
@@ -84,14 +88,19 @@ do
         echo "PhotonBPL $eps0_2 52 2.0" >> $FITFILE
         suffix="BPL2_${T1}_${T2}_A${mass}"
     fi
-    $rootCmd
+    $rootCmd > ${FILEBASE}_${suffix}.log 2>&1
     mv Fit.root ${FILEBASE}_${suffix}.root
     mv Fit.pdf ${FILEBASE}_${suffix}.pdf
     mv Fit_nu.pdf ${FILEBASE}_${suffix}_nu.pdf
     mv $FITFILE ${FILEBASE}_${suffix}.txt
     rm common.txt
 done
+gzip *.log
+gzip *.txt
 tarballName=${FILEBASE}_${T1}_${T2}.tar
-tar -cvf $tarballName *.root *.pdf *.txt
+tar -cvf $tarballName *.root *.pdf *.gz
 mv $tarballName ${OUTDIR}/
-#rmdir $jobdir
+rm *.root *.pdf *.gz
+rm -f core
+ls -la
+rmdir $jobdir

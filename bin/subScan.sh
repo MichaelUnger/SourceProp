@@ -5,14 +5,14 @@ temperatures=("10" "15" "20" "25" "30" "35" "40" "45" "50" "60" "70" "80" \
     "300" "350" "400" "450" "500" "750" "1000" "2000" "3000" "4000"  "5000" \
     "6000" "7000" "8000" "9000")
 
-#temperatures=("10"  "150")
+#temperatures=("250")
 
 export EXEDIR=/home/mu495/Software/Prop
 export OUTDIR=/scratch/mu495/Fit
 export DATADIR=$EXEDIR/Data
 export EVO=SFR2
 export IRB=G12
-export PRODNAME=Test_${EVO}_${IRB}
+export PRODNAME=FixMass_${EVO}_${IRB}
 
 singleTemperature=0
 queue=s48
