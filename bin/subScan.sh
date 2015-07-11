@@ -12,7 +12,7 @@ export OUTDIR=/scratch/mu495/Fit
 export DATADIR=$EXEDIR/Data
 export EVO=SFR2
 export IRB=G12
-export PRODNAME=FixMass_${EVO}_${IRB}
+export PRODNAME=Mass_${EVO}_${IRB}
 
 singleTemperature=0
 queue=s48

@@ -34,8 +34,8 @@ if [ $? -ne 0 ] ; then
 fi
 cd $jobdir
 
-#masses=("56"  "40" "28" "14")
-masses=("56")
+masses=("56"  "40" "28" "14" "4")
+#masses=("56")
 for mass in "${masses[@]}"
 do
     echo "########################## Astart = $mass #################"
@@ -47,7 +47,7 @@ do
     echo "IRB $IRB" >> common.txt
 #    echo "par gammaInj   -1.1 0.1 -3 -0.8 0" >> common.txt
 #    echo "par deltaEsc   -0.9 0.1 -1.01 -0.2 0" >> common.txt
-    echo "mass $mass 0.1 1 56 1 1" >> common.txt
+    echo "mass $mass 0.1 1 56 0 1" >> common.txt
 
     if [ "$T1" -ne "$T2" ]
     then
