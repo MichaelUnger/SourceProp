@@ -6,6 +6,25 @@ using namespace prop;
 using namespace utl;
 using namespace std;
 
+FitSummary::FitSummary() :
+  fChi2Tot(-1)
+{
+  for (unsigned int i = 0; i < 3; ++i) {
+    fEdot175Err[i] = 0;
+    fGammaErr[i] = 0;
+    fLgEmaxErr[i] = 0;
+    fLgEscFacErr[i] = 0;
+    fEscGammaErr[i] = 0;
+    fFGalErr[i] = 0;
+    fGammaGalErr[i] = 0;
+    fLgEmaxGalErr[i] = 0;
+    fNoPhotonErr[i] = 0;
+    fLgPhotonFieldErr[i] = 0;
+    fNNeutrinosErr[i] = 0;
+  }
+
+}
+
 void
 FitSummary::Fill(const prop::FitData& fitData,
                  const prop::FitOptions& fitOptions)
@@ -27,15 +46,15 @@ FitSummary::Fill(const prop::FitData& fitData,
   fNoPhoton = fitData.fFitParameters[eNoPhoton].fValue;
   fLgPhotonField = fitData.fFitParameters[eLgPhotonFieldFac].fValue;
 
-  fGammaErr = fitData.fFitParameters[eGamma].fError;
-  fLgEmaxErr = fitData.fFitParameters[eLgEmax].fError;
-  fLgEscFacErr = fitData.fFitParameters[eLgEscFac].fError;
-  fEscGammaErr = fitData.fFitParameters[eEscGamma].fError;
-  fFGalErr = fitData.fFitParameters[eFGal].fError;
-  fGammaGalErr = fitData.fFitParameters[eGammaGal].fError;
-  fLgEmaxGalErr = fitData.fFitParameters[eLgEmaxGal].fError;
-  fNoPhotonErr = fitData.fFitParameters[eNoPhoton].fError;
-  fLgPhotonFieldErr = fitData.fFitParameters[eLgPhotonFieldFac].fError;
+  fGammaErr[0] = fitData.fFitParameters[eGamma].fError;
+  fLgEmaxErr[0] = fitData.fFitParameters[eLgEmax].fError;
+  fLgEscFacErr[0] = fitData.fFitParameters[eLgEscFac].fError;
+  fEscGammaErr[0] = fitData.fFitParameters[eEscGamma].fError;
+  fFGalErr[0] = fitData.fFitParameters[eFGal].fError;
+  fGammaGalErr[0] = fitData.fFitParameters[eGammaGal].fError;
+  fLgEmaxGalErr[0] = fitData.fFitParameters[eLgEmaxGal].fError;
+  fNoPhotonErr[0] = fitData.fFitParameters[eNoPhoton].fError;
+  fLgPhotonFieldErr[0] = fitData.fFitParameters[eLgPhotonFieldFac].fError;
 
   const unsigned int nMass = fitData.GetNMass();
   fMasses.clear();
