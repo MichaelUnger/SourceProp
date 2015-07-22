@@ -47,6 +47,8 @@ steering file parameters:
   - e.g. -1 or +2 or 0
 * xmaxSigmaShift [nSigma]
   - e.g. -1, 0, +1
+* spectrumData [type]
+  - Auger2013, TA2013
 
 environment on butinah:
 -----------------------

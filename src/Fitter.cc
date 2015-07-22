@@ -106,7 +106,7 @@ namespace prop {
              << setw(5) << par[i] << endl;
       for (unsigned int i = 0; i < nMass; ++i)
         cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
-             << *(par + eNpars + nMass - 1 + i) << endl;
+             << *(par + eNpars + nMass - 1 + i) << << ", f=" << frac[i] << endl;
     }
 
 
@@ -399,36 +399,60 @@ namespace prop {
     const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift();
 
     // spectrum
-    ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
-    while (true) {
-      FluxData flux;
-      double eyDown, eyUp, N;
-      in >> flux.fLgE >> flux.fFlux >> eyDown >> eyUp >> N;
-      if (!in.good())
-        break;
-      // cout << "ReadData() :" << flux.fLgE << " " <<  flux.fFlux  << endl;
-      //#warning AAAAAAAAAAAAAAAAAAAAAAAAAAAa
-        //   flux.fFluxErr = fmax(0.1*flux.fFlux,(eyUp+eyDown)/2) ;
-      //  flux.fFluxErrUp = fmax(0.1*flux.fFlux,eyUp);
-      // flux.fFluxErrLow = fmax(0.1*flux.fFlux,eyDown);
-      flux.fFluxErr = (eyUp+eyDown)/2 ;
-      flux.fFluxErrUp = eyUp;
-      flux.fFluxErrLow = eyDown;
-      flux.fN = N;
+    if (fOptions.GetSpectrumDataType() == FitOptions::eAuger2013)  {
+      ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
+      while (true) {
+        FluxData flux;
+        double eyDown, eyUp, N;
+        in >> flux.fLgE >> flux.fFlux >> eyDown >> eyUp >> N;
+        if (!in.good())
+          break;
+        flux.fFluxErr = (eyUp+eyDown)/2 ;
+        flux.fFluxErrUp = eyUp;
+        flux.fFluxErrLow = eyDown;
+        flux.fN = N;
 
-      bool isSpectrumOutlier = false;
-      if (fOptions.RejectOutliers())
-        isSpectrumOutlier =
-          (flux.fLgE > 18.4 && flux.fLgE < 18.5) ||
-          (flux.fLgE > 18 && flux.fLgE < 18.2);
+        bool isSpectrumOutlier = false;
+        if (fOptions.RejectOutliers())
+          isSpectrumOutlier =
+            (flux.fLgE > 18.4 && flux.fLgE < 18.5) ||
+            (flux.fLgE > 18 && flux.fLgE < 18.2);
 
-      // syst shift?
-      flux.fLgE += deltaLgESys;
+        // syst shift?
+        flux.fLgE += deltaLgESys;
 
 
-      fFitData.fAllFluxData.push_back(flux);
-      if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
-        fFitData.fFluxData.push_back(flux);
+        fFitData.fAllFluxData.push_back(flux);
+        if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
+          fFitData.fFluxData.push_back(flux);
+      }
+    }
+    else if (fOptions.GetSpectrumDataType() == FitOptions::eTA2013)  {
+      ifstream in(fOptions.GetDataDirname() + "/TA-SD-spectrum-2013.dat");
+      while (true) {
+        FluxData fluxData;
+        double flux, fluxDown, fluxUp, N, dummy;
+        in >> fluxData.fLgE >> dummy >> N >> flux >> fluxDown >> fluxUp;
+        if (!in.good())
+          break;
+
+        const double E3 = pow(pow(10, fluxData.fLgE), 3);
+        const double convert = m2 * s / (km2 * year) / E3;
+        fluxData.fFlux = flux * convert;
+        const double eyUp = (fluxUp - flux) * convert;
+        const double eyDown = (flux - fluxDown) * convert;
+        fluxData.fFluxErr = (eyUp+eyDown)/2 ;
+        fluxData.fFluxErrUp = eyUp;
+        fluxData.fFluxErrLow = eyDown;
+        fluxData.fN = N;
+
+        // syst shift?
+        fluxData.fLgE += deltaLgESys;
+
+        fFitData.fAllFluxData.push_back(fluxData);
+        if (fluxData.fLgE > fOptions.GetMinFluxLgE())
+          fFitData.fFluxData.push_back(fluxData);
+      }
     }
 
     // Table 3 from  Astroparticle Physics 36 (2012) 183–194
@@ -493,7 +517,12 @@ namespace prop {
 
       for (int i = 0; i < xmaxGraph.GetN(); ++i) {
 
-        const double lgE = log10(xmaxGraph.GetX()[i]) + deltaLgESys;
+        const double relativeAugerTAShift =
+          fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
+          0.1 : // approx one bin
+          0;
+        const double lgE =
+          log10(xmaxGraph.GetX()[i]) + deltaLgESys + relativeAugerTAShift;
         const double E = pow(10, lgE);
         double xMax = xmaxGraph.GetY()[i];
         const double sigmaSys = fOptions.GetXmaxSigmaShift();

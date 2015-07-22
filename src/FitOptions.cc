@@ -38,6 +38,7 @@ namespace prop {
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
     fCutoffType = Spectrum::eExponential;
     fGalMass = MassValue(56, 1, 1, 56, 1, 1);
+    fSpectrumDataType = eAuger2013;
 
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
@@ -162,6 +163,17 @@ namespace prop {
       else if (keyword == "minLgECompo") {
         if (!(line >> fMinCompLgE))
           throw runtime_error("error decoding minLgECompo");
+      }
+      else if (keyword == "spectrumData") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding spectrumData");
+        if (type == "Auger2013")
+          fSpectrumDataType = eAuger2013;
+        else if (type == "TA2013")
+          fSpectrumDataType = eTA2013;
+        else
+          throw runtime_error("unknown spectrum data type: " + type);
       }
       else if (keyword == "cutoffType") {
         string type;

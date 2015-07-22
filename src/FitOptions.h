@@ -56,6 +56,11 @@ namespace prop {
       eUserField
     };
 
+    enum ESpectrumDataType {
+      eAuger2013,
+      eTA2013
+    };
+
   public:
     FitOptions(const std::string& filename);
     unsigned int GetNmass() const { return fMassValues.size(); }
@@ -126,6 +131,10 @@ namespace prop {
     Spectrum::ECutoffType GetCutoffType() const
     { return fCutoffType; }
 
+    ESpectrumDataType GetSpectrumDataType() const
+    { return fSpectrumDataType; }
+
+
   private:
     std::map<EPar, prop::StartValue> fStartValues;
     std::vector<prop::MassValue> fMassValues;
@@ -150,6 +159,8 @@ namespace prop {
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
     MassValue fGalMass;
+    ESpectrumDataType fSpectrumDataType;
+
     ClassDefNV(FitOptions, 1);
   };
 }
