@@ -1,7 +1,7 @@
 #!/bin/bash
 
 declare -a options=("uniform" "uniformCutAt3" "AGN" "AAGHRW05" "M10" "M15" "M20" "M25" "M30" "M35" "M40" "M45" "M50")
-declare -a options=("mM40" "mM35" "mM30" "mM25" "mM20" "mM15" "mM10" "mM05" "M00" "M05")
+declare -a options=("Mm40" "Mm35" "Mm30" "Mm25" "Mm20" "Mm15" "Mm10" "Mm05" "M00" "M05")
 
 export EXEDIR=/home/mu495/Software/Prop
 export PIONFILE=$EXEDIR/data/pionDecay.root

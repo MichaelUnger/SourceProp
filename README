@@ -3,6 +3,20 @@ gSystem->SetIncludePath("-I$ROOTSYS/include -Isrc");
 gSystem->Load("lib/libProp.so")
 .L macros/fit.C+
 
+environment on butinah:
+-----------------------
+
+module load NYUAD/2.0
+module load devel
+module load gcc/4.9.1
+module load python/2.7.9
+module load openmpi/1.8.3
+module load gsl/1.16
+module load boost/1.57.0
+. bin/setvars_butinah.sh
+. /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
+
+
 
 steering file parameters:
 ------------------------
@@ -49,17 +63,4 @@ steering file parameters:
   - e.g. -1, 0, +1
 * spectrumData [type]
   - Auger2013, TA2013
-
-environment on butinah:
------------------------
-
-module load NYUAD/2.0
-module load devel
-module load gcc/4.9.1
-module load python/2.7.9
-module load openmpi/1.8.3
-module load gsl/1.16
-module load boost/1.57.0
-. bin/setvars_butinah.sh
-. /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
 

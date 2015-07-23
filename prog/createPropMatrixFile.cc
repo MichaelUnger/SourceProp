@@ -35,6 +35,26 @@ main(int argc, char** argv)
     s = PropMatrixBuilder::eSFR2;
   else if (option == "AAGHRW05")
     s = PropMatrixBuilder::eAAGHRW05;
+  else if (option == "Mm40")
+    s = PropMatrixBuilder::eMm40;
+  else if (option == "Mm35")
+    s = PropMatrixBuilder::eMm35;
+  else if (option == "Mm30")
+    s = PropMatrixBuilder::eMm30;
+  else if (option == "Mm25")
+    s = PropMatrixBuilder::eMm25;
+  else if (option == "Mm20")
+    s = PropMatrixBuilder::eMm20;
+  else if (option == "Mm15")
+    s = PropMatrixBuilder::eMm15;
+  else if (option == "Mm10")
+    s = PropMatrixBuilder::eMm10;
+  else if (option == "Mm05")
+    s = PropMatrixBuilder::eMm05;
+  else if (option == "M00")
+    s = PropMatrixBuilder::eM00;
+  else if (option == "M05")
+    s = PropMatrixBuilder::eM05;
   else if (option == "M10")
     s = PropMatrixBuilder::eM10;
   else if (option == "M15")
