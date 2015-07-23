@@ -106,7 +106,7 @@ namespace prop {
              << setw(5) << par[i] << endl;
       for (unsigned int i = 0; i < nMass; ++i)
         cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
-             << *(par + eNpars + nMass - 1 + i) << << ", f=" << frac[i] << endl;
+             << *(par + eNpars + nMass - 1 + i) << ", f=" << frac[i] << endl;
     }
 
 

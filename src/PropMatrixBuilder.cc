@@ -242,6 +242,26 @@ namespace prop {
       else
         return 0;
     }
+    case eMm40:
+      return SimpleEvolution(z, -4.0);
+    case eMm35:
+      return SimpleEvolution(z, -3.5);
+    case eMm30:
+      return SimpleEvolution(z, -3.0);
+    case eMm25:
+      return SimpleEvolution(z, -2.5);
+    case eMm20:
+      return SimpleEvolution(z, -2.0);
+    case eMm15:
+      return SimpleEvolution(z, -1.5);
+    case eMm10:
+      return SimpleEvolution(z, -1.0);
+    case eMm05:
+      return SimpleEvolution(z, -0.5);
+    case eM00:
+      return SimpleEvolution(z, 0);
+    case eM05:
+      return SimpleEvolution(z, 0.5);
     case eM10:
       return SimpleEvolution(z, 1.0);
     case eM15:

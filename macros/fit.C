@@ -171,7 +171,8 @@ DrawData(const FitData& fitData,
   legSpec->SetTextSize(0.05);
   if (lowESpectrum->GetN())
     legSpec->AddEntry(lowESpectrum, "KG 2012","PE");
-  legSpec->AddEntry(fitSpectrum, "Auger 2013 prel.","PE");
+
+  legSpec->AddEntry(fitSpectrum, fitOptions.GetSpectrumDataLabel().c_str(),"PE");
   legSpec->Draw();
 
   if (showGlobus) {

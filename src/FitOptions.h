@@ -134,6 +134,7 @@ namespace prop {
     ESpectrumDataType GetSpectrumDataType() const
     { return fSpectrumDataType; }
 
+    std::string GetSpectrumDataLabel() const;
 
   private:
     std::map<EPar, prop::StartValue> fStartValues;

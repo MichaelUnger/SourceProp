@@ -408,4 +408,20 @@ namespace prop {
     return fBBTemperature.size();
   }
 
+  string
+  FitOptions::GetSpectrumDataLabel()
+    const
+  {
+    switch (fSpectrumDataType) {
+    case eTA2013:
+      return "TA 2013";
+    case eAuger2013:
+      return "Auger 2013 prel.";
+    default:
+      return "unknown";
+    }
+  }
+
+
+
 }
