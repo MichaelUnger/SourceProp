@@ -1,23 +1,22 @@
-par gammaInj   -1 0.1 -3 -0.99 0
-par lgRmax    1.84035e+01 0.1 0 0 0
-par lgResc    2.71657e+00 0.1 0 0 0
-par deltaEsc   -1 0.1 -1 -0.1 0
-par fGal       5.49385e-01 0.1 0 0 0
-par gammaGal  -4.15946e+00 0.1 0 0 0
-par lgEmaxGal   19 0.1 0 1 1
+par gammaInj   -1 0.1 0 0 1
+par lgRmax    1.84707e+01 0.1 0 0 0
+par lgResc    2.43829e+00 0.1 0 0 0
+par deltaEsc   -1 0.1 0 0 1
+par fGal       5.57893e-01 0.1 0 0 0
+par gammaGal  -4.18383e+00 0.1 0 0 0
+par lgEmaxGal   19 0.1 0 0 1
 par fNoPhoton    0 0.1 0 0 1
-mass 56 0.1 1 56 0 1
+mass 28 0.1 1 56 1 1
 galacticMass 56 1 56 1
-evolution SFR2
+evolution M01
 IRB Gilmore12
 DataDir ./data
-PhotonMBB 400 2
+PhotonBPL 0.05 52 2.0
 fitComposition 1
 rejectOutliers 0
 minLgEFlux 17.
 minLgECompo 17.
 interactionModel eposLHC
 cutoffType exponential
-energyBinShift +0
-xmaxSigmaShift +0
-spectrumData TASixYear
+energyBinShift 0
+xmaxSigmaShift 0

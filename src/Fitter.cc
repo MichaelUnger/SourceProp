@@ -354,6 +354,9 @@ namespace prop {
     double chi2;
     FitFunc(ierflag, NULL, chi2, &p.front(), ierflag);
     cout << " initial chi2 is " << chi2 << endl;
+    cout << " asdf " << fFitData.fPropagator->GetFluxAtEarth(1, 18.3)
+         << " " << fFitData.fPropagator->GetPrimaryNucleonFluxAtEarth(18.3) << endl;
+
   }
 
   bool
@@ -388,7 +391,9 @@ namespace prop {
     fMinuit.mnstat(amin, edm, errdef, nvpar, nparx, icstat);
     fFitData.fFitStatus = icstat;
     fFitData.fFitEDM = edm;
-
+    fFitData.fProtonRatio185 =
+      fFitData.fPropagator->GetPrimaryNucleonFluxAtEarth(18.3) /
+      fFitData.fPropagator->GetFluxAtEarth(1, 18.3);
     return true;
   }
 

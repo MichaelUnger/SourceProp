@@ -82,6 +82,13 @@ namespace prop {
     DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource, "hNucl",
                  n, x1, x2, eFluxEsc, false);
     */
+    map<int, TMatrixD> nucleons;
+    nucleons[1].ResizeTo(prop.GetPrimaryNucleonFluxAtEarth());
+    nucleons[1] = prop.GetPrimaryNucleonFluxAtEarth();
+    vector<MassGroup> nuclGroup;
+    nuclGroup.push_back(MassGroup(1, 1, 1, kRed, 2));
+    DrawSpectrum(nucleons, nuclGroup, fGammaEarth, "hNucl", n, x1, x2, eFluxEarth);
+
     DrawSpectrum(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
                  n, x1, x2, eFluxEarth);
 
@@ -393,8 +400,9 @@ namespace prop {
     for (unsigned int i = 0; i < n; ++i) {
       const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
       const double w = pow(pow(10, lgE), gamma);
-      for (unsigned int j = iFirst; j < fHists.size(); ++j)
+      for (unsigned int j = iFirst; j < fHists.size(); ++j) {
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
+      }
     }
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
       fHists[i]->SetLineWidth(1);

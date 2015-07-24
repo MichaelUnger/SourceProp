@@ -27,6 +27,12 @@ namespace prop {
 
     const std::map<int, TMatrixD>& GetFluxAtEarth() const
     { return fResult; }
+    double GetFluxAtEarth(const int A, const double lgE) const;
+
+    const TMatrixD& GetPrimaryNucleonFluxAtEarth() const
+    { return fNucleonResult; }
+
+    double GetPrimaryNucleonFluxAtEarth(const double lgE) const;
 
     void Rescale(const double f);
     void AddComponent(const unsigned int A, const TMatrixD& flux);
@@ -39,6 +45,7 @@ namespace prop {
 
     const PropMatrices& fPropMatrices;
     std::map<int, TMatrixD> fResult;
+    TMatrixD fNucleonResult;
     TMatrixD fSum;
     ClassDefNV(Propagator, 1)
 

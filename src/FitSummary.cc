@@ -21,6 +21,7 @@ FitSummary::FitSummary() :
     fNoPhotonErr[i] = 0;
     fLgPhotonFieldErr[i] = 0;
     fNNeutrinosErr[i] = 0;
+    fProtonRatio185Err[i] = 0;
   }
 
 }
@@ -58,8 +59,11 @@ FitSummary::Fill(const prop::FitData& fitData,
 
   const unsigned int nMass = fitData.GetNMass();
   fMasses.clear();
-  for (unsigned int i = 0; i < nMass; ++i)
+  for (unsigned int i = 0; i < nMass; ++i) {
     fMasses.push_back(fitData.fFitParameters[eNpars + nMass - 1 + i].fValue);
+    fMassesErrLow.push_back(fitData.fFitParameters[eNpars + nMass - 1 + i].fError);
+    fMassesErrUp.push_back(fitData.fFitParameters[eNpars + nMass - 1 + i].fError);
+  }
   fFractions.resize(nMass);
   vector<double> zeta;
   for (unsigned int i = 0; i < fFractions.size() - 1; ++i)
@@ -88,5 +92,6 @@ FitSummary::Fill(const prop::FitData& fitData,
   fFitFailed = fitData.fFitFailed;
   fFitEDM = fitData.fFitEDM;
   fNNan = fitData.fNNan;
+  fProtonRatio185 = fitData.fProtonRatio185;
 
 }

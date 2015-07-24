@@ -1,5 +1,6 @@
 #include "Propagator.h"
 #include "Utilities.h"
+#include "Particles.h"
 
 #include <sstream>
 #include <stdexcept>
@@ -13,6 +14,7 @@ namespace prop {
   {
 
     fResult.clear();
+    fNucleonResult.ResizeTo(0, 0);
     fSum.ResizeTo(0, 0);
     for (const auto& iter : spectrum) {
       const int Aprim = iter.first;
@@ -30,6 +32,12 @@ namespace prop {
         if (!r.GetNoElements())
           r.ResizeTo(propSpectrum);
         r += propSpectrum;
+        if (Aprim == 1 || Aprim == eNeutron) {
+          if (!fNucleonResult.GetNoElements()) {
+            fNucleonResult.ResizeTo(propSpectrum);
+          }
+          fNucleonResult += propSpectrum;
+        }
         if (!fSum.GetNoElements())
           fSum.ResizeTo(propSpectrum);
         fSum += propSpectrum;
@@ -43,7 +51,10 @@ namespace prop {
     for (auto& iter : fResult)
       iter.second *= f;
     fSum *= f;
+    fNucleonResult *= f;
   }
+
+
 
 
   std::pair<double, double>
@@ -66,6 +77,34 @@ namespace prop {
     const
   {
     return GetFluxSum(LgEtoIndex(lgE));
+  }
+
+  double
+  Propagator::GetFluxAtEarth(const int A,
+                             const double lgE)
+    const
+  {
+    const int i = LgEtoIndex(lgE);
+    auto iter = fResult.find(A);
+    if (iter == fResult.end() || i >=  (unsigned int) iter->second.GetNoElements()) {
+      std::cerr << " Propagator::GetFluxAtEarth() - "
+                << i << " is out of bound " << A << std::endl;
+      return 0;
+    }
+    return iter->second[i][0];
+  }
+
+  double
+  Propagator::GetPrimaryNucleonFluxAtEarth(const double lgE)
+    const
+  {
+    const int i = LgEtoIndex(lgE);
+    if (i >=  (unsigned int) fNucleonResult.GetNoElements()) {
+      std::cerr << " Propagator::GetPrimaryNucleonFluxAtEarth() - "
+                << i << " is out of bound " << std::endl;
+      return 0;
+    }
+    return fNucleonResult[i][0];
   }
 
   unsigned int

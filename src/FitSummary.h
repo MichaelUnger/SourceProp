@@ -38,6 +38,7 @@ public:
   double fNoPhoton;
   double fLgPhotonField;
   double fNNeutrinos;
+  double fProtonRatio185;
 
   // 0: symmetric, 1: upErr, 2: lowErr
   double fEdot175Err[3];
@@ -51,6 +52,7 @@ public:
   double fNoPhotonErr[3];
   double fLgPhotonFieldErr[3];
   double fNNeutrinosErr[3];
+  double fProtonRatio185Err[3];
 
   std::vector<double> fMasses;
   std::vector<double> fFractions;
