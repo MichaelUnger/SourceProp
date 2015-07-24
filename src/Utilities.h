@@ -7,6 +7,8 @@
 #include <stdexcept>
 #include <TMatrixDfwd.h>
 
+class TGraph;
+
 namespace prop {
 
   inline
@@ -120,6 +122,13 @@ namespace prop {
     else
       return zTable[A-1];
   }
+
+  // fast linear interpolation assuming values are equally spaced in x
+  // (fast as compared to TGraph::Eval(), which uses binary search)
+  double EvalFast(const TGraph& graph, const double xx);
+  void CheckEqualSpacing(const TGraph& graph);
+
+
 }
 
 #endif

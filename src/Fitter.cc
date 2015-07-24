@@ -399,59 +399,75 @@ namespace prop {
     const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift();
 
     // spectrum
-    if (fOptions.GetSpectrumDataType() == FitOptions::eAuger2013)  {
-      ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
-      while (true) {
-        FluxData flux;
-        double eyDown, eyUp, N;
-        in >> flux.fLgE >> flux.fFlux >> eyDown >> eyUp >> N;
-        if (!in.good())
-          break;
-        flux.fFluxErr = (eyUp+eyDown)/2 ;
-        flux.fFluxErrUp = eyUp;
-        flux.fFluxErrLow = eyDown;
-        flux.fN = N;
+    switch (fOptions.GetSpectrumDataType()) {
+    case FitOptions::eAuger2013:
+      {
+        ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
+        while (true) {
+          FluxData flux;
+          double eyDown, eyUp, N;
+          in >> flux.fLgE >> flux.fFlux >> eyDown >> eyUp >> N;
+          if (!in.good())
+            break;
+          flux.fFluxErr = (eyUp+eyDown)/2 ;
+          flux.fFluxErrUp = eyUp;
+          flux.fFluxErrLow = eyDown;
+          flux.fN = N;
 
-        bool isSpectrumOutlier = false;
-        if (fOptions.RejectOutliers())
-          isSpectrumOutlier =
-            (flux.fLgE > 18.4 && flux.fLgE < 18.5) ||
-            (flux.fLgE > 18 && flux.fLgE < 18.2);
+          bool isSpectrumOutlier = false;
+          if (fOptions.RejectOutliers())
+            isSpectrumOutlier =
+              (flux.fLgE > 18.4 && flux.fLgE < 18.5) ||
+              (flux.fLgE > 18 && flux.fLgE < 18.2);
 
-        // syst shift?
-        flux.fLgE += deltaLgESys;
+          // syst shift?
+          flux.fLgE += deltaLgESys;
 
 
-        fFitData.fAllFluxData.push_back(flux);
-        if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
-          fFitData.fFluxData.push_back(flux);
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
+            fFitData.fFluxData.push_back(flux);
+        }
+        break;
       }
-    }
-    else if (fOptions.GetSpectrumDataType() == FitOptions::eTA2013)  {
-      ifstream in(fOptions.GetDataDirname() + "/TA-SD-spectrum-2013.dat");
-      while (true) {
-        FluxData fluxData;
-        double flux, fluxDown, fluxUp, N, dummy;
-        in >> fluxData.fLgE >> dummy >> N >> flux >> fluxDown >> fluxUp;
-        if (!in.good())
-          break;
+    case FitOptions::eTA2013:
+    case FitOptions::eTASixYear:
+      {
+        ifstream in(fOptions.GetDataDirname() +
+                    (fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
+                     "/TA-SD-spectrum-2013.dat" :
+                     "/TA-SD-spectrum-6Year.dat"));
+        while (true) {
+          FluxData fluxData;
+          double flux, fluxDown, fluxUp, N, dummy;
+          in >> fluxData.fLgE >> dummy >> N >> flux >> fluxDown >> fluxUp;
+          if (!in.good())
+            break;
+          const double E3 = pow(pow(10, fluxData.fLgE), 3);
+          const double convert = (km2 * year) / (m2 * s) / E3;
+          fluxData.fFlux = flux * convert;
+          const double eyUp = (fluxUp - flux) * convert;
+          const double eyDown = (flux - fluxDown) * convert;
+          fluxData.fFluxErr = (eyUp+eyDown)/2 ;
+          fluxData.fFluxErrUp = eyUp;
+          fluxData.fFluxErrLow = eyDown;
+          fluxData.fN = N;
 
-        const double E3 = pow(pow(10, fluxData.fLgE), 3);
-        const double convert = m2 * s / (km2 * year) / E3;
-        fluxData.fFlux = flux * convert;
-        const double eyUp = (fluxUp - flux) * convert;
-        const double eyDown = (flux - fluxDown) * convert;
-        fluxData.fFluxErr = (eyUp+eyDown)/2 ;
-        fluxData.fFluxErrUp = eyUp;
-        fluxData.fFluxErrLow = eyDown;
-        fluxData.fN = N;
+          // syst shift?
+          fluxData.fLgE += deltaLgESys;
 
-        // syst shift?
-        fluxData.fLgE += deltaLgESys;
-
-        fFitData.fAllFluxData.push_back(fluxData);
-        if (fluxData.fLgE > fOptions.GetMinFluxLgE())
-          fFitData.fFluxData.push_back(fluxData);
+          fFitData.fAllFluxData.push_back(fluxData);
+          if (fluxData.fLgE > fOptions.GetMinFluxLgE())
+            fFitData.fFluxData.push_back(fluxData);
+        }
+        break;
+      }
+    default:
+      {
+        stringstream errMsg;
+        errMsg <<  "unknown spectrum type: " << fOptions.GetSpectrumDataType()
+               << ", \""  <<  fOptions.GetSpectrumDataLabel() << "\"" << endl;
+        throw runtime_error(errMsg.str());
       }
     }
 

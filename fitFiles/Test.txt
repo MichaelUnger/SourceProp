@@ -6,18 +6,18 @@ par fGal       5.49385e-01 0.1 0 0 0
 par gammaGal  -4.15946e+00 0.1 0 0 0
 par lgEmaxGal   19 0.1 0 1 1
 par fNoPhoton    0 0.1 0 0 1
-mass 56 0.1 1 56 1 1
+mass 56 0.1 1 56 0 1
 galacticMass 56 1 56 1
 evolution SFR2
 IRB Gilmore12
 DataDir ./data
-PhotonMBB 300 2
+PhotonMBB 400 2
 fitComposition 1
 rejectOutliers 0
 minLgEFlux 17.
 minLgECompo 17.
 interactionModel eposLHC
 cutoffType exponential
-energyBinShift 0
-xmaxSigmaShift -1
-spectrumData TA2013
+energyBinShift +0
+xmaxSigmaShift +0
+spectrumData TASixYear

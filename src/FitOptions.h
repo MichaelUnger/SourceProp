@@ -58,7 +58,8 @@ namespace prop {
 
     enum ESpectrumDataType {
       eAuger2013,
-      eTA2013
+      eTA2013,
+      eTASixYear
     };
 
   public:
