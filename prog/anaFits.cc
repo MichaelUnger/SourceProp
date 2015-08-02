@@ -118,25 +118,63 @@ main(int argc, char** argv)
   RootOutFile<FitSummary> outFile("anaFits.root");
   for (auto& iter : bestFitMap) {
     FitSummary& thisFit = iter.second;
-    if (thisFit.fEvolution == "uniformCutAt3" ||
-        thisFit.fEvolution == "AGN" ||
-        thisFit.fEvolution == "AAGHRW05")
-      continue;
-    else if (thisFit.fEvolution[0] == 'M') {
-      stringstream  name;
-      if (thisFit.fEvolution[1] == 'm') {
-        name << "m=-" << thisFit.fEvolution[2]
-             << "." << thisFit.fEvolution[3];
-      }
-      else {
-        name << "m=" << thisFit.fEvolution[1]
-             << "." << thisFit.fEvolution[2];
-      }
-      thisFit.fEvolution = name.str();
+    const string id = thisFit.fEvolution;
+    if (id == "uniform")
+      thisFit.fEvolutionId = 24.5;
+    else if (id == "uniformCutAt3")
+      thisFit.fEvolutionId = 23.5;
+    else if (id == "AGN")
+      thisFit.fEvolutionId = 22.5;
+    else if (id == "SFR1")
+      thisFit.fEvolutionId = 21.5;
+    else if (id == "SFR2")
+      thisFit.fEvolutionId = 19.5;
+    else if (id == "AAGHRW05")
+      thisFit.fEvolutionId = 20.5;
+    else if (id == "Mm40")
+      thisFit.fEvolutionId = 0.5;
+    else if (id == "Mm35")
+      thisFit.fEvolutionId = 1.5;
+    else if (id == "Mm30")
+      thisFit.fEvolutionId = 2.5;
+    else if (id == "Mm25")
+      thisFit.fEvolutionId = 3.5;
+    else if (id == "Mm20")
+      thisFit.fEvolutionId = 4.5;
+    else if (id == "Mm15")
+      thisFit.fEvolutionId = 5.5;
+    else if (id == "Mm10")
+      thisFit.fEvolutionId = 6.5;
+    else if (id == "Mm05")
+      thisFit.fEvolutionId = 7.5;
+    else if (id == "M00")
+      thisFit.fEvolutionId = 8.5;
+    else if (id == "M05")
+      thisFit.fEvolutionId = 9.5;
+    else if (id == "M10")
+      thisFit.fEvolutionId = 10.5;
+    else if (id == "M15")
+      thisFit.fEvolutionId = 11.5;
+    else if (id == "M20")
+      thisFit.fEvolutionId = 12.5;
+    else if (id == "M25")
+      thisFit.fEvolutionId = 13.5;
+    else if (id == "M30")
+      thisFit.fEvolutionId = 14.5;
+    else if (id == "M35")
+      thisFit.fEvolutionId = 15.5;
+    else if (id == "M40")
+      thisFit.fEvolutionId = 16.5;
+    else if (id == "M45")
+      thisFit.fEvolutionId = 17.5;
+    else if (id == "M50")
+      thisFit.fEvolutionId = 18.5;
+    else {
+      cerr << " unknown source evolution " << id << "!" << endl;
+      thisFit.fEvolutionId = -999;
     }
     outFile << iter.second;
   }
-
   cout << " processed " << iFile << " files, nGood = " << nGood << endl;
 
 }

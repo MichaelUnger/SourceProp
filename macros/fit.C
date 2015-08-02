@@ -482,7 +482,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 
   const FitData& fitData = fitter.GetFitData();
 
-  fitData.fPropagator->SaveFluxAtEarth();
+  //  fitData.fPropagator->SaveFluxAtEarth();
 
 
 

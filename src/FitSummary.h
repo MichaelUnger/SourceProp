@@ -70,6 +70,7 @@ public:
   std::vector<double> fBBTemperatureErrUp;
 
   std::string fEvolution;
+  double fEvolutionId;
   std::string fIRB;
 
   std::vector<int> fPhotonFieldType;
@@ -86,6 +87,6 @@ public:
   bool fFitFailed;
   double fFitEDM;
 
-  ClassDefNV(FitSummary, 2);
+  ClassDefNV(FitSummary, 3);
 };
 #endif

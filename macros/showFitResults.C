@@ -10,7 +10,7 @@ draw(string what, string yTit, string pdfname, bool left = true, bool top = true
   leg->SetBorderSize(1);
 
   TChain chain("FitSummaryTree");
-  chain.Add("ROOT/anaFitsMix*.root");
+  chain.Add("anaFitsFix1.root");
   chain.Draw((what).c_str(), cut.c_str());
   TH2F *htemp = (TH2F*)gPad->GetPrimitive("htemp");
   htemp->GetYaxis()->SetTitle(yTit.c_str());
@@ -95,11 +95,11 @@ showFitResults()
   draw("fLgEscFac:fEvolution", "R_{19}^{Fe}", "anaFit5_R19.pdf", true, false);
   draw("fLgEmax:fEvolution", "lg(E_{max})_{p}", "anaFit6_lgEmax.pdf", true, true);
   draw("fNNeutrinos:fEvolution", "number of neutrinos", "anaFit7_nu.pdf", true, true);
-  draw("fMasses[1]:fEvolution", "mass", "anaFit8_m.pdf", true, true);
-  drawFractions("anaFitsMix", "MBB1");
-  drawFractions("anaFitsMix", "MBB2");
-  drawFractions("anaFitsMix", "MBB0");
-  drawFractions("anaFitsMix", "BPL");
+  draw("fMasses[0]:fEvolution", "mass", "anaFit8_m.pdf", true, true);
+  //  drawFractions("anaFitsMix", "MBB1");
+  // drawFractions("anaFitsMix", "MBB2");
+  // drawFractions("anaFitsMix", "MBB0");
+  // drawFractions("anaFitsMix", "BPL");
 
 
 }
