@@ -5,6 +5,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -140,6 +141,30 @@ namespace prop {
     spectrum += flux;
     fSum += flux;
   }
+
+  void
+  Propagator::SaveFluxAtEarth()
+    const
+  {
+
+    const unsigned int n = fPropMatrices.GetN();
+    const double lgEmin = fPropMatrices.GetLgEmin();
+    const double lgEmax = fPropMatrices.GetLgEmax();
+    const double dlgE = (lgEmax - lgEmin) / n;
+    for (auto& iter : fResult) {
+      cout << " ################ A = " << iter.first
+           << " Z=" << int(aToZ(iter.first)) << endl;
+      double lgE = lgEmin + dlgE / 2;
+
+      for (unsigned int i = 0; i < iter.second.GetNoElements(); ++i) {
+        cout << scientific << setprecision(4) << setw(15) << lgE
+             << setw(15) << scientific << setprecision(5)
+             << iter.second[i][0] << endl;
+        lgE += dlgE;
+      }
+    }
+  }
+
 
 }
 

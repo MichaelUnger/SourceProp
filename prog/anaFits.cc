@@ -4,6 +4,7 @@
 #include <cmath>
 #include <iostream>
 #include <sstream>
+#include <fstream>
 using namespace std;
 
 
@@ -48,52 +49,69 @@ int
 main(int argc, char** argv)
 {
   if (argc < 2) {
-    cerr << argv[0] << " file " << endl;
+    cerr << argv[0] << " file list " << endl;
     return 1;
   }
   map<string, FitSummary> bestFitMap;
-  RootInFile<FitSummary> rootFile(argv[1]);
-  for (RootInFile<FitSummary>::Iterator iter = rootFile.Begin();
-       iter != rootFile.End(); ++iter) {
-    const FitSummary& thisFit = *iter;
-    if (thisFit.fFitFailed || thisFit.fBBTemperature[0] > 1000)
-      continue;
-    FitSummary& bestFit = bestFitMap[thisFit.fEvolution];
-    if (bestFit.fChi2Tot == -1 || bestFit.fChi2Tot > thisFit.fChi2Tot)
-      bestFit = thisFit;
+  ifstream fileList(argv[1]);
+  while (true) {
+    string filename;
+    fileList >> filename;
+    if (!fileList.good())
+      break;
+    cout << " processing " << filename << endl;
+    RootInFile<FitSummary> rootFile(filename);
+    for (RootInFile<FitSummary>::Iterator iter = rootFile.Begin();
+         iter != rootFile.End(); ++iter) {
+      const FitSummary& thisFit = *iter;
+      if (thisFit.fFitFailed || thisFit.fBBTemperature[0] > 1000)
+        continue;
+      FitSummary& bestFit = bestFitMap[thisFit.fEvolution];
+      if (bestFit.fChi2Tot == -1 || bestFit.fChi2Tot > thisFit.fChi2Tot)
+        bestFit = thisFit;
+    }
   }
 
-
+  fileList.seekg(0);
   int iFile = 0;
   int nGood = 0;
-  for (RootInFile<FitSummary>::Iterator iter = rootFile.Begin();
-       iter != rootFile.End(); ++iter) {
-    const FitSummary& thisFit = *iter;
-    ++iFile;
-    if (thisFit.fFitFailed || thisFit.fBBTemperature[0] > 1000)
-      continue;
-    ++nGood;
-    FitSummary& bestFit = bestFitMap[thisFit.fEvolution];
-    const double chi2Min = bestFit.fChi2Tot;
-    const unsigned int ndf = bestFit.fNdfTot;
-    const double nSigma = sqrt(ndf * (thisFit.fChi2Tot - chi2Min) / chi2Min);
-    if (nSigma < 1) {
-      FillErr(bestFit.fGamma, thisFit.fGamma, bestFit.fGammaErr);
-      FillErr(bestFit.fLgEmax, thisFit.fLgEmax, bestFit.fLgEmaxErr);
-      FillErr(bestFit.fLgEscFac, thisFit.fLgEscFac, bestFit.fLgEscFacErr);
-      FillErr(bestFit.fEscGamma, thisFit.fEscGamma, bestFit.fEscGammaErr);
-      FillErr(bestFit.fNNeutrinos, thisFit.fNNeutrinos, bestFit.fNNeutrinosErr);
-      FillErr(bestFit.fEdot175, thisFit.fEdot175, bestFit.fEdot175Err);
-      FillErr(bestFit.fMasses, thisFit.fMasses,
-              bestFit.fMassesErrLow, bestFit.fMassesErrUp);
-      FillErr(bestFit.fFractions, thisFit.fFractions,
-              bestFit.fFractionsErrLow, bestFit.fFractionsErrUp);
-      FillErr(bestFit.fEps0, thisFit.fEps0,
-              bestFit.fEps0ErrLow, bestFit.fEps0ErrUp);
-      FillErr(bestFit.fBBTemperature, thisFit.fBBTemperature,
-              bestFit.fBBTemperatureErrLow, bestFit.fBBTemperatureErrUp);
-      FillErr(bestFit.fProtonRatio185, thisFit.fProtonRatio185,
-              bestFit.fProtonRatio185Err);
+  while (true) {
+    string filename;
+    fileList >> filename;
+    if (!fileList.good())
+      break;
+    cout << " reprocessing " << filename << endl;
+    RootInFile<FitSummary> rootFile(filename);
+
+    for (RootInFile<FitSummary>::Iterator iter = rootFile.Begin();
+         iter != rootFile.End(); ++iter) {
+      const FitSummary& thisFit = *iter;
+      ++iFile;
+      if (thisFit.fFitFailed || thisFit.fBBTemperature[0] > 1000)
+        continue;
+      ++nGood;
+      FitSummary& bestFit = bestFitMap[thisFit.fEvolution];
+      const double chi2Min = bestFit.fChi2Tot;
+      const unsigned int ndf = bestFit.fNdfTot;
+      const double nSigma = sqrt(ndf * (thisFit.fChi2Tot - chi2Min) / chi2Min);
+      if (nSigma < 1) {
+        FillErr(bestFit.fGamma, thisFit.fGamma, bestFit.fGammaErr);
+        FillErr(bestFit.fLgEmax, thisFit.fLgEmax, bestFit.fLgEmaxErr);
+        FillErr(bestFit.fLgEscFac, thisFit.fLgEscFac, bestFit.fLgEscFacErr);
+        FillErr(bestFit.fEscGamma, thisFit.fEscGamma, bestFit.fEscGammaErr);
+        FillErr(bestFit.fNNeutrinos, thisFit.fNNeutrinos, bestFit.fNNeutrinosErr);
+        FillErr(bestFit.fEdot175, thisFit.fEdot175, bestFit.fEdot175Err);
+        FillErr(bestFit.fMasses, thisFit.fMasses,
+                bestFit.fMassesErrLow, bestFit.fMassesErrUp);
+        FillErr(bestFit.fFractions, thisFit.fFractions,
+                bestFit.fFractionsErrLow, bestFit.fFractionsErrUp);
+        FillErr(bestFit.fEps0, thisFit.fEps0,
+                bestFit.fEps0ErrLow, bestFit.fEps0ErrUp);
+        FillErr(bestFit.fBBTemperature, thisFit.fBBTemperature,
+                bestFit.fBBTemperatureErrLow, bestFit.fBBTemperatureErrUp);
+        FillErr(bestFit.fProtonRatio185, thisFit.fProtonRatio185,
+                bestFit.fProtonRatio185Err);
+      }
     }
   }
 

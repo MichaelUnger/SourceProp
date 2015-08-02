@@ -4,6 +4,7 @@
 #include <Neutrinos.h>
 #include <Plotter.h>
 #include <Particles.h>
+#include <Propagator.h>
 #include <FitSummary.h>
 #include <LnACalculator.h>
 #include <utl/Units.h>
@@ -480,6 +481,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
   const FitData& fitData = fitter.GetFitData();
+
+  fitData.fPropagator->SaveFluxAtEarth();
+
+
+
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);

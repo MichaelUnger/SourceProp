@@ -39,6 +39,8 @@ namespace prop {
     double GetMaximumDistance() const
     { return fPropMatrices.GetMaximumDistance(); }
 
+    void SaveFluxAtEarth() const;
+
   private:
     Propagator();
     unsigned int LgEtoIndex(const double lgE) const;
