@@ -124,8 +124,14 @@ main(int argc, char** argv)
       continue;
     else if (thisFit.fEvolution[0] == 'M') {
       stringstream  name;
-      name << "m=" << thisFit.fEvolution[1]
-           << "." << thisFit.fEvolution[2];
+      if (thisFit.fEvolution[1] == 'm') {
+        name << "m=-" << thisFit.fEvolution[2]
+             << "." << thisFit.fEvolution[3];
+      }
+      else {
+        name << "m=" << thisFit.fEvolution[1]
+             << "." << thisFit.fEvolution[2];
+      }
       thisFit.fEvolution = name.str();
     }
     outFile << iter.second;
