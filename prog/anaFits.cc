@@ -92,6 +92,8 @@ main(int argc, char** argv)
               bestFit.fEps0ErrLow, bestFit.fEps0ErrUp);
       FillErr(bestFit.fBBTemperature, thisFit.fBBTemperature,
               bestFit.fBBTemperatureErrLow, bestFit.fBBTemperatureErrUp);
+      FillErr(bestFit.fProtonRatio185, thisFit.fProtonRatio185,
+              bestFit.fProtonRatio185Err);
     }
   }
 
