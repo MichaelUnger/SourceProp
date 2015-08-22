@@ -330,6 +330,7 @@ namespace prop {
                         const bool drawTot)
   {
     const unsigned int iFirst = fHists.size();
+    int escSuperColor = -2;
     for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
       stringstream title;
       unsigned int color;
@@ -392,6 +393,12 @@ namespace prop {
         const double sumTot = histTot->GetBinContent(i+1) + m[i][0];
         histTot->SetBinContent(i + 1, sumTot);
       }
+      if (specPad == eFluxInj) {
+        if (escSuperColor == -2)
+          escSuperColor = hist->GetLineColor();
+        else
+          escSuperColor = -1;
+      }
     }
 
     fCanvas->cd(specPad);
@@ -414,7 +421,10 @@ namespace prop {
       fHists.push_back((TH1D*)histTot->Clone("escSuperimpose"));
       fHists.back()->SetLineStyle(2);
       fHists.back()->SetLineWidth(2);
-      fHists.back()->SetLineColor(kBlack);
+      if (escSuperColor > 0)
+        fHists.back()->SetLineColor(escSuperColor);
+      else
+        fHists.back()->SetLineColor(kBlack);
       fHists.back()->Draw("CSAME");
       TLegend* legEsc = new TLegend(0.73, 0.75, 0.98, 0.8,NULL,"brNDCARC");
       legEsc->SetFillColor(0);
@@ -423,7 +433,6 @@ namespace prop {
       legEsc->SetBorderSize(0);
       legEsc->AddEntry(fHists.back(), " injected", "L");
       legEsc->Draw();
-
     }
   }
 

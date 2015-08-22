@@ -84,7 +84,7 @@ tauIntSingle(double* x, double* p)
   const double gammaRes = p[4];
   const double epsilonRes = p[5];
   const double A = p[6];
-  const double n0 = 1.39878222182e+16; // print C*eV in photonField.py
+  const double n0 = 6.77010595359e+16; // print C*eV in photonField.py
   const double Eb = epsilonRes * A * mp / (2 * eps0);
   const double t0 =
     c * TMath::Pi() * sigmaRes * A * mp * gammaRes * n0 / (2*Eb) * Mpc;
@@ -106,9 +106,18 @@ void
 vwlPlot(double A = 56, double Z = 26)
 {
 
-  gStyle->SetOptLogy(1);
+  int color1 = kAzure+10;
+  int color2 = kAzure+10;
 
-  TCanvas* c = new TCanvas("c", "", 400, 800);
+  gStyle->SetOptLogy(1);
+  gStyle->SetTitleSize(0.1,"xyz");
+  gStyle->SetLabelSize(0.09,"xyz");
+  gStyle->SetPadBottomMargin(0.22);
+  gStyle->SetPadTopMargin(0.085);
+  gStyle->SetTitleOffset(0.7, "y");
+  gStyle->SetTitleOffset(1.1, "x");
+
+  TCanvas* c = new TCanvas("c", "", 400, 500);
   c->Divide(1, 3);
 
   const double alpha = 3/2.;
@@ -117,52 +126,71 @@ vwlPlot(double A = 56, double Z = 26)
 
   const double lgMin = 17.5;
   const double lgMax = 20.5;
-  TH2D* h = new TH2D("h", "", 100, lgMin, lgMax, 100, 1e-8, 1e-6);
+  TH2D* h1 = new TH2D("h1", ";", 100,
+                      lgMin, lgMax, 100, 0.08e-8, 0.8e-7);
+  h1->GetXaxis()->CenterTitle();
+  h1->GetYaxis()->CenterTitle();
   c->cd(1);
   TF1* pdFunc = new TF1("pdFunc", tauIntSingle, lgMin, lgMax, 7);
+  pdFunc->SetNpx(200);
   const double gammaPD = 8e6;
   const double sigmaPD = 1.45e-27*1e-4*A;
   const double epsPD =
     (A > 4 ? 42.65*pow(A,-0.21) : 0.925*pow(A, 2.433))*1e6;
   pdFunc->SetParameters(alpha, beta, eps0, sigmaPD, gammaPD, epsPD, A);
-  h->Draw();
+  h1->Draw();
   pdFunc->Draw("SAME");
 
-  TGraph* pd = GetPD("Python/data/pd_BPL_0.05_2.0_32.txt", Z, A - Z);
+  TGraph* pd = GetPD("data/pd_BPL_0.11_2.0_32.txt", Z, A - Z);
   pd->Draw("L");
   pdFunc->SetLineStyle(2);
+  pd->SetLineWidth(2);
+  pd->SetLineColor(color1);
+  pdFunc->SetLineColor(color2);
 
   c->cd(2);
   TF1* ppFunc = new TF1("ppFunc", tauIntSingle,  lgMin, lgMax, 7);
+  ppFunc->SetNpx(200);
   const double gammaPP = 150e6;
-  const double sigmaPP = 0.5e-31*A;
+  const double sigmaPP = 0.55e-31*A;
   const double mDelta = 1232e6;
   const double epsPP = (pow(mDelta,2)-pow(gProtonMass, 2))/(2*gProtonMass);
   ppFunc->SetParameters(alpha, beta, eps0, sigmaPP, gammaPP, epsPP, A);
-  h->Draw();
+  TH2D* h2 = new TH2D("h2", ";;c #tau  [a.u.]", 100,
+                      lgMin, lgMax, 100, 0.08e-8, 0.8e-7);
+  h2->GetXaxis()->CenterTitle();
+  h2->GetYaxis()->CenterTitle();
+  h2->Draw();
   ppFunc->Draw("SAME");
 
-  TGraph* pp = lambdaGraphPP("Python/data/ppp_BPL_0.11_2.0_32.txt", Z, A - Z);
-  pp->Draw("L");
+  TGraph* pp = lambdaGraphPP("data/ppp_BPL_0.11_2.0_32.txt", Z, A - Z);
   ppFunc->SetLineStyle(2);
+  pp->SetLineColor(color1);
+  pp->SetLineWidth(2);
+  ppFunc->SetLineColor(color2);
+  pp->Draw("L");
 
   c->cd(3);
   TGraph* sum = new TGraph();
   double lgE = lgMin;
-  const double dlgE = 0.1;
+  const double dlgE = 0.05;
   int i = 0;
   while (lgE <= lgMax*1.01) {
     const double lambdaPD = pd->Eval(lgE);
     const double lambdaPP = pp->Eval(lgE);
     const double lambdaTot = 1./(1/lambdaPD + 1/lambdaPP);
-    cout << lgE << " " << lambdaPD << " " << lambdaPP << " " <<  lambdaTot << endl;
     sum->SetPoint(i, lgE, lambdaTot);
     lgE += dlgE;
     ++i;
   }
-  h->Draw();
+  TH2D* h3 = new TH2D("h3", ";lg(E/eV);", 100,
+                      lgMin, lgMax, 100, 0.08e-8, 0.8e-7);
+  h3->GetXaxis()->CenterTitle();
+  h3->GetYaxis()->CenterTitle();
+  h3->Draw();
   sum->Draw("L");
   TF1* sumFunc = new TF1("sumFunc", tauIntSum, lgMin, lgMax, 14);
+  sumFunc->SetNpx(200);
   for (int i = 0; i < 7; ++i)
     sumFunc->SetParameter(i, pdFunc->GetParameter(i));
   for (int i = 0; i < 7; ++i)
@@ -170,5 +198,31 @@ vwlPlot(double A = 56, double Z = 26)
 
   sumFunc->Draw("SAME");
   sumFunc->SetLineStyle(2);
+  sum->SetLineColor(color1);
+  sum->SetLineWidth(2);
+  sumFunc->SetLineColor(color2);
+
+  TLatex l;
+  l.SetTextAlign(12);
+  l.SetTextSize(0.08);
+  l.SetTextFont(42);
+  l.SetTextColor(kBlack);
+  l.SetNDC(true);
+  c->cd(1);
+  l.DrawLatex(0.15, 0.97, "photo-disintegration");
+  c->cd(2);
+  l.DrawLatex(0.15, 0.97, "photo-pion production");
+  c->cd(3);
+  l.DrawLatex(0.15, 0.97, "total");
+  TLegend* leg = new TLegend(0.474232, 0.671, 0.938054, 0.90, NULL, "brNDCARC");
+  leg->SetFillColor(0);
+  leg->SetTextFont(42);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->AddEntry(sumFunc, "narrow width approximation", "L");
+  leg->AddEntry(sum, "numerical integration", "L");
+  leg->Draw();
+
+
 }
 
