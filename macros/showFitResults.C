@@ -1,45 +1,90 @@
+#include <TFile.h>
+#include <TH2F.h>
+#include <TChain.h>
+#include <TAxis.h>
+#include <TPad.h>
+#include <TCanvas.h>
+#include <TLatex.h>
+#include <TStyle.h>
+#include <TSystem.h>
+#include <TROOT.h>
+#include <TLegend.h>
+#include <vector>
+#include <string>
+#include <iostream>
+using namespace std;
+
+struct FitFile {
+  FitFile(string fname, string name, int color, int symbol) :
+    fFilename(fname), fName(name), fColor(color), fSymbol(symbol) {}
+  FitFile() {}
+  string fFilename;
+  string fName;
+  int fColor;
+  int fSymbol;
+};
+
+
 void
-draw(string what, string yTit, string pdfname, bool left = true, bool top = true,
-     string cut = "", const bool noLabel = false)
+draw(string what, string yTit, string pdfname, bool left, bool top,
+     string cut, const bool noLabel, const vector<FitFile>& fitFiles)
 {
   TCanvas* c = new TCanvas("c");
-  TLegend* leg = new TLegend(left?0.18:0.68, top?0.76:0.26, left?0.35:0.85, top?0.95:0.45,NULL,"brNDCARC");
+  TLegend* leg = new TLegend(left?0.18:0.76, top?0.76:0.26,
+                             left?0.35:0.93, top?0.95:0.45,
+                             NULL,"brNDCARC");
+  if (fitFiles.size() > 5)
+    leg->SetNColumns(2);
   leg->SetFillColor(0);
   leg->SetTextFont(42);
   leg->SetFillStyle(0);
   leg->SetBorderSize(1);
 
   TChain chain("FitSummaryTree");
-  chain.Add("anaFitsFix1.root");
+  for (unsigned int i = 0; i < fitFiles.size(); ++i) {
+    cout << fitFiles[i].fFilename << endl;
+    chain.Add(fitFiles[i].fFilename.c_str());
+  }
   chain.Draw((what).c_str(), cut.c_str());
   TH2F *htemp = (TH2F*)gPad->GetPrimitive("htemp");
-  htemp->GetYaxis()->SetTitle(yTit.c_str());
-  htemp->GetXaxis()->SetTitle("");
-  htemp->GetYaxis()->CenterTitle();
-  htemp->Draw();
+  TH2D* back = new TH2D("back", "", 18, 0, 18, 100,
+                        htemp->GetYaxis()->GetXmin(),
+                        htemp->GetYaxis()->GetXmax());
+  back->GetYaxis()->SetTitle(yTit.c_str());
+  back->GetXaxis()->SetTitle("evolution");
+  back->GetYaxis()->CenterTitle();
+  back->GetXaxis()->CenterTitle();
+  back->Draw();
+  //  back->GetXaxis()->SetRangeUser(8.2,17.9);
+  back->GetXaxis()->SetLabelSize(0.05);
+  TAxis* ax = back->GetXaxis();
+  ax->SetBinLabel(ax->FindBin(0.5), "-4.0");
+  ax->SetBinLabel(ax->FindBin(1.5), "-3.5");
+  ax->SetBinLabel(ax->FindBin(2.5), "-3.0");
+  ax->SetBinLabel(ax->FindBin(3.5), "-2.5");
+  ax->SetBinLabel(ax->FindBin(4.5), "-2.0");
+  ax->SetBinLabel(ax->FindBin(5.5), "-1.5");
+  ax->SetBinLabel(ax->FindBin(6.5), "-1.0");
+  ax->SetBinLabel(ax->FindBin(7.5), "-0.5");
+  ax->SetBinLabel(ax->FindBin(8.5), "0.0");
+  ax->SetBinLabel(ax->FindBin(9.5), "0.5");
+  ax->SetBinLabel(ax->FindBin(10.5), "1.0");
+  ax->SetBinLabel(ax->FindBin(11.5), "1.5");
+  ax->SetBinLabel(ax->FindBin(12.5), "2.0");
+  ax->SetBinLabel(ax->FindBin(13.5), "2.5");
+  ax->SetBinLabel(ax->FindBin(14.5), "3.0");
+  ax->SetBinLabel(ax->FindBin(15.5), "3.5");
+  ax->SetBinLabel(ax->FindBin(16.5), "4.0");
+  ax->SetBinLabel(ax->FindBin(17.5), "SFR");
 
-  TFile* file1 = TFile::Open("ROOT/anaFitsMixBPL.root");
-  TTree* tree1 = (TTree*) file1->Get("FitSummaryTree");
-  tree1->Draw((what).c_str(), cut.c_str(), "SAME");
-  leg->AddEntry(tree1, "BPL", "P");
-
-  TFile* file2 = TFile::Open("ROOT/anaFitsMixMBB0.root");
-  TTree* tree2 = (TTree*) file2->Get("FitSummaryTree");
-  tree2->SetMarkerColor(kRed);
-  tree2->Draw((what).c_str(), cut.c_str(), "SAME");
-  leg->AddEntry(tree2, "BB", "P");
-
-  TFile* file3 = TFile::Open("ROOT/anaFitsMixMBB1.root");
-  TTree* tree3 = (TTree*) file3->Get("FitSummaryTree");
-  tree3->SetMarkerColor(kBlue);
-  tree3->Draw((what).c_str(), cut.c_str(), "SAME");
-  leg->AddEntry(tree3, "MBB #sigma=1", "P");
-
-  TFile* file4 = TFile::Open("ROOT/anaFitsMixMBB2.root");
-  TTree* tree4 = (TTree*) file4->Get("FitSummaryTree");
-  tree4->SetMarkerColor(kGreen+1);
-  tree4->Draw((what).c_str(), cut.c_str(), "SAME");
-  leg->AddEntry(tree4, "MBB #sigma=2", "P");
+  for (unsigned int i = 0; i < fitFiles.size(); ++i) {
+    TFile* file1 = TFile::Open(fitFiles[i].fFilename.c_str());
+    TTree* tree1 = (TTree*) file1->Get("FitSummaryTree");
+    tree1->SetMarkerColor( fitFiles[i].fColor);
+    tree1->SetMarkerStyle( fitFiles[i].fSymbol);
+    tree1->Draw((what).c_str(), cut.c_str(), "SAME");
+    leg->AddEntry(tree1, fitFiles[i].fName.c_str(), "P");
+  }
 
   if (!noLabel)
     leg->Draw();
@@ -57,11 +102,11 @@ drawFractions(string prodname, string photonfield)
   TFile* file = TFile::Open(("ROOT/" + filename + ".root").c_str());
   TTree* tree = (TTree*) file->Get("FitSummaryTree");
   tree->Draw("fFractions:fEvolution");
-  TH2F *htemp = (TH2F*)gPad->GetPrimitive("htemp");
-  htemp->GetYaxis()->SetTitle("fraction");
-  htemp->GetXaxis()->SetTitle("");
-  htemp->GetYaxis()->CenterTitle();
-  htemp->Draw();
+  TH2F *back = (TH2F*)gPad->GetPrimitive("htemp");
+  back->GetYaxis()->SetTitle("fraction");
+  back->GetXaxis()->SetTitle("");
+  back->GetYaxis()->CenterTitle();
+  back->Draw();
   tree->SetMarkerColor(kRed);
   tree->Draw("fFractions:fEvolution","fMasses==1","SAME");
   tree->SetMarkerColor(kOrange-2);
@@ -87,16 +132,112 @@ drawFractions(string prodname, string photonfield)
 void
 showFitResults()
 {
-  draw("fChi2Tot:fEvolution", "#chi^{2}/ndf", "anaFit0_chi2.pdf");
-  draw("fBBTemperature[0]:fEvolution", "T [K]", "anaFit1_T.pdf", false, true, "", true);
-  draw("fEps0[0]:fEvolution", "#varepsilon_{0} [eV]", "anaFit2_eps.pdf", true, false);
-  draw("fGamma:fEvolution", "spectral index gamma", "anaFit3_gamma.pdf", true, false);
-  draw("fEscGamma:fEvolution", "#delta escape", "anaFit4_delta.pdf", true, false);
-  draw("fLgEscFac:fEvolution", "R_{19}^{Fe}", "anaFit5_R19.pdf", true, false);
-  draw("fLgEmax:fEvolution", "lg(E_{max})_{p}", "anaFit6_lgEmax.pdf", true, true);
-  draw("fNNeutrinos:fEvolution", "number of neutrinos", "anaFit7_nu.pdf", true, true);
-  draw("fMasses[0]:fEvolution", "mass", "anaFit8_m.pdf", true, true);
-  //  drawFractions("anaFitsMix", "MBB1");
+  gStyle->SetMarkerSize(1);
+  // exclude m = +4,5 and m = +5
+  string cut = "fEvolutionId <17 || fEvolutionId > 19";
+  vector<FitFile> files;
+  files.push_back(FitFile("tmp", "+0+0", kRed, 20));
+  files.push_back(FitFile("tmp", "+0-1", kBlue, 20));
+  files.push_back(FitFile("tmp", "+0+1", kRed, 21));
+  files.push_back(FitFile("tmp", "-1-0", kBlue, 21));
+  files.push_back(FitFile("tmp", "+1+0", kRed, 24));
+  files.push_back(FitFile("tmp", "-1-1", kBlue, 24));
+  files.push_back(FitFile("tmp", "-1+1", kRed, 25));
+  files.push_back(FitFile("tmp", "+1-1", kBlue, 25));
+  files.push_back(FitFile("tmp", "+1+1", kRed, 26));
+  for (unsigned int i = 0; i < files.size(); ++i)
+    files[i].fFilename = "ROOT/anaFits/Single/anaFits" + files[i].fName + ".root";
+
+  draw("fChi2Tot/fNdfTot:TMath::Min(fEvolutionId,17.5)", "#chi^{2}/ndf",
+       "anaFitSys0_chi2.pdf", true, true, cut, false, files);
+  draw("fEps0[0]:TMath::Min(fEvolutionId,17.5)", "#varepsilon_{0} [eV]",
+       "anaFitSys1_eps.pdf", false, true, cut, false, files);
+  draw("fGamma:TMath::Min(fEvolutionId,17.5)", "spectral index #gamma",
+       "anaFitSys2_gamma.pdf", true, true, cut, false, files);
+  draw("fLgEscFac:TMath::Min(fEvolutionId,17.5)", "lg(R_{19}^{Fe})",
+       "anaFitSys3_R19.pdf", true, false, cut, false, files);
+  draw("fEscGamma:TMath::Min(fEvolutionId,17.5)", "#delta escape",
+       "anaFitSys4_deltaEsc.pdf", false, true, cut, false, files);
+  draw("fLgEmax:TMath::Min(fEvolutionId,17.5)", "lg(E_{max})_{p}",
+       "anaFitSys5_lgEmax.pdf", false, true, cut, false, files);
+  draw("fNNeutrinos:TMath::Min(fEvolutionId,17.5)", "N_{#nu} (10 IC86 years)",
+       "anaFitSys6_neutrinos.pdf", true, true, cut, false, files);
+  draw("fMasses[0]:TMath::Min(fEvolutionId,17.5)", "mass",
+       "anaFitSys7_mass.pdf", false, true, cut, false, files);
+  draw("fProtonRatio185:TMath::Min(fEvolutionId,17.5)",
+       "primary nucleon frac @ 10^{18.3} eV",
+       "anaFitSys8_pFrac.pdf", false, true, cut, false, files);
+  draw("log10(fEdot175):TMath::Min(fEvolutionId,17.5)",
+       "lg(#dot{#varepsilon} / (erg Mpc^{-3} yr^{-1}))",
+       "anaFitSys9_power.pdf", false, true, cut, false, files);
+
+  //-------------------------------------------------------------
+  files.clear();
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsBPLNew.root",
+                          "BPL", kRed, 25));
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsMBB0.root",
+                          "BB", kBlue, 24));
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsMBB1.root",
+                           "MBB, #sigma=1", kGreen+1, 20));
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsMBB2.root",
+                           "MBB, #sigma=2", kBlack, 21));
+
+  draw("fChi2Tot/fNdfTot:TMath::Min(fEvolutionId,17.5)", "#chi^{2}/ndf",
+       "anaFitPhoton0_chi2.pdf", false, true, cut, false, files);
+  draw("fEps0[0]:TMath::Min(fEvolutionId,17.5)", "#varepsilon_{0} [eV]",
+       "anaFitPhoton1_eps.pdf", false, true, cut, true, files);
+  draw("fGamma:TMath::Min(fEvolutionId,17.5)", "spectral index #gamma",
+       "anaFitPhoton2_gamma.pdf", true, true, cut, true, files);
+  draw("fLgEscFac:TMath::Min(fEvolutionId,17.5)", "lg(R_{19}^{Fe})",
+       "anaFitPhoton3_R19.pdf", true, false, cut, true, files);
+  draw("fEscGamma:TMath::Min(fEvolutionId,17.5)", "#delta escape",
+       "anaFitPhoton4_deltaEsc.pdf", false, true, cut, true, files);
+  draw("fLgEmax:TMath::Min(fEvolutionId,17.5)", "lg(E_{max})_{p}",
+       "anaFitPhoton5_lgEmax.pdf", false, true, cut, true, files);
+  draw("fNNeutrinos:TMath::Min(fEvolutionId,17.5)", "N_{#nu} (10 IC86 years)",
+       "anaFitPhoton6_neutrinos.pdf", true, true, cut, true, files);
+  draw("fMasses[0]:TMath::Min(fEvolutionId,17.5)", "mass",
+       "anaFitPhoton7_mass.pdf", false, true, cut, true, files);
+  draw("fProtonRatio185:TMath::Min(fEvolutionId,17.5)",
+       "primary nucleon frac @ 10^{18.3} eV",
+       "anaFitPhoton8_pFrac.pdf", false, true, cut, true, files);
+  draw("log10(fEdot175):TMath::Min(fEvolutionId,17.5)",
+       "lg(#dot{#varepsilon} / (erg Mpc^{-3} yr^{-1}))",
+       "anaFitPhoton9_power.pdf", false, true, cut, true, files);
+
+  //-------------------------------------------------------------
+  files.clear();
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsFix1.root",
+                          "#gamma=-1", kRed, 25));
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsFix2.root",
+                          "#gamma=-2", kBlue, 24));
+  files.push_back(FitFile("ROOT/anaFits/Single/anaFitsFree.root",
+                          "#gamma=free", kGreen+1, 20));
+
+  draw("fChi2Tot/fNdfTot:TMath::Min(fEvolutionId,17.5)", "#chi^{2}/ndf",
+       "anaFitGamma0_chi2.pdf", true, true, cut, false, files);
+  draw("fEps0[0]:TMath::Min(fEvolutionId,17.5)", "#varepsilon_{0} [eV]",
+       "anaFitGamma1_eps.pdf", false, true, cut, true, files);
+  draw("fGamma:TMath::Min(fEvolutionId,17.5)", "spectral index #gamma",
+       "anaFitGamma2_gamma.pdf", true, true, cut, true, files);
+  draw("fLgEscFac:TMath::Min(fEvolutionId,17.5)", "lg(R_{19}^{Fe})",
+       "anaFitGamma3_R19.pdf", true, false, cut, true, files);
+  draw("fEscGamma:TMath::Min(fEvolutionId,17.5)", "#delta escape",
+       "anaFitGamma4_deltaEsc.pdf", false, true, cut, true, files);
+  draw("fLgEmax:TMath::Min(fEvolutionId,17.5)", "lg(E_{max})_{p}",
+       "anaFitGamma5_lgEmax.pdf", true, true, cut, true, files);
+  draw("fNNeutrinos:TMath::Min(fEvolutionId,17.5)", "N_{#nu} (10 IC86 years)",
+       "anaFitGamma6_neutrinos.pdf", true, true, cut, true, files);
+  draw("fMasses[0]:TMath::Min(fEvolutionId,17.5)", "mass",
+       "anaFitGamma7_mass.pdf", true, true, cut, true, files);
+  draw("fProtonRatio185:TMath::Min(fEvolutionId,17.5)",
+       "primary nucleon frac @ 10^{18.3} eV",
+       "anaFitGamma8_pFrac.pdf", false, true, cut, true, files);
+  draw("log10(fEdot175):TMath::Min(fEvolutionId,17.5)",
+       "lg(#dot{#varepsilon} / (erg Mpc^{-3} yr^{-1}))",
+       "anaFitGamma9_power.pdf", false, true, cut, true, files);
+
+  // drawFractions("anaFitsMix", "MBB1");
   // drawFractions("anaFitsMix", "MBB2");
   // drawFractions("anaFitsMix", "MBB0");
   // drawFractions("anaFitsMix", "BPL");

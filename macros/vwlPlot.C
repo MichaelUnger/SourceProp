@@ -103,7 +103,7 @@ tauIntSingle(double* x, double* p)
 
 
 void
-vwlPlot(double A = 56, double Z = 26)
+vwlPlot(double A = 28, double Z = 14)
 {
 
   int color1 = kAzure+10;
@@ -126,8 +126,10 @@ vwlPlot(double A = 56, double Z = 26)
 
   const double lgMin = 17.5;
   const double lgMax = 20.5;
+  const double ymin = 9e-10;
+  const double ymax = 2e-7;
   TH2D* h1 = new TH2D("h1", ";", 100,
-                      lgMin, lgMax, 100, 0.08e-8, 0.8e-7);
+                      lgMin, lgMax, 100, ymin, ymax);
   h1->GetXaxis()->CenterTitle();
   h1->GetYaxis()->CenterTitle();
   c->cd(1);
@@ -157,7 +159,7 @@ vwlPlot(double A = 56, double Z = 26)
   const double epsPP = (pow(mDelta,2)-pow(gProtonMass, 2))/(2*gProtonMass);
   ppFunc->SetParameters(alpha, beta, eps0, sigmaPP, gammaPP, epsPP, A);
   TH2D* h2 = new TH2D("h2", ";;c #tau  [a.u.]", 100,
-                      lgMin, lgMax, 100, 0.08e-8, 0.8e-7);
+                      lgMin, lgMax, 100, ymin, ymax);
   h2->GetXaxis()->CenterTitle();
   h2->GetYaxis()->CenterTitle();
   h2->Draw();
@@ -184,7 +186,7 @@ vwlPlot(double A = 56, double Z = 26)
     ++i;
   }
   TH2D* h3 = new TH2D("h3", ";lg(E/eV);", 100,
-                      lgMin, lgMax, 100, 0.08e-8, 0.8e-7);
+                      lgMin, lgMax, 100, ymin, ymax);
   h3->GetXaxis()->CenterTitle();
   h3->GetYaxis()->CenterTitle();
   h3->Draw();
