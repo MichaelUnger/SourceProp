@@ -7,6 +7,6 @@ energyBinShift +0
 xmaxSigmaShift +0
 par gammaInj -1.0 0.1 0 0 1
 par deltaEsc   -0.9 0.1 -1.01 -0.2 0
-mass 1  28 1 56 1 1
+mass 29 0.1 1 56 1 1
 spectrumData Auger2013
 PhotonBPL 0.11 32 2.0
