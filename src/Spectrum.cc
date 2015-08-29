@@ -287,18 +287,33 @@ namespace prop {
     const
   {
 
-    TMatrixD& mRemnant = fNucleons[eRemnant];
-    if (!mRemnant.GetNoElements())
-      mRemnant.ResizeTo(fN, 1);
     TMatrixD& mPD = fNucleons[eKnockOutPD];
     if (!mPD.GetNoElements())
       mPD.ResizeTo(fN, 1);
     TMatrixD& mPP = fNucleons[eKnockOutPP];
     if (!mPP.GetNoElements())
       mPP.ResizeTo(fN, 1);
-    TMatrixD& mPion = fNucleons[ePionPP];
-    if (!mPion.GetNoElements())
-      mPion.ResizeTo(fN, 1);
+    TMatrixD& mProtonProd = fNucleons[eProtonProd];
+    if (!mProtonProd.GetNoElements())
+      mProtonProd.ResizeTo(fN, 1);
+    TMatrixD& mNeutronProd = fNucleons[eNeutronProd];
+    if (!mNeutronProd.GetNoElements())
+      mNeutronProd.ResizeTo(fN, 1);
+    TMatrixD& mProtonEsc = fNucleons[eProtonEsc];
+    if (!mProtonEsc.GetNoElements())
+      mProtonEsc.ResizeTo(fN, 1);
+    TMatrixD& mNeutronEsc = fNucleons[eNeutronEsc];
+    if (!mNeutronEsc.GetNoElements())
+      mNeutronEsc.ResizeTo(fN, 1);
+    TMatrixD& mPionPlus = fNucleons[ePionPlus];
+    if (!mPionPlus.GetNoElements())
+      mPionPlus.ResizeTo(fN, 1);
+    TMatrixD& mPionMinus = fNucleons[ePionMinus];
+    if (!mPionMinus.GetNoElements())
+      mPionMinus.ResizeTo(fN, 1);
+    TMatrixD& mPionZero = fNucleons[ePionZero];
+    if (!mPionZero.GetNoElements())
+      mPionZero.ResizeTo(fN, 1);
 
     const double Emax  = pow(10, fLgEmax);
 
@@ -318,13 +333,16 @@ namespace prop {
       TH1D pp("pp", "", nBins, fLgEmin, fLgEmax);
       TH1D pion("pion", "", nBins, fLgEmin, fLgEmax);
 
-      // remnants
       vector<TH1D*> prodSpectrum;
       for (int i = 0; i <= Ainj; ++i) {
-        stringstream tit;
-        tit << "prodSpec" << i;
-        prodSpectrum.push_back(new TH1D(tit.str().c_str(), "",
-                                        nBins, fLgEmin, fLgEmax));
+        if (i == 0)
+          prodSpectrum.push_back(NULL); // padding
+        else {
+          stringstream tit;
+          tit << "prodSpec" << i;
+          prodSpectrum.push_back(new TH1D(tit.str().c_str(), "",
+                                          nBins, fLgEmin, fLgEmax));
+        }
       }
 
       TH1D& h = *prodSpectrum[Ainj];
@@ -399,12 +417,11 @@ namespace prop {
                     const double ppFrac =
                       fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                     const double flux = ppFrac * fInt * jacobi * Qprim;
-                    hSec.Fill(lgE, flux);
                     pion.Fill(lgE, flux);
                   }
                 }
               }
-              else {
+              else { // Asec + 1 == Aprim
                 // nuclei
                 const double jacobi = double(Aprim) / Asec;
                 const double Eprim = jacobi * E;
@@ -425,9 +442,9 @@ namespace prop {
         }
       }
 
-      for (int i = 0; i <= Ainj; ++i) {
+      for (int i = 1; i <= Ainj; ++i) {
         TH1D& h = *prodSpectrum[i];
-        TMatrixD& m = (i != 0 ? fEscape[i] : mPP);
+        TMatrixD& m = fEscape[i];
         if (!m.GetNoElements())
           m.ResizeTo(fN, 1);
         double lgE = fLgEmin + dlgEOrig / 2;
@@ -435,6 +452,9 @@ namespace prop {
           const double flux = LogEval(h, lgE);
           m[iE][0] += flux;
           lgE += dlgEOrig;
+          // add primary protons
+          if (Ainj == 1)
+            mProtonProd[iE][0] += flux;
         }
         delete prodSpectrum[i];
       }
@@ -443,67 +463,113 @@ namespace prop {
       for (unsigned int iE = 0; iE < fN; ++iE) {
         const double fPP = LogEval(pp, lgE);
         mPP[iE][0] += fPP;
+        mProtonProd[iE][0] += fPP / 2;
+        mNeutronProd[iE][0] += fPP / 2;
+
         const double fPD = LogEval(pd, lgE);
         mPD[iE][0] += fPD;
+        mProtonProd[iE][0] += fPD / 2;
+        mNeutronProd[iE][0] += fPD / 2;
+
         const double fPion = LogEval(pion, lgE);
-        mPion[iE][0] += fPion;
+       // 50% pi0, 25% pi+, 25% pi-
+        mPionPlus[iE][0] += fPion * 0.25;
+        mPionMinus[iE][0] += fPion * 0.25;
+        mPionZero[iE][0] += fPion * 0.5;
         lgE += dlgEOrig;
       }
     }
 
-    // restore arXiv v1: set to false
-    const bool protonInteractions = true;
+    // just a test: at this point, m[A=1] should be mNeutron + mProton
+    //              and mNeutron < mProton if there are primary protons
+    /*
+    for (unsigned int iE = 0; iE < fN; ++iE)
+      cout << " test proton "
+           << (fEscape[1][iE][0] ?
+               (mProtonProd[iE][0] + mNeutronProd[iE][0])/fEscape[1][iE][0] :
+               0)
+           << " n=" << mNeutronProd[iE][0] << " p=" <<  mProtonProd[iE][0]
+           << endl;
+    */
 
+
+    // to restore arXiv v1: set to false
+    const bool protonInteractions = true;
+    if (protonInteractions) {
+
+      // proton energy loss in photo-pion production
+      const double kappa = 0.8;
+
+      // fraction of p + gamma --> p + pi0
+      const double bPP = 0.5;
+
+      // test binning
+      if (1+log10(kappa)/dlgEOrig > 0.05) {
+        stringstream errMsg;
+        errMsg << " proton interaction only implemented for kappa ~ dlgE"
+               << kappa << " " << dlgEOrig;
+        throw runtime_error(errMsg.str().c_str());
+      }
+
+      // calculate trickle-down protons and fill escaping p/n/(p+n)
+      TMatrixD& mNucleonEsc = fEscape[1];
+      vector<double> protonFlux(int(fN), 0.);
+
+      double lgE = fLgEmax - dlgEOrig / 2;
+      for (int iE = fN - 1; iE >= 0; --iE) {
+        double pSum =  mProtonProd[iE][0];
+        double nSum =  mNeutronProd[iE][0];
+        if (iE < fN - 1) {
+          const int iENext = iE + 1;
+          const double qNext = protonFlux[iENext];
+          const double Enext = pow(10, lgE + dlgEOrig);
+          const double lambdaI = fSource->LambdaInt(Enext, 1);
+          const double lambdaE = fSource->LambdaEsc(Enext, 1);
+          const double fInt = lambdaE / (lambdaE + lambdaI);
+          pSum += bPP * fInt * qNext / kappa;
+          nSum += (1-bPP) * fInt * qNext / kappa;
+        }
+        protonFlux[iE] = pSum;
+
+        const double E = pow(10, lgE);
+        const double lambdaI = fSource->LambdaInt(E, 1);
+        const double lambdaE = fSource->LambdaEsc(E, 1);
+        const double fEsc = lambdaI / (lambdaE + lambdaI);
+        mProtonEsc[iE][0] = fEsc * pSum;
+        mNeutronEsc[iE][0] = nSum;
+        mNucleonEsc[iE][0] = fEsc * pSum + nSum;
+        lgE -= dlgEOrig;
+      }
+
+      // pi+ from p + gamma -> n + pi+
+      lgE = fLgEmin + dlgEOrig / 2;
+      for (unsigned int iE = 0; iE < fN - 8; ++iE) {
+        const int iENext = iE + 7;
+        const double qNext = protonFlux[iENext];
+        const double Enext = pow(10, lgE + 7 * dlgEOrig);
+        const double lambdaI = fSource->LambdaInt(Enext, 1);
+        const double lambdaE = fSource->LambdaEsc(Enext, 1);
+        const double fInt = lambdaE / (lambdaE + lambdaI);
+        mPionPlus[iE][0] += bPP * fInt * qNext / (1-kappa);
+        lgE += dlgEOrig;
+      }
+    }
+
+
+    // multiply flux of nuclei with fEscape
     for (auto& iter : fEscape) {
       const int A = iter.first;
       TMatrixD& m = iter.second;
-      if (A == 1) {
-        if (!protonInteractions)
-          continue;
-        // p energy loss
-        const double kappa = 0.8;
-        if (1+log10(kappa)/dlgEOrig > 0.05) {
-          stringstream errMsg;
-          errMsg << " proton interaction only implemented for kappa ~ dlgE"
-                 << kappa << " " << dlgEOrig;
-          throw runtime_error(errMsg.str().c_str());
-        }
-
-        double lgE = fLgEmin + dlgEOrig / 2;
-        for (unsigned int iE = 0; iE < fN; ++iE) {
-          double sum = 0;
-          double prod = 1;
-          double lgEprim = lgE;
-          for (int jE = 0; jE < fN - iE; ++jE) {
-            const double kE = iE + jE;
-            sum += 0.5 * m[kE][0] * pow(kappa, -jE) * prod;
-            const double Eprim = pow(10, lgEprim);
-            const double lambdaI = fSource->LambdaInt(Eprim, A);
-            const double lambdaE = fSource->LambdaEsc(Eprim, A);
-            const double fInt = lambdaE / (lambdaE + lambdaI);
-            prod *= fInt;
-            lgEprim += dlgEOrig;
-          }
-
-          const double E = pow(10, lgE);
-          const double lambdaI = fSource->LambdaInt(E, A);
-          const double lambdaE = fSource->LambdaEsc(E, A);
-          const double fEsc = lambdaI / (lambdaE + lambdaI);
-          const double qEsc = 0.5 * m[iE][0] + fEsc * sum;
-          m[iE][0] = qEsc;
-          lgE += dlgEOrig;
-        }
-      }
-      else {
-        double lgE = fLgEmin + dlgEOrig / 2;
-        for (unsigned int iE = 0; iE < fN; ++iE) {
-          const double E = pow(10, lgE);
-          const double lambdaI = fSource->LambdaInt(E, A);
-          const double lambdaE = fSource->LambdaEsc(E, A);
-          const double fEsc = lambdaI / (lambdaE + lambdaI);
-          m[iE][0] *= fEsc;
-          lgE += dlgEOrig;
-        }
+      if (A == 1) // already handled above
+        continue;
+      double lgE = fLgEmin + dlgEOrig / 2;
+      for (unsigned int iE = 0; iE < fN; ++iE) {
+        const double E = pow(10, lgE);
+        const double lambdaI = fSource->LambdaInt(E, A);
+        const double lambdaE = fSource->LambdaEsc(E, A);
+        const double fEsc = lambdaI / (lambdaE + lambdaI);
+        m[iE][0] *= fEsc;
+        lgE += dlgEOrig;
       }
     }
 

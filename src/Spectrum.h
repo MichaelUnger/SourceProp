@@ -15,10 +15,15 @@ namespace prop {
 
   public:
     enum ENucleonType {
-      eRemnant,
       eKnockOutPD,
       eKnockOutPP,
-      ePionPP
+      eProtonProd,
+      eNeutronProd,
+      eProtonEsc,
+      eNeutronEsc,
+      ePionPlus,
+      ePionMinus,
+      ePionZero
     };
 
     enum ECutoffType {

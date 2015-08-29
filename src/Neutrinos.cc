@@ -15,6 +15,7 @@ namespace prop {
   Neutrinos::Neutrinos(const prop::Spectrum& spectrum,
                        const std::string& propMatrixFilename)
   {
+
     const PropMatrixFile pmf(propMatrixFilename);
     const PropMatrices& pm = pmf.GetPropMatrices();
     fLgEmin = pm.GetLgEmin();
@@ -63,10 +64,10 @@ namespace prop {
     const map<int, TMatrixD>& escMapN =
       spectrum.GetNucleonFlux();
 
-    const TMatrixD& mRemnant = escMapN.find(Spectrum::eRemnant)->second;
-    const TMatrixD& mPD = escMapN.find(Spectrum::eKnockOutPD)->second;
-    const TMatrixD& mPP = escMapN.find(Spectrum::eKnockOutPP)->second;
-    const TMatrixD& mPiPP = escMapN.find(Spectrum::ePionPP)->second;
+    const TMatrixD& mPOrig = escMapN.find(Spectrum::eProtonEsc)->second;
+    const TMatrixD& mNOrig = escMapN.find(Spectrum::eNeutronEsc)->second;
+    const TMatrixD& mPiP = escMapN.find(Spectrum::ePionPlus)->second;
+    const TMatrixD& mPiM = escMapN.find(Spectrum::ePionMinus)->second;
 
     TMatrixD& mP = escFluxResized[1];
     mP.ResizeTo(nProp, 1);
@@ -77,13 +78,12 @@ namespace prop {
     TMatrixD& mPionMinus = escFluxResized[ePionMinus];
     mPionMinus.ResizeTo(nProp, 1);
 
+
     for (unsigned int i = 0; i < nEsc; ++i) {
-      const double knockOut = mPD(i, 0) + mPP(i, 0);
-      mP(i + deltaIndex, 0) = mRemnant(i, 0)*0.5 + knockOut*0.5;
-      mN(i + deltaIndex, 0) = mRemnant(i, 0)*0.5 + knockOut*0.5;
-      // 50% pi0, 50% charged pions
-      mPionPlus(i + deltaIndex, 0) = mPiPP(i, 0)*0.25;
-      mPionMinus(i + deltaIndex, 0) = mPiPP(i, 0)*0.25;
+      mP(i + deltaIndex, 0) = mPOrig (i, 0);
+      mN(i + deltaIndex, 0) = mNOrig (i, 0);
+      mPionPlus(i + deltaIndex, 0) = mPiP(i, 0);
+      mPionMinus(i + deltaIndex, 0) = mPiM(i, 0);
     }
     fPropagator->Propagate(escFluxResized);
 

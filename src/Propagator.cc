@@ -156,7 +156,7 @@ namespace prop {
            << " Z=" << int(aToZ(iter.first)) << endl;
       double lgE = lgEmin + dlgE / 2;
 
-      for (unsigned int i = 0; i < iter.second.GetNoElements(); ++i) {
+      for (int i = 0; i < iter.second.GetNoElements(); ++i) {
         cout << scientific << setprecision(4) << setw(15) << lgE
              << setw(15) << scientific << setprecision(5)
              << iter.second[i][0] << endl;

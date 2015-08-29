@@ -511,6 +511,7 @@ namespace prop {
       fHists.back()->GetXaxis()->SetTitle("lg(E/eV)");
       fHists.back()->GetXaxis()->CenterTitle();
       fHists.back()->GetYaxis()->CenterTitle();
+      fHists.back()->GetYaxis()->SetTitleOffset(1);
       stringstream yTit;
       if (gamma == 1)
         yTit << "E";
@@ -661,6 +662,7 @@ namespace prop {
     eventsTot->GetYaxis()->SetTitle("events / 0.1 lg(E) / 10 IC86-years");
     eventsTot->GetXaxis()->CenterTitle();
     eventsTot->GetYaxis()->CenterTitle();
+    eventsTot->GetYaxis()->SetTitleOffset(1);
     eventsE->SetLineColor(electronColor);
     eventsMu->SetLineColor(muonColor);
     eventsTau->SetLineColor(tauColor);
