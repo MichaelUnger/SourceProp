@@ -9,9 +9,8 @@ eV = 1.60217657e-19
 crpDataDir = '/ssd/munger/Mag/CRPropa3New/CRPropa3-data/'
 
 
-#temperatures = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 175, 200, 225, 250, 275, 300, 350, 400, 450, 500, 750, 1000]
-
-temperatures = [9000]
+temperatures = [10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140, 150, 175, 200, 225, 250, 275, 300, 350, 400, 450, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000]
+temperatures = [95]
 
 for temperature in temperatures:
 
@@ -47,10 +46,10 @@ for temperature in temperatures:
     xs2exc = array([iR.romb_pad_zero(x, 513) for x in d2exc['xs']])*1e-31
 
     fields = [
-        photonField.BrokenPowerLaw(temperature/1000., -2, 5, 2),
-        photonField.ModifiedBlackBody(T=temperature, sigma=0),
-        photonField.ModifiedBlackBody(T=temperature, sigma=1),
-        photonField.ModifiedBlackBody(T=temperature, sigma=2),
+        photonField.BrokenPowerLaw(temperature/1000., -2, 3, 2)
+#        photonField.ModifiedBlackBody(T=363, sigma=0),
+#        photonField.ModifiedBlackBody(T=206, sigma=1),
+#        photonField.ModifiedBlackBody(T=148, sigma=2),
         ]
 
     print '-------- PD'

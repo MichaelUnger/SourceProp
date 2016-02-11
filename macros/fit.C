@@ -469,7 +469,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   massGroups.push_back(MassGroup(1, 2, 1, kRed));
   massGroups.push_back(MassGroup(3, 6, 4, kOrange-2));
   massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
-  massGroups.push_back(MassGroup(20, 39, 26, kAzure+10));
+  massGroups.push_back(MassGroup(20, 39, 28, kAzure+10));
   massGroups.push_back(MassGroup(40, 56, 56, kBlue));
 #warning FIXME mass
   const unsigned int Agal = opt.GetGalacticMass().fStartMass + kGalacticOffset;

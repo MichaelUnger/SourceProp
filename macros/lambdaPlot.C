@@ -1,6 +1,8 @@
 // units: eV, m, s
 const double gProtonMass = 938.272046e6;
 const double gNeutronMass = 939.565379e6;
+const double gMpcToYear = 3.26e6;
+
 
 TGraph*
 GetPD(string filename, int Z, int N)
@@ -24,7 +26,7 @@ GetPD(string filename, int Z, int N)
       double lInv;
       while (iss >> lInv) {
         const double kappa = lossLength ? 1./(Z+N) : 1;
-        lambdaInv.push_back(1/(TMath::Max(lInv,1e-200)*kappa));
+        lambdaInv.push_back(gMpcToYear/(TMath::Max(lInv,1e-200)*kappa));
         lgGammaVec.push_back(lgGamma+log10(Z*gProtonMass+N*gNeutronMass));
         lgGamma += dLgGamma;
       }
@@ -55,7 +57,7 @@ lambdaGraphPP(const string& filename, int Z, int N)
     const double lInv = Z * lInvP + N * lInvN;
     const double lgE = lgGamma + log10(Z * gProtonMass + N * gNeutronMass);
     if (lInvP > 0 && 1. / lInvP < 10e5 && lgE < 22) {
-      graph->SetPoint(i, lgE, 1 / lInv);
+      graph->SetPoint(i, lgE, 1 / lInv*gMpcToYear);
       ++i;
     }
   }
@@ -81,8 +83,8 @@ lambdaPlot(double A = 28, double Z = 14)
 
   const double lgMin = 17.5;
   const double lgMax = 20.5;
-  TH2D* h1 = new TH2D("h1", ";lg(E/eV);c #tau  [a.u.]", 100,
-                      lgMin, lgMax, 100, 2e-8, 1e-6);
+  TH2D* h1 = new TH2D("h1", ";lg(E/eV);c #tau  [yr]", 100,
+                      lgMin, lgMax, 100, 0.5e-1, 10);
   h1->GetXaxis()->CenterTitle();
   h1->GetYaxis()->CenterTitle();
 

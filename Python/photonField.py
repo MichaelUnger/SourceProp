@@ -105,7 +105,7 @@ class BrokenPowerLaw:
     info = 'SP_0.05_2.0_52'
     redshift = None
 
-    def __init__(self, eps0 = 0.05, beta = -2, nom = 5, denom = 2) :
+    def __init__(self, eps0 = 0.05, beta = -2, nom = 3, denom = 2) :
         self.eps0 = eps0 * eV
         self.beta = float(beta)
         self.alpha = float(nom) / denom
@@ -127,6 +127,7 @@ class BrokenPowerLaw:
         """
         x = eps / self.eps0
         C = self.integralRatio
+#        print C*eV, self.eps0 /eV
         alpha = self.alpha
         beta = self.beta
         return ((eps > self.eps0)*x**beta+(eps <= self.eps0)*x**alpha)*C
@@ -215,9 +216,9 @@ class Elbaz2011:
 
 if __name__ == '__main__':
     from pylab import *
-    eps = logspace(-4, 1, 200) * eV
+    eps = logspace(-4, -0.458, 400) * eV
     x  = eps / eV
-    eps0 = 0.15 * eV
+    eps0 = 0.05 * eV
     bb = ModifiedBlackBody.fromPeak(eps0, 0)
     mbb1 = ModifiedBlackBody.fromPeak(eps0, 1)
     mbb2 = ModifiedBlackBody.fromPeak(eps0, 2)
@@ -227,16 +228,16 @@ if __name__ == '__main__':
     y3 = mbb2.getDensity(eps) / (1/eV) / (1/cm3)
     y4 = bpl.getDensity(eps) / (1/eV) / (1/cm3)
     figure()
-    plot(x, y1, label=bb.info)
-    plot(x, y2, label=mbb1.info)
-    plot(x, y3, label=mbb2.info)
-    plot(x, y4, label=bpl.info)
+    plot(x, y1, label=bb.info, linestyle='--', linewidth=2)
+    plot(x, y2, label=mbb1.info,  linestyle=':', linewidth=2)
+    plot(x, y3, label=mbb2.info, linestyle='-.', linewidth=2)
+    plot(x, y4, label=bpl.info, linestyle='-', linewidth=2)
 
     legend(loc='upper right')
-    semilogx()
+#    semilogx()
 #    loglog()
     ylim(ymin=0)
-    ylabel('d$n/$d$\epsilon$ [eV$^{-1}\,$cm$^{-3}$]')
-    xlabel('$\epsilon$ [eV]')
+    ylabel('d$n/$d$\epsilon$ [eV$^{-1}\,$cm$^{-3}$]', fontsize=20)
+    xlabel('$\epsilon$ [eV]', fontsize=20)
     savefig('photon.png')
     savefig('photon.pdf')

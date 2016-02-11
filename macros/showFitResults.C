@@ -15,19 +15,21 @@
 using namespace std;
 
 struct FitFile {
-  FitFile(string fname, string name, int color, int symbol) :
-    fFilename(fname), fName(name), fColor(color), fSymbol(symbol) {}
+  FitFile(string fname, string name, int color, int symbol, double size = 1) :
+    fFilename(fname), fName(name), fColor(color), fSymbol(symbol), fSize(size) {}
   FitFile() {}
   string fFilename;
   string fName;
   int fColor;
   int fSymbol;
+  double fSize;
 };
 
 
 void
 draw(string what, string yTit, string pdfname, bool left, bool top,
-     string cut, const bool noLabel, const vector<FitFile>& fitFiles)
+     string cut, const bool noLabel, const vector<FitFile>& fitFiles,
+     double Y1 = -999, double Y2 = -999)
 {
   TCanvas* c = new TCanvas("c");
   TLegend* leg = new TLegend(left?0.18:0.76, top?0.76:0.26,
@@ -47,9 +49,14 @@ draw(string what, string yTit, string pdfname, bool left, bool top,
   }
   chain.Draw((what).c_str(), cut.c_str());
   TH2F *htemp = (TH2F*)gPad->GetPrimitive("htemp");
-  TH2D* back = new TH2D("back", "", 18, 0, 18, 100,
-                        htemp->GetYaxis()->GetXmin(),
-                        htemp->GetYaxis()->GetXmax());
+  TH2D* back =
+    ((Y1 == -999 && Y2 == -999)  ?
+    new TH2D("back", "", 18, 0, 18, 100,
+             htemp->GetYaxis()->GetXmin(),
+             htemp->GetYaxis()->GetXmax()) :
+    new TH2D("back", "", 18, 0, 18, 100,
+             Y1, Y2));
+
   back->GetYaxis()->SetTitle(yTit.c_str());
   back->GetXaxis()->SetTitle("evolution");
   back->GetYaxis()->CenterTitle();
@@ -80,8 +87,9 @@ draw(string what, string yTit, string pdfname, bool left, bool top,
   for (unsigned int i = 0; i < fitFiles.size(); ++i) {
     TFile* file1 = TFile::Open(fitFiles[i].fFilename.c_str());
     TTree* tree1 = (TTree*) file1->Get("FitSummaryTree");
-    tree1->SetMarkerColor( fitFiles[i].fColor);
-    tree1->SetMarkerStyle( fitFiles[i].fSymbol);
+    tree1->SetMarkerColor(fitFiles[i].fColor);
+    tree1->SetMarkerStyle(fitFiles[i].fSymbol);
+    tree1->SetMarkerSize(fitFiles[i].fSize);
     tree1->Draw((what).c_str(), cut.c_str(), "SAME");
     leg->AddEntry(tree1, fitFiles[i].fName.c_str(), "P");
   }
@@ -183,49 +191,49 @@ showFitResults()
                            "MBB, #sigma=2", kBlack, 21));
 
   draw("fChi2Tot/fNdfTot:TMath::Min(fEvolutionId,17.5)", "#chi^{2}/ndf",
-       "anaFitPhoton0_chi2.pdf", false, true, cut, false, files);
+       "anaFitPhoton0_chi2.pdf", false, true, cut, false, files, 0, 5);
   draw("fEps0[0]:TMath::Min(fEvolutionId,17.5)", "#varepsilon_{0} [eV]",
-       "anaFitPhoton1_eps.pdf", false, true, cut, true, files);
+       "anaFitPhoton1_eps.pdf", false, true, cut, true, files, 0.02, 0.12);
   draw("fGamma:TMath::Min(fEvolutionId,17.5)", "spectral index #gamma",
-       "anaFitPhoton2_gamma.pdf", true, true, cut, true, files);
+       "anaFitPhoton2_gamma.pdf", true, true, cut, true, files, -2, 0.5);
   draw("fLgEscFac:TMath::Min(fEvolutionId,17.5)", "lg(R_{19}^{Fe})",
-       "anaFitPhoton3_R19.pdf", true, false, cut, true, files);
+       "anaFitPhoton3_R19.pdf", true, false, cut, true, files, 1.5, 3.5);
   draw("fEscGamma:TMath::Min(fEvolutionId,17.5)", "#delta escape",
-       "anaFitPhoton4_deltaEsc.pdf", false, true, cut, true, files);
+       "anaFitPhoton4_deltaEsc.pdf", false, true, cut, true, files, -1, -0.3);
   draw("fLgEmax:TMath::Min(fEvolutionId,17.5)", "lg(E_{max})_{p}",
-       "anaFitPhoton5_lgEmax.pdf", false, true, cut, true, files);
+       "anaFitPhoton5_lgEmax.pdf", false, true, cut, true, files, 18.2, 18.8);
   draw("fNNeutrinos:TMath::Min(fEvolutionId,17.5)", "N_{#nu} (10 IC86 years)",
        "anaFitPhoton6_neutrinos.pdf", true, true, cut, true, files);
   draw("fMasses[0]:TMath::Min(fEvolutionId,17.5)", "mass",
-       "anaFitPhoton7_mass.pdf", false, true, cut, true, files);
+       "anaFitPhoton7_mass.pdf", false, true, cut, true, files, 23, 33);
   draw("fProtonRatio185:TMath::Min(fEvolutionId,17.5)",
        "primary nucleon frac @ 10^{18.3} eV",
        "anaFitPhoton8_pFrac.pdf", false, true, cut, true, files);
   draw("log10(fEdot175):TMath::Min(fEvolutionId,17.5)",
        "lg(#dot{#varepsilon} / (erg Mpc^{-3} yr^{-1}))",
-       "anaFitPhoton9_power.pdf", false, true, cut, true, files);
+       "anaFitPhoton9_power.pdf", false, true, cut, true, files, 44.5, 46);
 
   //-------------------------------------------------------------
   files.clear();
   files.push_back(FitFile("ROOT/anaFits/Single/anaFitsFix1.root",
-                          "#gamma=-1", kRed, 25));
+                          "#gamma=-1", kRed, 25, 1.2));
   files.push_back(FitFile("ROOT/anaFits/Single/anaFitsFix2.root",
-                          "#gamma=-2", kBlue, 24));
+                          "#gamma=-2", kBlue, 24, 1.1));
   files.push_back(FitFile("ROOT/anaFits/Single/anaFitsFree.root",
-                          "#gamma=free", kGreen+1, 20));
+                          "#gamma=free", kBlack, 20));
 
   draw("fChi2Tot/fNdfTot:TMath::Min(fEvolutionId,17.5)", "#chi^{2}/ndf",
-       "anaFitGamma0_chi2.pdf", true, true, cut, false, files);
+       "anaFitGamma0_chi2.pdf", true, true, cut, false, files, 0, 9);
   draw("fEps0[0]:TMath::Min(fEvolutionId,17.5)", "#varepsilon_{0} [eV]",
-       "anaFitGamma1_eps.pdf", false, true, cut, true, files);
+       "anaFitGamma1_eps.pdf", false, true, cut, true, files, 0.02, 0.12);
   draw("fGamma:TMath::Min(fEvolutionId,17.5)", "spectral index #gamma",
        "anaFitGamma2_gamma.pdf", true, true, cut, true, files);
   draw("fLgEscFac:TMath::Min(fEvolutionId,17.5)", "lg(R_{19}^{Fe})",
-       "anaFitGamma3_R19.pdf", true, false, cut, true, files);
+       "anaFitGamma3_R19.pdf", true, false, cut, true, files, 1.5, 3.5);
   draw("fEscGamma:TMath::Min(fEvolutionId,17.5)", "#delta escape",
        "anaFitGamma4_deltaEsc.pdf", false, true, cut, true, files);
   draw("fLgEmax:TMath::Min(fEvolutionId,17.5)", "lg(E_{max})_{p}",
-       "anaFitGamma5_lgEmax.pdf", true, true, cut, true, files);
+       "anaFitGamma5_lgEmax.pdf", true, true, cut, true, files, 18.2, 19.2);
   draw("fNNeutrinos:TMath::Min(fEvolutionId,17.5)", "N_{#nu} (10 IC86 years)",
        "anaFitGamma6_neutrinos.pdf", true, true, cut, true, files);
   draw("fMasses[0]:TMath::Min(fEvolutionId,17.5)", "mass",
