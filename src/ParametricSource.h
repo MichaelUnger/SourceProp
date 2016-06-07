@@ -40,6 +40,7 @@ namespace prop {
       if (fNoInteraction)
         return 1e99;
 
+      // Karakular&Tkaczyk APP 1 (1993) 229
       const double epsilonGDR = A >= 4 ?
         42.65e6*pow(A, -0.21) :
         0.925e6*pow(A, 2.433);
