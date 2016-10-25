@@ -53,6 +53,10 @@ namespace prop {
     double GetNNeutrinos() const
     { return fNNeutrino; }
 
+    // .root and .txt will be added
+    void SaveHistsToFile(const std::string& filenameBase) const;
+
+
   private:
     template<class T>
     void DrawSpectrum(const std::map<T, TMatrixD>& specMap,

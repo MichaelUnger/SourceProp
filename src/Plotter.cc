@@ -17,6 +17,7 @@
 #include <TGraph.h>
 #include <TH1D.h>
 #include <TF1.h>
+#include <TFile.h>
 
 #include <sstream>
 #include <fstream>
@@ -48,6 +49,25 @@ namespace prop {
       fCanvas->SetBorderMode(1);
       fCanvas->Divide(3, 2);
       fCanvas->cd(eCompEarth)->Divide(2, 1, 0.01);
+    }
+  }
+
+  void
+  Plotter::SaveHistsToFile(const string& filenamebase)
+    const
+  {
+    TFile outfile((filenamebase + ".root").c_str(), "RECREATE");
+    ofstream outTxtFile(filenamebase + ".txt");
+    for (auto h : fHists) {
+      if (string(h->GetName()) == "escSuperimpose")
+        continue;
+      h->Write();
+      outTxtFile << "# " << h->GetName() << " " 
+                 << h->GetTitle() << "\n";
+      for (int i = 0; i < h->GetNbinsX(); ++i) {
+        outTxtFile << h->GetXaxis()->GetBinCenter(i+1) 
+                   << " " << h->GetBinContent(i+1) << endl;
+      }
     }
   }
 
@@ -339,7 +359,7 @@ namespace prop {
         color = mGroups[i].fColor;
         style = mGroups[i].fLineStyle;
         if (mGroups[i].fFirst > 56)
-          title << "galactic Fe";
+          title << "galactic (A=" << mGroups[i].fFirst % kGalacticOffset << ")";
         else
           title << mGroups[i].fFirst << "#leq A #leq" << mGroups[i].fLast;
       }
