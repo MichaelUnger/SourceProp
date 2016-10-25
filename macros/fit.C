@@ -423,7 +423,7 @@ DrawValues(const FitData& fitData,
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
 
-  const double lgEmin = 18;//17.5;
+  const double lgEmin = 17.5;
   double edot = -1;
   stringstream powerString;
   try {
