@@ -423,7 +423,7 @@ DrawValues(const FitData& fitData,
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
 
-  const double lgEmin = 17.5;
+  const double lgEmin = 18;//17.5;
   double edot = -1;
   stringstream powerString;
   try {
@@ -467,17 +467,25 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
 
   vector<MassGroup> massGroups;
-  massGroups.push_back(MassGroup(1, 2, 1, kRed));
-  massGroups.push_back(MassGroup(3, 6, 4, kOrange-2));
-  massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
-  massGroups.push_back(MassGroup(20, 39, 28, kAzure+10));
-  massGroups.push_back(MassGroup(40, 56, 56, kBlue));
+  bool all = false;
+  if (all) {
+    for (unsigned int i = 1; i <= 56; ++i)
+      massGroups.push_back(MassGroup(i, i, i, kRed+i));
+  }
+  else {
+    massGroups.push_back(MassGroup(1, 2, 1, kRed));
+    massGroups.push_back(MassGroup(3, 6, 4, kOrange-2));
+    massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
+    massGroups.push_back(MassGroup(20, 39, 28, kAzure+10));
+    massGroups.push_back(MassGroup(40, 56, 56, kBlue));
+  }
+
 
   const unsigned int Agal = opt.GetGalacticMass().fStartMass + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
                                  kMagenta+2, 3));
 
-  const double gammaScaleSource = 1;
+  const double gammaScaleSource = 2;
   const double gammaScaleEarth = 3;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
@@ -491,6 +499,8 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
             *fitData.fPropagator,
             massGroups);
   plot.SetXRange(17.5, 20.5);
+  plot.SaveHistsToFile(opt.GetOutDirname() + "/" + opt.GetOutFilename() + "Hist");
+
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
@@ -525,6 +535,18 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
   rootFile << fitSummary;
 
+  TH1D* epsHist = new TH1D("epsHist", "", 100, 17, 20);
+  for (int i = 0; i < epsHist->GetNbinsX(); ++i) {
+    const double lgE = epsHist->GetXaxis()->GetBinCenter(i+1);
+    using namespace utl;
+    const double edot =
+      fitData.GetTotalPower(pow(10, lgE)) / ( erg / (pow(Mpc, 3) * year));
+    cout << edot << endl;
+    epsHist->SetBinContent(i+1, edot);
+  }
+  rootFile.Write(*epsHist);
 }
+
+
 
 
