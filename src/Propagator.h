@@ -17,10 +17,13 @@ namespace prop {
 
     void Propagate(const std::map<unsigned int, TMatrixD>& spectrum);
 
+    const TMatrixD& GetSum() const { return fSum; }
+
   private:
     Propagator();
     const PropMatrixCollection& fPropMatrices;
     std::map<unsigned int, TMatrixD> fResult;
+    TMatrixD fSum;
     ClassDefNV(Propagator, 1)
 
   };
