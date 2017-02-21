@@ -188,18 +188,13 @@ namespace prop {
         throw runtime_error("unknown keyword " + keyword);
     }
 
-    if (fMassValues.empty()) {
-      fMassValues.push_back(MassValue(1, 0.1, 1, 56, 1, 0));
-      fMassValues.push_back(MassValue(4, 0.1, 1, 56, 1, 0));
-      fMassValues.push_back(MassValue(14, 0.1, 1, 56, 1, 0));
-      fMassValues.push_back(MassValue(28, 0.6, 1, 56, 1, 0));
-      fMassValues.push_back(MassValue(56, 0.1, 1, 56, 1, 1));
-    }
+    if (fMassValues.empty())
+      fMassValues.push_back(MassValue(28, 0.1, 1, 56, 0, 1));
 
     if (fBBTemperature.empty()) {
       fPhotonFieldType.push_back(eBlackBody);
-      fBBTemperature.push_back("100");
-      fBBSigma.push_back("0");
+      fBBTemperature.push_back("150");
+      fBBSigma.push_back("2");
       fEps0.push_back("n/a");
       fAlpha.push_back("n/a");
       fBeta.push_back("n/a");
