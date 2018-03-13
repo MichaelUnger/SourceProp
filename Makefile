@@ -45,6 +45,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc
 $(SRC_DIR)/%Dict.cc: $(SRC_DIR)/%.h $(SRC_DIR)/%LinkDef.h
 	@(echo generating $@ dictionary)
 	($(CINT) -f $@ -c $(CINTCXXFLAGS)   $^)
+	@mkdir -p lib
+	@mv src/*Dict_rdict.pcm lib
 
 clean:
 	@rm -f *~ $(OBJS) core \
