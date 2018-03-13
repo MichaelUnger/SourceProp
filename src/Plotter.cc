@@ -62,10 +62,10 @@ namespace prop {
       if (string(h->GetName()) == "escSuperimpose")
         continue;
       h->Write();
-      outTxtFile << "# " << h->GetName() << " " 
+      outTxtFile << "# " << h->GetName() << " "
                  << h->GetTitle() << "\n";
       for (int i = 0; i < h->GetNbinsX(); ++i) {
-        outTxtFile << h->GetXaxis()->GetBinCenter(i+1) 
+        outTxtFile << h->GetXaxis()->GetBinCenter(i+1)
                    << " " << h->GetBinContent(i+1) << endl;
       }
     }
@@ -102,6 +102,28 @@ namespace prop {
     DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource, "hNucl",
                  n, x1, x2, eFluxEsc, false);
     */
+
+    vector<MassGroup> nucleonGroups;
+    nucleonGroups.push_back(MassGroup(Spectrum::ePionPlus,
+                                      Spectrum::ePionPlus,
+                                      Spectrum::ePionPlus,
+                                      kMagenta+1, 1));
+    nucleonGroups.push_back(MassGroup(Spectrum::ePionMinus,
+                                      Spectrum::ePionMinus,
+                                      Spectrum::ePionMinus,
+                                      kMagenta+1, 2));
+    nucleonGroups.push_back(MassGroup(Spectrum::ePionZero,
+                                      Spectrum::ePionZero,
+                                      Spectrum::ePionZero,
+                                      kMagenta+1, 3));
+    nucleonGroups.push_back(MassGroup(Spectrum::eNeutronEsc,
+                                      Spectrum::eNeutronEsc,
+                                      Spectrum::eNeutronEsc,
+                                      kMagenta+1, 4));
+    DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource,
+                 "elMagSource",
+                 n, x1, x2, eFluxEsc, false);
+
     map<int, TMatrixD> nucleons;
     nucleons[1].ResizeTo(prop.GetPrimaryNucleonFluxAtEarth());
     nucleons[1] = prop.GetPrimaryNucleonFluxAtEarth();
@@ -360,8 +382,25 @@ namespace prop {
         style = mGroups[i].fLineStyle;
         if (mGroups[i].fFirst > 56)
           title << "galactic (A=" << mGroups[i].fFirst % kGalacticOffset << ")";
-        else
+        else if (nameBase == "elMagSource") {
+          if (mGroups[i].fFirst == mGroups[i].fLast) {
+            if (mGroups[i].fFirst == Spectrum::eNeutronEsc)
+              title << " neutron";
+            else if (mGroups[i].fFirst == Spectrum::ePionPlus)
+              title << " pionPlus";
+            else if (mGroups[i].fFirst == Spectrum::ePionMinus)
+              title << " pionMinus";
+            else if (mGroups[i].fFirst == Spectrum::ePionZero)
+              title << " pionZero";
+            else
+              title << " unknown";
+          }
+          else
+            title << mGroups[i].fFirst << "#leq A #leq" << mGroups[i].fLast;
+        }
+        else {
           title << mGroups[i].fFirst << "#leq A #leq" << mGroups[i].fLast;
+        }
       }
       else {
         color = kBlack;
@@ -504,7 +543,7 @@ namespace prop {
                                 eAntiMuonNeutrino, muonColor, 1, " #bar{#nu}_{#mu}"));
     mGroups.push_back(MassGroup(eAntiTauNeutrino, eAntiTauNeutrino,
                                 eAntiTauNeutrino, tauColor, 1, " #bar{#nu}_{#tau}"));
-    const string& nameBase = "hNeutrino";
+    const string nameBase = "hNeutrino";
     const unsigned int iFirst = fHists.size();
     for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
       stringstream title;
@@ -521,7 +560,6 @@ namespace prop {
         title << " sum";
       }
       stringstream name;
-      name << nameBase << i;
       fHists.push_back(new TH1D(name.str().c_str(),
                                 title.str().c_str(),
                                 n, x1, x2));

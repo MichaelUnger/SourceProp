@@ -27,9 +27,42 @@
 #include <TGraphErrors.h>
 #include <TROOT.h>
 #include <TH1D.h>
+#include <TF1.h>
 
 using namespace std;
 using namespace prop;
+
+void
+ReadKGLight(const FitOptions& fitOptions,
+            const double gammaScaleEarth,
+            TGraphErrors* kgFlux,
+            TGraphErrors* kgFluxEgal)
+{
+  TF1* galFlux = new TF1("dp", "[0]*pow(pow(10,x)/1e17, [1])",
+                         16, 19);
+  galFlux->SetParameters(1.60508e+32*pow(1e17, gammaScaleEarth) / pow(1e17, 2.7),
+                         -5.60210e-01);
+
+  const string& datadir = fitOptions.GetDataDirname();
+  ifstream data((datadir + "/KGLight.txt").c_str());
+  int i = 0;
+  while (true) {
+    double lgE, scaledflux, dummy, error;
+    data >> lgE >> scaledflux >> dummy >> dummy >> error >> error;
+    if (!data.good())
+      break;
+    const double E = pow(10, lgE);
+    const double w = pow(E, gammaScaleEarth) / pow(E, 2.7);
+    const double unitFac = 1e6*365*24*3600;
+    const double flux = scaledflux * w * unitFac;
+    kgFlux->SetPoint(i, lgE, flux);
+    kgFlux->SetPointError(i, 0, error * w * unitFac);
+    const double subF = flux - galFlux->Eval(lgE);
+    kgFluxEgal->SetPoint(i, lgE, subF);
+    kgFluxEgal->SetPointError(i, 0, error * w * unitFac);
+    ++i;
+  }
+}
 
 void
 ReadGlobus(const FitOptions& fitOptions,
@@ -86,6 +119,7 @@ DrawData(const FitData& fitData,
 {
 
   bool showGlobus = false;
+  bool showKG = false;
 
   TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
   const vector<FluxData>& fluxData = fitData.fFluxData;
@@ -157,6 +191,19 @@ DrawData(const FitData& fitData,
     globusFlux->SetLineStyle(globusStyle);
     globusFlux->SetLineWidth(globusWidth);
     globusFlux->SetLineColor(kBlack);
+  }
+
+  if (showKG) {
+    TGraphErrors* kgFlux = new TGraphErrors();
+    TGraphErrors* kgFluxEgal = new TGraphErrors();
+    ReadKGLight(fitOptions, gammaScaleEarth, kgFlux, kgFluxEgal);
+    kgFlux->Draw("P");
+    kgFlux->SetLineColor(kRed);
+    kgFlux->SetMarkerColor(kRed);
+    kgFluxEgal->Draw("P");
+    kgFluxEgal->SetLineColor(kRed);
+    kgFluxEgal->SetMarkerColor(kRed);
+    kgFluxEgal->SetMarkerStyle(24);
   }
 
 #ifdef _PAPER_
@@ -423,7 +470,7 @@ DrawValues(const FitData& fitData,
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
 
-  const double lgEmin = 17.5;
+  const double lgEmin = 17;
   double edot = -1;
   stringstream powerString;
   try {
@@ -467,7 +514,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
 
   vector<MassGroup> massGroups;
-  bool all = false;
+  bool all = true;
   if (all) {
     for (unsigned int i = 1; i <= 56; ++i)
       massGroups.push_back(MassGroup(i, i, i, kRed+i));
@@ -479,7 +526,6 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     massGroups.push_back(MassGroup(20, 39, 28, kAzure+10));
     massGroups.push_back(MassGroup(40, 56, 56, kBlue));
   }
-
 
   const unsigned int Agal = opt.GetGalacticMass().fStartMass + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
@@ -498,8 +544,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17.5, 20.5);
-  plot.SaveHistsToFile(opt.GetOutDirname() + "/" + opt.GetOutFilename() + "Hist");
+  plot.SetXRange(17, 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
@@ -532,6 +577,8 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, opt.GetDataDirname(), 100, 12., 22.);
     neutrinoCanvas->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + "_nu.pdf").c_str());
     fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
+    neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
+                                 + opt.GetOutFilename() + "HistNu");
   }
   rootFile << fitSummary;
 
@@ -541,10 +588,10 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     using namespace utl;
     const double edot =
       fitData.GetTotalPower(pow(10, lgE)) / ( erg / (pow(Mpc, 3) * year));
-    cout << edot << endl;
     epsHist->SetBinContent(i+1, edot);
   }
   rootFile.Write(*epsHist);
+  plot.SaveHistsToFile(opt.GetOutDirname() + "/" + opt.GetOutFilename() + "Hist");
 }
 
 
