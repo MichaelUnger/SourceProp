@@ -1,0 +1,21 @@
+# BPLNew_SFR2_G12 1975487.hpc0.abudhabi.nyu.edu at /state/partition1/1975487.hpc0.abudhabi.nyu.edu on login-0-1.local
+OutDir Marco/pdfs
+DataDir Data
+evolution SFR2
+IRB G12
+energyBinShift +1
+xmaxSigmaShift -1
+par gammaInj -1.0 0.1 -3.01 -1.01 0
+par deltaEsc   -0.9 0.1 -1.01 -0.2 0
+mass 1  0.364962 1 56 1 1
+mass 4  0.309246 1 56 1 1
+mass 12 0.0447689 1 56 1 1
+mass 16 0.0769107 1 56 1 1
+mass 20 0.018918 1 56 1 1
+mass 24 0.0387816 1 56 1 1
+mass 28 0.0392122 1 56 1 1
+mass 32 0.00964516 1 56 1 1
+mass 40 0.0140032 1 56 1 1
+mass 56 0.0835522 1 56 1 1
+spectrumData Auger2013
+PhotonBPL 0.09 32 2.0
