@@ -1,0 +1,49 @@
+#####################################################################################
+##  (c) Copyright by Pierre Auger Collaboration 2017                               ##
+##                                                                                 ##
+##  Publications using or referring to these data should cite the following        ## 
+##  reference:                                                                     ##
+##                                                                                 ##
+##  Francesco Fenu for The Pierre Auger Collaboration, "The cosmic ray energy      ##
+##  spectrum measured using the Pierre Auger Observatory"                          ##
+##  Proceedings of the 35th International Cosmic Ray Conference, Busan, Korea      ##
+##  PoS (2017) 486                                                                 ##
+##                                                                                 ##
+##  Data are provided as is and might be subject to future changes.                ##
+##                                                                                 ##
+##  These data are released under the Creative Commons Attribution-ShareAlike 4.0  ##
+##  International License (CC BY-SA 4.0). For more details see                     ##
+##  http://creativecommons.org/licenses/by-sa/4.0/                                 ##
+##                                                                                 ##
+#####################################################################################
+# ==========>  Spectrum: Auger combined spectrum (ICRC 2017) <============ 
+# E*J in  [m^-2 s^-1 sr^-1] units
+# log10E = center of the energy bin 
+# log10E    E*J       Err_up       Err_low  
+17.55 2.01e-11 1.08e-13 1.08e-13
+17.65 1.19e-11 8.32e-14 8.32e-14
+17.75 6.96e-12 6.36e-14 6.36e-14
+17.85 4.12e-12 4.90e-14 4.90e-14
+17.95 2.41e-12 3.76e-14 3.76e-14
+18.05 1.35e-12 2.38e-14 2.38e-14
+18.15 7.99e-13 1.63e-14 1.63e-14
+18.25 5.03e-13 1.15e-14 1.15e-14
+18.35 2.75e-13 7.20e-15 7.20e-15
+18.45 1.75e-13 6.52e-16 6.52e-16
+18.55 1.01e-13 4.92e-16 4.92e-16
+18.65 6.05e-14 3.40e-16 3.40e-16
+18.75 3.82e-14 2.71e-16 2.71e-16
+18.85 2.67e-14 2.29e-16 2.29e-16 
+18.95 1.88e-14 1.93e-16 1.93e-16
+19.05 1.31e-14 1.62e-16 1.62e-16
+19.15 8.91e-15 1.33e-16 1.33e-16
+19.25 5.58e-15 1.05e-16 1.05e-16
+19.35 3.67e-15 8.48e-17 8.48e-17
+19.45 2.19e-15 6.56e-17 6.56e-17
+19.55 1.42e-15 5.30e-17 5.30e-17
+19.65 7.60e-16 3.96e-17 3.96e-17
+19.75 3.30e-16 2.50e-17 2.50e-17
+19.85 1.49e-16 1.71e-17 1.71e-17
+19.95 4.45e-17 1.06e-17 1.06e-17
+20.05 2.33e-17 7.01e-18 7.01e-18
+20.15 9.66e-18 6.77e-18 4.04e-18
