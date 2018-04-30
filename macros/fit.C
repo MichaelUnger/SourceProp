@@ -582,7 +582,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
   rootFile << fitSummary;
 
-  TH1D* epsHist = new TH1D("epsHist", "", 100, 17, 20);
+  TH1D* epsHist = new TH1D("epsHist", "", 100, 17, 21);
   for (int i = 0; i < epsHist->GetNbinsX(); ++i) {
     const double lgE = epsHist->GetXaxis()->GetBinCenter(i+1);
     using namespace utl;
