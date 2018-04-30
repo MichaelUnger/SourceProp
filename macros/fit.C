@@ -557,8 +557,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   fitSummary.Fill(fitData, opt);
 
   if (neutrino) {
+    const bool withSourceNu = true;
+    if (!withSourceNu) 
+      cout << "fit(): warning -- withSourceNu = false" << endl;
     Neutrinos neutrinos(fitData.fSpectrum,
-                        opt.GetPropmatrixNuFilename());
+                        opt.GetPropmatrixNuFilename(), withSourceNu);
     TCanvas* neutrinoCanvas;
     bool singleSlide = false;
     if (singleSlide) {
@@ -575,10 +578,13 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     }
     Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
     neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, opt.GetDataDirname(), 100, 12., 22.);
-    neutrinoCanvas->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + "_nu.pdf").c_str());
+    neutrinoCanvas->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() +
+                           "_nu" + (withSourceNu?"":"NoSource") +
+                           ".pdf").c_str());
     fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
     neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
-                                 + opt.GetOutFilename() + "HistNu");
+                                 + opt.GetOutFilename() + "HistNu" +
+                                 (withSourceNu?"":"NoSource"));
   }
   rootFile << fitSummary;
 

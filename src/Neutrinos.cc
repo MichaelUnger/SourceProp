@@ -13,7 +13,8 @@ namespace prop {
 
 
   Neutrinos::Neutrinos(const prop::Spectrum& spectrum,
-                       const std::string& propMatrixFilename)
+                       const std::string& propMatrixFilename,
+                       const bool withSourceNu)
   {
 
     const PropMatrixFile pmf(propMatrixFilename);
@@ -79,12 +80,22 @@ namespace prop {
     mPionMinus.ResizeTo(nProp, 1);
 
 
-    for (unsigned int i = 0; i < nEsc; ++i) {
-      mP(i + deltaIndex, 0) = mPOrig (i, 0);
-      mN(i + deltaIndex, 0) = mNOrig (i, 0);
-      mPionPlus(i + deltaIndex, 0) = mPiP(i, 0);
-      mPionMinus(i + deltaIndex, 0) = mPiM(i, 0);
+    if (withSourceNu) {
+      for (unsigned int i = 0; i < nEsc; ++i) {
+        mP(i + deltaIndex, 0) = mPOrig (i, 0);
+        mN(i + deltaIndex, 0) = mNOrig (i, 0);
+        mPionPlus(i + deltaIndex, 0) = mPiP(i, 0);
+        mPionMinus(i + deltaIndex, 0) = mPiM(i, 0);
+      }
     }
+    else {
+      for (unsigned int i = 0; i < nEsc; ++i) {
+        mP(i + deltaIndex, 0) = mPOrig (i, 0) + mNOrig (i, 0);
+        mN(i + deltaIndex, 0) = 0;
+        mPionPlus(i + deltaIndex, 0) = 0;
+        mPionMinus(i + deltaIndex, 0) = 0;
+      }
+    }     
     fPropagator->Propagate(escFluxResized);
 
     NeutrinoOscillator osci;

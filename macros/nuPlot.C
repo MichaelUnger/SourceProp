@@ -1,5 +1,6 @@
 TLegend* gLegend;
 TCanvas* gCanvas;
+const double legTextSize = 0.05;
 
 void
 Draw(const int firstPad, const string& title, const string& filename,
@@ -12,17 +13,27 @@ Draw(const int firstPad, const string& title, const string& filename,
     cerr << " cannot open " << filename << "HistNu.root" << endl;
     return;
   }
+  TFile* nuFileNoSource = TFile::Open((filename + "HistNuNoSource.root").c_str());
+  if (!nuFileNoSource || nuFileNoSource->IsZombie()) {
+    cerr << " cannot open " << filename << "HistNuNoSource.root" << endl;
+    return;
+  }
 
   TH1D* nuSum = (TH1D*) nuFile->Get(";7 sum");
   if (!nuSum) {
     cerr << " no nuSum hist in " << filename << endl;
     return;
   }
+  TH1D* nuSumNoSource = (TH1D*) nuFileNoSource->Get(";7 sum");
+  if (!nuSumNoSource) {
+    cerr << " no nuSumNoSource hist in " << filename << endl;
+    return;
+  }
 
   const double tsiz = 0.06;
   const double toffx = 1;
   const double toffy = 1.2;
-  TH2D* back = new TH2D("back", "", 100, 13, 18, 100, 1e-12, 1e-7);
+  TH2D* back = new TH2D("back", "", 100, 13, 18, 100, 1e-12, 1.1e-7);
   back->GetXaxis()->SetTitle("lg(E/eV)");
   back->GetYaxis()->SetTitle("E^{2} #Phi(E) [GeV cm^{-2} sr^{-1} s^{-1}]");
   back->GetXaxis()->CenterTitle();
@@ -38,8 +49,28 @@ Draw(const int firstPad, const string& title, const string& filename,
   nuSum->SetLineStyle(style);
   nuSum->SetLineWidth(width);
   nuSum->Draw("CSAME");
+  nuSumNoSource->SetLineColor(color);
+  nuSumNoSource->SetLineStyle(2);
+  nuSumNoSource->SetLineWidth(width);
+  nuSumNoSource->Draw("CSAME");
   gLegend->AddEntry(nuSum, ("  " + title).c_str(), "L");
 
+  TLegend* iceLegend = new TLegend(0.55, 0.15, 1, 0.3, NULL, "brNDCARC");
+  iceLegend->SetFillColor(0);
+  iceLegend->SetTextFont(42);
+  iceLegend->SetFillStyle(0);
+  iceLegend->SetLineStyle(2);
+  iceLegend->SetTextSize(legTextSize);
+  iceLegend->SetBorderSize(0);
+
+  TGraph* ng = new TGraph("data/iceCube2017Limits.txt");
+  ng->SetLineStyle(3);
+  ng->Draw("L");
+  iceLegend->AddEntry("all #nu","all #nu","L")->SetLineStyle(1);
+  iceLegend->AddEntry("prop #nu","prop #nu","L")->SetLineStyle(2);
+  iceLegend->AddEntry(ng, "  IceCube 9yr 90% C.L.", "L");
+  iceLegend->Draw();
+  
   TFile* histFile = TFile::Open((filename + "Hist.root").c_str());
   if (!histFile || histFile->IsZombie()) {
     cerr << " cannot open " << filename << "Hist.root" << endl;
@@ -53,6 +84,11 @@ Draw(const int firstPad, const string& title, const string& filename,
     cerr << " no specSum hist in " << filename << endl;
     return;
   }
+  TH1D* sourceNuc = (TH1D*) histFile->Get("hNucl0");
+  if (!sourceNuc) {
+    cerr << " no sourceNuc hist in " << filename << endl;
+    return;
+  }
   specSum->SetTitle("");
   specSum->GetXaxis()->SetTitleSize(tsiz);
   specSum->GetXaxis()->SetTitleOffset(toffx);
@@ -61,9 +97,26 @@ Draw(const int firstPad, const string& title, const string& filename,
   specSum->SetLineColor(color);
   specSum->SetLineStyle(style);
   specSum->SetLineWidth(width);
-  specSum->GetYaxis()->SetRangeUser(0, 150e36);
+  specSum->GetYaxis()->SetRangeUser(0, 180e36);
   specSum->GetXaxis()->SetRangeUser(17.5,20.5);
   specSum->Draw("CSAME");
+
+  sourceNuc->SetLineColor(color);
+  sourceNuc->SetLineStyle(style+1);
+  sourceNuc->SetLineWidth(width);
+  sourceNuc->Draw("CSAME");
+
+  TLegend* leg = new TLegend(0.65, 0.75, 1, 0.95,NULL,"brNDCARC");
+  leg->SetFillColor(0);
+  leg->SetTextFont(42);
+  leg->SetFillStyle(0);
+  leg->SetBorderSize(0);
+  leg->AddEntry("all particles","all particles", "L")->SetLineStyle(1);
+  leg->AddEntry("source nucleons","source nucleons","L")->SetLineStyle(2);
+  leg->Draw();
+
+  
+  gPad->RedrawAxis(),
   
   TVirtualPad* lnAPad = gCanvas->cd(firstPad + 8);
   lnAPad->SetLogy(0);
@@ -141,7 +194,7 @@ Draw(const int firstPad, const string& title, const string& filename,
   escProton->Divide(intProton);
   TH1D* escSilicon = (TH1D*) histFile->Get("lambdaEsc28");
   TH1D* intSilicon = (TH1D*) histFile->Get("lambdaInt28");
-  TH2D* ratioBack = new TH2D("ratioBack", "", 100, 17, 21, 100, 0.01, 5);
+  TH2D* ratioBack = new TH2D("ratioBack", "", 100, 17, 20, 100, 0.01, 5);
   ratioBack->GetXaxis()->SetTitle("lg(E/eV)");
   ratioBack->GetYaxis()->SetTitle("#tau_{esc}/#tau_{int}");
   ratioBack->GetXaxis()->CenterTitle();
@@ -168,10 +221,11 @@ Draw(const int firstPad, const string& title, const string& filename,
   pionPad->SetLogy(1);
   TH1D* piPlus = (TH1D*) histFile->Get("elMagSource0");
   TH1D* piMinus = (TH1D*) histFile->Get("elMagSource1");
+  TH1D* piZero = (TH1D*) histFile->Get("elMagSource2");
   TH1D* neutron = (TH1D*) histFile->Get("elMagSource3");
   piPlus->Add(piMinus);
 
-  TH2D* pionBack = new TH2D("pionBack", "", 100, 17, 21, 100, 1e16, 1e21);
+  TH2D* pionBack = new TH2D("pionBack", "", 100, 17, 20, 100, 1e16, 1e21);
   pionBack->GetXaxis()->SetTitle("lg(E/eV)");
   pionBack->GetYaxis()->SetTitle(piPlus->GetYaxis()->GetTitle());
   pionBack->GetXaxis()->CenterTitle();
@@ -188,6 +242,9 @@ Draw(const int firstPad, const string& title, const string& filename,
   neutron->SetLineColor(color);
   neutron->SetLineStyle(2);
   neutron->Draw("CSAME");
+  piZero->SetLineColor(color);
+  piZero->SetLineStyle(3);
+  //  piZero->Draw("CSAME");
 
   TLegend* leg = new TLegend(0.65, 0.75, 1, 0.95,NULL,"brNDCARC");
   leg->SetFillColor(0);
@@ -195,6 +252,7 @@ Draw(const int firstPad, const string& title, const string& filename,
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->AddEntry("#pi^{+}+#pi^{-}","#pi^{+}+#pi^{-}","L")->SetLineStyle(1);
+  //  leg->AddEntry("#pi^{0}","#pi^{0}","L")->SetLineStyle(3);
   leg->AddEntry("neutron","neutron","L")->SetLineStyle(2);
   leg->Draw();
 
@@ -206,7 +264,6 @@ Draw(const int firstPad, const string& title, const string& filename,
 void
 nuPlot()
 {
-  const double legTextSize = 0.05;
   gStyle->SetOptLogy(1);
   gStyle->SetOptStat(0);
   gStyle->SetPadTopMargin(0.01);
@@ -219,16 +276,6 @@ nuPlot()
   gCanvas = new TCanvas("c", "", 10, 10, 0.5*800, 0.5*1000);
   gCanvas->Divide(4, 7);
 
-  TLegend* iceLegend = new TLegend(0.41, 0.13, 0.71, 0.33, NULL, "brNDCARC");
-  iceLegend->SetFillColor(0);
-  iceLegend->SetTextFont(42);
-  iceLegend->SetFillStyle(0);
-  iceLegend->SetLineStyle(2);
-  iceLegend->SetBorderSize(0);
-
-  TGraph* ng = new TGraph("data/iceCube2017Limits.txt");
-  ng->SetLineStyle(2);
-  iceLegend->AddEntry(ng, "  IceCube 9yr 90% C.L.", "L");
   
   int pad = 2;
   gCanvas->cd(pad);
@@ -254,7 +301,6 @@ nuPlot()
   r+=delta; b-=delta;
   Draw(pad, "m=+4", "Marco/pdfs/evo_p4",TColor::GetColor(r,g,b));
   gCanvas->cd(pad);
-  ng->Draw("L");
 
   gLegend->Draw();
 
@@ -271,9 +317,7 @@ nuPlot()
   Draw(pad, "syst.", "Marco/pdfs/PRDSys", kRed);
   Draw(pad, "Gal. mix", "Marco/pdfs/PRDGalactic", kBlue);
   gCanvas->cd(pad);
-  ng->Draw("L");
   gLegend->Draw();
-  iceLegend->Draw();
   
   pad = 3;
   gCanvas->cd(pad);
@@ -286,11 +330,10 @@ nuPlot()
 
   Draw(pad, "AAGHRW05", "Marco/pdfs/evo_AAGHRW05", kBlack);
   Draw(pad, "AGN", "Marco/pdfs/evo_AGN", kRed);
-  Draw(pad, "uniform", "Marco/pdfs/evo_uniform", kBlue);
-  Draw(pad, "uniform z<3", "Marco/pdfs/evo_uniformCutAt3", kMagenta);
-  Draw(pad, "m=0", "Marco/pdfs/evo_0", kGreen+1);
+  Draw(pad, "SFR", "Marco/pdfs/evo_SFR", kBlue);
+  Draw(pad, "m=0 z<3", "Marco/pdfs/evo_uniformCutAt3", kMagenta);
+  Draw(pad, "m=0 z<2", "Marco/pdfs/evo_0", kGreen+1);
   gCanvas->cd(pad);
-  ng->Draw("L");
   gLegend->Draw();
   
   pad = 4;
@@ -323,7 +366,6 @@ nuPlot()
          TColor::GetColor(r,g,b)); r+=delta; b-=delta;
 
   gCanvas->cd(pad);
-  ng->Draw("L");
   gLegend->Draw();
 
   gCanvas->Print("plot.pdf");

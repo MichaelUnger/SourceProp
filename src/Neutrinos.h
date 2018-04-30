@@ -14,7 +14,8 @@ namespace prop {
 
   public:
     Neutrinos(const prop::Spectrum& spectrum,
-              const std::string& propMatrixFilename);
+              const std::string& propMatrixFilename,
+              const bool withSourceNu = true);
     ~Neutrinos();
 
     const std::map<int, TMatrixD>& GetFlux() const;
