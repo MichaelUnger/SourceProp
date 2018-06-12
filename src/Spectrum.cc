@@ -551,6 +551,7 @@ namespace prop {
         const double lambdaE = fSource->LambdaEsc(Enext, 1);
         const double fInt = lambdaE / (lambdaE + lambdaI);
         mPionPlus[iE][0] += bPP * fInt * qNext / (1-kappa);
+        mPionZero[iE][0] += (1 - bPP) * fInt * qNext / (1-kappa);
         lgE += dlgEOrig;
       }
     }
