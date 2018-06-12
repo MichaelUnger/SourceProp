@@ -10,7 +10,7 @@ using namespace utl;
 namespace prop {
 
   IceCubeAcceptance::IceCubeAcceptance(const string& dataDirname) :
-    // data IC86, Fig.6 middle panel, arXiv 1311.5238
+    // data IC86, Fig.6 middle panel, arXiv arXiv:1310.5477
     fAreaNuE((dataDirname + "/iceCubeAreaNuE.txt").c_str()),
     fAreaAntiNuE((dataDirname + "/iceCubeAreaNuAntiE.txt").c_str()),
     fAreaNuMu((dataDirname + "/iceCubeAreaNuMu.txt").c_str()),
