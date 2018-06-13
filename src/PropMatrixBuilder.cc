@@ -162,9 +162,8 @@ namespace prop {
 
   inline
   double
-  SimpleEvolution(const double z, const double m)
+  SimpleEvolution(const double z, const double m, const double z0 = 2)
   {
-    const double z0 = 2;
     if (z < z0)
       return pow(1+z, m);
     else
@@ -280,6 +279,56 @@ namespace prop {
       return SimpleEvolution(z, 4.5);
     case eM50:
       return SimpleEvolution(z, 5.0);
+    case eMm40z10:
+      return SimpleEvolution(z, -4, 1);
+    case eMm40z20:
+      return SimpleEvolution(z, -4, 2);
+    case eMm40z30:
+      return SimpleEvolution(z, -4, 3);
+    case eMm40z40:
+      return SimpleEvolution(z, -4, 4);
+    case eMm40z50:
+      return SimpleEvolution(z, -4, 5);
+    case eMm20z10:
+      return SimpleEvolution(z, -2, 1);
+    case eMm20z20:
+      return SimpleEvolution(z, -2, 2);
+    case eMm20z30:
+      return SimpleEvolution(z, -2, 3);
+    case eMm20z40:
+      return SimpleEvolution(z, -2, 4);
+    case eMm20z50:
+      return SimpleEvolution(z, -2, 5);
+    case eM00z10:
+      return SimpleEvolution(z, 0, 1);
+    case eM00z20:
+      return SimpleEvolution(z, 0, 2);
+    case eM00z30:
+      return SimpleEvolution(z, 0, 3);
+    case eM00z40:
+      return SimpleEvolution(z, 0, 4);
+    case eM00z50:
+      return SimpleEvolution(z, 0, 5);
+    case eMp20z10:
+      return SimpleEvolution(z, 2, 1);
+    case eMp20z20:
+      return SimpleEvolution(z, 2, 2);
+    case eMp20z30:
+      return SimpleEvolution(z, 2, 3);
+    case eMp20z40:
+      return SimpleEvolution(z, 2, 4);
+    case eMp20z50:
+      return SimpleEvolution(z, 2, 5);
+    case eMp40z10:
+      return SimpleEvolution(z, 4, 1);
+    case eMp40z20:
+      return SimpleEvolution(z, 4, 2);
+    case eMp40z30:
+      return SimpleEvolution(z, 4, 3);
+    case eMp40z40:
+      return SimpleEvolution(z, 4, 4);
+    case eMp40z50:
+      return SimpleEvolution(z, 4, 5);
     }
     return 0;
   }

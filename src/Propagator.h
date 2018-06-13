@@ -16,7 +16,8 @@ namespace prop {
     Propagator(const PropMatrices& m) :
       fPropMatrices(m) {}
 
-    void Propagate(const std::map<int, TMatrixD>& spectrum);
+    void Propagate(const std::map<int, TMatrixD>& spectrum,
+                   const bool onlyNuc = true);
 
     double GetFluxSum(const unsigned int i) const;
     double GetFluxSum(const double lgE) const;

@@ -281,7 +281,7 @@ namespace prop {
   std::string FitOptions::GetPropmatrixFilename()
     const
   {
-    return GetDataDirname() + "/" + fIRB + "_" + fEvolution + ".root";
+    return GetDataDirname() + "/" + fIRB + "_" + fEvolution + "_nu.root";
   }
 
   std::string FitOptions::GetPropmatrixNuFilename()

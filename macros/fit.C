@@ -516,7 +516,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   vector<MassGroup> massGroups;
   bool all = true;
   if (all) {
-    for (unsigned int i = 1; i <= 56; ++i)
+    for (unsigned int i = 1; i <= GetMaxA(); ++i)
       massGroups.push_back(MassGroup(i, i, i, kRed+i));
   }
   else {

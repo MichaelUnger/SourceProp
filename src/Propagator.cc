@@ -11,7 +11,7 @@ using namespace std;
 
 namespace prop {
   void
-  Propagator::Propagate(const map<int, TMatrixD>& spectrum)
+  Propagator::Propagate(const map<int, TMatrixD>& spectrum, const bool onlyNuc)
   {
 
     fResult.clear();
@@ -27,6 +27,8 @@ namespace prop {
       }
       for (const auto& mIter : fPropMatrices.GetSecondaryMap(Aprim)) {
         const unsigned int Asec = mIter.first;
+        if (onlyNuc && (Asec < 0 || Asec > GetMaxA()))
+          continue;
         const TMatrixD& m = mIter.second;
         const TMatrixD propSpectrum(m, TMatrixD::kMult, sourceSpectrum);
         TMatrixD& r = fResult[Asec];

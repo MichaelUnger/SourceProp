@@ -16,7 +16,7 @@ Draw(const int firstPad, const string& title, const string& filename,
   TFile* nuFileNoSource = TFile::Open((filename + "HistNuNoSource.root").c_str());
   if (!nuFileNoSource || nuFileNoSource->IsZombie()) {
     cerr << " cannot open " << filename << "HistNuNoSource.root" << endl;
-    return;
+    //   return;
   }
 
   TH1D* nuSum = (TH1D*) nuFile->Get(";7 sum");
@@ -24,10 +24,13 @@ Draw(const int firstPad, const string& title, const string& filename,
     cerr << " no nuSum hist in " << filename << endl;
     return;
   }
-  TH1D* nuSumNoSource = (TH1D*) nuFileNoSource->Get(";7 sum");
-  if (!nuSumNoSource) {
-    cerr << " no nuSumNoSource hist in " << filename << endl;
-    return;
+  TH1D* nuSumNoSource = NULL;
+  if (nuFileNoSource && !nuFileNoSource->IsZombie()) {
+    nuSumNoSource = (TH1D*) nuFileNoSource->Get(";7 sum");
+    if (!nuSumNoSource) {
+      cerr << " no nuSumNoSource hist in " << filename << endl;
+      return;
+    }
   }
 
   const double tsiz = 0.06;
@@ -49,10 +52,12 @@ Draw(const int firstPad, const string& title, const string& filename,
   nuSum->SetLineStyle(style);
   nuSum->SetLineWidth(width);
   nuSum->Draw("CSAME");
-  nuSumNoSource->SetLineColor(color);
-  nuSumNoSource->SetLineStyle(2);
-  nuSumNoSource->SetLineWidth(width);
-  nuSumNoSource->Draw("CSAME");
+  if (nuSumNoSource) {
+    nuSumNoSource->SetLineColor(color);
+    nuSumNoSource->SetLineStyle(2);
+    nuSumNoSource->SetLineWidth(width);
+    nuSumNoSource->Draw("CSAME");
+  }
   gLegend->AddEntry(nuSum, ("  " + title).c_str(), "L");
 
   TLegend* iceLegend = new TLegend(0.55, 0.15, 1, 0.3, NULL, "brNDCARC");
@@ -116,7 +121,7 @@ Draw(const int firstPad, const string& title, const string& filename,
   leg->Draw();
 
   
-  gPad->RedrawAxis(),
+  gPad->RedrawAxis();
   
   TVirtualPad* lnAPad = gCanvas->cd(firstPad + 8);
   lnAPad->SetLogy(0);

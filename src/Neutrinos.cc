@@ -96,7 +96,7 @@ namespace prop {
         mPionMinus(i + deltaIndex, 0) = 0;
       }
     }     
-    fPropagator->Propagate(escFluxResized);
+    fPropagator->Propagate(escFluxResized, false);
 
     NeutrinoOscillator osci;
 

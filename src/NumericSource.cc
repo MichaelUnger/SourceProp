@@ -332,8 +332,10 @@ namespace prop {
           const double lgGamma = log10(E / M);
           const int iBin = hist.FindFixBin(lgGamma);
           if (iBin == 0 || iBin == hist.GetNbinsX() + 1) {
+            /*
             cerr << " energy out of range " << E << " "
                  << Aprim << " " << Asec << endl;
+            */
             return 0;
           }
           else {

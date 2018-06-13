@@ -17,8 +17,8 @@ namespace prop {
     const double x1 = x[0];
     const double x2 = x[n - 1];
     if (xx <= x1) {
-      cerr << " EvalFast(): below TGraph range, "
-           << xx << " < " << x1 << endl;
+      //      cerr << " EvalFast(): below TGraph range, "
+      //     << xx << " < " << x1 << endl;
       return y[0];
     }
     else if (xx >= x2) {
@@ -60,7 +60,10 @@ namespace prop {
     double sumFluxLnA2 = 0;
     double sumFlux = 0;
     for (const auto& iter : specMap) {
-      const double lnA = log(iter.first % kGalacticOffset);
+      const double A = iter.first % kGalacticOffset;
+      if (A < 1 || A > GetMaxA())
+        continue;
+      const double lnA = log(A);
       const TMatrixD& m = iter.second;
       const double flux = m[index][0];
       sumFlux += flux;

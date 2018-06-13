@@ -73,6 +73,56 @@ main(int argc, char** argv)
     s = PropMatrixBuilder::eM45;
   else if (option == "M50")
     s = PropMatrixBuilder::eM50;
+  else if (option == "eMm40z10")
+    s = PropMatrixBuilder::eMm40z10;
+  else if (option == "eMm40z20")
+    s = PropMatrixBuilder::eMm40z20;
+  else if (option == "eMm40z30")
+    s = PropMatrixBuilder::eMm40z30;
+  else if (option == "eMm40z40")
+    s = PropMatrixBuilder::eMm40z40;
+  else if (option == "eMm40z50")
+    s = PropMatrixBuilder::eMm40z50;
+  else if (option == "eMm20z10")
+    s = PropMatrixBuilder::eMm20z10;
+  else if (option == "eMm20z20")
+    s = PropMatrixBuilder::eMm20z20;
+  else if (option == "eMm20z30")
+    s = PropMatrixBuilder::eMm20z30;
+  else if (option == "eMm20z40")
+    s = PropMatrixBuilder::eMm20z40;
+  else if (option == "eMm20z50")
+    s = PropMatrixBuilder::eMm20z50;
+  else if (option == "eM00z10")
+    s = PropMatrixBuilder::eM00z10;
+  else if (option == "eM00z20")
+    s = PropMatrixBuilder::eM00z20;
+  else if (option == "eM00z30")
+    s = PropMatrixBuilder::eM00z30;
+  else if (option == "eM00z40")
+    s = PropMatrixBuilder::eM00z40;
+  else if (option == "eM00z50")
+    s = PropMatrixBuilder::eM00z50;
+  else if (option == "eMp20z10")
+    s = PropMatrixBuilder::eMp20z10;
+  else if (option == "eMp20z20")
+    s = PropMatrixBuilder::eMp20z20;
+  else if (option == "eMp20z30")
+    s = PropMatrixBuilder::eMp20z30;
+  else if (option == "eMp20z40")
+    s = PropMatrixBuilder::eMp20z40;
+  else if (option == "eMp20z50")
+    s = PropMatrixBuilder::eMp20z50;
+  else if (option == "eMp40z10")
+    s = PropMatrixBuilder::eMp40z10;
+  else if (option == "eMp40z20")
+    s = PropMatrixBuilder::eMp40z20;
+  else if (option == "eMp40z30")
+    s = PropMatrixBuilder::eMp40z30;
+  else if (option == "eMp40z40")
+    s = PropMatrixBuilder::eMp40z40;
+  else if (option == "eMp40z50")
+    s = PropMatrixBuilder::eMp40z50;
   else {
     cerr << " unknown source evolution " << option << "!" << endl;
     cerr << usage.str() << endl;
