@@ -1,6 +1,7 @@
 #include "Spectrum.h"
 #include "VSource.h"
 #include "Utilities.h"
+#include "utl/Units.h"
 
 #include <TH1D.h>
 #include <TDirectory.h>
@@ -577,4 +578,7 @@ namespace prop {
     save->cd();
   }
 
+  double Spectrum::GetE0() { return 1e18*utl::eV; }
+  
 }
+

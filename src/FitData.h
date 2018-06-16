@@ -7,7 +7,7 @@
 
 namespace prop {
 
-  class NumericSource;
+  class VSource;
   class Propagator;
 
   struct FluxData {
@@ -59,7 +59,7 @@ namespace prop {
 
     unsigned int fIteration;
     unsigned int fNNan;
-    NumericSource* fSource;
+    VSource* fSource;
     Propagator* fPropagator;
     Spectrum fSpectrum;
     unsigned int fNLgE;

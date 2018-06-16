@@ -11,15 +11,15 @@ namespace prop {
   {}
 
   bool
-  PropMatrices::HasPrimary(const unsigned int Aprim)
+  PropMatrices::HasPrimary(const int Aprim)
     const
   {
     return fMatrices.find(Aprim) != fMatrices.end();
   }
 
   bool
-  PropMatrices::HasMatrix(const unsigned int Aprim,
-                          const unsigned int Asec)
+  PropMatrices::HasMatrix(const int Aprim,
+                          const int Asec)
     const
   {
     auto m = fMatrices.find(Aprim);
@@ -32,8 +32,8 @@ namespace prop {
 
 
   TMatrixD&
-  PropMatrices::GetMatrix(const unsigned int Aprim,
-                          const unsigned int Asec)
+  PropMatrices::GetMatrix(const int Aprim,
+                          const int Asec)
   {
     return fMatrices[Aprim][Asec];
   }

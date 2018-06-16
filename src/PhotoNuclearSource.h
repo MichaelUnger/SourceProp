@@ -1,5 +1,5 @@
-#ifndef _NumericSource_h_
-#define _NumericSource_h_
+#ifndef _PhotoNuclearSource_h_
+#define _PhotoNuclearSource_h_
 
 #include "VSource.h"
 
@@ -10,14 +10,14 @@ class TGraph;
 class TH1D;
 
 namespace prop {
-  class NumericSource : public VSource {
+  class PhotoNuclearSource : public VSource {
 
   public:
 
-    NumericSource(const std::vector<std::string>& fields,
+    PhotoNuclearSource(const std::vector<std::string>& fields,
                   const std::string& directory);
 
-    virtual ~NumericSource();
+    virtual ~PhotoNuclearSource();
 
     double
     LambdaInt(const double E, const int A) const;
@@ -29,12 +29,9 @@ namespace prop {
     double
     GetPDBranchingRatio(const double E, const int Asec, const int Aprim) const;
 
-    void SetPhotonScaleFactors(const std::vector<double>& f)
-    { fFieldScaleFactors = f; }
-
   private:
-    NumericSource& operator=(const NumericSource&);
-    NumericSource(NumericSource&);
+    PhotoNuclearSource& operator=(const PhotoNuclearSource&);
+    PhotoNuclearSource(PhotoNuclearSource&);
     void ReadBranch();
     void ReadPD();
     void ReadPPP();
@@ -45,7 +42,6 @@ namespace prop {
     std::vector<Lambda> fPhotoPionProductions;
     typedef std::map<unsigned int, std::map<unsigned int, TH1D*> > BranchingRatio;
     std::vector<BranchingRatio> fBranchingRatios;
-    std::vector<double> fFieldScaleFactors;
     const std::vector<std::string> fFields;
     const std::string fDirectory;
   };

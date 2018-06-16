@@ -1,6 +1,7 @@
 #include "Fitter.h"
 #include "FitParameters.h"
-#include "NumericSource.h"
+#include "PhotoNuclearSource.h"
+#include "VSource.h"
 #include "Spectrum.h"
 #include "PropMatrixFile.h"
 #include "Propagator.h"
@@ -68,7 +69,7 @@ namespace prop {
 
     FitData& data = fFitData;
 
-    NumericSource* source = data.fSource;
+    VSource* source = data.fSource;
     source->SetEscFac(1);
     source->SetEscGamma(par[eEscGamma]);
 
@@ -221,8 +222,8 @@ namespace prop {
     for (const auto f : filenames)
       cout << " " << fOptions.GetDataDirname() << "/" << f << endl;
 
-    fFitData.fSource = new NumericSource(fOptions.GetPhotIntFilenames(),
-                                         fOptions.GetDataDirname());
+    fFitData.fSource = new PhotoNuclearSource(fOptions.GetPhotIntFilenames(),
+                                              fOptions.GetDataDirname());
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();

@@ -1,4 +1,4 @@
-#include "NumericSource.h"
+#include "PhotoNuclearSource.h"
 #include "Utilities.h"
 
 #include <TGraph.h>
@@ -17,8 +17,8 @@ namespace prop {
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
 
-  NumericSource::NumericSource(const std::vector<std::string>& fields,
-                               const std::string& directory)  :
+  PhotoNuclearSource::PhotoNuclearSource(const std::vector<std::string>& fields,
+                                         const std::string& directory)  :
     fFields(fields), fDirectory(directory)
   {
     if (fFields.empty())
@@ -29,7 +29,7 @@ namespace prop {
   }
 
 
-  NumericSource::~NumericSource()
+  PhotoNuclearSource::~PhotoNuclearSource()
   {
     for (auto lambdaMap : fPhotoDissociations)
       for (auto iter : lambdaMap)
@@ -52,7 +52,7 @@ namespace prop {
   }
 
   void
-  NumericSource::ReadBranch()
+  PhotoNuclearSource::ReadBranch()
   {
     cout << " initializing branching ratios " << endl;
     const double lgmin = 6; // minimum log10(Lorentz-factor)
@@ -140,7 +140,7 @@ namespace prop {
   }
 
   void
-  NumericSource::ReadPD()
+  PhotoNuclearSource::ReadPD()
   {
     cout << " initializing PD tables " << endl;
 
@@ -202,7 +202,7 @@ namespace prop {
   }
 
   void
-  NumericSource::ReadPPP()
+  PhotoNuclearSource::ReadPPP()
   {
     cout << " initializing PP tables " << endl;
 
@@ -251,7 +251,7 @@ namespace prop {
   }
 
   const TGraph&
-  NumericSource::FindGraph(const Lambda& lambda, const unsigned int A)
+  PhotoNuclearSource::FindGraph(const Lambda& lambda, const unsigned int A)
     const
   {
     Lambda::const_iterator iter = lambda.find(A);
@@ -269,7 +269,7 @@ namespace prop {
 
 
   double
-  NumericSource::LambdaInt(const double E, const int A)
+  PhotoNuclearSource::LambdaInt(const double E, const int A)
     const
   {
     if (fFieldScaleFactors.size() < fPhotoDissociations.size()) {
@@ -302,9 +302,9 @@ namespace prop {
   }
 
   double
-  NumericSource::GetPDBranchingRatio(const double E,
-                                     const int Asec,
-                                     const int Aprim)
+  PhotoNuclearSource::GetPDBranchingRatio(const double E,
+                                          const int Asec,
+                                          const int Aprim)
     const
   {
     // no A = 5 in CRPropa
@@ -333,8 +333,8 @@ namespace prop {
           const int iBin = hist.FindFixBin(lgGamma);
           if (iBin == 0 || iBin == hist.GetNbinsX() + 1) {
             /*
-            cerr << " energy out of range " << E << " "
-                 << Aprim << " " << Asec << endl;
+              cerr << " energy out of range " << E << " "
+              << Aprim << " " << Asec << endl;
             */
             return 0;
           }
@@ -362,9 +362,9 @@ namespace prop {
   }
 
   double
-  NumericSource::GetProcessFraction(const double E,
-                                    const int A,
-                                    const EProcess p)
+  PhotoNuclearSource::GetProcessFraction(const double E,
+                                         const int A,
+                                         const EProcess p)
     const
   {
     const double lgE = log10(E);
@@ -380,7 +380,7 @@ namespace prop {
           continue;
         const double lambdaPP =
           EvalFast(FindGraph(fPhotoPionProductions[i], A),
-                       lgE) / f;
+                   lgE) / f;
         if (lPP == 0)
           lPP = lambdaPP;
         else

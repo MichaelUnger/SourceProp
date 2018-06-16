@@ -20,6 +20,8 @@ namespace prop {
       fEscGamma(escGamma)
     {}
 
+    virtual ~VSource() {}
+    
     void SetEscFac(const double f) { fEscFac = f; }
     void SetEscGamma(const double g) { fEscGamma = g; }
 
@@ -47,7 +49,11 @@ namespace prop {
                        const EProcess p)
       const = 0;
 
+    void SetPhotonScaleFactors(const std::vector<double>& f)
+    { fFieldScaleFactors = f; }
+    
   protected:
+    std::vector<double> fFieldScaleFactors;
     double fEscFac;
     double fEscGamma;
   };

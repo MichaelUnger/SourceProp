@@ -3,7 +3,6 @@
 
 #include <map>
 #include <TMatrixD.h>
-#include <utl/Units.h>
 
 #include "VSource.h"
 
@@ -82,7 +81,7 @@ namespace prop {
 
     const VSource* GetSource() const { return fSource; }
 
-    static double GetE0() { return 1e18*utl::eV; }
+    static double GetE0(); 
 
     // P = int_E1^E2 E * f(E/E0) dE
     double InjectedPower(const double E1, const double E2, const double A) const;

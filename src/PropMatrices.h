@@ -9,23 +9,23 @@ namespace prop {
   class PropMatrices {
 
   public:
-    typedef std::map<unsigned int, TMatrixD> SecondaryMap;
-    typedef std::map<unsigned int, SecondaryMap> PrimaryMap;
+    typedef std::map<int, TMatrixD> SecondaryMap;
+    typedef std::map<int, SecondaryMap> PrimaryMap;
 
   public:
     PropMatrices(const double lgEmin = 0,
                  const double lgEmax = 0);
 
-    bool HasPrimary(const unsigned int Aprim) const;
-    bool HasMatrix(const unsigned int Aprim,
-                   const unsigned int Asec) const;
-    TMatrixD& GetMatrix(const unsigned int Aprim,
-                        const unsigned int Asec);
+    bool HasPrimary(const int Aprim) const;
+    bool HasMatrix(const int Aprim,
+                   const int Asec) const;
+    TMatrixD& GetMatrix(const int Aprim,
+                        const int Asec);
     PrimaryMap& GetPrimaryMap() { return fMatrices; }
     const PrimaryMap& GetPrimaryMap() const { return fMatrices; }
-    SecondaryMap& GetSecondaryMap(const unsigned int Aprim)
+    SecondaryMap& GetSecondaryMap(const int Aprim)
     { return fMatrices.find(Aprim)->second; }
-    const SecondaryMap& GetSecondaryMap(const unsigned int Aprim) const
+    const SecondaryMap& GetSecondaryMap(const int Aprim) const
     { return fMatrices.find(Aprim)->second; }
 
     unsigned int GetN() const;

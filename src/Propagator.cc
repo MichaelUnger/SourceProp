@@ -26,7 +26,7 @@ namespace prop {
         throw runtime_error(errMsg.str());
       }
       for (const auto& mIter : fPropMatrices.GetSecondaryMap(Aprim)) {
-        const unsigned int Asec = mIter.first;
+        const int Asec = mIter.first;
         if (onlyNuc && (Asec < 0 || Asec > GetMaxA()))
           continue;
         const TMatrixD& m = mIter.second;
@@ -89,7 +89,7 @@ namespace prop {
   {
     const int i = LgEtoIndex(lgE);
     auto iter = fResult.find(A);
-    if (iter == fResult.end() || i >=  (unsigned int) iter->second.GetNoElements()) {
+    if (iter == fResult.end() || i >=  iter->second.GetNoElements()) {
       std::cerr << " Propagator::GetFluxAtEarth() - "
                 << i << " is out of bound " << A << std::endl;
       return 0;
@@ -102,7 +102,7 @@ namespace prop {
     const
   {
     const int i = LgEtoIndex(lgE);
-    if (i >=  (unsigned int) fNucleonResult.GetNoElements()) {
+    if (i >=  fNucleonResult.GetNoElements()) {
       std::cerr << " Propagator::GetPrimaryNucleonFluxAtEarth() - "
                 << i << " is out of bound " << std::endl;
       return 0;

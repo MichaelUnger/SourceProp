@@ -1,6 +1,6 @@
 #include "FitData.h"
 #include "FitParameters.h"
-#include "NumericSource.h"
+#include "VSource.h"
 #include "Propagator.h"
 #include "Utilities.h"
 #include "DoubleMass.h"
