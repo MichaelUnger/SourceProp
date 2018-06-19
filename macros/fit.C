@@ -311,7 +311,11 @@ DrawData(const FitData& fitData,
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
   leg->AddEntry(fitLnA, "", "PE");
-  leg->AddEntry(fitVlnA, "  Auger 2014 + EPOS-LHC", "PE");
+  const string iamName = fitOptions.GetInteractionModel();
+  const LnACalculator::EModel model = LnACalculator::GetModel(iamName);
+  const string niceName = LnACalculator::GetNiceModelName(model);
+  
+  leg->AddEntry(fitVlnA, ("  Auger 2014 + " + niceName).c_str(), "PE");
   can->cd(Plotter::eCompEarth)->cd(1);
   leg->Draw();
   TLatex l;
@@ -514,7 +518,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
 
   vector<MassGroup> massGroups;
-  bool all = true;
+  bool all = false;
   if (all) {
     for (unsigned int i = 1; i <= GetMaxA(); ++i)
       massGroups.push_back(MassGroup(i, i, i, kRed+i));
