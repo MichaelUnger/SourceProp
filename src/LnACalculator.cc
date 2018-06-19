@@ -5,17 +5,19 @@
 using namespace std;
 
 // parameters from lnA paper and update in ICRC13 proceedings
-const double gX0[LnACalculator::eNModels] = {795.1, 806.1, 790.4};
-const double gD[LnACalculator::eNModels] = {57.7, 55.6, 54.4};
-const double gZeta[LnACalculator::eNModels] = {-0.04, 0.15, -0.31};
-const double gDelta[LnACalculator::eNModels] = {-0.04, 0.83, 0.24};
+const double gX0[LnACalculator::eNModels] = {795.1, 806.1, 790.4, 819.3};
+const double gD[LnACalculator::eNModels] = {57.7, 55.6, 54.4, 57.4};
+const double gZeta[LnACalculator::eNModels] = {-0.04, 0.15, -0.31, -0.56};
+const double gDelta[LnACalculator::eNModels] = {-0.04, 0.83, 0.24, 0.68};
 const double gP[LnACalculator::eNModels][3] = { {2785, -364, 152},
                                                 {3284, -260, 132},
-                                                {3738, -375, -21} };
+                                                {3738, -375, -21},
+                                                {3792, -524, 124}};
 const double gA[LnACalculator::eNModels][2] = { {-0.368, -0.0049},
                                                 {-0.462, -0.0008},
-                                                {-0.397, 0.0008} };
-const double gB[LnACalculator::eNModels] = {0.039, 0.059, 0.046};
+                                                {-0.397, 0.0008},
+                                                {-0.404, 0.00004}};
+const double gB[LnACalculator::eNModels] = {0.039, 0.059, 0.046, 0.047};
 const double gE0 = 1e19;
 
 inline

@@ -37,7 +37,7 @@ namespace prop {
       eM40,
       eM45,
       eM50,
-      eMm40z10,
+      eMm40z10, // 25
       eMm40z20,
       eMm40z30,
       eMm40z40,
@@ -61,7 +61,7 @@ namespace prop {
       eMp40z20,
       eMp40z30,
       eMp40z40,
-      eMp40z50
+      eMp40z50   //49
     };
 
   public:

@@ -13,6 +13,7 @@ public:
     eSibyll21,
     eEPOSLHC,
     eQGSJetII04,
+    eSibyll23c,
     eNModels
   };
 
@@ -26,6 +27,25 @@ public:
       return "eposLHC";
     case eQGSJetII04:
       return "qgsjetII04";
+    case eSibyll23c:
+      return "sibyll23c";
+    default:
+      return "unknown";
+    }
+  }
+
+  static
+  std::string GetNiceModelName(EModel m)
+  {
+    switch (m) {
+    case eSibyll21:
+      return "Sibyll-2.1";
+    case eEPOSLHC:
+      return "EPOS-LHC";
+    case eQGSJetII04:
+      return "QGSJetII-04";
+    case eSibyll23c:
+      return "Sibyll-2.3c";
     default:
       return "unknown";
     }
@@ -40,6 +60,8 @@ public:
       return eEPOSLHC;
     else if (modelName == "qgsjetII04")
       return eQGSJetII04;
+    else if (modelName == "sibyll23c")
+      return eSibyll23c;
     else
       throw std::runtime_error("unknown model" + modelName);
   }
