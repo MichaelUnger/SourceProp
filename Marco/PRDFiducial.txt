@@ -2,11 +2,12 @@
 OutDir Marco/pdfs
 DataDir Data
 evolution SFR2
-IRB G12
-energyBinShift +0
-xmaxSigmaShift +0
+IRB CRPropaG12
 par gammaInj -1.0 0.1 0 0 1
 par deltaEsc   -6.53346e-01 0.1 -1.01 -0.2 0
 mass 28 0.1 1 56 1 1
 spectrumData Auger2013
 PhotonBPL 0.11 32 2.0
+energyBinShift +0
+xmaxSigmaShift +0
+interactionModel eposLHC

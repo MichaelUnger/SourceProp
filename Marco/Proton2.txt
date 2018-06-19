@@ -2,7 +2,7 @@
 OutDir Marco/pdfs
 DataDir Data
 evolution M00
-IRB G12
+IRB CRPropaG12
 energyBinShift +1
 xmaxSigmaShift +0
 par lgRmax 20 0.1 17 22 0

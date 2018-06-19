@@ -2,7 +2,7 @@
 OutDir Marco/pdfs
 DataDir Data
 evolution SFR2
-IRB G12
+IRB CRPropaG12
 energyBinShift +1
 xmaxSigmaShift -1
 par gammaInj -1.0 0.1 -3.01 -1.01 0

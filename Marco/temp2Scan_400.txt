@@ -1,7 +1,7 @@
 OutDir Marco/pdfs
-DataDir data
+DataDir Data
 evolution SFR2
-IRB Gilmore12
+IRB CRPropaG12
 par gammaInj -1.0 0.1 0 0 1
 par deltaEsc   -0.9 0.1 -1.01 -0.2 0
 mass 29 0.1 1 56 0 1
