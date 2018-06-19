@@ -35,6 +35,7 @@ namespace utl {
   const double kMolarGasConstant =  8.3145 * joule/(mole*kelvin); // R: NIST
   const double kAvogadro = 6.022142e23 / mole;                    // Na: NIST
   const double kBoltzmann = kMolarGasConstant / kAvogadro;        // kB = R/Na
+  const double kStefanBoltzmann = 5.670367e-8*watt/m2/kelvin/kelvin/kelvin/kelvin;
 
   const double kDryAirMolarMass = 28.97 * gram/mole;  // M. Note: R_spec = R/M
   const double kN2MolarMass = 28.0134 * gram/mole;
@@ -108,7 +109,19 @@ namespace utl {
     (8 * kEpsilonZero * kPi*kPi * kElectronMass*kElectronMass *
      kSpeedOfLight*kSpeedOfLight*kSpeedOfLight);
 
+  // Thomson cross section
+  // https://en.wikipedia.org/wiki/Thomson_scattering
+  const double kSigmaThomson = 8*kPi / 3 * pow(eplus*eplus /
+                                               (kFourPi*kEpsilonZero*
+                                                kElectronMass*kSpeedOfLight2),2);
+
   const double kGCSunDistance = 8.5*kpc;
+
+  const double kTCMB = 2.726*kelvin;
+
+  const double kAstronomicalUnit = 149597870700*m;
+  const double kAU = kAstronomicalUnit;
+  const double kSolarMass = 1.98855e30*kg;
 
 }
 
