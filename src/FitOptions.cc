@@ -170,6 +170,8 @@ namespace prop {
           throw runtime_error("error decoding spectrumData");
         if (type == "Auger2013")
           fSpectrumDataType = eAuger2013;
+        else if (type == "Auger2017")
+          fSpectrumDataType = eAuger2017;
         else if (type == "TA2013")
           fSpectrumDataType = eTA2013;
         else if (type == "TASixYear")
@@ -421,6 +423,8 @@ namespace prop {
       return "TA 6 year";
     case eAuger2013:
       return "Auger 2013 prel.";
+    case eAuger2017:
+      return "Auger 2017 prel.";
     default:
       return "unknown";
     }

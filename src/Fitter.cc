@@ -405,6 +405,13 @@ namespace prop {
     switch (fOptions.GetSpectrumDataType()) {
     case FitOptions::eAuger2013:
       {
+        /*
+          Columns:
+          1 - Energy bin center log10 (E/eV)
+          2 - Flux J [ eV^-1 km^-1 sr^-1 yr^-1 ]
+          3 - Lower flux uncertainty (68 % C.L.)
+          4 - Upper flux uncertainty (68 % C.L.)
+        */
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
         while (true) {
           FluxData flux;
@@ -429,6 +436,37 @@ namespace prop {
 
           fFitData.fAllFluxData.push_back(flux);
           if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
+            fFitData.fFluxData.push_back(flux);
+        }
+        break;
+      }
+    case FitOptions::eAuger2017:
+      {
+        ifstream in(fOptions.GetDataDirname() + "/auger_icrc2017.dat");
+        /*
+        # E*J in  [m^-2 s^-1 sr^-1] units
+        # log10E = center of the energy bin 
+        # log10E    E*J       Err_up       Err_low  
+        */
+        while (true) {
+          FluxData flux;
+          double eyDown, eyUp, fluxE;
+          in >> flux.fLgE >> fluxE >> eyDown >> eyUp;
+          if (!in.good())
+            break;
+          // to  [ eV^-1 km^-1 sr^-1 yr^-1 ]
+          const double conv = 1e6 * 365*24*3600 / pow(10, flux.fLgE); 
+          flux.fFlux = fluxE * conv;
+          flux.fFluxErr = (eyUp+eyDown)/2 * conv;
+          flux.fFluxErrUp = eyUp * conv;
+          flux.fFluxErrLow = eyDown * conv;
+          flux.fN = 0;
+
+          // syst shift?
+          flux.fLgE += deltaLgESys;
+
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE())
             fFitData.fFluxData.push_back(flux);
         }
         break;
