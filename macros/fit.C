@@ -314,8 +314,9 @@ DrawData(const FitData& fitData,
   const string iamName = fitOptions.GetInteractionModel();
   const LnACalculator::EModel model = LnACalculator::GetModel(iamName);
   const string niceName = LnACalculator::GetNiceModelName(model);
+  const string xmaxLabel = fitOptions.GetXmaxDataLabel() + " " + niceName;
   
-  leg->AddEntry(fitVlnA, ("  Auger 2014 + " + niceName).c_str(), "PE");
+  leg->AddEntry(fitVlnA, xmaxLabel.c_str(), "PE");
   can->cd(Plotter::eCompEarth)->cd(1);
   leg->Draw();
   TLatex l;
