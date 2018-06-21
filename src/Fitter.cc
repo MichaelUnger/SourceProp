@@ -137,20 +137,47 @@ namespace prop {
     if (fGal > 0) {
       const double lgE0 = 17.55;
       const double E0 = pow(10, lgE0);
-      const double emaxGal = pow(10, par[eLgEmaxGal]);
-      const double gammaGal = par[eGammaGal];
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
-      const double sE = exp(-E0/emaxGal);
-      const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
-      const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
-      double lgE = data.fLgEmin + dlgE/2;
-      TMatrixD galactic(data.fNLgE, 1);
-      for (unsigned int i = 0; i < data.fNLgE; ++i) {
-        const double E = pow(10, lgE);
-        galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
-        lgE += dlgE;
+
+      const bool knees = true;
+      if (!knees) {
+        const double emaxGal = pow(10, par[eLgEmaxGal]);
+        const double gammaGal = par[eGammaGal];
+        const double sE = exp(-E0/emaxGal);
+        const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
+        const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+        double lgE = data.fLgEmin + dlgE/2;
+        TMatrixD galactic(data.fNLgE, 1);
+        for (unsigned int i = 0; i < data.fNLgE; ++i) {
+          const double E = pow(10, lgE);
+          galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+          lgE += dlgE;
+        }
+        data.fPropagator->AddComponent(data.fGalMass + kGalacticOffset,
+                                       galactic);
       }
-      data.fPropagator->AddComponent(data.fGalMass + kGalacticOffset, galactic);
+      else {
+        /*
+        const double emaxGal = pow(10, par[eLgEmaxGal]);
+        const double gammaGal = par[eGammaGal];
+        const double sE = exp(-E0/emaxGal);
+        const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
+        const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+        double lgE = data.fLgEmin + dlgE/2;
+        const unsigned int nMass = 3;
+        const double galMasses[nMass] = {4, 14, 56};
+        const double f[nMass] = {0.25, 0.25, 0.5};
+        for (unsigned int iMass = 0; iMass < nMass; ++iMass) {
+          TMatrixD galactic(data.fNLgE, 1);
+          for (unsigned int i = 0; i < data.fNLgE; ++i) {
+            const double E = pow(10, lgE);
+            galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+            lgE += dlgE;
+          }
+          data.fPropagator->AddComponent(data.fGalMass + kGalacticOffset, f[iMass]*galactic);
+        }
+        */
+      }
     }
 
     const pair<double, double> norm = calcNorm(data);
@@ -240,12 +267,12 @@ namespace prop {
     for (unsigned int i = 0; i < eNpars; ++i) {
       const EPar par = EPar(i);
       fMinuit.mnparm(par,
-                    GetParName(par),
-                    fOptions.GetStartValue(par),
-                    fOptions.GetStep(par),
-                    fOptions.GetMin(par),
-                    fOptions.GetMax(par),
-                    ierflag);
+                     GetParName(par),
+                     fOptions.GetStartValue(par),
+                     fOptions.GetStep(par),
+                     fOptions.GetMin(par),
+                     fOptions.GetMax(par),
+                     ierflag);
 
       if (fOptions.IsFixed(par)) {
         fMinuit.FixParameter(par);
@@ -515,7 +542,7 @@ namespace prop {
     // Table 3 from  Astroparticle Physics 36 (2012) 183–194
     // energy in eV
     // flux in m-2 s-1 sr-1 GeV-1
-    if (false) {
+    if (true) {
       ifstream inKG(fOptions.GetDataDirname() + "/KascadeGrande2012.txt");
       while (true) {
         FluxData flux;
@@ -549,75 +576,119 @@ namespace prop {
     cout << " spectrum: nAll = " <<  fFitData.fAllFluxData.size()
          << ", nFit = " <<  fFitData.fFluxData.size() << endl;
 
-    TFile* erFile =
-      TFile::Open((fOptions.GetDataDirname() + "/elongationRate.root").c_str());
-    if (erFile) {
-      const TGraphErrors& xmaxGraph =
-        *((TGraphErrors*) erFile->Get("elongXmaxFinal"));
-      const TGraphErrors& sigmaGraph =
-        *((TGraphErrors*) erFile->Get("elongSigmaFinal"));
-      const TGraphAsymmErrors& xmaxSysGraph =
-        *((TGraphAsymmErrors*) erFile->Get("elongXmaxFinalSys"));
-      const TGraphAsymmErrors& sigmaXmaxSysGraph =
-        *((TGraphAsymmErrors*) erFile->Get("elongSigmaFinalSys"));
-
-      LnACalculator lnAcalc;
-      const LnACalculator::EModel model =
-        LnACalculator::GetModel(fOptions.GetInteractionModel());
-
-      const double energyScaleUncertainty = 0.14;
-      TGraphAsymmErrors lnASys =
-        lnAcalc.GetMeanLnASys(xmaxSysGraph, energyScaleUncertainty, model);
-      TGraphAsymmErrors lnAVarianceSys =
-        lnAcalc.GetLnAVarianceSys(xmaxSysGraph, sigmaXmaxSysGraph,
-                                        energyScaleUncertainty, model);
-
-      for (int i = 0; i < xmaxGraph.GetN(); ++i) {
-
-        const double relativeAugerTAShift =
-          fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
-          0.1 : // approx one bin
-          0;
-        const double lgE =
-          log10(xmaxGraph.GetX()[i]) + deltaLgESys + relativeAugerTAShift;
-        const double E = pow(10, lgE);
-        double xMax = xmaxGraph.GetY()[i];
-        const double sigmaSys = fOptions.GetXmaxSigmaShift();
-        if (sigmaSys > 0)
-          xMax += sigmaSys * xmaxSysGraph.GetEYhigh()[i];
-        else if (sigmaSys < 0)
-          xMax += sigmaSys * xmaxSysGraph.GetEYlow()[i];
-        const double sigma = sigmaGraph.GetY()[i];
-        const double xMaxErr = xmaxGraph.GetEY()[i];
-        const double sigmaErr = sigmaGraph.GetEY()[i];
-
-        CompoData comp;
-        comp.fLgE = lgE;
-        comp.fLnA = lnAcalc.GetMeanLnA(xMax, E, model);
-        comp.fVlnA = lnAcalc.GetLnAVariance(xMax, sigma, E, model);
-        comp.fLnAErr = lnAcalc.GetMeanLnAError(xMaxErr, E, model);
-        comp.fVlnAErr = lnAcalc.GetLnAVarianceError(xMax, sigma,
-                                                    xMaxErr, sigmaErr,
-                                                    E, model);
-        comp.fLnASysLow = lnASys.GetEYlow()[i];
-        comp.fLnASysUp = lnASys.GetEYhigh()[i];
-        comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
-        comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
-
-        /*
-        cout << scientific << setprecision(3) << setw(12)
-             << setw(12) << comp.fLgE << setw(12) << comp.fLnA
-             << setw(12)<< comp.fVlnA << setw(12) << comp.fLnAErr
-             << setw(12) << comp.fVlnAErr << setw(12)
-             << comp.fLnASysLow << setw(12)<< comp.fLnASysUp
-             << setw(12) << comp.fVlnASysLow  << setw(12)
-             << comp.fVlnASysUp << endl;
-        */
-
-        fFitData.fAllCompoData.push_back(comp);
-        if (comp.fLgE > fOptions.GetMinCompLgE())
-          fFitData.fCompoData.push_back(comp);
+    TGraphErrors* xmaxGraph = nullptr;
+    TGraphErrors* sigmaGraph = nullptr;
+    TGraphAsymmErrors* xmaxSysGraph = nullptr;
+    TGraphAsymmErrors* sigmaXmaxSysGraph = nullptr;
+    switch (fOptions.GetXmaxDataType()) {
+    case FitOptions::eAugerXmax2014:
+      {
+        TFile* erFile =
+          TFile::Open((fOptions.GetDataDirname() + "/elongationRate.root").c_str());
+        if (erFile) {
+          xmaxGraph = (TGraphErrors*) erFile->Get("elongXmaxFinal");
+          sigmaGraph = (TGraphErrors*) erFile->Get("elongSigmaFinal");
+          xmaxSysGraph = (TGraphAsymmErrors*) erFile->Get("elongXmaxFinalSys");
+          sigmaXmaxSysGraph = (TGraphAsymmErrors*) erFile->Get("elongSigmaFinalSys");
+        }
+        break;
       }
+    case FitOptions::eAugerXmax2017:
+      {
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        xmaxGraph = new TGraphErrors();
+        sigmaGraph = new TGraphErrors();
+        xmaxSysGraph = new TGraphAsymmErrors();
+        sigmaXmaxSysGraph = new TGraphAsymmErrors();
+        int i = 0;
+        ifstream in(fOptions.GetDataDirname() + "/elongationRate17.txt");
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+
+          ++i;
+        }
+        break;
+      }
+    default:
+      {
+        cerr << " unknown Xmax data " << endl;
+      }
+    }
+    
+    LnACalculator lnAcalc;
+    const LnACalculator::EModel model =
+      LnACalculator::GetModel(fOptions.GetInteractionModel());
+    
+    const double energyScaleUncertainty = 0.14;
+    TGraphAsymmErrors lnASys =
+      lnAcalc.GetMeanLnASys(*xmaxSysGraph, energyScaleUncertainty, model);
+    TGraphAsymmErrors lnAVarianceSys =
+      lnAcalc.GetLnAVarianceSys(*xmaxSysGraph, *sigmaXmaxSysGraph,
+                                energyScaleUncertainty, model);
+    
+    for (int i = 0; i < xmaxGraph->GetN(); ++i) {
+      
+      const double relativeAugerTAShift =
+        fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
+        0.1 : // approx one bin
+        0;
+      const double lgE =
+        log10(xmaxGraph->GetX()[i]) + deltaLgESys + relativeAugerTAShift;
+      const double E = pow(10, lgE);
+      double xMax = xmaxGraph->GetY()[i];
+      const double sigmaSys = fOptions.GetXmaxSigmaShift();
+      if (sigmaSys > 0)
+        xMax += sigmaSys * xmaxSysGraph->GetEYhigh()[i];
+      else if (sigmaSys < 0)
+        xMax += sigmaSys * xmaxSysGraph->GetEYlow()[i];
+      const double sigma = sigmaGraph->GetY()[i];
+      const double xMaxErr = xmaxGraph->GetEY()[i];
+      const double sigmaErr = sigmaGraph->GetEY()[i];
+      
+      CompoData comp;
+      comp.fLgE = lgE;
+      comp.fLnA = lnAcalc.GetMeanLnA(xMax, E, model);
+      comp.fVlnA = lnAcalc.GetLnAVariance(xMax, sigma, E, model);
+      comp.fLnAErr = lnAcalc.GetMeanLnAError(xMaxErr, E, model);
+      comp.fVlnAErr = lnAcalc.GetLnAVarianceError(xMax, sigma,
+                                                  xMaxErr, sigmaErr,
+                                                  E, model);
+      comp.fLnASysLow = lnASys.GetEYlow()[i];
+      comp.fLnASysUp = lnASys.GetEYhigh()[i];
+      comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
+      comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
+      cout << lgE << " " << xMax << " " << comp.fLnA << endl;
+      fFitData.fAllCompoData.push_back(comp);
+      if (comp.fLgE > fOptions.GetMinCompLgE())
+        fFitData.fCompoData.push_back(comp);
     }
 
     cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()

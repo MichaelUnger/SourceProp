@@ -62,6 +62,11 @@ namespace prop {
       eTASixYear,
       eAuger2017
     };
+    
+    enum EXmaxDataType {
+      eAugerXmax2014,
+      eAugerXmax2017
+    };
 
   public:
     FitOptions(const std::string& filename);
@@ -135,9 +140,12 @@ namespace prop {
 
     ESpectrumDataType GetSpectrumDataType() const
     { return fSpectrumDataType; }
-
     std::string GetSpectrumDataLabel() const;
-
+    
+    EXmaxDataType GetXmaxDataType() const
+    { return fXmaxDataType; }
+    std::string GetXmaxDataLabel() const;
+    
   private:
     std::map<EPar, prop::StartValue> fStartValues;
     std::vector<prop::MassValue> fMassValues;
@@ -163,6 +171,7 @@ namespace prop {
     Spectrum::ECutoffType fCutoffType;
     MassValue fGalMass;
     ESpectrumDataType fSpectrumDataType;
+    EXmaxDataType fXmaxDataType;
 
     ClassDefNV(FitOptions, 1);
   };

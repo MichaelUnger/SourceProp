@@ -12,7 +12,7 @@ enum ESpecPars {
   eZ3,
   eZ4,
   eNpars,
-  eNParsOne = eJ0+1;
+  eNParsOne = eJ0+1
 };
 
 
@@ -87,7 +87,7 @@ kg()
   gStyle->SetOptLogy(1);
   gStyle->SetOptStat(0);
   TGraphErrors* kg = new TGraphErrors();
-  ifstream inKG("Mag/Prop/Data/KascadeGrande2012.txt");
+  ifstream inKG("./Data/KascadeGrande2012.txt");
   int iPoint = 0;
   while (true) {
     double energy, flx, ferr, ferrUp, ferrLow;
@@ -131,6 +131,7 @@ kg()
   double eps = 20;
 
   TF1* kneeSum = new TF1("ks", kneeSumFunc, lgEmin, 18, eNpars);
+  kneeSum->SetLineColor(kBlack);
   kneeSum->SetParName(eLgKnee, "lgKnee");
   kneeSum->SetParName(eGamma1, "gamma1");
   kneeSum->SetParName(eGamma2, "gamma2");
@@ -163,9 +164,9 @@ kg()
   kneeSum->FixParameter(eGamma2, gamma2);
   //  kneeSum->FixParameter(eDelta, delta);
   kneeSum->FixParameter(eEps, eps);
-  kneeSum->FixParameter(eZeta1, zeta1);
-  kneeSum->FixParameter(eZeta2, zeta2);
-  kneeSum->FixParameter(eZeta3, zeta3);
+  //  kneeSum->FixParameter(eZeta1, zeta1);
+  // kneeSum->FixParameter(eZeta2, zeta2);
+  // kneeSum->FixParameter(eZeta3, zeta3);
 
   kg->Fit("ks", "", "", 16, 17.3);
 
@@ -174,8 +175,9 @@ kg()
   zetas[1] = kneeSum->GetParameter(eZeta2);
   zetas[2] = kneeSum->GetParameter(eZeta3);
   zetaToFraction(zetas, fractions);
+  const double chargeVals[4] = {26, Z2, Z3, Z4}; 
   for (unsigned int i = 0; i < 4; ++i)
-    cout << " fit fraction " << i << " " << fractions[i] << endl;
+    cout << " fit fraction " << chargeVals[i] << " " << fractions[i] << endl;
 
   gamma1 = kneeSum->GetParameter(eGamma1);
   gamma2 = kneeSum->GetParameter(eGamma2);

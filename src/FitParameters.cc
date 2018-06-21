@@ -34,9 +34,7 @@ namespace prop {
       if (parName == GetParName(par))
         return par;
     }
-
     throw runtime_error("unknown par " + parName);
-
   }
 
 }

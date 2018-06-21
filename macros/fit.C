@@ -530,12 +530,23 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     massGroups.push_back(MassGroup(7, 19, 14, kGreen+1));
     massGroups.push_back(MassGroup(20, 39, 28, kAzure+10));
     massGroups.push_back(MassGroup(40, 56, 56, kBlue));
+
+    const unsigned int n = massGroups.size();
+    for (unsigned int i = 0; i < n; ++i) {
+      MassGroup mg = massGroups[i];
+      mg.fFirst += kGalacticOffset;
+      mg.fLast += kGalacticOffset;
+      mg.fRepA += kGalacticOffset;
+      mg.fLineStyle = 3;
+      massGroups.push_back(mg);
+    }
   }
 
+  /*
   const unsigned int Agal = opt.GetGalacticMass().fStartMass + kGalacticOffset;
   massGroups.push_back(MassGroup(Agal, Agal, Agal,
                                  kMagenta+2, 3));
-
+  */
   const double gammaScaleSource = 2;
   const double gammaScaleEarth = 3;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);

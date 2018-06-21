@@ -39,6 +39,7 @@ namespace prop {
     fCutoffType = Spectrum::eExponential;
     fGalMass = MassValue(56, 1, 1, 56, 1, 1);
     fSpectrumDataType = eAuger2013;
+    fXmaxDataType = eAugerXmax2014;
 
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
@@ -176,6 +177,17 @@ namespace prop {
           fSpectrumDataType = eTA2013;
         else if (type == "TASixYear")
           fSpectrumDataType = eTASixYear;
+        else
+          throw runtime_error("unknown spectrum data type: " + type);
+      }
+      else if (keyword == "xmaxData") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding spectrumData");
+        if (type == "Auger2014")
+          fXmaxDataType = eAugerXmax2014;
+        else if (type == "Auger2017")
+          fXmaxDataType = eAugerXmax2017;
         else
           throw runtime_error("unknown spectrum data type: " + type);
       }
@@ -422,9 +434,23 @@ namespace prop {
     case eTASixYear:
       return "TA 6 year";
     case eAuger2013:
-      return "Auger 2013 prel.";
+      return "Auger 2013.";
     case eAuger2017:
-      return "Auger 2017 prel.";
+      return "Auger 2017";
+    default:
+      return "unknown";
+    }
+  }
+
+  string
+  FitOptions::GetXmaxDataLabel()
+    const
+  {
+    switch (fXmaxDataType) {
+    case eAugerXmax2014:
+      return "Auger 2014";
+    case eAugerXmax2017:
+      return "Auger 2017";
     default:
       return "unknown";
     }
