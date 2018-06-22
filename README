@@ -1,21 +1,27 @@
-root.exe -n
-gSystem->SetIncludePath("-I$ROOTSYS/include -Isrc");
-gSystem->Load("lib/libProp.so")
-.L macros/fit.C+
+1) compile:
 
-environment on butinah:
------------------------
+  - set root environment
+  - source bin/setvars.csh
+  - make
 
-module load NYUAD/2.0
-module load devel
-module load gcc/4.9.1
-module load python/2.7.9
-module load openmpi/1.8.3
-module load gsl/1.16
-module load boost/1.57.0
-. bin/setvars_butinah.sh
-. /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
+2) to run
 
+  - start root
+  - at root prompt first do
+
+    * gSystem->SetIncludePath("-I$ROOTSYS/include -Isrc");
+    * gSystem->Load("lib/libProp.so")
+    * gSystem->CompileMacro("macros/fit.C","O")
+
+    and then try to run
+
+    * fit("Marco/PRDFiducial.txt", true, true)
+
+    The first argument is the configuration file (see below),
+    if the second is "true" then the minimization will be
+    performed (otherwise the calculation will be as the start
+    parameters in the config file). And the third parameter gives
+    whether or not to produce the neutrino plot.
 
 
 steering file parameters:
@@ -62,5 +68,24 @@ steering file parameters:
 * xmaxSigmaShift [nSigma]
   - e.g. -1, 0, +1
 * spectrumData [type]
-  - Auger2013, TA2013
+  - Auger2013, TA2013, Auger2017
+* xmaxData [type]
+  - Auger2014, Auger2017
+
+
+
+environment on butinah:
+-----------------------
+
+module load NYUAD/2.0
+module load devel
+module load gcc/4.9.1
+module load python/2.7.9
+module load openmpi/1.8.3
+module load gsl/1.16
+module load boost/1.57.0
+. bin/setvars_butinah.sh
+. /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
+
+
 
