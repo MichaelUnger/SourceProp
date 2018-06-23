@@ -139,7 +139,8 @@ namespace prop {
       const double E0 = pow(10, lgE0);
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
 
-      const bool knees = true;
+      const bool knees = false;
+      // ------ single power law
       if (!knees) {
         const double emaxGal = pow(10, par[eLgEmaxGal]);
         const double gammaGal = par[eGammaGal];
@@ -157,28 +158,71 @@ namespace prop {
                                        galactic);
       }
       else {
-        /*
-        const double emaxGal = pow(10, par[eLgEmaxGal]);
-        const double gammaGal = par[eGammaGal];
-        const double sE = exp(-E0/emaxGal);
-        const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
-        const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
-        double lgE = data.fLgEmin + dlgE/2;
+        // ------ sum of KASCADE-Grande knees
         const unsigned int nMass = 3;
-        const double galMasses[nMass] = {4, 14, 56};
-        const double f[nMass] = {0.25, 0.25, 0.5};
+        const unsigned int galMasses[nMass] = {4, 14, (unsigned int) data.fGalMass};
+        const double f[nMass] = {0.2, 0.2, 0.6};
+        const double rMaxGal = pow(10, par[eLgEmaxGal]);
+        const double dGammaGal = par[eGammaGal];
+        const double gamma1 = -2.76;
+        const double gamma2 = -3.24;
+        #warning hardcoded sys
+        const double deltaLgESys = 0.1;// * fOptions.GetEnergyBinShift();
+        const double kneeFe = pow(10, 16.92+deltaLgESys);
+        const double eps = 20;
+        const double refEGal = pow(10, 16.5+deltaLgESys);
+        
+        auto galFunc = [](const double E, const double Eknee,
+                          const double gamma1, const double gamma2,
+                          const double eps, const double delta,
+                          const double Emax) {
+          const double dGamma = std::max(0., log10(E/Eknee))*delta;
+          const double gamma3 = gamma2  - dGamma;
+          const double sE = exp(-E/Emax);
+          const double kneeTerm = pow(1+pow(E/Eknee, eps), (gamma3 - gamma1)/eps);
+          return pow(E, gamma1) * kneeTerm * sE;
+        };
+
+
+        double galSum = 0;
         for (unsigned int iMass = 0; iMass < nMass; ++iMass) {
+          const double Z = aToZ(galMasses[iMass]);
+          const double Eknee = kneeFe / 26 * Z;
+          const double Emax = rMaxGal / 26 * Z;
+          const double galRef =
+            galFunc(refEGal, Eknee, gamma1, gamma2, eps, dGammaGal, Emax);
+          const double egalRef =
+            f[iMass] * galFunc(E0, Eknee, gamma1, gamma2, eps, dGammaGal, Emax) / galRef;
+          galSum += egalRef;
+        }
+
+        const double galNorm = extraGalactic * fGal / (1 - fGal) / galSum;
+        
+        const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+
+        for (unsigned int iMass = 0; iMass < nMass; ++iMass) {
+          const double Z = aToZ(galMasses[iMass]);
+          const double Eknee = kneeFe / 26 * Z;
+          const double Emax = rMaxGal / 26 * Z;
           TMatrixD galactic(data.fNLgE, 1);
+          const double galRef =
+            galFunc(refEGal, Eknee, gamma1, gamma2, eps, dGammaGal, Emax);
+          int iTest = -1;
+          double lgE = data.fLgEmin + dlgE/2;
           for (unsigned int i = 0; i < data.fNLgE; ++i) {
             const double E = pow(10, lgE);
-            galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+            const double phiGal =
+              f[iMass] * galFunc(E, Eknee, gamma1, gamma2, eps, dGammaGal, Emax) / galRef;
+            galactic[i][0] = galNorm * phiGal;
+            if (iTest < 0 && E > E0)
+              iTest = i;
             lgE += dlgE;
           }
-          data.fPropagator->AddComponent(data.fGalMass + kGalacticOffset, f[iMass]*galactic);
+          data.fPropagator->AddComponent(galMasses[iMass] + kGalacticOffset, galactic);
         }
-        */
       }
     }
+
 
     const pair<double, double> norm = calcNorm(data);
     const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;

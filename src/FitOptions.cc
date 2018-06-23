@@ -33,7 +33,7 @@ namespace prop {
     fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eFGal] = StartValue(0.6, 0.1, 0, 1, 0);
     fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, -2, -10, 0);
-    fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
+    fStartValues[eLgEmaxGal] = StartValue(22.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
     fCutoffType = Spectrum::eExponential;

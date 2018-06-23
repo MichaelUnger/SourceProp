@@ -109,15 +109,15 @@ kg()
   back->Draw();
   kg->Draw("P");
 
-  const double Z2 = 14;
+  const double Z2 = 20;
   const double Z3 = 6;
   const double Z4 = 2;
   const double kneeFe = pow(10, 16.92);
   
   double j0 = 3e19;
-  double zeta1 = 0.5;
+  double zeta1 = 0.6;
   double zeta2 = 0.5;
-  double zeta3 = 0.5;
+  double zeta3 = 0.8;
   double zetas[3] = {zeta1, zeta2, zeta3};
   double fractions[4];
   zetaToFraction(zetas, fractions);
@@ -127,7 +127,7 @@ kg()
   
   double gamma1 = -2.76;
   double gamma2 = -3.24;
-  double delta = 0.4;
+  double delta = 0.3;
   double eps = 20;
 
   TF1* kneeSum = new TF1("ks", kneeSumFunc, lgEmin, 18, eNpars);
@@ -162,11 +162,11 @@ kg()
 
   kneeSum->FixParameter(eGamma1, gamma1);
   kneeSum->FixParameter(eGamma2, gamma2);
-  //  kneeSum->FixParameter(eDelta, delta);
+  kneeSum->FixParameter(eDelta, delta);
   kneeSum->FixParameter(eEps, eps);
-  //  kneeSum->FixParameter(eZeta1, zeta1);
-  // kneeSum->FixParameter(eZeta2, zeta2);
-  // kneeSum->FixParameter(eZeta3, zeta3);
+  kneeSum->FixParameter(eZeta1, zeta1);
+ kneeSum->FixParameter(eZeta2, zeta2);
+ kneeSum->FixParameter(eZeta3, zeta3);
 
   kg->Fit("ks", "", "", 16, 17.3);
 

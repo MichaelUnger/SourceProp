@@ -242,7 +242,7 @@ DrawData(const FitData& fitData,
   TGraphAsymmErrors* fitVlnASys = new TGraphAsymmErrors();
   const vector<CompoData>& compData = fitData.fCompoData;
   const double dlgE = 0.05;
-  for (unsigned int i = 0; i < fluxData.size(); ++i) {
+  for (unsigned int i = 0; i < compData.size(); ++i) {
     fitLnA->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
     fitLnA2->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
     fitLnA->SetPointError(i, 0, compData[i].fLnAErr);
@@ -548,7 +548,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
                                  kMagenta+2, 3));
   */
   const double gammaScaleSource = 2;
-  const double gammaScaleEarth = 3;
+  const double gammaScaleEarth = 2.7;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
   const FitData& fitData = fitter.GetFitData();
