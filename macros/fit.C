@@ -437,13 +437,14 @@ DrawValues(const FitData& fitData,
   l.DrawLatex(x, y, ("evolution: " + fitOptions.GetEvolution() +
                      ", IRB: " + fitOptions.GetIRB()).c_str());
 
+  y = yStart;
+  
   const unsigned int nMass = fitData.GetNMass();
   vector<double> fractions(nMass);
   vector<double> zeta;
   for (unsigned int i = 0; i < fractions.size() - 1; ++i)
     zeta.push_back(pow(10, fitParameters[eNpars + i].fValue));
   zetaToFraction(fractions.size(), &zeta.front(), &fractions.front());
-  y = yStart;
 
   unsigned int nFix = 0;
   for (unsigned int i = 0; i < fractions.size(); ++i) {
@@ -469,7 +470,42 @@ DrawValues(const FitData& fitData,
     l.DrawLatex(0.63, y, parString.str().c_str());
     y -= dy;
   }
+  y -= dy/3.;
 
+  const unsigned int nGalMass = fitData.GetNGalMass();
+  const unsigned int offset = 2*nMass - 1;
+  vector<double> galFractions(nGalMass);
+  vector<double> galZeta;
+  for (unsigned int i = 0; i < galFractions.size() - 1; ++i) 
+    galZeta.push_back(pow(10, fitParameters[eNpars + offset + i].fValue));
+  zetaToFraction(galFractions.size(), &galZeta.front(), &galFractions.front());
+
+  nFix = 0;
+  for (unsigned int i = 0; i < galFractions.size(); ++i) {
+    stringstream parString;
+    const double m =
+      fitData.fFitParameters[eNpars + offset + nGalMass - 1 + i].fValue;
+    parString << "f_{gal}(" << m << ")"
+              << (m < 10 ? "  = " : "= ")
+              << scientific << setprecision(1)
+              << galFractions[i];
+
+    bool isFix = false;
+    if (i < galFractions.size() - 1) {
+      if (fitParameters[eNpars + offset + i].fIsFixed) {
+        ++nFix;
+        isFix = true;
+      }
+    }
+    else {
+      if (nFix == galFractions.size() - 1)
+        isFix = true;
+    }
+    l.SetTextColor(isFix ? fixColor : freeColor);
+    l.DrawLatex(0.63, y, parString.str().c_str());
+    y -= dy;
+  }
+  
   using namespace utl;
 
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
@@ -548,7 +584,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
                                  kMagenta+2, 3));
   */
   const double gammaScaleSource = 2;
-  const double gammaScaleEarth = 2.7;
+  const double gammaScaleEarth = 3;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
   const FitData& fitData = fitter.GetFitData();

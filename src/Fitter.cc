@@ -185,10 +185,9 @@ namespace prop {
           galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
           lgE += dlgE;
         }
-        for (const auto iter : galFractions) {
+        for (const auto iter : galFractions) 
           data.fPropagator->AddComponent(iter.first + kGalacticOffset,
                                          iter.second*galactic);
-        }
       }
       else {
         // ------ sum of KASCADE-Grande knees

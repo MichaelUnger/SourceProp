@@ -81,9 +81,8 @@ namespace prop {
       else if (keyword == "galacticMass") {
         fGalMasses.push_back(MassValue());
         MassValue& m = fGalMasses.back();
-        if (!(line >> m.fStartMass >>
-              m.fMassMinVal >> m.fMassMaxVal >>
-              m.fMassIsFixed))
+        if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
+              m.fMassMaxVal >> m.fMassIsFixed >> m.fFractionIsFixed))
           throw runtime_error("error reading galactic mass");
       }
       else if (keyword == "IRB") {

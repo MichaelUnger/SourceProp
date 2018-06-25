@@ -41,7 +41,9 @@ steering file parameters:
      fNoPhoton
      lgfPhoton
 * mass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
-* galacticMass [startA] [Amin] [Amax] [massFix]
+  (multiple masses possible)
+* galacticMass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
+  (multiple masses possible)
 * evolution:
 * IRB:
 * DataDir:
