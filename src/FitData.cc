@@ -50,12 +50,6 @@ namespace prop {
 
 
   unsigned int
-  FitData::GetNMass() const
-  {
-    return (fFitParameters.size() - eNpars + 1) / 2;
-  }
-
-  unsigned int
   FitData::GetNdfTot() const
   {
     unsigned int nFreePar = 0;

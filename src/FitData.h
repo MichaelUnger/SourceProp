@@ -55,7 +55,8 @@ namespace prop {
     double GetChi2Tot() const;
     unsigned int GetNdfTot() const;
     double GetTotalPower(const double Elow) const;
-    unsigned int GetNMass() const;
+    unsigned int GetNMass() const { return fNMass; }
+    unsigned int GetNGalMass() const { return fNGalMass; }
 
     unsigned int fIteration;
     unsigned int fNNan;
@@ -76,12 +77,13 @@ namespace prop {
     double fChi2VlnA;
     double fQ0;
     double fQ0Err;
-    double fGalMass;
     double fProtonRatio185;
     std::vector<FitParameter> fFitParameters;
     int fFitStatus;
     bool fFitFailed;
     double fFitEDM;
+    int fNMass;
+    int fNGalMass;
   };
 }
 

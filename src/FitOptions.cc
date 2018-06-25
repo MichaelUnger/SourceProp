@@ -37,7 +37,6 @@ namespace prop {
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
     fCutoffType = Spectrum::eExponential;
-    fGalMass = MassValue(56, 1, 1, 56, 1, 1);
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
 
@@ -80,9 +79,11 @@ namespace prop {
         cout << " read evolution " << fEvolution << endl;
       }
       else if (keyword == "galacticMass") {
-        if (!(line >> fGalMass.fStartMass >>
-              fGalMass.fMassMinVal >> fGalMass.fMassMaxVal >>
-              fGalMass.fMassIsFixed))
+        fGalMasses.push_back(MassValue());
+        MassValue& m = fGalMasses.back();
+        if (!(line >> m.fStartMass >>
+              m.fMassMinVal >> m.fMassMaxVal >>
+              m.fMassIsFixed))
           throw runtime_error("error reading galactic mass");
       }
       else if (keyword == "IRB") {
@@ -256,6 +257,14 @@ namespace prop {
         fOutFilename = "fit";
     }
 
+    if (fGalMasses.empty()) {
+      const unsigned int defaultGalMass = 56;
+      cerr << " FitOptions::FitOptions() - warning, no galactic mass given."
+           << " Setting Agal = " << defaultGalMass << endl;
+      fGalMasses.push_back(MassValue(defaultGalMass, 1, 1,
+                                     defaultGalMass, 1, 1));
+    }
+   
   }
 
   double

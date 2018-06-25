@@ -71,6 +71,7 @@ namespace prop {
   public:
     FitOptions(const std::string& filename);
     unsigned int GetNmass() const { return fMassValues.size(); }
+    unsigned int GetNGalMass() const { return fGalMasses.size(); }
     double GetStartValue(const EPar par) const;
     double GetStep(const EPar par) const;
     double GetMin(const EPar par) const;
@@ -129,10 +130,10 @@ namespace prop {
     double GetXmaxSigmaShift() const
     { return fXmaxSigmaShift; }
 
-    MassValue GetGalacticMass() const
-    { return fGalMass; }
+    const std::vector<MassValue>& GetGalacticMasses() const
+    { return fGalMasses; }
 
-   const std::string GetInteractionModel() const
+    const std::string GetInteractionModel() const
     { return fInteractionModel; }
 
     Spectrum::ECutoffType GetCutoffType() const
@@ -169,7 +170,7 @@ namespace prop {
     double fXmaxSigmaShift;
     std::string fInteractionModel;
     Spectrum::ECutoffType fCutoffType;
-    MassValue fGalMass;
+    std::vector<MassValue> fGalMasses;
     ESpectrumDataType fSpectrumDataType;
     EXmaxDataType fXmaxDataType;
 

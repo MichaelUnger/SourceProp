@@ -58,7 +58,9 @@ namespace prop {
   Fitter::GetNParameters()
     const
   {
-    return eNpars + 2 * fOptions.GetNmass() - 1;
+    return eNpars
+      + 2 * fOptions.GetNmass() - 1
+      + 2 * fOptions.GetNGalMass() - 1;
   }
 
   void
@@ -69,72 +71,101 @@ namespace prop {
 
     FitData& data = fFitData;
 
-    VSource* source = data.fSource;
-    source->SetEscFac(1);
-    source->SetEscGamma(par[eEscGamma]);
-
-    vector<double> photonScale;
-    const double fScale = pow(10, par[eLgPhotonFieldFac]);
-    photonScale.push_back(fScale);
-    photonScale.push_back((1-fScale));
-    source->SetPhotonScaleFactors(photonScale);
-
-    const double lambdaI = source->LambdaInt(1e19, 56);
-    const double lambdaE = source->LambdaEsc(1e19, 56);
-    source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
-
-    map<unsigned int, double> fractions;
+    // extragalactic part
     const unsigned int nMass = data.GetNMass();
-    double frac[nMass];
-    double zeta[nMass-1];
-    for (unsigned int i = 0; i < nMass - 1; ++i)
-      zeta[i] = pow(10, *(par + eNpars + i));
-    zetaToFraction(nMass, zeta, frac);
-    for (unsigned int i = 0; i < nMass; ++i) {
-      const double m = *(par + eNpars + nMass - 1 + i);
-      const DoubleMass dm(m);
-      if (dm.GetFrac1() > 0)
-        fractions[dm.GetMass1()] += dm.GetFrac1()*frac[i];
-      if (dm.GetFrac2() > 0)
-        fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
-    }
-
-    if (!(data.fIteration%10)) {
-      cout << "----------------------------------------" << endl;
-      for (unsigned int i = 0; i < eNpars; ++i)
-        cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i))
-             << " " << setw(11) << scientific << setprecision(5)
-             << setw(5) << par[i] << endl;
-      for (unsigned int i = 0; i < nMass; ++i)
-        cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
-             << *(par + eNpars + nMass - 1 + i) << ", f=" << frac[i] << endl;
-    }
-
-
-    Spectrum& spectrum = data.fSpectrum;
-    spectrum.SetParameters(source,
-                           par[eGamma],
-                           pow(10, par[eLgEmax]),
-                           data.fNLgE,
-                           data.fLgEmin, data.fLgEmax,
-                           fractions);
-
-    if (par[eNoPhoton] > 0) {
-      const Spectrum::SpecMap& injFlux = spectrum.GetInjFlux();
-      for (Spectrum::SpecMap::const_iterator iter = injFlux.begin();
-           iter != injFlux.end(); ++iter) {
-        const unsigned int A = iter->first;
-        const TMatrixD& m = iter->second;
-        const TMatrixD mm = par[eNoPhoton] * m;
-        spectrum.AddEscComponent(A, mm);
+    {
+      VSource* source = data.fSource;
+      source->SetEscFac(1);
+      source->SetEscGamma(par[eEscGamma]);
+      
+      vector<double> photonScale;
+      const double fScale = pow(10, par[eLgPhotonFieldFac]);
+      photonScale.push_back(fScale);
+      photonScale.push_back((1-fScale));
+      source->SetPhotonScaleFactors(photonScale);
+      
+      const double lambdaI = source->LambdaInt(1e19, 56);
+      const double lambdaE = source->LambdaEsc(1e19, 56);
+      source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
+      
+      map<unsigned int, double> fractions;
+      double frac[nMass];
+      double zeta[nMass-1];
+      for (unsigned int i = 0; i < nMass - 1; ++i)
+        zeta[i] = pow(10, *(par + eNpars + i));
+      zetaToFraction(nMass, zeta, frac);
+      for (unsigned int i = 0; i < nMass; ++i) {
+        const double m = *(par + eNpars + nMass - 1 + i);
+        const DoubleMass dm(m);
+        if (dm.GetFrac1() > 0)
+          fractions[dm.GetMass1()] += dm.GetFrac1()*frac[i];
+        if (dm.GetFrac2() > 0)
+          fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
       }
+      
+      if (!(data.fIteration%10)) {
+        cout << "----------------------------------------" << endl;
+        for (unsigned int i = 0; i < eNpars; ++i)
+          cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i))
+               << " " << setw(11) << scientific << setprecision(5)
+               << setw(5) << par[i] << endl;
+        for (unsigned int i = 0; i < nMass; ++i)
+          cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
+               << *(par + eNpars + nMass - 1 + i) << ", f=" << frac[i] << endl;
+      }
+      
+      
+      Spectrum& spectrum = data.fSpectrum;
+      spectrum.SetParameters(source,
+                             par[eGamma],
+                             pow(10, par[eLgEmax]),
+                             data.fNLgE,
+                             data.fLgEmin, data.fLgEmax,
+                             fractions);
+      
+      if (par[eNoPhoton] > 0) {
+        const Spectrum::SpecMap& injFlux = spectrum.GetInjFlux();
+        for (Spectrum::SpecMap::const_iterator iter = injFlux.begin();
+             iter != injFlux.end(); ++iter) {
+          const unsigned int A = iter->first;
+          const TMatrixD& m = iter->second;
+          const TMatrixD mm = par[eNoPhoton] * m;
+          spectrum.AddEscComponent(A, mm);
+        }
+      }
+
+      data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
     }
-
-    data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
-
+    
     // galactic
     const double fGal = par[eFGal];
     if (fGal > 0) {
+
+      map<unsigned int, double> galFractions;
+      const unsigned int nGalMass = data.GetNGalMass();
+      double fracGal[nGalMass];
+      double zetaGal[nGalMass-1];
+      const unsigned int offset = eNpars + nMass - 1 + nMass;
+      for (unsigned int i = 0; i < nGalMass - 1; ++i) 
+        zetaGal[i] = pow(10, *(par + offset + i));
+      zetaToFraction(nGalMass, zetaGal, fracGal);
+      for (unsigned int i = 0; i < nGalMass; ++i) {
+        const double m = *(par + offset + nGalMass - 1 + i);
+        const DoubleMass dm(m);
+        if (dm.GetFrac1() > 0) 
+          galFractions[dm.GetMass1()] += dm.GetFrac1()*fracGal[i];
+        if (dm.GetFrac2() > 0) 
+          galFractions[dm.GetMass2()] += dm.GetFrac2()*fracGal[i];
+      }
+
+      if (!(data.fIteration%10)) {
+        for (unsigned int i = 0; i < nGalMass; ++i)
+          cout << "mGal" << i << " " << setw(11) << scientific
+               << setprecision(5)
+               << *(par + offset + nGalMass - 1 + i)
+               << ", f=" << fracGal[i] << endl;
+      }
+      
       const double lgE0 = 17.55;
       const double E0 = pow(10, lgE0);
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
@@ -154,14 +185,20 @@ namespace prop {
           galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
           lgE += dlgE;
         }
-        data.fPropagator->AddComponent(data.fGalMass + kGalacticOffset,
-                                       galactic);
+        for (const auto iter : galFractions) {
+          data.fPropagator->AddComponent(iter.first + kGalacticOffset,
+                                         iter.second*galactic);
+        }
       }
       else {
         // ------ sum of KASCADE-Grande knees
-        const unsigned int nMass = 3;
-        const unsigned int galMasses[nMass] = {4, 14, (unsigned int) data.fGalMass};
-        const double f[nMass] = {0.2, 0.2, 0.6};
+        const unsigned int nMass = galFractions.size();
+        vector<double> galMasses;
+        vector<double> f;
+        for (const auto iter : galFractions) {
+          galMasses.push_back(iter.first);
+          f.push_back(iter.second);
+        }
         const double rMaxGal = pow(10, par[eLgEmaxGal]);
         const double dGammaGal = par[eGammaGal];
         const double gamma1 = -2.76;
@@ -179,7 +216,8 @@ namespace prop {
           const double dGamma = std::max(0., log10(E/Eknee))*delta;
           const double gamma3 = gamma2  - dGamma;
           const double sE = exp(-E/Emax);
-          const double kneeTerm = pow(1+pow(E/Eknee, eps), (gamma3 - gamma1)/eps);
+          const double kneeTerm = pow(1+pow(E/Eknee, eps),
+                                      (gamma3 - gamma1)/eps);
           return pow(E, gamma1) * kneeTerm * sE;
         };
 
@@ -192,7 +230,8 @@ namespace prop {
           const double galRef =
             galFunc(refEGal, Eknee, gamma1, gamma2, eps, dGammaGal, Emax);
           const double egalRef =
-            f[iMass] * galFunc(E0, Eknee, gamma1, gamma2, eps, dGammaGal, Emax) / galRef;
+            f[iMass] * galFunc(E0, Eknee, gamma1, gamma2,
+                               eps, dGammaGal, Emax) / galRef;
           galSum += egalRef;
         }
 
@@ -212,13 +251,15 @@ namespace prop {
           for (unsigned int i = 0; i < data.fNLgE; ++i) {
             const double E = pow(10, lgE);
             const double phiGal =
-              f[iMass] * galFunc(E, Eknee, gamma1, gamma2, eps, dGammaGal, Emax) / galRef;
+              f[iMass] * galFunc(E, Eknee, gamma1, gamma2,
+                                 eps, dGammaGal, Emax) / galRef;
             galactic[i][0] = galNorm * phiGal;
             if (iTest < 0 && E > E0)
               iTest = i;
             lgE += dlgE;
           }
-          data.fPropagator->AddComponent(galMasses[iMass] + kGalacticOffset, galactic);
+          data.fPropagator->AddComponent(galMasses[iMass] + kGalacticOffset,
+                                         galactic);
         }
       }
     }
@@ -274,7 +315,6 @@ namespace prop {
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
-    fFitData.fGalMass = fOptions.GetGalacticMass().fStartMass;
 
     ReadData();
     cout << " reading prop matrix from "
@@ -334,84 +374,91 @@ namespace prop {
            << setw(7) << (fOptions.IsFixed(par)?"fixed":"free") << endl;
     }
 
-    vector<double> fraction;
-    vector<double> massIndex;
-    vector<bool> fixedFraction;
-    // first the fixed fractions ...
-    int iMass = 0;
-    for (const auto& m : fOptions.GetMasses()) {
-      if (m.fFractionIsFixed) {
-        massIndex.push_back(iMass);
-        fraction.push_back(m.fStartFraction);
-        fixedFraction.push_back(true);
-      }
-      ++iMass;
-    }
-
-    //  ... then the variable ones
-    iMass = 0;
-    for (const auto& m : fOptions.GetMasses()) {
-      if (!m.fFractionIsFixed) {
-        massIndex.push_back(iMass);
-        fraction.push_back(m.fStartFraction);
-        fixedFraction.push_back(false);
-      }
-      ++iMass;
-    }
-
-    const unsigned int nMass = fOptions.GetNmass();
-    vector<double> zeta(nMass - 1);
-    fractionToZeta(nMass - 1, &fraction.front(), &zeta.front());
     unsigned int iPar = eNpars;
-    for (unsigned int i = 0; i < zeta.size(); ++i) {
-      stringstream parName;
-      parName << "zeta" << i;
-      const double step = 0.1;
-      const double minZeta = -7;
-      const double maxZeta = 1e-14;
-      fMinuit.mnparm(iPar, parName.str().c_str(), log10(zeta[i]),
-                     step, minZeta, maxZeta, ierflag);
-      if (fixedFraction[i]) {
-        fMinuit.FixParameter(iPar);
-        fFitData.fFitParameters[iPar].fIsFixed = true;
+    for (unsigned int iMassClass = 0; iMassClass < 2; ++iMassClass) {
+      const vector<MassValue>& masses =
+        iMassClass == 0 ? fOptions.GetMasses() : fOptions.GetGalacticMasses();
+      vector<double> fraction;
+      vector<double> massIndex;
+      vector<bool> fixedFraction;
+      // first the fixed fractions ...
+      int iMass = 0;
+      for (const auto& m : masses) {
+        if (m.fFractionIsFixed) {
+          massIndex.push_back(iMass);
+          fraction.push_back(m.fStartFraction);
+          fixedFraction.push_back(true);
+        }
+        ++iMass;
       }
-      else
-        fFitData.fFitParameters[iPar].fIsFixed = false;
 
-      cout << setw(2) << iPar << setw(10) << parName.str()
-           << setw(11) << scientific << setprecision(3) << log10(zeta[i])
-           << setw(11) << step
-           << setw(11) << minZeta
-           << setw(11) << maxZeta
-           << setw(7) << (fixedFraction[i] ? "fixed" : "free") << endl;
-      ++iPar;
-    }
-
-    // ... and then the masses
-    const vector<MassValue>& masses = fOptions.GetMasses();
-    for (unsigned int i = 0; i < masses.size(); ++i) {
-      stringstream parName;
-      parName << "mass" << i;
-      const MassValue& m = masses[i];
-      const double step = 1;
-      const double minMass = masses[i].fMassMinVal;
-      const double maxMass = masses[i].fMassMaxVal;
-      fMinuit.mnparm(iPar, parName.str().c_str(), m.fStartMass,
-                     step, minMass, maxMass, ierflag);
-      if (m.fMassIsFixed) {
-        fMinuit.FixParameter(iPar);
-        fFitData.fFitParameters[iPar].fIsFixed = true;
+      //  ... then the variable ones
+      iMass = 0;
+      for (const auto& m : masses) {
+        if (!m.fFractionIsFixed) {
+          massIndex.push_back(iMass);
+          fraction.push_back(m.fStartFraction);
+          fixedFraction.push_back(false);
+        }
+        ++iMass;
       }
+      
+      const unsigned int nMass = masses.size();
+      if (iMassClass == 0)
+        fFitData.fNMass = nMass;
       else
-        fFitData.fFitParameters[iPar].fIsFixed = false;
+        fFitData.fNGalMass = nMass;
+      vector<double> zeta(nMass - 1);
+      fractionToZeta(nMass - 1, &fraction.front(), &zeta.front());
+      for (unsigned int i = 0; i < zeta.size(); ++i) {
+        stringstream parName;
+        parName << "zeta" << (iMassClass ? "Gal" : "") << i;
+        const double step = 0.1;
+        const double minZeta = -7;
+        const double maxZeta = 1e-14;
+        fMinuit.mnparm(iPar, parName.str().c_str(), log10(zeta[i]),
+                       step, minZeta, maxZeta, ierflag);
+        if (fixedFraction[i]) {
+          fMinuit.FixParameter(iPar);
+          fFitData.fFitParameters[iPar].fIsFixed = true;
+        }
+        else
+          fFitData.fFitParameters[iPar].fIsFixed = false;
+        
+        cout << setw(2) << iPar << setw(10) << parName.str()
+             << setw(11) << scientific << setprecision(3) << log10(zeta[i])
+             << setw(11) << step
+             << setw(11) << minZeta
+             << setw(11) << maxZeta
+             << setw(7) << (fixedFraction[i] ? "fixed" : "free") << endl;
+        ++iPar;
+      }
 
-      cout << setw(2) << iPar << setw(10) << parName.str()
-           << setw(11) << scientific << setprecision(3) << m.fStartMass
-           << setw(11) << step
-           << setw(11) << minMass
-           << setw(11) << maxMass
-           << setw(7) << (m.fMassIsFixed ? "fixed" : "free") << endl;
-      ++iPar;
+      // ... and then the masses
+      for (unsigned int i = 0; i < masses.size(); ++i) {
+        stringstream parName;
+        parName << "mass" << (iMassClass ? "Gal" : "") << i;
+        const MassValue& m = masses[i];
+        const double step = 1;
+        const double minMass = masses[i].fMassMinVal;
+        const double maxMass = masses[i].fMassMaxVal;
+        fMinuit.mnparm(iPar, parName.str().c_str(), m.fStartMass,
+                       step, minMass, maxMass, ierflag);
+        if (m.fMassIsFixed) {
+          fMinuit.FixParameter(iPar);
+          fFitData.fFitParameters[iPar].fIsFixed = true;
+        }
+        else
+          fFitData.fFitParameters[iPar].fIsFixed = false;
+        
+        cout << setw(2) << iPar << setw(10) << parName.str()
+             << setw(11) << scientific << setprecision(3) << m.fStartMass
+             << setw(11) << step
+             << setw(11) << minMass
+             << setw(11) << maxMass
+             << setw(7) << (m.fMassIsFixed ? "fixed" : "free") << endl;
+        ++iPar;
+      }
     }
 
     cout << separator << endl;
@@ -586,7 +633,7 @@ namespace prop {
     // Table 3 from  Astroparticle Physics 36 (2012) 183–194
     // energy in eV
     // flux in m-2 s-1 sr-1 GeV-1
-    if (true) {
+    if (false) {
       ifstream inKG(fOptions.GetDataDirname() + "/KascadeGrande2012.txt");
       while (true) {
         FluxData flux;
@@ -729,7 +776,6 @@ namespace prop {
       comp.fLnASysUp = lnASys.GetEYhigh()[i];
       comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
       comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
-      cout << lgE << " " << xMax << " " << comp.fLnA << endl;
       fFitData.fAllCompoData.push_back(comp);
       if (comp.fLgE > fOptions.GetMinCompLgE())
         fFitData.fCompoData.push_back(comp);
