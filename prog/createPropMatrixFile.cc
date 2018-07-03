@@ -130,6 +130,7 @@ main(int argc, char** argv)
   }
   const vector<string> filenames(argv + 2, argv + argc);
 
+  if (false)
   {
     PropMatrixBuilder pmb(s);
     pmb.Process(filenames);
