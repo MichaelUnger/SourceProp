@@ -44,6 +44,8 @@ namespace crpropa {
       return ePionMinus;
     else if (id == 211)
       return ePionPlus;
+    else if (id == 22)
+      return 0;
     else
       throw runtime_error("unknown id" + to_string(id));
   }
