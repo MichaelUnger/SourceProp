@@ -11,7 +11,8 @@ namespace prop {
     static const string parNames[eNpars] =
       {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
        "lg(R_{esc}^{ Fe19})","#delta_{esc}",
-       "f_{gal}", "#gamma_{gal}", "lg(E_{max}^{gal}/eV)",
+       "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
+       "lg(E_{max}^{gal}/eV)",
        "f_{noPhot}", "lg(fphot)"};
     return parNames[p];
   }
@@ -20,9 +21,9 @@ namespace prop {
   GetParName(const EPar p)
   {
     static const string parNames[eNpars] =
-      {"gammaInj", "lgRmax", "lgResc",
-       "deltaEsc", "fGal", "gammaGal", "lgEmaxGal",
-       "fNoPhoton", "lgfPhoton"};
+      {"gammaInj", "lgRmax", "lgResc", "deltaEsc",
+       "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
+       "lgEmaxGal",  "fNoPhoton", "lgfPhoton"};
     return parNames[p];
   }
 

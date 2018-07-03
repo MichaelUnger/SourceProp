@@ -5,15 +5,18 @@ evolution SFR2
 IRB CRPropaG12
 par gammaInj -1.0 0.1 0 0 1
 par deltaEsc   -6.53346e-01 0.1 -1.01 -0.2 0
-par lgEmaxGal 18.5 0.1 0 0 0
-#par gammaGal  0.05 0  10 0
+par lgEmaxGal 28.5 0.1 0 0 1
+par gammaGal  -4 0.01 0  10 0
+par gammaGalLowE  -4 0.01 0  10 1
+par deltaGammaGal 0.1 0.01 0  10 1
+par fGal  0.55 0.01 0  10 0  
 mass 28 0.1 1 56 0 1
 spectrumData Auger2017
 xmaxData Auger2017
 PhotonBPL 0.11 32 2.0
-energyBinShift +1
-xmaxSigmaShift -1
-interactionModel eposLHC
-minLgEFlux 17
-galacticMass 56 0.5 1 57 0 0
-galacticMass 1 0.5 1 57 0 0
+energyBinShift 0
+xmaxSigmaShift 0
+interactionModel sibyll23c
+minLgEFlux 17.
+galacticMass 56 0.0835522 1 56 0 1
+

@@ -33,6 +33,7 @@ namespace prop {
     delete fPropagator;
     delete fSource;
     fFluxData.clear();
+    fLowEFluxData.clear();
     fCompoData.clear();
     fAllFluxData.clear();
     fAllCompoData.clear();

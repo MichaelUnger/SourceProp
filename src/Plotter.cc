@@ -288,8 +288,8 @@ namespace prop {
     for (const auto& m : mGroups) {
       stringstream title;
       if (m.fFirst >= kGalacticOffset) {
-        // continue;
-        title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
+        continue;
+        // title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
       }
       else
         title << m.fFirst << " #leq A #leq " << m.fLast;
@@ -815,8 +815,8 @@ namespace prop {
     lnA->GetYaxis()->SetRangeUser(-0.39, 4);
     vlnA->GetYaxis()->SetRangeUser(-0.39, 4);
 
-    lnA->GetXaxis()->SetRangeUser(17.8, 19.85);
-    vlnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+    lnA->GetXaxis()->SetRangeUser(17, 20);
+    vlnA->GetXaxis()->SetRangeUser(17, 20);
 
     lnA->SetLineColor(kRed);
     lnA->GetXaxis()->SetTitle("lg(E/eV)");
@@ -858,7 +858,7 @@ namespace prop {
     c22->SetRightMargin(0.17);
     c22->SetTicks(1, 1);
     vlnA->Draw("CY+");
-    vlnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+    vlnA->GetXaxis()->SetRangeUser(17, 20);
 #ifdef _PAPER_
     lnA->SetLineWidth(1);
     vlnA->SetLineWidth(1);

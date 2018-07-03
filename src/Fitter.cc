@@ -170,7 +170,7 @@ namespace prop {
       const double E0 = pow(10, lgE0);
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
 
-      const bool knees = false;
+      const bool knees = true;
       // ------ single power law
       if (!knees) {
         const double emaxGal = pow(10, par[eLgEmaxGal]);
@@ -198,15 +198,15 @@ namespace prop {
           galMasses.push_back(iter.first);
           f.push_back(iter.second);
         }
-        const double rMaxGal = pow(10, par[eLgEmaxGal]);
-        const double dGammaGal = par[eGammaGal];
-        const double gamma1 = -2.76;
-        const double gamma2 = -3.24;
-        #warning hardcoded sys
-        const double deltaLgESys = 0.1;// * fOptions.GetEnergyBinShift();
-        const double kneeFe = pow(10, 16.92+deltaLgESys);
+        const double deltaGammaProton = 0;//0.07;
+        const double rMaxGalFe = pow(10, par[eLgEmaxGal]);
+        const double dGammaGal = par[eDeltaGammaGal];
+        const double gamma1 = par[eGammaGalLowE];
+        const double gamma2 = par[eGammaGal];
+        #warning hardcoded syst for k nee
+        const double deltaLgESys = 0;// * fOptions.GetEnergyBinShift();
         const double eps = 20;
-        const double refEGal = pow(10, 16.5+deltaLgESys);
+        const double refEGal = 1e12;//pow(10, 16.5+deltaLgESys);
         
         auto galFunc = [](const double E, const double Eknee,
                           const double gamma1, const double gamma2,
@@ -224,10 +224,12 @@ namespace prop {
         double galSum = 0;
         for (unsigned int iMass = 0; iMass < nMass; ++iMass) {
           const double Z = aToZ(galMasses[iMass]);
-          const double Eknee = kneeFe / 26 * Z;
-          const double Emax = rMaxGal / 26 * Z;
+          const double Eknee = rMaxGalFe / 26 * Z;
+          const double Emax = 1e50;
+          const double dGamma = galMasses[iMass] == 1 ? deltaGammaProton : 0;
           const double galRef =
-            galFunc(refEGal, Eknee, gamma1, gamma2, eps, dGammaGal, Emax);
+            galFunc(refEGal, Eknee, gamma1 - dGamma, gamma2 - dGamma,
+                    eps, dGammaGal, Emax);
           const double egalRef =
             f[iMass] * galFunc(E0, Eknee, gamma1, gamma2,
                                eps, dGammaGal, Emax) / galRef;
@@ -240,17 +242,19 @@ namespace prop {
 
         for (unsigned int iMass = 0; iMass < nMass; ++iMass) {
           const double Z = aToZ(galMasses[iMass]);
-          const double Eknee = kneeFe / 26 * Z;
-          const double Emax = rMaxGal / 26 * Z;
+          const double Eknee = rMaxGalFe / 26 * Z;
+          const double Emax = 1e50;
           TMatrixD galactic(data.fNLgE, 1);
+          const double dGamma = galMasses[iMass] == 1 ? deltaGammaProton : 0;
           const double galRef =
-            galFunc(refEGal, Eknee, gamma1, gamma2, eps, dGammaGal, Emax);
+            galFunc(refEGal, Eknee, gamma1 - dGamma, gamma2 - dGamma,
+                    eps, dGammaGal, Emax);
           int iTest = -1;
           double lgE = data.fLgEmin + dlgE/2;
           for (unsigned int i = 0; i < data.fNLgE; ++i) {
             const double E = pow(10, lgE);
             const double phiGal =
-              f[iMass] * galFunc(E, Eknee, gamma1, gamma2,
+              f[iMass] * galFunc(E, Eknee, gamma1 - dGamma, gamma2 - dGamma,
                                  eps, dGammaGal, Emax) / galRef;
             galactic[i][0] = galNorm * phiGal;
             if (iTest < 0 && E > E0)
@@ -632,7 +636,7 @@ namespace prop {
     // Table 3 from  Astroparticle Physics 36 (2012) 183–194
     // energy in eV
     // flux in m-2 s-1 sr-1 GeV-1
-    if (false) {
+    if (true) {
       ifstream inKG(fOptions.GetDataDirname() + "/KascadeGrande2012.txt");
       while (true) {
         FluxData flux;

@@ -129,7 +129,7 @@ DrawData(const FitData& fitData,
     fitSpectrum->SetPointEYhigh(i, w*fluxData[i].fFluxErrUp);
     fitSpectrum->SetPointEYlow(i, w*fluxData[i].fFluxErrLow);
   }
-
+  
   TGraphAsymmErrors* lowESpectrum = new TGraphAsymmErrors();
   TGraph* lowESpectrum2 = new TGraph();
   const vector<FluxData>& lowEFluxData = fitData.fLowEFluxData;
@@ -299,7 +299,7 @@ DrawData(const FitData& fitData,
   gROOT->GetObject("hvLnA", vlnA);
   vlnA->SetLineColor(kBlack);
   vlnA->Draw("CSAME");
-  vlnA->GetXaxis()->SetRangeUser(17.8, 19.85);
+  vlnA->GetXaxis()->SetRangeUser(17, 20);
   fitVlnA->Draw("PZ");
   gPad->RedrawAxis();
 
@@ -365,7 +365,9 @@ DrawValues(const FitData& fitData,
     parString << GetParLatexName(par) << " = " << showpoint
               << setprecision(3) << fitParameters[i].fValue;
     l.SetTextColor(fitParameters[i].fIsFixed ? fixColor : freeColor);
-    if ((par == eLgEmaxGal || par == eNoPhoton) && fitParameters[i].fIsFixed)
+    if ((par == eLgEmaxGal || par == eNoPhoton || par == eLgPhotonFieldFac ||
+         par == eDeltaGammaGal || par == eGammaGalLowE) &&
+        fitParameters[i].fIsFixed)
       continue;
     if (!fitParameters[i].fIsFixed)
       parString << "#pm" << noshowpoint
@@ -596,7 +598,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17, 20.5);
+  plot.SetXRange(15., 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
