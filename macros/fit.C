@@ -129,7 +129,11 @@ DrawData(const FitData& fitData,
     fitSpectrum->SetPointEYhigh(i, w*fluxData[i].fFluxErrUp);
     fitSpectrum->SetPointEYlow(i, w*fluxData[i].fFluxErrLow);
   }
-  
+  fitSpectrum->SetName("fitSpectrum");
+  TFile out("tmp.root","RECREATE");
+  fitSpectrum->Write();
+  out.Write();
+  out.Close();
   TGraphAsymmErrors* lowESpectrum = new TGraphAsymmErrors();
   TGraph* lowESpectrum2 = new TGraph();
   const vector<FluxData>& lowEFluxData = fitData.fLowEFluxData;
@@ -217,8 +221,8 @@ DrawData(const FitData& fitData,
   legSpec->SetFillStyle(0);
   legSpec->SetBorderSize(0);
   legSpec->SetTextSize(0.05);
-  if (lowESpectrum->GetN())
-    legSpec->AddEntry(lowESpectrum, "KG 2012","PE");
+  if (lowESpectrum->GetN()) 
+    legSpec->AddEntry(lowESpectrum, fitOptions.GetLowESpectrumDataLabel().c_str());
 
   legSpec->AddEntry(fitSpectrum, fitOptions.GetSpectrumDataLabel().c_str(),"PE");
   legSpec->Draw();
@@ -598,7 +602,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(15., 20.5);
+  plot.SetXRange(16, 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);

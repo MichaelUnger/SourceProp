@@ -62,10 +62,16 @@ namespace prop {
       eTASixYear,
       eAuger2017
     };
+
+    enum ELowESpectrumDataType {
+      eKG12,
+      eNoLowESpectrum
+    };
     
     enum EXmaxDataType {
       eAugerXmax2014,
-      eAugerXmax2017
+      eAugerXmax2017,
+      eAugerXmax2017fudge
     };
 
   public:
@@ -115,6 +121,9 @@ namespace prop {
     bool DoCompositionFit() const
     { return fFitCompo; }
 
+    bool GCRWithKnees() const
+    { return fGCRWithKnees; }
+
     bool RejectOutliers() const
     { return fRejectOutliers; }
 
@@ -142,6 +151,10 @@ namespace prop {
     ESpectrumDataType GetSpectrumDataType() const
     { return fSpectrumDataType; }
     std::string GetSpectrumDataLabel() const;
+
+    ELowESpectrumDataType GetLowESpectrumDataType() const
+    { return fLowESpectrumDataType; }
+    std::string GetLowESpectrumDataLabel() const;
     
     EXmaxDataType GetXmaxDataType() const
     { return fXmaxDataType; }
@@ -163,6 +176,7 @@ namespace prop {
     std::vector<std::string> fBBSigma;
     std::vector<std::string> fUserPhotonfieldName;
     bool fFitCompo;
+    bool fGCRWithKnees;
     bool fRejectOutliers;
     double fMinFluxLgE;
     double fMinCompLgE;
@@ -172,6 +186,7 @@ namespace prop {
     Spectrum::ECutoffType fCutoffType;
     std::vector<MassValue> fGalMasses;
     ESpectrumDataType fSpectrumDataType;
+    ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
 
     ClassDefNV(FitOptions, 1);

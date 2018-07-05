@@ -30,6 +30,7 @@ namespace prop {
                         const int);
     PropMatrices fPropMatrices;
     FitOptions fOptions;
+    static bool fGCRKnees;
     static FitData fFitData;
     TMinuit fMinuit;
     ClassDefNV(Fitter, 1);

@@ -2,6 +2,7 @@
 #include "Utilities.h"
 #include "Particles.h"
 
+
 #include <sstream>
 #include <stdexcept>
 #include <iostream>
@@ -17,6 +18,7 @@ namespace prop {
     fResult.clear();
     fNucleonResult.ResizeTo(0, 0);
     fSum.ResizeTo(0, 0);
+    
     for (const auto& iter : spectrum) {
       const int Aprim = iter.first;
       const TMatrixD& sourceSpectrum = iter.second;

@@ -28,7 +28,8 @@ using namespace utl;
 namespace prop {
 
   FitData Fitter::fFitData;
-
+  bool Fitter::fGCRKnees = false;
+  
   pair<double, double>
   calcNorm(const FitData& data)
   {
@@ -170,9 +171,8 @@ namespace prop {
       const double E0 = pow(10, lgE0);
       const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
 
-      const bool knees = true;
       // ------ single power law
-      if (!knees) {
+      if (!fGCRKnees) {
         const double emaxGal = pow(10, par[eLgEmaxGal]);
         const double gammaGal = par[eGammaGal];
         const double sE = exp(-E0/emaxGal);
@@ -198,13 +198,11 @@ namespace prop {
           galMasses.push_back(iter.first);
           f.push_back(iter.second);
         }
-        const double deltaGammaProton = 0;//0.07;
+        const double deltaGammaProton = 0.07;
         const double rMaxGalFe = pow(10, par[eLgEmaxGal]);
         const double dGammaGal = par[eDeltaGammaGal];
         const double gamma1 = par[eGammaGalLowE];
         const double gamma2 = par[eGammaGal];
-        #warning hardcoded syst for k nee
-        const double deltaLgESys = 0;// * fOptions.GetEnergyBinShift();
         const double eps = 20;
         const double refEGal = 1e12;//pow(10, 16.5+deltaLgESys);
         
@@ -319,6 +317,8 @@ namespace prop {
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
 
+    fGCRKnees = fOptions.GCRWithKnees();
+    
     ReadData();
     cout << " reading prop matrix from "
          << fOptions.GetPropmatrixFilename() << endl;
@@ -636,7 +636,7 @@ namespace prop {
     // Table 3 from  Astroparticle Physics 36 (2012) 183–194
     // energy in eV
     // flux in m-2 s-1 sr-1 GeV-1
-    if (true) {
+    if (fOptions.GetLowESpectrumDataType() == FitOptions::eKG12) {
       ifstream inKG(fOptions.GetDataDirname() + "/KascadeGrande2012.txt");
       while (true) {
         FluxData flux;
@@ -665,6 +665,52 @@ namespace prop {
           fFitData.fLowEFluxData.push_back(flux);
         }
       }
+      if (false) {
+        string kFile = fOptions.GetDataDirname() + "/KAS_q01_All.txt";
+        ifstream inK(kFile.c_str());
+        string line;
+        while (getline(inK, line)){
+          if (!line.empty() && line[0] == '#')
+            continue;
+          stringstream strstr(line);
+          string d;
+          vector<double> data;
+          while (getline(strstr,d, ';')) 
+            data.push_back(stod(d));
+          if (data.size() != 4) {
+            cerr << " error reading " << kFile << endl;
+            break;
+          }
+          FluxData flux;
+          const double energy = data[0];
+          double flx = data[1];
+          double ferrUp = data[2];
+          double ferrLow = data[3];
+          const double fudgeFactor = 0.8;
+          double fac = 1e6*365*24*3600.*fudgeFactor;
+          double ferr = (ferrUp + ferrLow) / 2;
+          flx *= fac;
+          ferr *= fac;
+          ferrUp *= fac;
+          ferrLow *= fac;
+          flux.fFluxErr = ferr; //(ferrUp+ferrLow)/2 ;
+          flux.fFluxErrUp = ferr; //ferrUp;
+          flux.fFluxErrLow = ferr; //ferrLow;
+          flux.fN = 100; // dummy
+          flux.fLgE = log10(energy);
+          flux.fFlux = flx;
+          if (ferr/flx > 0.2)
+            continue;
+          // syst shift?
+          flux.fLgE += deltaLgESys;
+          
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fLowEFluxData.push_back(flux);
+          }
+        }
+      }
     }
 
     cout << " spectrum: nAll = " <<  fFitData.fAllFluxData.size()
@@ -688,6 +734,7 @@ namespace prop {
         break;
       }
     case FitOptions::eAugerXmax2017:
+    case FitOptions::eAugerXmax2017fudge:
       {
         /*
           #  (1) meanLgE:      <lg(E/eV)>
@@ -706,7 +753,11 @@ namespace prop {
         xmaxSysGraph = new TGraphAsymmErrors();
         sigmaXmaxSysGraph = new TGraphAsymmErrors();
         int i = 0;
-        ifstream in(fOptions.GetDataDirname() + "/elongationRate17.txt");
+        const string filename =
+          fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2017 ?
+          "/elongationRate17.txt" :
+          "/elongationRate17fudge.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
         while (true) {
           double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
             sigma, sigmaErr, sigmaSystUp, sigmaSystLow;

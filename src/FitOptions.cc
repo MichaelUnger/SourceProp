@@ -20,7 +20,8 @@ namespace prop {
     fIRB = "Kneiske04";
     fDataDirname = "./data";
     fOutDirname = "./pdfs";
-    fFitCompo = 1;
+    fFitCompo = true;
+    fGCRWithKnees = false;
     fRejectOutliers = 0;
     fMinFluxLgE = 17;
     fMinCompLgE = 17;
@@ -36,13 +37,13 @@ namespace prop {
     fStartValues[eGammaGalLowE] = StartValue(-2.7e+00, 0.1, -2, -10, 1);
     fStartValues[eDeltaGammaGal] = StartValue(0.2, 0.1, 0, 10, 1);
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
-    // PRD:    fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
     fCutoffType = Spectrum::eExponential;
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
-
+    fLowESpectrumDataType = eNoLowESpectrum;
+    
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
       throw runtime_error("error reading " + filename);
@@ -148,6 +149,10 @@ namespace prop {
         if (!(line >> fFitCompo))
           throw runtime_error("error decoding fitComposition");
       }
+      else if (keyword == "gcrWithKnees") {
+        if (!(line >> fGCRWithKnees))
+          throw runtime_error("error decoding gcrWithKnees");
+      }
       else if (keyword == "energyBinShift") {
         if (!(line >> fEnergyBinShift))
           throw runtime_error("error decoding energyBinShift");
@@ -183,6 +188,15 @@ namespace prop {
         else
           throw runtime_error("unknown spectrum data type: " + type);
       }
+      else if (keyword == "spectrumDataLowE") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding spectrumDataLowE");
+        if (type == "KG2012")
+          fLowESpectrumDataType = eKG12;
+        else
+          throw runtime_error("unknown spectrum data type: " + type);
+      }
       else if (keyword == "xmaxData") {
         string type;
         if (!(line >> type))
@@ -191,6 +205,8 @@ namespace prop {
           fXmaxDataType = eAugerXmax2014;
         else if (type == "Auger2017")
           fXmaxDataType = eAugerXmax2017;
+        else if (type == "Auger2017fudge")
+          fXmaxDataType = eAugerXmax2017fudge;
         else
           throw runtime_error("unknown spectrum data type: " + type);
       }
@@ -454,6 +470,19 @@ namespace prop {
   }
 
   string
+  FitOptions::GetLowESpectrumDataLabel()
+    const
+  {
+    switch (fLowESpectrumDataType) {
+    case eKG12:
+      return "KG 2012";
+    default:
+      return "unknown";
+    }
+  }
+
+  
+  string
   FitOptions::GetXmaxDataLabel()
     const
   {
@@ -462,6 +491,8 @@ namespace prop {
       return "Auger 2014";
     case eAugerXmax2017:
       return "Auger 2017";
+    case eAugerXmax2017fudge:
+      return "Auger 2017^{*}";
     default:
       return "unknown";
     }
