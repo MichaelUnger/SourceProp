@@ -669,7 +669,7 @@ namespace prop {
       iceFluxLo->SetLineColor(kMagenta+1);
       iceFluxLo->Draw("SAME");
 
-      histTot->GetXaxis()->SetRangeUser(13, 19);
+      histTot->GetXaxis()->SetRangeUser(13, 20);
       ifstream in(dataDir + "/iceCube2012Limits.txt");
       double x, y;
       TGraph* iceLimits = new TGraph();
@@ -711,7 +711,7 @@ namespace prop {
     fCanvas->cd(2);
     const unsigned int nX = 45;
     const double hx1 = 14.5;
-    const double hx2 = 19;
+    const double hx2 = 20;
     TH1D* eventsE = new TH1D("eventsE", "", nX, hx1, hx2);
     TH1D* eventsMu = new TH1D("eventsMu", "", nX, hx1, hx2);
     TH1D* eventsTau = new TH1D("eventsTau", "", nX, hx1, hx2);

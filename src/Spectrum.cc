@@ -46,6 +46,14 @@ namespace prop {
     return fNucleons;
   }
 
+  Spectrum::SpecMap&
+  Spectrum::GetNucleonFlux()
+  {
+    if (fNucleons.empty())
+      CalculateSpectrum();
+    return fNucleons;
+  }
+
   const
   Spectrum::SpecMap&
   Spectrum::GetInjFlux()

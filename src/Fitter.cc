@@ -147,7 +147,10 @@ namespace prop {
         TMatrixD& m = spectrum.GetEscFlux()[1];
         if (!m.GetNoElements())
           m.ResizeTo(n, 1);
-
+        TMatrixD& mm = spectrum.GetNucleonFlux()[Spectrum::eProtonEsc];
+        if (!mm.GetNoElements())
+          mm.ResizeTo(n, 1);
+        
         const double f = par[eExtraProtonFraction195];
         const double gamma = par[eExtraProtonGamma];
         const double Emax = pow(10, par[eExtraProtonLgEmax]);
@@ -158,6 +161,7 @@ namespace prop {
           const double E = pow(10, lgE);
           const double flux = norm * pow(E, gamma) * exp(-E/Emax);
           m[iE][0] += flux;
+          mm[iE][0] += flux;
           lgE += dlgE;
         }
       }
@@ -830,7 +834,6 @@ namespace prop {
           sigmaGraph->SetPointError(i, E, sigmaErr);
           sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
           sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
-
           ++i;
         }
         break;
@@ -859,7 +862,7 @@ namespace prop {
                                    6.99, 6.99, 6.99, 6.99};
 
       unsigned int i = xmaxGraph->GetN();
-      for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
+      for (unsigned int iSD = 5; iSD < nSD; ++iSD) {
         const double E = pow(10, sdLgE[iSD]);
         xmaxGraph->SetPoint(i, E, sdXmax[iSD]);
         xmaxSysGraph->SetPoint(i, E, sdXmax[iSD]);
@@ -907,7 +910,7 @@ namespace prop {
       comp.fLnASysLow = lnASys.GetEYlow()[i];
       comp.fLnASysUp = lnASys.GetEYhigh()[i];
 
-      if (i < nSigma - 1) {
+      if (i < nSigma) {
         const double sigmaErr = sigmaGraph->GetEY()[i];
         const double sigma = sigmaGraph->GetY()[i];
         comp.fVlnA = lnAcalc.GetLnAVariance(xMax, sigma, E, model);

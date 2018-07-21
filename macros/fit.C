@@ -307,8 +307,8 @@ DrawData(const FitData& fitData,
   gROOT->GetObject("hvLnA", vlnA);
   vlnA->SetLineColor(kBlack);
   vlnA->Draw("CSAME");
-  vlnA->GetXaxis()->SetRangeUser(17, 20.2);
-  lnA->GetXaxis()->SetRangeUser(17, 20.2);
+  vlnA->GetXaxis()->SetRangeUser(17.8, 20.2);
+  lnA->GetXaxis()->SetRangeUser(17.8, 20.2);
   fitVlnA->Draw("PZ");
   gPad->RedrawAxis();
 
@@ -552,7 +552,7 @@ DrawValues(const FitData& fitData,
     cout << a.what() << endl;
   }
   ostringstream pFraction;
-  pFraction << "proton fraction > 50 EeV: " << setprecision(3) << showpoint
+  pFraction << "proton fraction > 60 EeV: " << setprecision(3) << showpoint
             << fitData.fProtonFraction60*100 << "%";
   l.DrawLatex(xEdot, eps0Y-0.08, pFraction.str().c_str());
 }
@@ -625,7 +625,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17, 21);
+  plot.SetXRange(17.8, 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
