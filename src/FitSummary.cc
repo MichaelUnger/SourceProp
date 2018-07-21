@@ -22,6 +22,7 @@ FitSummary::FitSummary() :
     fLgPhotonFieldErr[i] = 0;
     fNNeutrinosErr[i] = 0;
     fProtonRatio185Err[i] = 0;
+    fProtonFraction60Err[i] = 0;
   }
 
 }
@@ -93,5 +94,6 @@ FitSummary::Fill(const prop::FitData& fitData,
   fFitEDM = fitData.fFitEDM;
   fNNan = fitData.fNNan;
   fProtonRatio185 = fitData.fProtonRatio185;
+  fProtonFraction60 = fitData.fProtonFraction60;
 
 }

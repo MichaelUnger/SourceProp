@@ -278,6 +278,7 @@ nuPlot()
   gStyle->SetTitleSize(0.06,"XYZ");
   gStyle->SetTitleOffset(1,"XYZ");
 
+
   gCanvas = new TCanvas("c", "", 10, 10, 0.5*800, 0.5*1000);
   gCanvas->Divide(4, 7);
 

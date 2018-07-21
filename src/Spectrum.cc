@@ -27,6 +27,14 @@ namespace prop {
     return fEscape;
   }
 
+  Spectrum::SpecMap&
+  Spectrum::GetEscFlux()
+  {
+    if (fEscape.empty())
+      CalculateSpectrum();
+    return fEscape;
+  }
+
 
   const
   Spectrum::SpecMap&

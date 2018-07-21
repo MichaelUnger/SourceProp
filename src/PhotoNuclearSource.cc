@@ -39,6 +39,7 @@ namespace prop {
       for (auto iter : lambdaMap)
         delete iter.second;
 
+    return;
     for (auto& br : fBranchingRatios)
       for (auto& iter2 : br)
         for (auto iter3 : iter2.second)

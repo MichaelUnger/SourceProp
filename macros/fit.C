@@ -247,22 +247,26 @@ DrawData(const FitData& fitData,
   const vector<CompoData>& compData = fitData.fCompoData;
   const double dlgE = 0.05;
   for (unsigned int i = 0; i < compData.size(); ++i) {
-    fitLnA->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
-    fitLnA2->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
-    fitLnA->SetPointError(i, 0, compData[i].fLnAErr);
-    fitLnASys->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
-    fitLnASys->SetPointEYlow(i, compData[i].fLnASysLow);
-    fitLnASys->SetPointEYhigh(i, compData[i].fLnASysUp);
-    fitLnASys->SetPointEXlow(i, dlgE);
-    fitLnASys->SetPointEXhigh(i, dlgE);
+    if (compData[i].fLnAErr > 0) {
+      fitLnA->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
+      fitLnA2->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
+      fitLnA->SetPointError(i, 0, compData[i].fLnAErr);
+      fitLnASys->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
+      fitLnASys->SetPointEYlow(i, compData[i].fLnASysLow);
+      fitLnASys->SetPointEYhigh(i, compData[i].fLnASysUp);
+      fitLnASys->SetPointEXlow(i, dlgE);
+      fitLnASys->SetPointEXhigh(i, dlgE);
+    }
 
-    fitVlnA->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
-    fitVlnA->SetPointError(i, 0, compData[i].fVlnAErr);
-    fitVlnASys->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
-    fitVlnASys->SetPointEYlow(i, compData[i].fVlnASysLow);
-    fitVlnASys->SetPointEYhigh(i, compData[i].fVlnASysUp);
-    fitVlnASys->SetPointEXlow(i, dlgE);
-    fitVlnASys->SetPointEXhigh(i, dlgE);
+    if (compData[i].fVlnAErr > 0) {
+      fitVlnA->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
+      fitVlnA->SetPointError(i, 0, compData[i].fVlnAErr);
+      fitVlnASys->SetPoint(i, compData[i].fLgE, compData[i].fVlnA);
+      fitVlnASys->SetPointEYlow(i, compData[i].fVlnASysLow);
+      fitVlnASys->SetPointEYhigh(i, compData[i].fVlnASysUp);
+      fitVlnASys->SetPointEXlow(i, dlgE);
+      fitVlnASys->SetPointEXhigh(i, dlgE);
+    }
   }
   fitLnA->SetLineColor(kRed);
   fitLnA->SetMarkerColor(kRed);
@@ -303,7 +307,8 @@ DrawData(const FitData& fitData,
   gROOT->GetObject("hvLnA", vlnA);
   vlnA->SetLineColor(kBlack);
   vlnA->Draw("CSAME");
-  vlnA->GetXaxis()->SetRangeUser(17, 20);
+  vlnA->GetXaxis()->SetRangeUser(17, 20.2);
+  lnA->GetXaxis()->SetRangeUser(17, 20.2);
   fitVlnA->Draw("PZ");
   gPad->RedrawAxis();
 
@@ -517,6 +522,7 @@ DrawValues(const FitData& fitData,
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
 
+  const double xEdot = 0.47;
   const double lgEmin = 17;
   double edot = -1;
   stringstream powerString;
@@ -532,7 +538,6 @@ DrawValues(const FitData& fitData,
     l.SetTextColor(freeColor);
     powerString << "#dot{#varepsilon}_{" << lgEmin << "} = "
                 << setprecision(2) << showpoint << edot;
-    const double xEdot = 0.47;
     l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
     l.SetTextSize(textSize*0.7);
 #ifdef _PAPER_
@@ -546,6 +551,10 @@ DrawValues(const FitData& fitData,
   catch (runtime_error& a) {
     cout << a.what() << endl;
   }
+  ostringstream pFraction;
+  pFraction << "proton fraction > 50 EeV: " << setprecision(3) << showpoint
+            << fitData.fProtonFraction60*100 << "%";
+  l.DrawLatex(xEdot, eps0Y-0.08, pFraction.str().c_str());
 }
 
 
@@ -553,6 +562,20 @@ void
 fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
 {
   gROOT->Clear();
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+  gStyle->SetMarkerStyle(20);
+  gStyle->SetMarkerSize(0.7);
+  gStyle->SetPadTopMargin(0.025);
+  gStyle->SetPadBottomMargin(0.175);
+  gStyle->SetPadLeftMargin(0.15);
+  gStyle->SetPadRightMargin(0.05);
+  gStyle->SetTitleSize(0.06,"X");
+  gStyle->SetTitleSize(0.06,"Y");
+  gStyle->SetErrorX(0.);
+  gStyle->SetLabelOffset(0.013,"X");
+  gStyle->SetLabelOffset(0.013,"Y");
+
   FitOptions opt(fitFilename);
   Fitter fitter(opt);
   if (fit) {
@@ -602,7 +625,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(16, 20.5);
+  plot.SetXRange(17, 21);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);

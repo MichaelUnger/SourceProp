@@ -1,3 +1,5 @@
+const double gammaRef = 3;
+
 enum ESpecPars {
   eLgKnee,
   eGamma1,
@@ -14,6 +16,18 @@ enum ESpecPars {
   eNpars,
   eNParsOne = eJ0+1
 };
+
+inline
+void
+fractionToZeta(const unsigned int nZeta,
+               const double* fractions, double* zeta)
+{
+  for (unsigned int i = 0; i < nZeta; ++i) {
+    zeta[i] = fractions[i];
+    for (unsigned int j = 0;  j < i; ++j)
+      zeta[i] /= (1 - zeta[j]);
+  }
+}
 
 
 inline
@@ -41,7 +55,7 @@ kneeFunc(const double* x, const double* p)
   const double kneeTermRef = pow(1+pow(Eref/Eknee, eps), (gamma2 - gamma1)/eps);
   const double norm = pow(Eref/Eknee, gamma1) * kneeTermRef;
   const double kneeTerm = pow(1+pow(E/Eknee, eps), (gamma2 - gamma1)/eps);
-  return pow(E/Eref,2.7) * jRef / norm *  pow(E/Eknee, gamma1) * kneeTerm;
+  return pow(E/Eref,gammaRef) * jRef / norm *  pow(E/Eknee, gamma1) * kneeTerm;
 }
 
 double
@@ -84,7 +98,6 @@ kneeSumFunc(double*x , double* p)
 void
 kg()
 {
-  gStyle->SetOptLogy(1);
   gStyle->SetOptStat(0);
   TGraphErrors* kg = new TGraphErrors();
   ifstream inKG("./Data/KascadeGrande2012.txt");
@@ -94,7 +107,7 @@ kg()
     inKG >> energy >> flx >> ferr >> ferrUp >> ferrLow;
     if (!inKG.good())
       break;
-    const double fac = /*1e6*365*24*3600./1e9**/pow(energy, 2.7)/1e9;
+    const double fac = /*1e6*365*24*3600./1e9**/pow(energy, gammaRef)/1e9;
     flx *= fac;
     ferr *= fac;
     ferrUp *= fac;
@@ -105,24 +118,25 @@ kg()
   }
 
   const double lgEmin = 15;
-  TH2D* back = new TH2D("back", "", 100, lgEmin, 18, 100, 2e18, 1e20);
+  TH2D* back = new TH2D("back", "", 100, lgEmin, 18, 100, 2e23, 0.5e25);
   back->Draw();
   kg->Draw("P");
 
-  const double Z2 = 20;
-  const double Z3 = 6;
-  const double Z4 = 2;
+  const double Z2 = 7;
+  const double Z3 = 2;
+  const double Z4 = 1;
+  const double charge[4] = {26, Z2, Z3, Z4};
   const double kneeFe = pow(10, 16.92);
   
-  double j0 = 3e19;
-  double zeta1 = 0.6;
-  double zeta2 = 0.5;
-  double zeta3 = 0.8;
+  double j0 = 3e24;
+  double zeta1 = 0.08;
+  double zeta2 = 0.03;
+  double zeta3 = 0.03;
   double zetas[3] = {zeta1, zeta2, zeta3};
   double fractions[4];
   zetaToFraction(zetas, fractions);
   for (unsigned int i = 0; i < 4; ++i)
-    cout << " start fraction " << i << " " << fractions[i] << endl;
+    cout << " start fraction " << charge[i] << " " << fractions[i] << endl;
 
   
   double gamma1 = -2.76;
@@ -155,20 +169,22 @@ kg()
   
   kneeSum->Draw("SAME");
 
-  //  kneeSum->FixParameter(eLgKnee, log10(kneeFe));
+  kneeSum->FixParameter(eLgKnee, log10(kneeFe));
   kneeSum->FixParameter(eZ2, Z2);
   kneeSum->FixParameter(eZ3, Z3);
   kneeSum->FixParameter(eZ4, Z4);
 
   kneeSum->FixParameter(eGamma1, gamma1);
-  kneeSum->FixParameter(eGamma2, gamma2);
-  kneeSum->FixParameter(eDelta, delta);
+  //  kneeSum->FixParameter(eGamma2, gamma2);
+  //  kneeSum->FixParameter(eDelta, delta);
   kneeSum->FixParameter(eEps, eps);
-  kneeSum->FixParameter(eZeta1, zeta1);
- kneeSum->FixParameter(eZeta2, zeta2);
- kneeSum->FixParameter(eZeta3, zeta3);
+  //  kneeSum->FixParameter(eZeta1, zeta1);
+  // kneeSum->FixParameter(eZeta2, zeta2);
+  //kneeSum->FixParameter(eZeta3, zeta3);
 
-  kg->Fit("ks", "", "", 16, 17.3);
+  kg->SetMarkerStyle(20);
+  kg->SetMarkerSize(1);
+  kg->Fit("ks", "", "", 16, 17.2);
 
   j0 = kneeSum->GetParameter(eJ0);
   zetas[0] = kneeSum->GetParameter(eZeta1);
@@ -195,7 +211,7 @@ kg()
   TF1* knee3 = new TF1("k3", kneeFunc, lgEmin, 18, eNParsOne);
   knee3->SetParameters(log10(kneeFe/26.*Z3), gamma1, gamma2, delta, eps, j0*fractions[2]);
   knee3->Draw("SAME");
-  knee3->SetLineColor(kAzure+10);
+  knee3->SetLineColor(kYellow+1);
   TF1* knee4 = new TF1("k4", kneeFunc, lgEmin, 18, eNParsOne);
   knee4->SetParameters(log10(kneeFe/26.*Z4), gamma1, gamma2, delta, eps, j0*fractions[3]);
   knee4->Draw("SAME");

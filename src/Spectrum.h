@@ -63,6 +63,7 @@ namespace prop {
 
     const SpecMap& GetInjFlux() const;
     const SpecMap& GetEscFlux() const;
+    SpecMap& GetEscFlux();
     const SpecMap& GetNucleonFlux() const;
 
     void AddEscComponent(const unsigned int A, const TMatrixD& flux);

@@ -1,22 +1,19 @@
-# BPLNew_SFR2_G12 1975487.hpc0.abudhabi.nyu.edu at /state/partition1/1975487.hpc0.abudhabi.nyu.edu on login-0-1.local
 OutDir Marco/pdfs
 DataDir Data
 evolution SFR2
 IRB CRPropaG12
 par gammaInj -1.0 0.1 0 0 1
-par deltaEsc   -6.53346e-01 0.1 -1.01 -0.2 0
-par lgEmaxGal 28.5 0.1 0 0 1
-par gammaGal  -4 0.01 0  10 0
-par gammaGalLowE  -4 0.01 0  10 1
-par deltaGammaGal 0.1 0.01 0  10 1
-par fGal  0.55 0.01 0  10 0  
-mass 28 0.1 1 56 0 1
+par deltaEsc   -0.9 0.1 -1.01 -0.2 0
+par extraProtonFraction 0.05 0.05 0 1 1
+par extraProtonLgEmax 21 0.1 19 23 1
+par extraProtonGamma -2 0.1 -2.4 -0.8 1
+mass 29 0.1 1 56 0 1
 spectrumData Auger2017
 xmaxData Auger2017
-PhotonBPL 0.11 32 2.0
-energyBinShift 0
-xmaxSigmaShift 0
+PhotonBPL 0.07 32 2.0
 interactionModel sibyll23c
-minLgEFlux 17.
-galacticMass 56 0.0835522 1 56 0 1
-
+energyBinShift 1
+xmaxSigmaShift -1
+galacticMass 56 0.3 1 56 1 0
+galacticMass 14  0.6 1 56 1 0
+galacticMass 1  0.1 1 56 1 0

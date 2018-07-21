@@ -16,6 +16,9 @@ namespace prop {
     eLgEmaxGal,
     eNoPhoton,
     eLgPhotonFieldFac,
+    eExtraProtonFraction195,
+    eExtraProtonLgEmax,
+    eExtraProtonGamma,
     eNpars
   };
 

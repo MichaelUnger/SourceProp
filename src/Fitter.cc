@@ -135,6 +135,33 @@ namespace prop {
         }
       }
 
+      if (par[eExtraProtonFraction195] > 0) {
+        const double refLgE = 19.5;
+        const double refE = pow(10, refLgE);
+        const double sum = spectrum.GetFluxSum(19.5);
+        const double lgEmin = spectrum.GetLgEmin();
+        const double lgEmax = spectrum.GetLgEmax();
+        const double n = spectrum.GetN();
+        const double dlgE = (lgEmax - lgEmin) / n;
+
+        TMatrixD& m = spectrum.GetEscFlux()[1];
+        if (!m.GetNoElements())
+          m.ResizeTo(n, 1);
+
+        const double f = par[eExtraProtonFraction195];
+        const double gamma = par[eExtraProtonGamma];
+        const double Emax = pow(10, par[eExtraProtonLgEmax]);
+        
+        const double norm = f * sum / (pow(refE, gamma) * exp(-refE/Emax));
+        double lgE = lgEmin + dlgE / 2;
+        for (unsigned int iE = 0; iE < n; ++iE) {
+          const double E = pow(10, lgE);
+          const double flux = norm * pow(E, gamma) * exp(-E/Emax);
+          m[iE][0] += flux;
+          lgE += dlgE;
+        }
+      }
+
       data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
     }
     
@@ -198,7 +225,7 @@ namespace prop {
           galMasses.push_back(iter.first);
           f.push_back(iter.second);
         }
-        const double deltaGammaProton = 0.07;
+        const double deltaGammaProton = 0;
         const double rMaxGalFe = pow(10, par[eLgEmaxGal]);
         const double dGammaGal = par[eDeltaGammaGal];
         const double gamma1 = par[eGammaGalLowE];
@@ -288,8 +315,10 @@ namespace prop {
     for (const auto& compo : data.fCompoData) {
       const pair<double, double> m =
         data.fPropagator->GetLnAMoments(compo.fLgE);
-      data.fChi2LnA += pow((compo.fLnA - m.first) / compo.fLnAErr, 2);
-      data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
+      if (compo.fLnAErr > 0)
+        data.fChi2LnA += pow((compo.fLnA - m.first) / compo.fLnAErr, 2);
+      if (compo.fVlnAErr > 0) 
+        data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
     }
 
     chi2 = data.GetChi2Tot();
@@ -513,6 +542,30 @@ namespace prop {
     fFitData.fProtonRatio185 =
       fFitData.fPropagator->GetPrimaryNucleonFluxAtEarth(18.3) /
       fFitData.fPropagator->GetFluxAtEarth(1, 18.3);
+
+    cout << " proton fraction at Earth > 50 EeV: " << flush;
+    const double lgEref = log10(60e18);
+    const double dlgE = (fFitData.fLgEmax - fFitData.fLgEmin) / fFitData.fNLgE;
+    const map<int, TMatrixD>& flux = fFitData.fPropagator->GetFluxAtEarth();
+    double allSum = 0;
+    double nucleonSum = 0;
+    for (const auto& m : flux) {
+      if (IsNucleus(m.first)) {
+        double lgE = fFitData.fLgEmin;
+        for (unsigned int i = 0; i < fFitData.fNLgE; ++i) {
+          if (lgE >= lgEref) {
+            const double dE = pow(10, lgE + dlgE) - pow(10, lgE);
+            if (m.first == 1) 
+              nucleonSum += m.second(i, 0)*dE;
+            allSum += m.second(i, 0)*dE;
+          }
+          lgE += dlgE;
+        }
+      }
+    }
+    cout << nucleonSum / allSum * 100 << "%" << endl;
+    fFitData.fProtonFraction60 = nucleonSum / allSum;
+
     return true;
   }
 
@@ -788,6 +841,36 @@ namespace prop {
       }
     }
     
+    const bool augerSD = true;
+    if (augerSD) {
+      const unsigned int nSD = 14;
+      const double sdLgE[nSD] = {18.55, 18.65, 18.75, 18.85, 18.95, 19.05,
+                                 19.15, 19.25, 19.35, 19.45, 19.55, 19.64,
+                                 19.74, 19.88};
+      const double sdXmax[nSD] = {750.7, 755.2, 756.4, 759.8, 763.0, 766.5,
+                                  769.6, 775, 780, 779, 788, 785, 795, 807};
+      
+      const double sdXmaxErr[nSD] = {0.3, 0.3, 0.4, 0.6, 0.6, 0.7, 0.9, 1.0,
+                                     2.0, 2.0, 2.0, 2.0, 3.0, 3.0};
+      const double sdSysUp[nSD] = {7.34,7.43,7.54,7.67,7.83,8.01,
+                                   8.21, 8.43,8.67,8.93,9.45,9.45,9.45,9.45};
+      const double sdSysLo[nSD] = {9.11, 8.80,8.49, 8.19, 7.88,
+                                   7.61, 7.37, 7.17, 7.03, 6.94,
+                                   6.99, 6.99, 6.99, 6.99};
+
+      unsigned int i = xmaxGraph->GetN();
+      for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
+        const double E = pow(10, sdLgE[iSD]);
+        xmaxGraph->SetPoint(i, E, sdXmax[iSD]);
+        xmaxSysGraph->SetPoint(i, E, sdXmax[iSD]);
+        xmaxGraph->SetPointError(i, E, sdXmaxErr[iSD]);
+        xmaxSysGraph->SetPointEYhigh(i, sdSysUp[iSD]);
+        xmaxSysGraph->SetPointEYlow(i, sdSysLo[iSD]);
+        ++i;
+      }
+    }
+
+
     LnACalculator lnAcalc;
     const LnACalculator::EModel model =
       LnACalculator::GetModel(fOptions.GetInteractionModel());
@@ -798,7 +881,8 @@ namespace prop {
     TGraphAsymmErrors lnAVarianceSys =
       lnAcalc.GetLnAVarianceSys(*xmaxSysGraph, *sigmaXmaxSysGraph,
                                 energyScaleUncertainty, model);
-    
+
+    const int nSigma = sigmaGraph->GetN();
     for (int i = 0; i < xmaxGraph->GetN(); ++i) {
       
       const double relativeAugerTAShift =
@@ -814,27 +898,36 @@ namespace prop {
         xMax += sigmaSys * xmaxSysGraph->GetEYhigh()[i];
       else if (sigmaSys < 0)
         xMax += sigmaSys * xmaxSysGraph->GetEYlow()[i];
-      const double sigma = sigmaGraph->GetY()[i];
       const double xMaxErr = xmaxGraph->GetEY()[i];
-      const double sigmaErr = sigmaGraph->GetEY()[i];
       
       CompoData comp;
       comp.fLgE = lgE;
       comp.fLnA = lnAcalc.GetMeanLnA(xMax, E, model);
-      comp.fVlnA = lnAcalc.GetLnAVariance(xMax, sigma, E, model);
       comp.fLnAErr = lnAcalc.GetMeanLnAError(xMaxErr, E, model);
-      comp.fVlnAErr = lnAcalc.GetLnAVarianceError(xMax, sigma,
-                                                  xMaxErr, sigmaErr,
-                                                  E, model);
       comp.fLnASysLow = lnASys.GetEYlow()[i];
       comp.fLnASysUp = lnASys.GetEYhigh()[i];
-      comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
-      comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
+
+      if (i < nSigma - 1) {
+        const double sigmaErr = sigmaGraph->GetEY()[i];
+        const double sigma = sigmaGraph->GetY()[i];
+        comp.fVlnA = lnAcalc.GetLnAVariance(xMax, sigma, E, model);
+        comp.fVlnAErr = lnAcalc.GetLnAVarianceError(xMax, sigma,
+                                                    xMaxErr, sigmaErr,
+                                                    E, model);
+        comp.fVlnASysLow = lnAVarianceSys.GetEYlow()[i];
+        comp.fVlnASysUp = lnAVarianceSys.GetEYhigh()[i];
+      }
+      else {
+        comp.fVlnA = 0;
+        comp.fVlnAErr = 0;
+        comp.fVlnASysLow = 0;
+        comp.fVlnASysUp = 0;
+      }
       fFitData.fAllCompoData.push_back(comp);
       if (comp.fLgE > fOptions.GetMinCompLgE())
         fFitData.fCompoData.push_back(comp);
     }
-
+    
     cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()
          << ", nFit = " <<  fFitData.fCompoData.size() << endl;
 

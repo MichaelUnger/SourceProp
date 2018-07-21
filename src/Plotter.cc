@@ -812,8 +812,8 @@ namespace prop {
       lnA->SetBinContent(i+1, lmm.first);
       vlnA->SetBinContent(i+1, lmm.second);
     }
-    lnA->GetYaxis()->SetRangeUser(-0.39, 4);
-    vlnA->GetYaxis()->SetRangeUser(-0.39, 4);
+    lnA->GetYaxis()->SetRangeUser(-0.39, 4.5);
+    vlnA->GetYaxis()->SetRangeUser(-0.39, 4.5);
 
     lnA->GetXaxis()->SetRangeUser(17, 20);
     vlnA->GetXaxis()->SetRangeUser(17, 20);

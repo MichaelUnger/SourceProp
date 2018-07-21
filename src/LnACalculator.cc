@@ -55,9 +55,9 @@ LnACalculator::GetLnAVariance(const TGraphErrors& meanXmax,
                               const EModel m)
   const
 {
-  vector<double> lnAVariance(meanXmax.GetN());
-  vector<double> lnAVarianceErr(meanXmax.GetN());
-  for (int i = 0; i < meanXmax.GetN(); ++i) {
+  vector<double> lnAVariance(sigmaXmax.GetN());
+  vector<double> lnAVarianceErr(sigmaXmax.GetN());
+  for (int i = 0; i < sigmaXmax.GetN(); ++i) {
     lnAVariance[i] = GetLnAVariance(meanXmax.GetY()[i], sigmaXmax.GetY()[i],
                                     meanXmax.GetX()[i], m);
     lnAVarianceErr[i] = GetLnAVarianceError(meanXmax.GetY()[i],
@@ -66,7 +66,7 @@ LnACalculator::GetLnAVariance(const TGraphErrors& meanXmax,
                                             sigmaXmax.GetEY()[i],
                                             meanXmax.GetX()[i], m);
   }
-  return TGraphErrors(meanXmax.GetN(), meanXmax.GetX(), &lnAVariance.front(),
+  return TGraphErrors(sigmaXmax.GetN(), meanXmax.GetX(), &lnAVariance.front(),
                       NULL, &lnAVarianceErr.front());
 }
 
@@ -114,10 +114,10 @@ LnACalculator::GetLnAVarianceSys(const TGraphAsymmErrors& meanXmaxSys,
                                  const EModel m)
   const
 {
-  vector<double> lnAVar(meanXmaxSys.GetN());
-  vector<double> lnAVarErrUp(meanXmaxSys.GetN());
-  vector<double> lnAVarErrLo(meanXmaxSys.GetN());
-  for (int i = 0; i < meanXmaxSys.GetN(); ++i) {
+  vector<double> lnAVar(sigmaXmaxSys.GetN());
+  vector<double> lnAVarErrUp(sigmaXmaxSys.GetN());
+  vector<double> lnAVarErrLo(sigmaXmaxSys.GetN());
+  for (int i = 0; i < sigmaXmaxSys.GetN(); ++i) {
     const double E =  meanXmaxSys.GetX()[i];
     const double xMax = meanXmaxSys.GetY()[i];
     const double sigmaXmax = sigmaXmaxSys.GetY()[i];
@@ -150,7 +150,7 @@ LnACalculator::GetLnAVarianceSys(const TGraphAsymmErrors& meanXmaxSys,
     lnAVarErrUp[i] = errUp;
     lnAVarErrLo[i] = errLo;
   }
-  return TGraphAsymmErrors(meanXmaxSys.GetN(), meanXmaxSys.GetX(), &lnAVar.front(),
+  return TGraphAsymmErrors(sigmaXmaxSys.GetN(), meanXmaxSys.GetX(), &lnAVar.front(),
                            NULL, NULL, &lnAVarErrLo.front(), &lnAVarErrUp.front());
 }
 

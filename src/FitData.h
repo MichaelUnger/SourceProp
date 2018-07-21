@@ -78,6 +78,7 @@ namespace prop {
     double fQ0;
     double fQ0Err;
     double fProtonRatio185;
+    double fProtonFraction60;
     std::vector<FitParameter> fFitParameters;
     int fFitStatus;
     bool fFitFailed;

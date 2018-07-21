@@ -13,7 +13,8 @@ namespace prop {
        "lg(R_{esc}^{ Fe19})","#delta_{esc}",
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
-       "f_{noPhot}", "lg(fphot)"};
+       "f_{noPhot}", "lg(fphot)", "f(UHEp)", "lg(Emax, UHEp)",
+       "#gamma(UHEp)"};
     return parNames[p];
   }
 
@@ -23,7 +24,8 @@ namespace prop {
     static const string parNames[eNpars] =
       {"gammaInj", "lgRmax", "lgResc", "deltaEsc",
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
-       "lgEmaxGal",  "fNoPhoton", "lgfPhoton"};
+       "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonFraction",
+       "extraProtonLgEmax", "extraProtonGamma"};
     return parNames[p];
   }
 

@@ -39,6 +39,10 @@ namespace prop {
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
+    fStartValues[eExtraProtonFraction195] = StartValue(0, 0.1, 0, 0, 1);
+    fStartValues[eExtraProtonLgEmax] = StartValue(22, 0.1, 19, 24, 1);
+    fStartValues[eExtraProtonGamma] = StartValue(-1, 0.1, -3, -0.5, 1);
+
     fCutoffType = Spectrum::eExponential;
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
