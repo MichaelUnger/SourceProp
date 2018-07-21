@@ -66,6 +66,7 @@ namespace prop {
     unsigned int fNLgE;
     double fLgEmin;
     double fLgEmax;
+    double fUHEExposure;
     std::vector<FluxData> fFluxData;
     std::vector<FluxData> fLowEFluxData;
     std::vector<CompoData> fCompoData;

@@ -306,14 +306,31 @@ namespace prop {
     data.fPropagator->Rescale(norm.first);
 
     data.fChi2Spec = 0;
+    double lastLgE = 0;
     for (const auto& flux : data.fFluxData) {
       const double y = flux.fFlux;
       const double sigma = flux.fFluxErr;
       const double m = data.fPropagator->GetFluxSum(flux.fLgE);
       const double r = (y -  m) / sigma;
       data.fChi2Spec += pow(r, 2);
+      if (lastLgE == 0 || flux.fLgE > lastLgE)
+        lastLgE = flux.fLgE;
     }
 
+    // chi2 from Poisson log-like for zero observations
+    // (see Baker&Cousins, NIM 221 (1984), 437)
+    const double dLgE = 0.1;
+    double lgE = lastLgE + dLgE;
+    double chi2Zero = 0;
+    while (lgE < data.fLgEmax) {
+      const double dE = pow(10, lgE) * kLn10 * dLgE;
+      const double nExpected =
+        data.fPropagator->GetFluxSum(lgE) * data.fUHEExposure * dE;
+      chi2Zero += 2*nExpected;
+      lgE += dLgE;
+    }
+    data.fChi2Spec += chi2Zero;
+    
     data.fChi2LnA = 0;
     data.fChi2VlnA = 0;
     for (const auto& compo : data.fCompoData) {
@@ -591,6 +608,9 @@ namespace prop {
           4 - Upper flux uncertainty (68 % C.L.)
         */
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2013.dat");
+        double exposure;
+        in >> exposure;
+        fFitData.fUHEExposure = exposure;
         while (true) {
           FluxData flux;
           double eyDown, eyUp, N;
@@ -626,6 +646,9 @@ namespace prop {
         # log10E = center of the energy bin 
         # log10E    E*J       Err_up       Err_low  
         */
+        double exposure;
+        in >> exposure;
+        fFitData.fUHEExposure = exposure;
         while (true) {
           FluxData flux;
           double eyDown, eyUp, fluxE;
@@ -652,6 +675,7 @@ namespace prop {
     case FitOptions::eTA2013:
     case FitOptions::eTASixYear:
       {
+        throw runtime_error("please implement TA exposure");
         ifstream in(fOptions.GetDataDirname() +
                     (fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
                      "/TA-SD-spectrum-2013.dat" :
@@ -689,7 +713,8 @@ namespace prop {
         throw runtime_error(errMsg.str());
       }
     }
-
+    cout << " UHE exposure is " << fFitData.fUHEExposure
+         << " km^2 sr yr" << endl;
     // Table 3 from  Astroparticle Physics 36 (2012) 183–194
     // energy in eV
     // flux in m-2 s-1 sr-1 GeV-1
@@ -844,7 +869,7 @@ namespace prop {
       }
     }
     
-    const bool augerSD = true;
+    const bool augerSD = false;
     if (augerSD) {
       const unsigned int nSD = 14;
       const double sdLgE[nSD] = {18.55, 18.65, 18.75, 18.85, 18.95, 19.05,
@@ -862,7 +887,7 @@ namespace prop {
                                    6.99, 6.99, 6.99, 6.99};
 
       unsigned int i = xmaxGraph->GetN();
-      for (unsigned int iSD = 5; iSD < nSD; ++iSD) {
+      for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
         const double E = pow(10, sdLgE[iSD]);
         xmaxGraph->SetPoint(i, E, sdXmax[iSD]);
         xmaxSysGraph->SetPoint(i, E, sdXmax[iSD]);
