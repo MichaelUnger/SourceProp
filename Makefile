@@ -31,6 +31,9 @@ CLIBS = $(LIB_DIR)/libProp.so
 
 all: $(CLIBS) $(EXE)
 
+$(BIN_DIR)/runFit: $(PROG_DIR)/runFit.cc macros/fit.C
+	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp
+
 $(BIN_DIR)/%: $(PROG_DIR)/%.cc
 	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp
 
