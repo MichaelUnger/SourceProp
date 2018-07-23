@@ -40,6 +40,9 @@ steering file parameters:
      lgEmaxGal
      fNoPhoton
      lgfPhoton
+     extraProtonFraction
+     extraProtonLgEmax
+     extraProtonGamma
 * mass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
   (multiple masses possible)
 * galacticMass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
@@ -72,7 +75,7 @@ steering file parameters:
 * spectrumData [type]
   - Auger2013, TA2013, Auger2017
 * xmaxData [type]
-  - Auger2014, Auger2017
+  - Auger2014, Auger2017, Auger2017fudge
 
 
 

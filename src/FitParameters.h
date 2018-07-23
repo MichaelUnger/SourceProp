@@ -5,19 +5,19 @@
 
 namespace prop {
   enum EPar {
-    eGamma,
+    eGamma,   // 0
     eLgEmax,
-    eLgEscFac,
+    eLgEscFac, // 2
     eEscGamma,
-    eFGal,
+    eFGal,     // 4
     eGammaGal,
-    eGammaGalLowE,
+    eGammaGalLowE, // 6
     eDeltaGammaGal,
-    eLgEmaxGal,
+    eLgEmaxGal,    // 8
     eNoPhoton,
-    eLgPhotonFieldFac,
+    eLgPhotonFieldFac, // 10
     eExtraProtonFraction195,
-    eExtraProtonLgEmax,
+    eExtraProtonLgEmax,  // 12
     eExtraProtonGamma,
     eNpars
   };
