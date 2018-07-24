@@ -1,25 +1,4 @@
-#####################################################################################
-##  (c) Copyright by Pierre Auger Collaboration 2017                               ##
-##                                                                                 ##
-##  Publications using or referring to these data should cite the following        ## 
-##  reference:                                                                     ##
-##                                                                                 ##
-##  Francesco Fenu for The Pierre Auger Collaboration, "The cosmic ray energy      ##
-##  spectrum measured using the Pierre Auger Observatory"                          ##
-##  Proceedings of the 35th International Cosmic Ray Conference, Busan, Korea      ##
-##  PoS (2017) 486                                                                 ##
-##                                                                                 ##
-##  Data are provided as is and might be subject to future changes.                ##
-##                                                                                 ##
-##  These data are released under the Creative Commons Attribution-ShareAlike 4.0  ##
-##  International License (CC BY-SA 4.0). For more details see                     ##
-##  http://creativecommons.org/licenses/by-sa/4.0/                                 ##
-##                                                                                 ##
-#####################################################################################
-# ==========>  Spectrum: Auger combined spectrum (ICRC 2017) <============ 
-# E*J in  [m^-2 s^-1 sr^-1] units
-# log10E = center of the energy bin 
-# log10E    E*J       Err_up       Err_low  
+66709
 17.55 2.01e-11 1.08e-13 1.08e-13
 17.65 1.19e-11 8.32e-14 8.32e-14
 17.75 6.96e-12 6.36e-14 6.36e-14
