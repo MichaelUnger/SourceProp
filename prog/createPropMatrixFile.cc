@@ -12,15 +12,15 @@ main(int argc, char** argv)
 {
 
   stringstream usage;
-  usage << argv[0] << " <option> <filenames>\n"
-        << "        options: uniform, uniformCutAt3, AGN, SFR1,"
-        << " SFR2, AAGHRW05, M10...M50";
-  if (argc < 2) {
+  usage << argv[0] << " <option> <minDist> <filenames>\n"
+        << "        see PropMatrixBuilder.h for options, minDist in Mpc";
+  if (argc < 3) {
     cerr << " not enough arguments " << endl;
     cerr << usage.str() << endl;
     return 1;
   }
 
+  const double minDist = stod(argv[2]);
   string option = argv[1];
   PropMatrixBuilder::ESourceDistribution s;
   if (option == "uniform")
@@ -2274,7 +2274,7 @@ main(int argc, char** argv)
 
   if (false)
   {
-    PropMatrixBuilder pmb(s);
+    PropMatrixBuilder pmb(s, 100, 12, 22, true, minDist);
     pmb.Process(filenames);
     pmb.PrintSummary();
 
@@ -2284,7 +2284,7 @@ main(int argc, char** argv)
   }
 
   {
-    PropMatrixBuilder pmbNu(s, 100, 12, 22, false);
+    PropMatrixBuilder pmbNu(s, 100, 12, 22, false, minDist);
     pmbNu.Process(filenames);
     pmbNu.PrintSummary();
 

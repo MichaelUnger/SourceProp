@@ -1140,7 +1140,8 @@ namespace prop {
                       const unsigned int nBins = 50,
                       const double lgEmin = 17,
                       const double lgEmax = 22,
-                      const bool onlyNuclei = true);
+                      const bool onlyNuclei = true,
+                      const double minDist = 0);
     ~PropMatrixBuilder();
     void Process(const std::vector<std::string>& filenames);
     void Process(const std::string& filename);
@@ -1161,6 +1162,7 @@ namespace prop {
     TAxis fAxis;
     std::map<unsigned int, TH1D*> fGenMap;
     mutable PropMatrices fPropMatrices;
+    double fMinDistance;
     double fMaxDistance;
   };
 }

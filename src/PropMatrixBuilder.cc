@@ -24,7 +24,8 @@ namespace prop {
                                        const unsigned int nBins,
                                        const double lgEmin,
                                        const double lgEmax,
-                                       const bool onlyNuclei) :
+                                       const bool onlyNuclei,
+                                       const double minDist) :
     fSourceDistribution(s),
     fIsNormalized(false),
     fNbins(nBins),
@@ -33,6 +34,7 @@ namespace prop {
     fOnlyNuclei(onlyNuclei),
     fAxis(fNbins, fLgEmin, fLgEmax),
     fPropMatrices(fLgEmin, fLgEmax),
+    fMinDistance(minDist),
     fMaxDistance(0)
   {
     cout << " source distribution : " << fSourceDistribution << endl;
@@ -97,6 +99,8 @@ namespace prop {
       const double d = event.GetLightDistance() * utl::Mpc;
       if (d > fMaxDistance)
         fMaxDistance = d;
+      if (d < fMinDistance)
+        continue;
       const unsigned int Aprim = event.GetMass();
       if (fOnlyNuclei && !IsNucleus(Aprim))
         continue;
