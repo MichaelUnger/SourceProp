@@ -11,6 +11,8 @@ namespace prop {
   double
   EvalFast(const TGraph& graph, const double xx)
   {
+//#warning FIXME!!!!!
+    //return graph.Eval(xx);
     const int n = graph.GetN();
     const double* y = graph.GetY();
     const double* x = graph.GetX();
@@ -19,7 +21,14 @@ namespace prop {
     if (xx <= x1) {
       //      cerr << " EvalFast(): below TGraph range, "
       //     << xx << " < " << x1 << endl;
-      return y[0];
+      //return y[0]; original
+      const unsigned int i = 0;
+      const double xLow = log(x[i]);
+      const double xUp = log(x[i+1]);
+      const double yLow = log(y[i]);
+      const double yUp = log(y[i+1]);
+      const double yn = log(xx)*(yLow - yUp) + xLow*yUp - xUp*yLow;
+      return exp(yn / (xLow - xUp));
     }
     else if (xx >= x2) {
       cerr << " EvalFast(): above TGraph range " << endl;
