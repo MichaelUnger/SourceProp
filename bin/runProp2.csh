@@ -10,7 +10,7 @@ set minDists = "0 1 5 10 50 100"
 
 foreach minDist ($minDists)
 
-  $PROG $EVOLUTION $PIONFILE1 $PIONFILE2 $PHOTONFIELD/*.root
+  $PROG $EVOLUTION $minDist $PIONFILE1 $PIONFILE2 $PHOTONFIELD/*.root
   mv propMatrix_${EVOLUTION}_nu.root $OUTDIR/${PHOTONFIELD}_${EVOLUTION}_${minDist}_nu.root
   
 end

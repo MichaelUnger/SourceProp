@@ -9,7 +9,7 @@ setenv PHOTONFIELD CRPropaG12
 
 setenv OUTDIR /afs/cern.ch/work/m/munger/crp5
 
-set queue=8nh
+set queue=1nd
 
 set counter = 0
 foreach option ($options)
