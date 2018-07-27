@@ -338,7 +338,6 @@ namespace prop {
           // restore arXiv v1: remove Aprim
           const double M = Aprim * (gProtonMass + gNeutronMass) / 2;
           const double lgGamma = log10(E / M);
-#warning check this
           const int iBin = std::max(1, hist.FindFixBin(lgGamma));
           if (iBin == 0 || iBin == hist.GetNbinsX() + 1) {
             /*

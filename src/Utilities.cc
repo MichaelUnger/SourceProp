@@ -3,6 +3,7 @@
 #include <TMatrixD.h>
 #include <TGraph.h>
 #include <cmath>
+#include <limits>
 #include <iostream>
 using namespace std;
 
@@ -21,14 +22,18 @@ namespace prop {
     if (xx <= x1) {
       //      cerr << " EvalFast(): below TGraph range, "
       //     << xx << " < " << x1 << endl;
-      //return y[0]; original
+      //      return y[0]; //original
       const unsigned int i = 0;
       const double xLow = log(x[i]);
       const double xUp = log(x[i+1]);
       const double yLow = log(y[i]);
       const double yUp = log(y[i+1]);
       const double yn = log(xx)*(yLow - yUp) + xLow*yUp - xUp*yLow;
-      return exp(yn / (xLow - xUp));
+      const double arg = yn / (xLow - xUp);
+      if (arg > 400)
+        return exp(400);
+      else
+        return exp(arg);
     }
     else if (xx >= x2) {
       cerr << " EvalFast(): above TGraph range " << endl;
