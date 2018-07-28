@@ -37,7 +37,8 @@ namespace prop {
     fMinDistance(minDist),
     fMaxDistance(0)
   {
-    cout << " source distribution : " << fSourceDistribution << endl;
+    cout << " source distribution : " << fSourceDistribution
+         << ", minDist = " << minDist << endl;
   }
 
 

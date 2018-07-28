@@ -1,5 +1,6 @@
 #include <PropMatrixBuilder.h>
 #include <PropMatrixFile.h>
+#include <utl/Units.h>
 
 #include <iostream>
 #include <sstream>
@@ -20,7 +21,7 @@ main(int argc, char** argv)
     return 1;
   }
 
-  const double minDist = stod(argv[2]);
+  const double minDist = stod(argv[2]) * utl::Mpc;
   string option = argv[1];
   PropMatrixBuilder::ESourceDistribution s;
   if (option == "uniform")
