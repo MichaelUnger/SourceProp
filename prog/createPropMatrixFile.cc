@@ -2271,7 +2271,7 @@ main(int argc, char** argv)
     cerr << usage.str() << endl;
     return 1;
   }
-  const vector<string> filenames(argv + 2, argv + argc);
+  const vector<string> filenames(argv + 3, argv + argc);
 
   if (false)
   {
