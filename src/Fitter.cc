@@ -817,6 +817,7 @@ namespace prop {
       }
     case FitOptions::eAugerXmax2017:
     case FitOptions::eAugerXmax2017fudge:
+    case FitOptions::eAugerXmax2017fudgeAndSD:
       {
         /*
           #  (1) meanLgE:      <lg(E/eV)>
@@ -868,16 +869,16 @@ namespace prop {
         cerr << " unknown Xmax data " << endl;
       }
     }
-    
-    const bool augerSD = false;
-    if (augerSD) {
+
+    if (fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2017fudgeAndSD) {
+      const bool calibAugerSD = false;
       const unsigned int nSD = 14;
       const double sdLgE[nSD] = {18.55, 18.65, 18.75, 18.85, 18.95, 19.05,
                                  19.15, 19.25, 19.35, 19.45, 19.55, 19.64,
                                  19.74, 19.88};
       const double sdXmax[nSD] = {750.7, 755.2, 756.4, 759.8, 763.0, 766.5,
                                   769.6, 775, 780, 779, 788, 785, 795, 807};
-      
+        
       const double sdXmaxErr[nSD] = {0.3, 0.3, 0.4, 0.6, 0.6, 0.7, 0.9, 1.0,
                                      2.0, 2.0, 2.0, 2.0, 3.0, 3.0};
       const double sdSysUp[nSD] = {7.34,7.43,7.54,7.67,7.83,8.01,
@@ -885,19 +886,19 @@ namespace prop {
       const double sdSysLo[nSD] = {9.11, 8.80,8.49, 8.19, 7.88,
                                    7.61, 7.37, 7.17, 7.03, 6.94,
                                    6.99, 6.99, 6.99, 6.99};
-
+        
       unsigned int i = xmaxGraph->GetN();
       for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
+        const double shift = calibAugerSD ? 17.5 - sdLgE[iSD]*0.7 : 0;
         const double E = pow(10, sdLgE[iSD]);
-        xmaxGraph->SetPoint(i, E, sdXmax[iSD]);
-        xmaxSysGraph->SetPoint(i, E, sdXmax[iSD]);
-        xmaxGraph->SetPointError(i, E, sdXmaxErr[iSD]);
+        xmaxGraph->SetPoint(i, E, sdXmax[iSD]+shift);
+        xmaxSysGraph->SetPoint(i, E, sdXmax[iSD]+shift);
+        xmaxGraph->SetPointError(i, E, sqrt(sdXmaxErr[iSD]*sdXmaxErr[iSD]+25));
         xmaxSysGraph->SetPointEYhigh(i, sdSysUp[iSD]);
         xmaxSysGraph->SetPointEYlow(i, sdSysLo[iSD]);
         ++i;
       }
     }
-
 
     LnACalculator lnAcalc;
     const LnACalculator::EModel model =

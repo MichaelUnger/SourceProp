@@ -211,6 +211,8 @@ namespace prop {
           fXmaxDataType = eAugerXmax2017;
         else if (type == "Auger2017fudge")
           fXmaxDataType = eAugerXmax2017fudge;
+        else if (type == "Auger2017fudgeAndSD")
+          fXmaxDataType = eAugerXmax2017fudgeAndSD;
         else
           throw runtime_error("unknown spectrum data type: " + type);
       }

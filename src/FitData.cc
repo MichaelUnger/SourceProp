@@ -59,8 +59,14 @@ namespace prop {
         ++nFreePar;
 
     unsigned int ndf = fFluxData.size();
-    if (fFitCompo)
-      ndf += 2*fCompoData.size();
+    if (fFitCompo) {
+      for (const auto& c : fCompoData) {
+        if (c.fLnAErr > 0)
+          ++ndf;
+        if (c.fVlnAErr > 0)
+          ++ndf;
+      }
+    }
     ndf -= nFreePar;
     return ndf;
   }

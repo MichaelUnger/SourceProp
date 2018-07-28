@@ -71,7 +71,8 @@ namespace prop {
     enum EXmaxDataType {
       eAugerXmax2014,
       eAugerXmax2017,
-      eAugerXmax2017fudge
+      eAugerXmax2017fudge,
+      eAugerXmax2017fudgeAndSD
     };
 
   public:
