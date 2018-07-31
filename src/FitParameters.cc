@@ -14,7 +14,7 @@ namespace prop {
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
        "f_{noPhot}", "lg(fphot)", "f(UHEp)", "lg(Emax, UHEp)",
-       "#gamma(UHEp)"};
+       "#gamma(UHEp)", "m_{extra}"};
     return parNames[p];
   }
 
@@ -25,7 +25,7 @@ namespace prop {
       {"gammaInj", "lgRmax", "lgResc", "deltaEsc",
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
        "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonFraction",
-       "extraProtonLgEmax", "extraProtonGamma"};
+       "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass"};
     return parNames[p];
   }
 

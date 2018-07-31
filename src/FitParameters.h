@@ -19,6 +19,7 @@ namespace prop {
     eExtraProtonFraction195,
     eExtraProtonLgEmax,  // 12
     eExtraProtonGamma,
+    eExtraProtonMass,
     eNpars
   };
 

@@ -43,6 +43,7 @@ steering file parameters:
      extraProtonFraction
      extraProtonLgEmax
      extraProtonGamma
+     extraProtonMass (use fixed only, because no continous mass)
 * mass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
   (multiple masses possible)
 * galacticMass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]

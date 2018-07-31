@@ -143,8 +143,8 @@ namespace prop {
         const double lgEmax = spectrum.GetLgEmax();
         const double n = spectrum.GetN();
         const double dlgE = (lgEmax - lgEmin) / n;
-
-        TMatrixD& m = spectrum.GetEscFlux()[1];
+        const int mass = int(par[eExtraProtonMass]);
+        TMatrixD& m = spectrum.GetEscFlux()[mass];
         if (!m.GetNoElements())
           m.ResizeTo(n, 1);
         TMatrixD& mm = spectrum.GetNucleonFlux()[Spectrum::eProtonEsc];
