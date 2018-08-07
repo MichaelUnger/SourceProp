@@ -4,6 +4,7 @@
 #include <TF1.h>
 #include <TFile.h>
 #include <TStyle.h>
+#include <TPad.h>
 
 #include <fstream>
 #include <sstream>
@@ -95,9 +96,9 @@ snrFunc(const double* x, const double* p)
     const double g2 = gamma2 + dG;
     const double Eknee = EkneeP * Z;
     if (A > minMass && A <= maxMass) {
-      fluxSum += f*kneeFunc(E, Eknee, g1, g2);
+      fluxSum += f*kneeFunc(E, Eknee, g1, g2, eps);
     }
-    refSum += f*kneeFunc(Eref, Eknee, g1, g2);
+    refSum += f*kneeFunc(Eref, Eknee, g1, g2, eps);
   }
   return norm * fluxSum / refSum;
 }
@@ -419,11 +420,21 @@ fitLowE(const double scale = 3)
     gMass.push_back(a);
     cout << a << " " << z << " " << f << endl;
   }
-  
+
+  const bool logY = false;
   gStyle->SetOptStat(0);
-  gStyle->SetOptLogy(1);
+  gStyle->SetLineWidth(1);
+  gStyle->SetOptLogy(logY);
   gStyle->SetMarkerStyle(20);
   gStyle->SetMarkerSize(0.8);
+  gStyle->SetPadTopMargin(0.04);
+  gStyle->SetPadBottomMargin(0.175);
+  gStyle->SetPadLeftMargin(0.15);
+  gStyle->SetPadRightMargin(0.05);
+  gStyle->SetTitleSize(0.06,"XYZ");
+  gStyle->SetErrorX(0.);
+  gStyle->SetLabelOffset(0.013,"XY");
+
   TGraphErrors* ice73 = ReadIceTop(scale, 0.8);
   TGraphErrors* kg = ReadKG(scale);
   TGraphErrors* auger = ReadAuger(scale);
@@ -453,11 +464,17 @@ fitLowE(const double scale = 3)
     if (minY < 0 || y < minY)
       minY = y;
   }
-
+  if (!logY)
+    minY = 0;
+  
   const double minX = 14;
   const double maxX = 20.4;
-  TH2D* back = new TH2D("back", "", 1000, minX, maxX, 1000, minY/10, maxY*1.2);
-
+  ostringstream title;
+  title << ";lg(E/eV);J(E) E^{" << scale << "} [GeV^{"
+        << scale - 1 << "} m^{-2} s sr]";
+  TH2D* back = new TH2D("back", title.str().c_str(), 1000, minX, maxX, 1000, minY/2, maxY*1.2);
+  back->GetXaxis()->CenterTitle();
+  back->GetYaxis()->CenterTitle();
   tibet->Draw("P");
   auger->Draw("P");
   ice73->Draw("P");
@@ -466,8 +483,9 @@ fitLowE(const double scale = 3)
 
   ReadUFA("Marco/pdfs/PRDFiducial17Hist.root", scale);
 
-  TF1* sumFlux = new TF1("sumFlux", sumFunc, minX, maxX, 12);
-  const double startPar[12] =
+  const int nPar = 12;
+  TF1* sumFlux = new TF1("sumFlux", sumFunc, minX, maxX, nPar);
+  const double startPar[nPar] =
     {4.22e4*pow(Eref/1e9, scale)/pow(Eref/1e9, 2.7), // 0
      3e15,  // 1
      -2.665+scale, // 2
@@ -480,14 +498,24 @@ fitLowE(const double scale = 3)
      -4+scale,
      0.1, // 10
      5};
-  for (unsigned int i = 0; i < 12; ++i)
+  const string names[nPar] = {"n_{A}", "R_{max,A}",
+                              "\\gamma_{1,A}", "\\gamma_{2,A}",
+                              "\\Delta\\gamma_{p}",
+                              "\\varepsilon_{A}",
+                              "n_{B}", "R_{max,B}",
+                              "\\gamma_{1,B}", "\\gamma_{2,B}",
+                              "f_{1, A}",
+                              "\\varepsilon_{B}"};
+  for (unsigned int i = 0; i < nPar; ++i) {
     sumFlux->SetParameter(i, startPar[i]);
+    sumFlux->SetParName(i, names[i].c_str());
+  }
   sumFlux->FixParameter(4,-0.5);
   //  sumFlux->FixParameter(5,10);
-  //  sumFlux->FixParameter(7,2e17);
-  sumFlux->SetParLimits(8,-10+scale, -1+scale);
+  //sumFlux->SetParLimits(7,1e15, 2.3e+16);
+  sumFlux->SetParLimits(8,-10+scale, -2+scale);
   sumFlux->SetParLimits(10,0, 1);
-  //  sumFlux->FixParameter(10,0.8);
+  //  sumFlux->FixParameter(10,0);
   sumFlux->FixParameter(11,4);
   sumFlux->SetLineColor(kBlack);
   all->Fit("sumFlux");
@@ -535,16 +563,34 @@ fitLowE(const double scale = 3)
     snrA->Draw("SAME");
   }
 
-  const double snrBPar[6] = {sumFlux->GetParameter(6),
-                             sumFlux->GetParameter(7),
-                             sumFlux->GetParameter(8),
-                             sumFlux->GetParameter(9),
-                             sumFlux->GetParameter(10),
-                             sumFlux->GetParameter(11)};
-  TF1* snrB = new TF1("snrB", snrBFunc, minX, maxX, 6);
-  snrB->SetNpx(1000);
-  snrB->SetParameters(snrBPar);
-  snrB->SetLineColor(kMagenta);
-  snrB->Draw("SAME");
+  const double heFrac = sumFlux->GetParameter(10);
+  const double snrBPar1[6] = {sumFlux->GetParameter(6)*heFrac,
+                              sumFlux->GetParameter(7),
+                              sumFlux->GetParameter(8),
+                              sumFlux->GetParameter(9),
+                              1.,
+                              sumFlux->GetParameter(11)};
+  TF1* snrB1 = new TF1("snrB1", snrBFunc, minX, maxX, 6);
+  snrB1->SetNpx(1000);
+  snrB1->SetParameters(snrBPar1);
+  snrB1->SetLineColor(color[2]);
+  snrB1->SetLineStyle(2);
+  snrB1->Draw("SAME");
+
+  cout << heFrac << endl;
+  const double snrBPar2[6] = {sumFlux->GetParameter(6)*(1-heFrac),
+                              sumFlux->GetParameter(7),
+                              sumFlux->GetParameter(8),
+                              sumFlux->GetParameter(9),
+                              0.,
+                              sumFlux->GetParameter(11)};
+  TF1* snrB2 = new TF1("snrB2", snrBFunc, minX, maxX, 6);
+  snrB2->SetNpx(1000);
+  snrB2->SetParameters(snrBPar2);
+  snrB2->SetLineColor(color[3]);
+  snrB2->SetLineStyle(2);
+  snrB2->Draw("SAME");
+
+  gPad->RedrawAxis();
   
 }
