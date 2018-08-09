@@ -11,14 +11,16 @@ void fit(string, bool, bool);
 int main(int argc, char** argv)
 {
   if (argc < 2) {
-    cerr << "usage: " << argv[0] << " <fitFile> <nThreads (default=1)>" << endl;
+    cerr << "usage: " << argv[0] << " <fitFile> <doFit (default = 1)> "
+         << "<nThreads (default=1)>"
+         << endl;
     return 1;
   }
 
 #ifdef _WITH_OPENMP_
-  if (argc > 2) {
+  if (argc >= 4) {
     const int maxThreads = omp_get_max_threads();
-    const int nThreads = stoi(argv[2]);
+    const int nThreads = stoi(argv[3]);
     if (nThreads > maxThreads) {
       cerr << " nThreads = " << nThreads << " > maxThread = " << maxThreads
            << endl;
@@ -34,7 +36,10 @@ int main(int argc, char** argv)
     }
   }
 #endif
+
+  const bool doFit = argc >= 3 ? stoi(argv[2]) : 1;
+  cout << argc << " " << doFit << endl;    
   
-  fit(argv[1], true, true);
+  fit(argv[1], doFit, true);
   return 0;
 }
