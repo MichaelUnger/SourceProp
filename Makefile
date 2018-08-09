@@ -1,5 +1,7 @@
 #.PHONY: Make-depend
 
+WITH_OPENMP = 0
+
 LD            := $(CXX)
 
 SRC_DIR = src
@@ -19,6 +21,11 @@ LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
 LDFLAGS  += -lgsl -lgslcblas
 SOFLAGS   = -Wl,--no-as-needed -fPIC -ggdb3 -Wall -shared
 
+ifeq ($(WITH_OPENMP), 1)
+   CXXFLAGS += -D_WITH_OPENMP_
+   LDFLAGS  += -fopenmp
+   CXXFLAGS  += -fopenmp
+endif
 
 OBJS  = $(patsubst $(SRC_DIR)/%LinkDef.h, $(OBJ_DIR)/%Dict.o, $(wildcard $(SRC_DIR)/*LinkDef.h))
 OBJS += $(patsubst $(SRC_DIR)/%.cc, $(OBJ_DIR)/%.o, $(wildcard $(SRC_DIR)/*.cc))

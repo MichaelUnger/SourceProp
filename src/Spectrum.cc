@@ -15,6 +15,11 @@
 #include <gsl/gsl_sf_gamma.h>
 using namespace std;
 
+#ifdef _WITH_OPENMP_
+#include <omp.h>
+#endif
+
+
 namespace prop {
 
   const
@@ -72,7 +77,8 @@ namespace prop {
         m.ResizeTo(fN, 1);
 
       double lgE = fLgEmin + dlgE / 2;
-      for (unsigned int iE = 0; iE < fN; ++iE) {
+      const unsigned int n = fN;
+      for (unsigned int iE = 0; iE < n; ++iE) {
         const double flux =
           frac * InjectedFlux(pow(10, lgE), Ainj);
         m[iE][0] += flux;
@@ -341,6 +347,7 @@ namespace prop {
     const unsigned int nSubBins = 10;
     const unsigned int nBins = fN * nSubBins;
     const double dlgE = (fLgEmax - fLgEmin) / nBins;
+
     for (const auto& iter : fFractions) {
       const int Ainj = iter.first;
       const double frac = iter.second;
@@ -372,6 +379,9 @@ namespace prop {
       }
 
       // nucleus production
+#ifdef _WITH_OPENMP_      
+      #pragma omp parallel for
+#endif      
       for (int Asec = Ainj - 1; Asec > 0; --Asec) {
         TH1D& hSec = *prodSpectrum[Asec];
         lgE = fLgEmin + dlgE / 2;
@@ -385,7 +395,8 @@ namespace prop {
               const double jacobi = double(Aprim) / Asec;
               const double Eprim = jacobi * E;
               if (Eprim < Emax) {
-                const double bPD = fSource->GetPDBranchingRatio(Eprim, Asec, Aprim);
+                const double bPD =
+                  fSource->GetPDBranchingRatio(Eprim, Asec, Aprim);
                 if (bPD > 0) {
                   const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
@@ -477,7 +488,9 @@ namespace prop {
       }
 
       lgE = fLgEmin + dlgEOrig / 2;
-      for (unsigned int iE = 0; iE < fN; ++iE) {
+      const unsigned int n = fN;
+
+      for (unsigned int iE = 0; iE < n; ++iE) {
         const double fPP = LogEval(pp, lgE);
         mPP[iE][0] += fPP;
         mProtonProd[iE][0] += fPP / 2;
@@ -533,7 +546,8 @@ namespace prop {
       vector<double> protonFlux(int(fN), 0.);
 
       double lgE = fLgEmax - dlgEOrig / 2;
-      for (int iE = fN - 1; iE >= 0; --iE) {
+      const unsigned int n = fN;
+      for (int iE = n - 1; iE >= 0; --iE) {
         double pSum =  mProtonProd[iE][0];
         double nSum =  mNeutronProd[iE][0];
         if (iE < fN - 1) {
@@ -560,7 +574,7 @@ namespace prop {
 
       // pi+ from p + gamma -> n + pi+
       lgE = fLgEmin + dlgEOrig / 2;
-      for (unsigned int iE = 0; iE < fN - 8; ++iE) {
+      for (unsigned int iE = 0; iE < n - 8; ++iE) {
         const int iENext = iE + 7;
         const double qNext = protonFlux[iENext];
         const double Enext = pow(10, lgE + 7 * dlgEOrig);
@@ -590,7 +604,6 @@ namespace prop {
         lgE += dlgEOrig;
       }
     }
-
     save->cd();
   }
 
