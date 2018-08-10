@@ -136,12 +136,15 @@ sumFunc(const double* x, const double* p)
 }
 
 void
-AddToGraph(TGraphErrors* g1, TGraphErrors* g2)
+AddToGraph(TGraphErrors* g1, TGraphErrors* g2, const double minRelErr = 0)
 {
   int i = g1->GetN();
   for (int j = 0; j < g2->GetN(); ++j) {
-    g1->SetPoint(i, *(g2->GetX()+j), *(g2->GetY()+j));
-    g1->SetPointError(i, 0, *(g2->GetEY()+j));
+    const double y = *(g2->GetY()+j);
+    g1->SetPoint(i, *(g2->GetX()+j), y);
+    const double ey = *(g2->GetEY()+j);
+    const double relErr = ey / y;
+    g1->SetPointError(i, 0, std::max(0.01, relErr)*y);
     ++i;
   }
 }
@@ -310,7 +313,7 @@ ReadTibet(double scale = 3, double norm = 1, double shift = 1, bool qgsjet = fal
 
 
 TGraphErrors*
-ReadAuger(const double scale = 3)
+ReadAuger(const double scale = 3, const double shift = 1)
 {
   TGraphErrors* auger = new TGraphErrors();
   ifstream in("data/auger_icrc2017.dat");
@@ -328,9 +331,9 @@ ReadAuger(const double scale = 3)
     if (!in.good())
       break;
     // to  [ eV^-1 km^-1 sr^-1 yr^-1 ]
-    const double E = pow(10, lgE);
+    const double E = pow(10, lgE)*shift;
     const double conv = unitConv * pow(E/1e9, scale-1);
-    auger->SetPoint(i, lgE, fluxE*conv);
+    auger->SetPoint(i, log10(E), fluxE*conv);
     auger->SetPointError(i, 0, (eyUp+eyDown)/2 * conv);
     ++i;
   }
@@ -338,7 +341,7 @@ ReadAuger(const double scale = 3)
 }
 
 TGraphErrors*
-ReadKG(double scale = 3)
+ReadKG(double scale = 3, double shift = 1)
 {
   TGraphErrors* kg = new TGraphErrors();
   ifstream inKG("./data/KascadeGrande2012.txt");
@@ -348,6 +351,7 @@ ReadKG(double scale = 3)
     inKG >> energy >> flx >> ferr >> ferrUp >> ferrLow;
     if (!inKG.good())
       break;
+    energy *= shift;
     const double fac = unitConv*pow(energy/1e9, scale);
     flx *= fac;
     ferr *= fac;
@@ -363,7 +367,7 @@ ReadKG(double scale = 3)
 }
 
 TGraphErrors*
-ReadIceTop(double scale = 3, double norm = 1)
+ReadIceTop(double scale = 3, double norm = 1, double shift = 1)
 {
   ifstream in("data/IceTop73.txt");
   TGraphErrors* ice = new TGraphErrors();
@@ -374,10 +378,10 @@ ReadIceTop(double scale = 3, double norm = 1)
     if (!in.good())
       break;
     const double lgEMean = (lgEmax+lgEmin)/2 + 9;
-    const double eMean = pow(10, lgEMean);
+    const double eMean = pow(10, lgEMean) * shift;
     const double fluxConv = norm*unitConv*pow(eMean/1e9, scale-1)*fac;
     if (stat/flux < relErrCut) {
-      ice->SetPoint(i, lgEMean, flux*fluxConv);
+      ice->SetPoint(i, log10(eMean), flux*fluxConv);
       ice->SetPointError(i, 0, stat*fluxConv);
       ++i;
     }
@@ -393,7 +397,7 @@ fitLowE(const double scale = 3)
   const double minMass[nMass] = {0,  0, 2, 6, 19, 39, 57};
   const double maxMass[nMass] = {500, 2, 6, 19, 39, 57, 500};
   
-  ifstream frac("data/rppGalCosmicTA.txt");
+  ifstream frac("data/rppGalCosmicUFA.txt");
   double fluxSum = 0;
   vector<double> fraction;
   vector<double> mass;
@@ -448,12 +452,13 @@ fitLowE(const double scale = 3)
   tibet->SetMarkerColor(kMagenta);
   tibet->SetLineColor(kMagenta);
 
+  const double minRelErr = 0.01;
   TGraphErrors* all = new TGraphErrors();
-  AddToGraph(all, ice73);
-  AddToGraph(all, kg);
+  AddToGraph(all, ice73, minRelErr);
+  AddToGraph(all, kg, minRelErr);
   AddToGraph(all, auger);
-  AddToGraph(all, kasc);
-  AddToGraph(all, tibet);
+  AddToGraph(all, kasc, minRelErr);
+  AddToGraph(all, tibet, minRelErr);
 
   double maxY = -1;
   double minY = -1;
@@ -472,7 +477,8 @@ fitLowE(const double scale = 3)
   ostringstream title;
   title << ";lg(E/eV);J(E) E^{" << scale << "} [GeV^{"
         << scale - 1 << "} m^{-2} s sr]";
-  TH2D* back = new TH2D("back", title.str().c_str(), 1000, minX, maxX, 1000, minY/2, maxY*1.2);
+  TH2D* back = new TH2D("back", title.str().c_str(),
+                        1000, minX, maxX, 1000, minY/2, maxY*1.2);
   back->GetXaxis()->CenterTitle();
   back->GetYaxis()->CenterTitle();
   tibet->Draw("P");
@@ -496,7 +502,7 @@ fitLowE(const double scale = 3)
      1e17/6.,  // 7
      -2+scale, // 8
      -4+scale,
-     0.1, // 10
+     0.3, // 10
      5};
   const string names[nPar] = {"n_{A}", "R_{max,A}",
                               "\\gamma_{1,A}", "\\gamma_{2,A}",
@@ -592,5 +598,23 @@ fitLowE(const double scale = 3)
   snrB2->Draw("SAME");
 
   gPad->RedrawAxis();
+
+  const string galName = "galDataA.txt";
+  cout << " writing gal data to " << galName << endl;
+  TGraphErrors* allGal = new TGraphErrors();
+  AddToGraph(allGal, ice73);
+  AddToGraph(allGal, kg);
+  AddToGraph(allGal, kasc);
+  AddToGraph(allGal, tibet);
+  ofstream f(galName.c_str());
+  for (int i = 0; i < allGal->GetN(); ++i) {
+    const double lgE = *(allGal->GetX()+i);
+    const double cy = pow(pow(10, lgE)/1e9, -scale);
+    f << lgE << " "
+      << *(allGal->GetY()+i) * cy << " "
+      << *(allGal->GetEY()+i) * cy
+      << endl;
+  }
+  f.close();
   
 }
