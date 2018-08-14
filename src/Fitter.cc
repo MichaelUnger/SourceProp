@@ -144,12 +144,15 @@ namespace prop {
         const double n = spectrum.GetN();
         const double dlgE = (lgEmax - lgEmin) / n;
         const int mass = int(par[eExtraProtonMass]);
+        const int charge = aToZ(mass);
         TMatrixD& m = spectrum.GetEscFlux()[mass];
         if (!m.GetNoElements())
           m.ResizeTo(n, 1);
         TMatrixD& mm = spectrum.GetNucleonFlux()[Spectrum::eProtonEsc];
-        if (!mm.GetNoElements())
-          mm.ResizeTo(n, 1);
+        if (mass == 1 && charge == 1) {
+          if (!mm.GetNoElements())
+            mm.ResizeTo(n, 1);
+        }
         
         const double f = par[eExtraProtonFraction195];
         const double gamma = par[eExtraProtonGamma];
@@ -161,7 +164,8 @@ namespace prop {
           const double E = pow(10, lgE);
           const double flux = norm * pow(E, gamma) * exp(-E/Emax);
           m[iE][0] += flux;
-          mm[iE][0] += flux;
+          if (mass == 1 && charge == 1) 
+            mm[iE][0] += flux;
           lgE += dlgE;
         }
       }
