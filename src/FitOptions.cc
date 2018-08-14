@@ -20,6 +20,7 @@ namespace prop {
     fIRB = "Kneiske04";
     fDataDirname = "./data";
     fOutDirname = "./pdfs";
+    fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
     fRejectOutliers = 0;
@@ -70,12 +71,12 @@ namespace prop {
         string parName;
         if (!(line >> parName))
           throw runtime_error("error decoding " + keyword);
-        const EPar par = GetPar(parName);
+        const EPar par = GetPar(parName, fBoostedModel);
         StartValue& s = fStartValues[par];
         if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
           throw runtime_error("error decoding " + keyword);
       }
-      else if (keyword == "mass") {
+      else if (keyword == "mass" || keyword == "massB") {
         fMassValues.push_back(MassValue());
         MassValue& m = fMassValues.back();
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
@@ -87,7 +88,7 @@ namespace prop {
           throw runtime_error("error decoding evolution");
         cout << " read evolution " << fEvolution << endl;
       }
-      else if (keyword == "galacticMass") {
+      else if (keyword == "galacticMass" || keyword == "massA") {
         fGalMasses.push_back(MassValue());
         MassValue& m = fGalMasses.back();
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
@@ -154,6 +155,10 @@ namespace prop {
         if (!(line >> fFitCompo))
           throw runtime_error("error decoding fitComposition");
       }
+      else if (keyword == "boostedModel") {
+        if (!(line >> fBoostedModel))
+          throw runtime_error("error decoding boostedModel");
+      }
       else if (keyword == "gcrWithKnees") {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
@@ -199,6 +204,8 @@ namespace prop {
           throw runtime_error("error decoding spectrumDataLowE");
         if (type == "KG2012")
           fLowESpectrumDataType = eKG12;
+        else if (type == "GalacticDataA")
+          fLowESpectrumDataType = eGalacticDataA;
         else
           throw runtime_error("unknown spectrum data type: " + type);
       }
@@ -483,6 +490,8 @@ namespace prop {
     switch (fLowESpectrumDataType) {
     case eKG12:
       return "KG 2012";
+    case eGalacticDataA:
+      return "TKKGIa";
     default:
       return "unknown";
     }

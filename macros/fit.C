@@ -24,6 +24,7 @@
 #include <TColor.h>
 #include <TMath.h>
 #include <TGraphAsymmErrors.h>
+#include <TFeldmanCousins.h>
 #include <TGraphErrors.h>
 #include <TROOT.h>
 #include <TH1D.h>
@@ -122,13 +123,36 @@ DrawData(const FitData& fitData,
   bool showKG = false;
 
   TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
+  double lastLgE = 0;
   const vector<FluxData>& fluxData = fitData.fFluxData;
   for (unsigned int i = 0; i < fluxData.size(); ++i) {
     const double w = pow(pow(10, fluxData[i].fLgE), gammaScaleEarth);
     fitSpectrum->SetPoint(i, fluxData[i].fLgE, w*fluxData[i].fFlux);
     fitSpectrum->SetPointEYhigh(i, w*fluxData[i].fFluxErrUp);
     fitSpectrum->SetPointEYlow(i, w*fluxData[i].fFluxErrLow);
+    if (lastLgE == 0 || fluxData[i].fLgE > lastLgE)
+      lastLgE = fluxData[i].fLgE;
   }
+
+  {
+    const double dlgE = 0.1;
+    double lgE = lastLgE + dlgE;
+    TFeldmanCousins fc(0.84);
+    const double nUp = fc.CalculateUpperLimit(0, 0);
+    const double exposure = fitData.fUHEExposure;
+    int i = fitSpectrum->GetN();
+    while (lgE < 22) {
+      const double w = pow(pow(10, lgE), gammaScaleEarth);
+      const double dE = pow(10, lgE) * log(10) * dlgE;
+      const double fUp = nUp / exposure / dE;
+      fitSpectrum->SetPoint(i, lgE, 0);
+      fitSpectrum->SetPointEYhigh(i, w*fUp);
+      fitSpectrum->SetPointEYlow(i, 0);
+      ++i;
+      lgE += dlgE;
+    }
+  }
+  
   fitSpectrum->SetName("fitSpectrum");
   TFile out("tmp.root","RECREATE");
   fitSpectrum->Write();
@@ -212,7 +236,7 @@ DrawData(const FitData& fitData,
 
 #ifdef _PAPER_
   TLegend* legSpec;
-  legSpec = new TLegend(0.590596, 0.816871, 0.90813, 0.889714, NULL, "brNDCARC");
+  legSpec = new TLegend(0.62, 0.77, 0.93, 0.87, NULL, "brNDCARC");
 #else
   TLegend* legSpec = new TLegend(0.43, 0.7697, 0.896, 0.890, NULL, "brNDCARC");
 #endif
@@ -222,9 +246,11 @@ DrawData(const FitData& fitData,
   legSpec->SetBorderSize(0);
   legSpec->SetTextSize(0.05);
   if (lowESpectrum->GetN()) 
-    legSpec->AddEntry(lowESpectrum, fitOptions.GetLowESpectrumDataLabel().c_str());
+    legSpec->AddEntry(lowESpectrum,
+                      fitOptions.GetLowESpectrumDataLabel().c_str(), "PE");
 
-  legSpec->AddEntry(fitSpectrum, fitOptions.GetSpectrumDataLabel().c_str(),"PE");
+  legSpec->AddEntry(fitSpectrum,
+                    fitOptions.GetSpectrumDataLabel().c_str(),"PE");
   legSpec->Draw();
 
   if (showGlobus) {
@@ -307,8 +333,8 @@ DrawData(const FitData& fitData,
   gROOT->GetObject("hvLnA", vlnA);
   vlnA->SetLineColor(kBlack);
   vlnA->Draw("CSAME");
-  vlnA->GetXaxis()->SetRangeUser(17.8, 20.2);
-  lnA->GetXaxis()->SetRangeUser(17.8, 20.2);
+  vlnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), 20.2);
+  lnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), 20.2);
   fitVlnA->Draw("PZ");
   gPad->RedrawAxis();
 
@@ -371,13 +397,18 @@ DrawValues(const FitData& fitData,
   for (unsigned int i = 0; i < eNpars; ++i) {
     const EPar par = EPar(i);
     stringstream parString;
-    parString << GetParLatexName(par) << " = " << showpoint
+    parString << GetParLatexName(par, fitOptions.BoostedModel())
+              << " = " << showpoint
               << setprecision(3) << fitParameters[i].fValue;
     l.SetTextColor(fitParameters[i].fIsFixed ? fixColor : freeColor);
     if ((par == eLgEmaxGal || par == eNoPhoton || par == eLgPhotonFieldFac ||
          par == eDeltaGammaGal || par == eGammaGalLowE) &&
         fitParameters[i].fIsFixed)
       continue;
+    if ((par == eExtraProtonGamma || par == eExtraProtonMass ||
+         (par == eExtraProtonLgEmax && !fitOptions.BoostedModel())) &&
+        fitParameters[eExtraProtonFraction195].fValue <= 0)
+        continue;
     if (!fitParameters[i].fIsFixed)
       parString << "#pm" << noshowpoint
                 << setprecision(1) << fitParameters[i].fError;
@@ -625,7 +656,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17.8, 20.5);
+  plot.SetXRange(14, 21);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);

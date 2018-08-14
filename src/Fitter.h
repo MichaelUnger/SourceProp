@@ -31,6 +31,7 @@ namespace prop {
     PropMatrices fPropMatrices;
     FitOptions fOptions;
     static bool fGCRKnees;
+    static bool fBoostedModel;
     static FitData fFitData;
     TMinuit fMinuit;
     ClassDefNV(Fitter, 1);

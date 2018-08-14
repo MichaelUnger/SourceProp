@@ -14,8 +14,8 @@ namespace prop {
       fStart(0), fStep(0), fMinVal(0), fMaxVal(0), fIsFixed(0) {}
 
     StartValue(const double start, const double step,
-                const double minVal, const double maxVal,
-                const bool fixed) :
+               const double minVal, const double maxVal,
+               const bool fixed) :
       fStart(start), fStep(step), fMinVal(minVal), fMaxVal(maxVal),
       fIsFixed(fixed) {}
     double fStart;
@@ -36,12 +36,12 @@ namespace prop {
       fStartMass(startMass), fStartFraction(startFraction),
       fMassMinVal(minMassVal), fMassMaxVal(maxMassVal),
       fMassIsFixed(massFixed), fFractionIsFixed(fractionFixed) {}
-      double fStartMass;
-      double fStartFraction;
-      double fMassMinVal;
-      double fMassMaxVal;
-      double fMassIsFixed;
-      double fFractionIsFixed;
+    double fStartMass;
+    double fStartFraction;
+    double fMassMinVal;
+    double fMassMaxVal;
+    double fMassIsFixed;
+    double fFractionIsFixed;
   };
 
 
@@ -65,6 +65,7 @@ namespace prop {
 
     enum ELowESpectrumDataType {
       eKG12,
+      eGalacticDataA,
       eNoLowESpectrum
     };
     
@@ -125,6 +126,9 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
+    bool BoostedModel() const
+    { return fBoostedModel; }
+
     bool RejectOutliers() const
     { return fRejectOutliers; }
 
@@ -176,6 +180,7 @@ namespace prop {
     std::vector<std::string> fBBTemperature;
     std::vector<std::string> fBBSigma;
     std::vector<std::string> fUserPhotonfieldName;
+    bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
     bool fRejectOutliers;

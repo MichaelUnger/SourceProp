@@ -20,20 +20,24 @@ namespace prop {
     eExtraProtonLgEmax,  // 12
     eExtraProtonGamma,
     eExtraProtonMass,
-    eNpars
+    eNpars,
+    eGammaA = eGammaGalLowE,
+    eGammaB = eGammaGal,
+    eDeltaGamma = eDeltaGammaGal,
+    eLgRmaxA = eLgEmaxGal,
+    eLgRmaxB = eLgEmax,
+    efA = eNoPhoton,
+    eLgRmaxUHE = eExtraProtonLgEmax
   };
 
-  const
-  std::string&
-  GetParLatexName(const EPar p);
+  std::string
+  GetParLatexName(const EPar p, const bool boosted = false);
 
-  const
-  std::string&
-  GetParName(const EPar p);
+  std::string
+  GetParName(const EPar p, const bool boosted = false);
 
   EPar
-  GetPar(const std::string& parName);
-
+  GetPar(const std::string& parName, const bool boosted = false);
 
 }
 #endif
