@@ -338,15 +338,77 @@ namespace prop {
         if (dm.GetFrac2() > 0) 
           fractionsB[dm.GetMass2()] += dm.GetFrac2()*fracB[i];
       }
+
       const double gammaA = par[eGammaA];
       const double gammaB = par[eGammaB];
       const double deltaGamma = par[eDeltaGammaGal];
       const double RmaxA = pow(10, par[eLgRmaxA]);
       const double RmaxB = pow(10, par[eLgRmaxB]);
       const double fA = par[efA];
+
       const double fGal = par[eFGal];
-      const double gammaUHE = par[eGamma];
+      const double gammaUHEA = par[eGamma];
+      const double gammaUHEB = gammaUHEA - gammaA + gammaB;
+      const double deltaGammaUHE = deltaGamma;
       const double RmaxUHE = par[eLgRmaxUHE];
+      const double boost = RmaxUHE / RmaxA;
+
+      
+      auto bplFunc = [](const double E, const double R0,
+                        const double Z, const double gamma,
+                        const double dG) {
+        const double Ebreak = Z*R0;
+        const double s = 0.024;
+        return pow(E, gamma) * pow(1 + pow(E/Ebreak, dG/s), s);
+      };
+
+      const double ErefAB = 1e17;
+      double sumA = 0;
+      for (const auto iter : fractionsA) {
+        const double Z = aToZ(iter.first);
+        const double f = iter.second;
+        sumA += f * bplFunc(ErefAB, RmaxA, Z, gammaA, deltaGamma);
+      }
+      double sumB = 0;
+      for (const auto iter : fractionsB) {
+        const double Z = aToZ(iter.first);
+        const double f = iter.second;
+        sumB += f * bplFunc(ErefAB, RmaxB, Z, gammaB, deltaGamma);
+      }
+      const double facA = fA / (sumA / (sumA + sumB));
+      const double facB = (1 - fA) / (sumB / (sumA + sumB));
+
+      const double ErefABUHE = 1e18;
+      double sumAB = 0;
+      for (const auto iter : fractionsA) {
+        const double Z = aToZ(iter.first);
+        const double f = iter.second;
+        sumAB += facA * f * bplFunc(ErefABUHE, RmaxA, Z, gammaA, deltaGamma);
+      }
+      for (const auto iter : fractionsB) {
+        const double Z = aToZ(iter.first);
+        const double f = iter.second;
+        sumAB += facB * f * bplFunc(ErefABUHE, RmaxB, Z, gammaB, deltaGamma);
+      }
+
+      double sumUHE = 0;
+      for (const auto iter : fractionsA) {
+        const double Z = aToZ(iter.first);
+        const double f = iter.second;
+        sumUHE += facA * f * bplFunc(ErefABUHE/boost, RmaxA, Z,
+                                     gammaUHEA, deltaGammaUHE);
+      }
+      for (const auto iter : fractionsB) {
+        const double Z = aToZ(iter.first);
+        const double f = iter.second;
+        sumUHE += facB * f *  bplFunc(ErefABUHE/boost, RmaxB, Z,
+                                      gammaUHEB, deltaGammaUHE);
+      }
+      const double facAB = fGal / (sumAB / (sumAB + sumUHE));
+      const double facUHE = (1 - fGal) / (sumAB / (sumAB + sumUHE));
+      
+      
+      
     }
 
     const pair<double, double> norm = calcNorm(data);
