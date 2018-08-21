@@ -25,25 +25,26 @@ namespace prop {
       ePionZero
     };
 
-    enum ECutoffType {
+    enum ESpectrumType {
       eExponential,
       eBrokenExponential,
       eHeavyside,
       eDeltaGamma1,
       eDeltaGamma2,
       eDeltaGamma3,
-      eDeltaGamma4
+      eDeltaGamma4,
+      eExternal
     };
 
     typedef std::map<int, TMatrixD> SpecMap;
   public:
-    Spectrum() : fCutoffType(eExponential) { }
+    Spectrum() : fSpectrumType(eExponential) { }
     Spectrum(const VSource* s, const double gamma,
              const double Rmax, const double nE,
              const double lgEmin, const double lgEmax,
              const std::map<unsigned int, double>& fractions,
-             const ECutoffType cutoffType = eExponential) :
-      fCutoffType(cutoffType),
+             const ESpectrumType spectrumType = eExponential) :
+      fSpectrumType(spectrumType),
       fRmax(Rmax),
       fGamma(gamma),
       fSource(s),
@@ -53,13 +54,14 @@ namespace prop {
       fFractions(fractions)
     {}
 
-    void SetCutoffType(const ECutoffType type)
-    { fCutoffType = type; }
-
     void SetParameters(const VSource* s, const double gamma,
                        const double Emax, const double nE,
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions);
+    
+    void SetInjectedSpectrum(const VSource* s, const SpecMap& inj,
+                             const double nE, const double lgEmin, const double lgEmax,
+                             const std::map<unsigned int, double>& fractions);
 
     const SpecMap& GetInjFlux() const;
     void SetInjFlux(const SpecMap& inj) { fInj = inj; }
@@ -80,6 +82,9 @@ namespace prop {
     double GetLgEmax() const
     { return fLgEmax; }
 
+    void SetSpectrumType(const ESpectrumType type)
+    { fSpectrumType = type; }
+
     void Rescale(const double f);
 
     const VSource* GetSource() const { return fSource; }
@@ -96,7 +101,7 @@ namespace prop {
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
-    ECutoffType fCutoffType;
+    ESpectrumType fSpectrumType;
     double fRmax;
     double fGamma;
     const VSource* fSource;

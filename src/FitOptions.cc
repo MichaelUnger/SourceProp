@@ -45,7 +45,7 @@ namespace prop {
     fStartValues[eExtraProtonGamma] = StartValue(-1, 0.1, -3, -0.5, 1);
     fStartValues[eExtraProtonMass] = StartValue(1, 0.1, 1, 56, 1);
 
-    fCutoffType = Spectrum::eExponential;
+    fSpectrumType = Spectrum::eExponential;
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
     fLowESpectrumDataType = eNoLowESpectrum;
@@ -224,26 +224,26 @@ namespace prop {
         else
           throw runtime_error("unknown spectrum data type: " + type);
       }
-      else if (keyword == "cutoffType") {
+      else if (keyword == "spectrumType") {
         string type;
         if (!(line >> type))
-          throw runtime_error("error decoding cutoffType");
+          throw runtime_error("error decoding spectrumType");
         if (type == "exponential")
-          fCutoffType = Spectrum::eExponential;
+          fSpectrumType = Spectrum::eExponential;
         else if (type == "brokenExponential")
-          fCutoffType = Spectrum::eBrokenExponential;
+          fSpectrumType = Spectrum::eBrokenExponential;
         else if (type == "deltaGamma1")
-          fCutoffType = Spectrum::eDeltaGamma1;
+          fSpectrumType = Spectrum::eDeltaGamma1;
         else if (type == "deltaGamma2")
-          fCutoffType = Spectrum::eDeltaGamma2;
+          fSpectrumType = Spectrum::eDeltaGamma2;
         else if (type == "deltaGamma3")
-          fCutoffType = Spectrum::eDeltaGamma3;
+          fSpectrumType = Spectrum::eDeltaGamma3;
         else if (type == "deltaGamma4")
-          fCutoffType = Spectrum::eDeltaGamma4;
+          fSpectrumType = Spectrum::eDeltaGamma4;
         else if (type == "heavyside")
-          fCutoffType = Spectrum::eHeavyside;
+          fSpectrumType = Spectrum::eHeavyside;
         else
-          throw runtime_error("unknown cutoff type" + type);
+          throw runtime_error("unknown spectrum type" + type);
       }
       else
         throw runtime_error("unknown keyword " + keyword);
@@ -296,7 +296,12 @@ namespace prop {
       fGalMasses.push_back(MassValue(defaultGalMass, 1, 1,
                                      defaultGalMass, 1, 1));
     }
-   
+
+    if (fBoostedModel && fSpectrumType != Spectrum::eExternal) {
+      cerr << " warning: override spectrum type " << fSpectrumType << endl;
+      fSpectrumType = Spectrum::eExternal;
+    }
+    
   }
 
   double

@@ -121,11 +121,6 @@ namespace prop {
         for (size_t i = 0; i < nlg; i++) {
           lineStream >> r;
 
-          const double E = pow(10, lgmin + i * (lgmax - lgmin) / nlg) * 1e9 * 28;
-          if (Z == 14 && A == 28 && E > 1.e+19 && E < 1.1e+19)
-            cout << E
-                 << " " << remnantA << " " << r << endl;
-
           for (const auto secondaryIter : secondaryMap) {
             const int Asec = secondaryIter.first;
             const int n = secondaryIter.second;

@@ -479,7 +479,7 @@ namespace prop {
   {
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
-    fFitData.fSpectrum.SetCutoffType(fOptions.GetCutoffType());
+    fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
 
     fGCRKnees = fOptions.GCRWithKnees();
     fBoostedModel = fOptions.BoostedModel();

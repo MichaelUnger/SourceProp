@@ -154,42 +154,42 @@ namespace prop {
   {
     const double E0 = GetE0();
     const double Emax = fRmax *  aToZ(A);
-    if (fCutoffType == eExponential)
+    if (fSpectrumType == eExponential)
       return pow(E / E0, fGamma) * exp(-E/Emax);
-    else if (fCutoffType == eBrokenExponential) {
+    else if (fSpectrumType == eBrokenExponential) {
       if (E > Emax)
         return  pow(E / E0, fGamma) * exp(1 - E/Emax);
       else
         return pow(E / E0, fGamma);
     }
-    else if (fCutoffType == eDeltaGamma1) {
+    else if (fSpectrumType == eDeltaGamma1) {
       if (E > Emax)
         return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 1);
       else
         return pow(E / E0, fGamma);
     }
-    else if (fCutoffType == eDeltaGamma2) {
+    else if (fSpectrumType == eDeltaGamma2) {
       if (E > Emax)
         return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 2);
       else
         return pow(E / E0, fGamma);
     }
-    else if (fCutoffType == eDeltaGamma3) {
+    else if (fSpectrumType == eDeltaGamma3) {
       if (E > Emax)
         return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 3);
       else
         return pow(E / E0, fGamma);
     }
-    else if (fCutoffType == eDeltaGamma4) {
+    else if (fSpectrumType == eDeltaGamma4) {
       if (E > Emax)
         return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 4);
       else
         return pow(E / E0, fGamma);
     }
-    else if (fCutoffType == eHeavyside)
+    else if (fSpectrumType == eHeavyside)
       return E > Emax ? 0 :pow(E / E0, fGamma);
     else
-      throw runtime_error("cutoff type not implemented");
+      throw runtime_error("spectrum type not implemented");
   }
 
   double
@@ -197,12 +197,12 @@ namespace prop {
     const
   {
     const double Emax = fRmax * aToZ(A);
-    if (fCutoffType == eExponential) {
+    if (fSpectrumType == eExponential) {
       const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
       const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / Emax);
       return pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
     }
-    else if (fCutoffType == eHeavyside) {
+    else if (fSpectrumType == eHeavyside) {
       const double energy1 = fmin(E1, Emax);
       const double energy2 = fmin(E2, Emax);
       if (fabs(fGamma+2) < 1e-9)
@@ -212,7 +212,7 @@ namespace prop {
                                                pow(energy1 / GetE0(), fGamma+2));
     }
     else
-      throw runtime_error("integral not implemented for this cutoff");
+      throw runtime_error("integral not implemented for this spectrum");
   }
 
   double
@@ -220,13 +220,13 @@ namespace prop {
     const
   {
     const double Emax = fRmax * aToZ(A);
-    if (fCutoffType == eExponential) {
+    if (fSpectrumType == eExponential) {
       const double Gamma = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
       return pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * Gamma;
     }
-    else if (fCutoffType == eBrokenExponential)
+    else if (fSpectrumType == eBrokenExponential)
       throw runtime_error("integral for eBrokenExponential not implemented");
-    else if (fCutoffType == eHeavyside) {
+    else if (fSpectrumType == eHeavyside) {
       if (fabs(fGamma+2) < 1e-9)
         return numeric_limits<double>::infinity();
       else {
@@ -238,7 +238,7 @@ namespace prop {
       }
     }
     else
-      throw runtime_error("cutoff type not implemented");
+      throw runtime_error("spectrum type not implemented");
   }
 
   void
@@ -257,6 +257,24 @@ namespace prop {
     fLgEmin = lgEmin;
     fLgEmax = lgEmax;
     fFractions = fractions;
+  }
+
+  void
+  Spectrum::SetInjectedSpectrum(const VSource* s, const SpecMap& inj,
+                                const double nE, const double lgEmin, const double lgEmax,
+                                const std::map<unsigned int, double>& fractions)
+  {
+    fInj = inj;
+    fEscape.clear();
+    fNucleons.clear();
+    fRmax = 0;
+    fGamma = 0;
+    fSource = s;
+    fN = nE;
+    fLgEmin = lgEmin;
+    fLgEmax = lgEmax;
+    fFractions = fractions;
+    fSpectrumType = eExternal;
   }
 
 

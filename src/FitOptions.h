@@ -150,8 +150,8 @@ namespace prop {
     const std::string GetInteractionModel() const
     { return fInteractionModel; }
 
-    Spectrum::ECutoffType GetCutoffType() const
-    { return fCutoffType; }
+    Spectrum::ESpectrumType GetSpectrumType() const
+    { return fSpectrumType; }
 
     ESpectrumDataType GetSpectrumDataType() const
     { return fSpectrumDataType; }
@@ -189,7 +189,7 @@ namespace prop {
     int fEnergyBinShift;
     double fXmaxSigmaShift;
     std::string fInteractionModel;
-    Spectrum::ECutoffType fCutoffType;
+    Spectrum::ESpectrumType fSpectrumType;
     std::vector<MassValue> fGalMasses;
     ESpectrumDataType fSpectrumDataType;
     ELowESpectrumDataType fLowESpectrumDataType;
