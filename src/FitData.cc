@@ -91,7 +91,7 @@ namespace prop {
         fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
     }
     double powerSum = 0;
-    for (auto iter : fractions)
+    for (const auto iter : fractions)
       powerSum += iter.second * fSpectrum.InjectedPower(Elow, iter.first);
     return fQ0 * powerSum;
   }

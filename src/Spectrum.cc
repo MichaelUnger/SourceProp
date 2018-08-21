@@ -2,6 +2,7 @@
 #include "VSource.h"
 #include "Utilities.h"
 #include "utl/Units.h"
+#include "utl/MathConstants.h"
 
 #include <TH1D.h>
 #include <TDirectory.h>
@@ -211,8 +212,9 @@ namespace prop {
         return pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(), fGamma+2) -
                                                pow(energy1 / GetE0(), fGamma+2));
     }
-    else
+    else {
       throw runtime_error("integral not implemented for this spectrum");
+    }
   }
 
   double
@@ -237,8 +239,23 @@ namespace prop {
                                                  pow(E1 / GetE0(), fGamma+2));
       }
     }
-    else
-      throw runtime_error("spectrum type not implemented");
+    else {
+      GetInjFlux();
+      double sum = 0;
+      const unsigned int nBins = fN * fNSubBins;
+      const double dlgE = (fLgEmax - fLgEmin) / nBins;
+      double lgE = fLgEmin + dlgE / 2;
+      TMatrixD& m = fInj[A];
+      for (unsigned int iE = 0; iE < nBins; ++iE) {
+        const double E = pow(10, lgE);
+        if (E > E1) {
+          const double dE = utl::kLn10 * E * dlgE;
+          sum += m[iE][0] * E * dE;
+        }
+        lgE += dlgE;
+      }
+      return sum;
+    }
   }
 
   void

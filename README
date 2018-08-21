@@ -94,4 +94,49 @@ module load boost/1.57.0
 . /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
 
 
+refValues PRDFiducial:
+-----------------------
 
+v9006 (change chi2 for empty bins)
+----------------------------------
+FCN=391.659 FROM MIGRAD    STATUS=CONVERGED     163 CALLS         164 TOTAL
+                     EDM=4.76862e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  gammaInj    -1.00000e+00     fixed    
+   2  lgRmax       1.85192e+01   6.96791e-03   2.75578e-05   3.91017e-01
+   3  lgResc       2.63902e+00   3.79701e-02   6.03361e-06  -1.03241e-01
+   4  deltaEsc    -7.67586e-01   4.24031e-02   1.88786e-04  -2.65259e-02
+   5  fGal         5.72206e-01   9.58920e-03   7.12605e-05  -2.71900e-02
+   6  gammaGal    -4.18537e+00   3.55460e-02   8.15056e-05   2.67853e-02
+ 
+v9008 (reduce subBins to 5)
+---------------------------
+ FCN=392.517 FROM MIGRAD    STATUS=CONVERGED     161 CALLS         162 TOTAL
+                     EDM=5.89671e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  gammaInj    -1.00000e+00     fixed    
+   2  lgRmax       1.85192e+01   6.96564e-03   2.75702e-05   3.57705e-01
+   3  lgResc       2.64156e+00   3.79116e-02   6.03934e-06  -1.59164e+00
+   4  deltaEsc    -7.69914e-01   4.23390e-02   1.89458e-04  -7.26237e-02
+   5  fGal         5.71566e-01   9.60479e-03   7.14324e-05  -2.70805e-02
+   6  gammaGal    -4.18443e+00   3.55493e-02   8.16051e-05   6.02294e-02
+  Q0 7.76e+30 +/- 2.05e+28
+  edot: 9.1985058855e+44
+
+v9009 (reduce subBins to 2)
+---------------------------
+ FCN=390.871 FROM MIGRAD    STATUS=CONVERGED     160 CALLS         161 TOTAL
+                     EDM=3.24854e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  gammaInj    -1.00000e+00     fixed    
+   2  lgRmax       1.85224e+01   6.94499e-03   2.73115e-05  -2.74349e-01
+   3  lgResc       2.64311e+00   3.79864e-02   5.99254e-06   3.23464e+00
+   4  deltaEsc    -7.68137e-01   4.24277e-02   1.87242e-04   1.13239e-01
+   5  fGal         5.69505e-01   9.68055e-03   7.15529e-05   2.42849e-01
+   6  gammaGal    -4.18265e+00   3.56564e-02   8.15200e-05   8.58208e-02
+  Q0 7.85e+30 +/- 2.07e+28
+  edot: 9.3739423279e+44
+  Nnu = 4.7
