@@ -66,18 +66,19 @@ namespace prop {
   {
     if (!fInj.empty())
       return fInj;
-    
-    const double dlgE = (fLgEmax - fLgEmin) / fN;
+
+    const unsigned int nBins = fN * fNSubBins;
+    const double dlgE = (fLgEmax - fLgEmin) / nBins;
 
     for (const auto& iter : fFractions) {
       const unsigned int Ainj = iter.first;
       const double frac = iter.second;
       TMatrixD& m = fInj[Ainj];
       if (!m.GetNoElements())
-        m.ResizeTo(fN, 1);
+        m.ResizeTo(nBins, 1);
 
       double lgE = fLgEmin + dlgE / 2;
-      const unsigned int n = fN;
+      const unsigned int n = nBins;
       for (unsigned int iE = 0; iE < n; ++iE) {
         const double flux =
           frac * InjectedFlux(pow(10, lgE), Ainj);
@@ -85,7 +86,6 @@ namespace prop {
         lgE += dlgE;
       }
     }
-
     return fInj;
   }
 
@@ -308,7 +308,9 @@ namespace prop {
   Spectrum::CalculateSpectrum()
     const
   {
-
+    // init injected flux
+    GetInjFlux();
+    
     TMatrixD& mPD = fNucleons[eKnockOutPD];
     if (!mPD.GetNoElements())
       mPD.ResizeTo(fN, 1);
@@ -343,13 +345,11 @@ namespace prop {
     gROOT->cd();
 
     const double dlgEOrig = (fLgEmax - fLgEmin) / fN;
-    const unsigned int nSubBins = 10;
-    const unsigned int nBins = fN * nSubBins;
+    const unsigned int nBins = fN * fNSubBins;
     const double dlgE = (fLgEmax - fLgEmin) / nBins;
 
     for (const auto& iter : fFractions) {
       const int Ainj = iter.first;
-      const double frac = iter.second;
 
       // knock-off nucleon and pion production
       TH1D pd("pd", "", nBins, fLgEmin, fLgEmax);
@@ -369,12 +369,9 @@ namespace prop {
       }
 
       TH1D& h = *prodSpectrum[Ainj];
-      double lgE = fLgEmin + dlgE / 2;
       for (unsigned int iE = 0; iE < nBins; ++iE) {
-        const double E = pow(10, lgE);
-        const double injectedFlux = frac * InjectedFlux(E, Ainj);
-        h.SetBinContent(iE + 1, injectedFlux);
-        lgE += dlgE;
+        TMatrixD& m = fInj[Ainj];
+        h.SetBinContent(iE + 1, m[iE][0]);
       }
 
       // nucleus production
@@ -383,7 +380,7 @@ namespace prop {
 #endif      
       for (int Asec = Ainj - 1; Asec > 0; --Asec) {
         TH1D& hSec = *prodSpectrum[Asec];
-        lgE = fLgEmin + dlgE / 2;
+        double lgE = fLgEmin + dlgE / 2;
         for (unsigned int iE = 0; iE < nBins; ++iE) {
           const double E = pow(10, lgE);
           for (int Aprim = Asec + 1; Aprim <= Ainj; ++Aprim) {
@@ -486,7 +483,7 @@ namespace prop {
         delete prodSpectrum[i];
       }
 
-      lgE = fLgEmin + dlgEOrig / 2;
+      double lgE = fLgEmin + dlgEOrig / 2;
       const unsigned int n = fN;
 
       for (unsigned int iE = 0; iE < n; ++iE) {
