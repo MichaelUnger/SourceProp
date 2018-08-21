@@ -39,12 +39,12 @@ namespace prop {
   public:
     Spectrum() : fCutoffType(eExponential) { }
     Spectrum(const VSource* s, const double gamma,
-             const double Emax, const double nE,
+             const double Rmax, const double nE,
              const double lgEmin, const double lgEmax,
              const std::map<unsigned int, double>& fractions,
              const ECutoffType cutoffType = eExponential) :
       fCutoffType(cutoffType),
-      fEmax(Emax),
+      fRmax(Rmax),
       fGamma(gamma),
       fSource(s),
       fN(nE),
@@ -62,6 +62,7 @@ namespace prop {
                        const std::map<unsigned int, double>& fractions);
 
     const SpecMap& GetInjFlux() const;
+    void SetInjFlux(const SpecMap& inj) { fInj = inj; }
     const SpecMap& GetEscFlux() const;
     SpecMap& GetEscFlux();
     const SpecMap& GetNucleonFlux() const;
@@ -96,7 +97,7 @@ namespace prop {
     unsigned int LgEtoIndex(const double lgE) const;
 
     ECutoffType fCutoffType;
-    double fEmax;
+    double fRmax;
     double fGamma;
     const VSource* fSource;
     double fN;

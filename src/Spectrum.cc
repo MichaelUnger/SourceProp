@@ -66,7 +66,7 @@ namespace prop {
   {
     if (!fInj.empty())
       return fInj;
-
+    
     const double dlgE = (fLgEmax - fLgEmin) / fN;
 
     for (const auto& iter : fFractions) {
@@ -87,7 +87,6 @@ namespace prop {
     }
 
     return fInj;
-
   }
 
   unsigned int
@@ -154,41 +153,41 @@ namespace prop {
     const
   {
     const double E0 = GetE0();
-    const double zEmax = fEmax *  aToZ(A);
+    const double Emax = fRmax *  aToZ(A);
     if (fCutoffType == eExponential)
-      return pow(E / E0, fGamma) * exp(-E/zEmax);
+      return pow(E / E0, fGamma) * exp(-E/Emax);
     else if (fCutoffType == eBrokenExponential) {
-      if (E > zEmax)
-        return  pow(E / E0, fGamma) * exp(1 - E/zEmax);
+      if (E > Emax)
+        return  pow(E / E0, fGamma) * exp(1 - E/Emax);
       else
         return pow(E / E0, fGamma);
     }
     else if (fCutoffType == eDeltaGamma1) {
-      if (E > zEmax)
-        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 1);
+      if (E > Emax)
+        return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 1);
       else
         return pow(E / E0, fGamma);
     }
     else if (fCutoffType == eDeltaGamma2) {
-      if (E > zEmax)
-        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 2);
+      if (E > Emax)
+        return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 2);
       else
         return pow(E / E0, fGamma);
     }
     else if (fCutoffType == eDeltaGamma3) {
-      if (E > zEmax)
-        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 3);
+      if (E > Emax)
+        return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 3);
       else
         return pow(E / E0, fGamma);
     }
     else if (fCutoffType == eDeltaGamma4) {
-      if (E > zEmax)
-        return  pow(zEmax / E0, fGamma) * pow(E / zEmax, fGamma - 4);
+      if (E > Emax)
+        return  pow(Emax / E0, fGamma) * pow(E / Emax, fGamma - 4);
       else
         return pow(E / E0, fGamma);
     }
     else if (fCutoffType == eHeavyside)
-      return E > zEmax ? 0 :pow(E / E0, fGamma);
+      return E > Emax ? 0 :pow(E / E0, fGamma);
     else
       throw runtime_error("cutoff type not implemented");
   }
@@ -197,15 +196,15 @@ namespace prop {
   Spectrum::InjectedPower(const double E1, const double E2, const double A)
     const
   {
-    const double zEmax = fEmax * aToZ(A);
+    const double Emax = fRmax * aToZ(A);
     if (fCutoffType == eExponential) {
-      const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / zEmax);
-      const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / zEmax);
-      return pow(GetE0(), 2) * pow(zEmax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
+      const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
+      const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / Emax);
+      return pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
     }
     else if (fCutoffType == eHeavyside) {
-      const double energy1 = fmin(E1, zEmax);
-      const double energy2 = fmin(E2, zEmax);
+      const double energy1 = fmin(E1, Emax);
+      const double energy2 = fmin(E2, Emax);
       if (fabs(fGamma+2) < 1e-9)
         return pow(GetE0(), 2) * (log(energy2 / GetE0()) - log(energy1 / GetE0()));
       else
@@ -220,10 +219,10 @@ namespace prop {
   Spectrum::InjectedPower(const double E1, const double A)
     const
   {
-    const double zEmax = fEmax * aToZ(A);
+    const double Emax = fRmax * aToZ(A);
     if (fCutoffType == eExponential) {
-      const double Gamma = gsl_sf_gamma_inc(fGamma+2, E1 / zEmax);
-      return pow(GetE0(), 2) * pow(zEmax / GetE0(), fGamma+2) * Gamma;
+      const double Gamma = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
+      return pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * Gamma;
     }
     else if (fCutoffType == eBrokenExponential)
       throw runtime_error("integral for eBrokenExponential not implemented");
@@ -231,10 +230,10 @@ namespace prop {
       if (fabs(fGamma+2) < 1e-9)
         return numeric_limits<double>::infinity();
       else {
-        if (E1 > zEmax)
+        if (E1 > Emax)
           return 0;
         else
-          return pow(GetE0(), 2) / (fGamma+2) * (pow(zEmax / GetE0(), fGamma+2) -
+          return pow(GetE0(), 2) / (fGamma+2) * (pow(Emax / GetE0(), fGamma+2) -
                                                  pow(E1 / GetE0(), fGamma+2));
       }
     }
@@ -244,14 +243,14 @@ namespace prop {
 
   void
   Spectrum::SetParameters(const VSource* s, const double gamma,
-                          const double Emax, const double nE,
+                          const double Rmax, const double nE,
                           const double lgEmin, const double lgEmax,
                           const std::map<unsigned int, double>& fractions)
   {
     fEscape.clear();
     fInj.clear();
     fNucleons.clear();
-    fEmax = Emax;
+    fRmax = Rmax;
     fGamma = gamma;
     fSource = s;
     fN = nE;
