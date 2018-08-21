@@ -107,7 +107,7 @@ namespace prop {
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
-    const unsigned int fNSubBins = 10;
+    const unsigned int fNSubBins = 5;
   };
 }
 #endif
