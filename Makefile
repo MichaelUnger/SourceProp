@@ -1,7 +1,7 @@
 #.PHONY: Make-depend
 
 WITH_OPENMP = 0
-FASTANDFURIOUS = 0
+FASTANDFURIOUS = 1
 
 LD            := $(CXX)
 
@@ -28,7 +28,7 @@ ifeq ($(WITH_OPENMP), 1)
    CXXFLAGS  += -fopenmp
 endif
 
-ifeq ($(FAST), 1)
+ifeq ($(FASTANDFURIOUS), 1)
    CXXFLAGS += -D_FASTANDFURIOUS_
 endif
 
