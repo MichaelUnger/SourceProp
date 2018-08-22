@@ -38,7 +38,6 @@ int main(int argc, char** argv)
 #endif
 
   const bool doFit = argc >= 3 ? stoi(argv[2]) : 1;
-  cout << argc << " " << doFit << endl;    
   
   fit(argv[1], doFit, true);
   return 0;

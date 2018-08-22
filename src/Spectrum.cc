@@ -126,6 +126,7 @@ namespace prop {
   void
   Spectrum::Rescale(const double f)
   {
+    fNorm *= f;
     if (fInj.empty())
       GetInjFlux();
     for (auto& iter : fInj)
@@ -198,19 +199,20 @@ namespace prop {
     const
   {
     const double Emax = fRmax * aToZ(A);
+    const double fac = fNorm * fFractions.at(A);
     if (fSpectrumType == eExponential) {
       const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
       const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / Emax);
-      return pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
+      return fac*pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
     }
     else if (fSpectrumType == eHeavyside) {
       const double energy1 = fmin(E1, Emax);
       const double energy2 = fmin(E2, Emax);
       if (fabs(fGamma+2) < 1e-9)
-        return pow(GetE0(), 2) * (log(energy2 / GetE0()) - log(energy1 / GetE0()));
+        return fac*pow(GetE0(), 2) * (log(energy2 / GetE0()) - log(energy1 / GetE0()));
       else
-        return pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(), fGamma+2) -
-                                               pow(energy1 / GetE0(), fGamma+2));
+        return fac*pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(), fGamma+2) -
+                                                   pow(energy1 / GetE0(), fGamma+2));
     }
     else {
       throw runtime_error("integral not implemented for this spectrum");
@@ -222,9 +224,10 @@ namespace prop {
     const
   {
     const double Emax = fRmax * aToZ(A);
+    const double fac = fNorm * fFractions.at(A);
     if (fSpectrumType == eExponential) {
       const double Gamma = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
-      return pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * Gamma;
+      return fac*pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * Gamma;
     }
     else if (fSpectrumType == eBrokenExponential)
       throw runtime_error("integral for eBrokenExponential not implemented");
@@ -235,11 +238,12 @@ namespace prop {
         if (E1 > Emax)
           return 0;
         else
-          return pow(GetE0(), 2) / (fGamma+2) * (pow(Emax / GetE0(), fGamma+2) -
-                                                 pow(E1 / GetE0(), fGamma+2));
+          return fac*pow(GetE0(), 2) / (fGamma+2) * (pow(Emax / GetE0(), fGamma+2) -
+                                                     pow(E1 / GetE0(), fGamma+2));
       }
     }
     else {
+      // no "fac" needed, because already multiplied by frac and fNorm
       GetInjFlux();
       double sum = 0;
       const unsigned int nBins = fN * fNSubBins;
@@ -274,6 +278,7 @@ namespace prop {
     fLgEmin = lgEmin;
     fLgEmax = lgEmax;
     fFractions = fractions;
+    fNorm = 1;
   }
 
   void

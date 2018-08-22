@@ -560,8 +560,6 @@ DrawValues(const FitData& fitData,
   try {
     edot =
       fitData.GetTotalPower(pow(10, lgEmin)) / ( erg / (pow(Mpc, 3) * year));
-    //  const double P =  fitData.fSpectrum.InjectedPower(pow(10, lgEmin), 1);
-    //  const double edot = fitData.fQ0 * P / ( erg / (pow(Mpc, 3) * year));
     cout << " edot: " << setprecision(10) << edot << endl;
     const double mSun = 1.98855e30*kg;
     const double eSun = mSun * kSpeedOfLight * kSpeedOfLight;
@@ -615,7 +613,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
 
   vector<MassGroup> massGroups;
-  bool all = true;
+  bool all = false;
   if (all) {
     for (unsigned int i = 1; i <= GetMaxA(); ++i)
       massGroups.push_back(MassGroup(i, i, i, kRed+i));
@@ -656,7 +654,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(14, 21);
+  plot.SetXRange(17.5, 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);

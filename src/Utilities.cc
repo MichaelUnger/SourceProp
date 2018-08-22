@@ -22,7 +22,9 @@ namespace prop {
     if (xx <= x1) {
       //      cerr << " EvalFast(): below TGraph range, "
       //     << xx << " < " << x1 << endl;
-      //      return y[0]; //original
+#ifdef _FASTANDFURIOUS_
+      return y[0];
+#endif           
       const unsigned int i = 0;
       const double xLow = log(x[i]);
       const double xUp = log(x[i+1]);

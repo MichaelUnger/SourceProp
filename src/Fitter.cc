@@ -413,7 +413,7 @@ namespace prop {
 
     const pair<double, double> norm = calcNorm(data);
     const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
-    const double normInternalUnits = norm.first *  1 / (km2 * year * eV * sr);
+    const double normInternalUnits = 1 / (km2 * year * eV * sr);
     data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
     data.fQ0Err = norm.second / norm.first * data.fQ0;
     data.fSpectrum.Rescale(norm.first);

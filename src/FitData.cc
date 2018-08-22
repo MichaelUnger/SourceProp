@@ -92,7 +92,7 @@ namespace prop {
     }
     double powerSum = 0;
     for (const auto iter : fractions)
-      powerSum += iter.second * fSpectrum.InjectedPower(Elow, iter.first);
+      powerSum += fSpectrum.InjectedPower(Elow, iter.first);
     return fQ0 * powerSum;
   }
 

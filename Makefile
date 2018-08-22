@@ -1,6 +1,7 @@
 #.PHONY: Make-depend
 
 WITH_OPENMP = 0
+FASTANDFURIOUS = 0
 
 LD            := $(CXX)
 
@@ -26,6 +27,11 @@ ifeq ($(WITH_OPENMP), 1)
    LDFLAGS  += -fopenmp
    CXXFLAGS  += -fopenmp
 endif
+
+ifeq ($(FAST), 1)
+   CXXFLAGS += -D_FASTANDFURIOUS_
+endif
+
 
 OBJS  = $(patsubst $(SRC_DIR)/%LinkDef.h, $(OBJ_DIR)/%Dict.o, $(wildcard $(SRC_DIR)/*LinkDef.h))
 OBJS += $(patsubst $(SRC_DIR)/%.cc, $(OBJ_DIR)/%.o, $(wildcard $(SRC_DIR)/*.cc))

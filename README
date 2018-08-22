@@ -94,8 +94,8 @@ module load boost/1.57.0
 . /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
 
 
-refValues PRDFiducial:
------------------------
+refValues PRDFiducial/PRDGalactic:
+----------------------------------
 
 v9006 (change chi2 for empty bins)
 ----------------------------------
@@ -125,7 +125,7 @@ v9008 (reduce subBins to 5)
   Q0 7.76e+30 +/- 2.05e+28
   edot: 9.1985058855e+44
 
-v9009 (reduce subBins to 2)
+v9010 (reduce subBins to 2)
 ---------------------------
  FCN=390.871 FROM MIGRAD    STATUS=CONVERGED     160 CALLS         161 TOTAL
                      EDM=3.24854e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
@@ -140,3 +140,17 @@ v9009 (reduce subBins to 2)
   Q0 7.85e+30 +/- 2.07e+28
   edot: 9.3739423279e+44
   Nnu = 4.7
+
+  FCN=249.405 FROM MIGRAD    STATUS=CONVERGED     404 CALLS         405 TOTAL
+                     EDM=1.58249e-05    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  gammaInj    -1.23998e+00   2.16951e-02   1.12027e-04  -1.02731e-01
+   2  lgRmax       1.85915e+01   1.12845e-02   2.85659e-05  -8.88441e-01
+   3  lgResc       2.57284e+00   1.93783e-02   5.66502e-06   4.39016e+00
+   4  deltaEsc    -1.01000e+00   2.62240e-02   2.82489e-03** at limit **
+   5  fGal         6.85097e-01   1.08329e-02   5.05320e-05   4.32503e-01
+   6  gammaGal    -3.70273e+00   2.29431e-02   3.76978e-05  -4.28379e-01
+  Q0 5.42e+31 +/- 1.43e+29
+  edot: 1.5335241043e+45
+  Nnu = 5

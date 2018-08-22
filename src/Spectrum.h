@@ -109,10 +109,15 @@ namespace prop {
     double fLgEmin;
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
+    double fNorm = 1;
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
+#ifdef _FASTANDFURIOUS_    
     const unsigned int fNSubBins = 2;
+#else
+    const unsigned int fNSubBins = 10;
+#endif    
   };
 }
 #endif
