@@ -81,13 +81,12 @@ namespace prop {
       delete fHists.back();
       fHists.pop_back();
     }
-    const unsigned int n = spectrum.GetN();
     const double x1 = spectrum.GetLgEmin();
     const double x2 = spectrum.GetLgEmax();
     DrawSpectrum(spectrum.GetEscFlux(), mGroups, fGammaSource, "hEsc",
-                 n, x1, x2, eFluxEsc);
+                 spectrum.GetN(), x1, x2, eFluxEsc);
     DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
-                 n, x1, x2, eFluxInj);
+                 spectrum.GetNBinsInternal(), x1, x2, eFluxInj);
 
     /*
     vector<MassGroup> nucleonGroups;
@@ -103,6 +102,7 @@ namespace prop {
                  n, x1, x2, eFluxEsc, false);
     */
 
+    /*
     vector<MassGroup> nucleonGroups;
     nucleonGroups.push_back(MassGroup(Spectrum::ePionPlus,
                                       Spectrum::ePionPlus,
@@ -122,20 +122,23 @@ namespace prop {
                                       kMagenta+1, 4));
     DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource,
                  "elMagSource",
-                 n, x1, x2, eFluxEsc, false);
-
+                 spectrum.GetN(), x1, x2, eFluxEsc, false);
+    */
+    
     map<int, TMatrixD> nucleons;
     nucleons[1].ResizeTo(prop.GetPrimaryNucleonFluxAtEarth());
     nucleons[1] = prop.GetPrimaryNucleonFluxAtEarth();
     vector<MassGroup> nuclGroup;
     nuclGroup.push_back(MassGroup(1, 1, 1, kRed, 2));
-    DrawSpectrum(nucleons, nuclGroup, fGammaEarth, "hNucl", n, x1, x2, eFluxEarth);
+    DrawSpectrum(nucleons, nuclGroup, fGammaEarth, "hNucl",
+                 spectrum.GetN(), x1, x2, eFluxEarth);
 
     DrawSpectrum(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
-                 n, x1, x2, eFluxEarth);
+                 spectrum.GetN(), x1, x2, eFluxEarth);
 
-    DrawSource(spectrum.GetSource(), mGroups, n, x1, x2, drawProtonSourceLines);
-    DrawLnA(prop.GetFluxAtEarth(), n, x1, x2);
+    DrawSource(spectrum.GetSource(), mGroups, spectrum.GetN(),
+               x1, x2, drawProtonSourceLines);
+    DrawLnA(prop.GetFluxAtEarth(), spectrum.GetN(), x1, x2);
 
     for (int i = 0; i <= eFluxEarth; ++i)
       fCanvas->cd(i + 1)->RedrawAxis();
@@ -365,8 +368,8 @@ namespace prop {
   template<class T>
   void
   Plotter::DrawSpectrum(const map<T, TMatrixD>& specMap,
-                        const std::vector<MassGroup>& mGroups, const double gamma,
-                        const string& nameBase,
+                        const std::vector<MassGroup>& mGroups,
+                        const double gamma, const string& nameBase,
                         const unsigned int n, const double x1, const double x2,
                         const unsigned int specPad,
                         const bool drawTot)

@@ -306,8 +306,8 @@ namespace prop {
     }
     else {
       // component A
-      const unsigned int nMassA = data.GetNMass();
       map<unsigned int, double> fractionsA;
+      const unsigned int nMassA = data.GetNMass();
       double fracA[nMassA];
       double zetaA[nMassA-1];
       for (unsigned int i = 0; i < nMassA - 1; ++i)
@@ -350,17 +350,37 @@ namespace prop {
       const double gammaUHEA = par[eGamma];
       const double gammaUHEB = gammaUHEA - gammaA + gammaB;
       const double deltaGammaUHE = deltaGamma;
-      const double RmaxUHE = par[eLgRmaxUHE];
+      const double RmaxUHE = pow(10, par[eLgRmaxUHE]);
       const double boost = RmaxUHE / RmaxA;
 
-      
+
+      auto bplFunc = [](const double E, const double R0,
+                        const double Z, const double gamma,
+                        const double dG) {
+        const double Ebreak = Z*R0;
+        //        const double s = 0.024;
+        if (E < Ebreak)
+          return pow(E, gamma);
+        else
+          return pow(Ebreak, gamma) * pow(E/Ebreak, dG);
+        //return pow(E, gamma) * pow(1 + pow(E/Ebreak, dG/s), s);
+      };
+
+      /*
       auto bplFunc = [](const double E, const double R0,
                         const double Z, const double gamma,
                         const double dG) {
         const double Ebreak = Z*R0;
         const double s = 0.024;
-        return pow(E, gamma) * pow(1 + pow(E/Ebreak, dG/s), s);
+        const double r = E/Ebreak;
+        if (r < 1e-3)
+          return pow(E, gamma);
+        //        else if (r > 1e50)
+        //  return pow(Ebreak, gamma) * pow(r, gamma + dG);
+        else
+          return pow(E, gamma) * pow(1 + pow(r, dG/s), s);
       };
+      */
 
       const double ErefAB = 1e17;
       double sumA = 0;
@@ -391,22 +411,56 @@ namespace prop {
         sumAB += facB * f * bplFunc(ErefABUHE, RmaxB, Z, gammaB, deltaGamma);
       }
 
-      double sumUHE = 0;
+
+      Spectrum& spectrum = data.fSpectrum;
+      map<unsigned int, double> fractions;
+      spectrum.SetParameters(source, 0, 0, data.fNLgE, data.fLgEmin,
+                             data.fLgEmax, fractions);
+      const unsigned int nBins = spectrum.GetNBinsInternal();
+      const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
+      
+      Spectrum::SpecMap extraGal;
       for (const auto iter : fractionsA) {
-        const double Z = aToZ(iter.first);
-        const double f = iter.second;
-        sumUHE += facA * f * bplFunc(ErefABUHE/boost, RmaxA, Z,
-                                     gammaUHEA, deltaGammaUHE);
+        const int A = iter.first;
+        TMatrixD& m = extraGal[A];
+        if (!m.GetNoElements())
+          m.ResizeTo(nBins, 1);
+        double lgE = data.fLgEmin + dlgE / 2;
+        for (unsigned int iE = 0; iE < nBins; ++iE) {
+          const double Z = aToZ(A);
+          const double f = iter.second;
+          const double E = pow(10, lgE);
+          const double flux = facA * f * bplFunc(E/boost, RmaxA, Z,
+                                                 gammaUHEA, deltaGammaUHE);
+          m[iE][0] += flux;
+          lgE += dlgE;
+        }
       }
       for (const auto iter : fractionsB) {
-        const double Z = aToZ(iter.first);
-        const double f = iter.second;
-        sumUHE += facB * f *  bplFunc(ErefABUHE/boost, RmaxB, Z,
-                                      gammaUHEB, deltaGammaUHE);
+        const int A = iter.first;
+        TMatrixD& m = extraGal[A];
+        if (!m.GetNoElements())
+          m.ResizeTo(nBins, 1);
+        double lgE = data.fLgEmin + dlgE / 2;
+        for (unsigned int iE = 0; iE < nBins; ++iE) {
+          const double Z = aToZ(A);
+          const double f = iter.second;
+          const double E = pow(10, lgE);
+          const double flux = facB * f * bplFunc(E/boost, RmaxB, Z,
+                                                 gammaUHEB, deltaGammaUHE);
+          m[iE][0] += flux;
+          lgE += dlgE;
+        }
       }
+
+      spectrum.SetInjectedSpectrum(source, extraGal, data.fNLgE,
+                                   data.fLgEmin, data.fLgEmax);
+      data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
+        
+        /*   
       const double facAB = fGal / (sumAB / (sumAB + sumUHE));
       const double facUHE = (1 - fGal) / (sumAB / (sumAB + sumUHE));
-      
+        */
       
       
     }

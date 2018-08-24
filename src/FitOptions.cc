@@ -76,7 +76,7 @@ namespace prop {
         if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
           throw runtime_error("error decoding " + keyword);
       }
-      else if (keyword == "mass" || keyword == "massB") {
+      else if (keyword == "mass" || keyword == "massA") {
         fMassValues.push_back(MassValue());
         MassValue& m = fMassValues.back();
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
@@ -88,7 +88,7 @@ namespace prop {
           throw runtime_error("error decoding evolution");
         cout << " read evolution " << fEvolution << endl;
       }
-      else if (keyword == "galacticMass" || keyword == "massA") {
+      else if (keyword == "galacticMass" || keyword == "massB") {
         fGalMasses.push_back(MassValue());
         MassValue& m = fGalMasses.back();
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
@@ -242,6 +242,8 @@ namespace prop {
           fSpectrumType = Spectrum::eDeltaGamma4;
         else if (type == "heavyside")
           fSpectrumType = Spectrum::eHeavyside;
+        else if (type == "external")
+          fSpectrumType = Spectrum::eExternal;
         else
           throw runtime_error("unknown spectrum type" + type);
       }

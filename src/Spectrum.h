@@ -38,7 +38,7 @@ namespace prop {
 
     typedef std::map<int, TMatrixD> SpecMap;
   public:
-    Spectrum() : fSpectrumType(eExponential) { }
+    Spectrum() : fSpectrumType(eExponential) {}
     Spectrum(const VSource* s, const double gamma,
              const double Rmax, const double nE,
              const double lgEmin, const double lgEmax,
@@ -52,7 +52,8 @@ namespace prop {
       fLgEmin(lgEmin),
       fLgEmax(lgEmax),
       fFractions(fractions)
-    {}
+    {
+    }
 
     void SetParameters(const VSource* s, const double gamma,
                        const double Emax, const double nE,
@@ -60,8 +61,8 @@ namespace prop {
                        const std::map<unsigned int, double>& fractions);
     
     void SetInjectedSpectrum(const VSource* s, const SpecMap& inj,
-                             const double nE, const double lgEmin, const double lgEmax,
-                             const std::map<unsigned int, double>& fractions);
+                             const double nE, const double lgEmin,
+                             const double lgEmax);
 
     const SpecMap& GetInjFlux() const;
     void SetInjFlux(const SpecMap& inj) { fInj = inj; }
@@ -96,6 +97,9 @@ namespace prop {
     // P = int_E1^\infty E * f(E/E0) dE
     double InjectedPower(const double E1, const double A) const;
 
+    unsigned int GetNBinsInternal() const
+    { return fN * fNSubBins; }
+    
   private:
     void CalculateSpectrum() const;
     double InjectedFlux(const double E, const double A) const;
@@ -113,7 +117,7 @@ namespace prop {
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
-#ifdef _FASTANDFURIOUS_    
+#ifdef _FASTANDFURIOUS_
     const unsigned int fNSubBins = 2;
 #else
     const unsigned int fNSubBins = 10;

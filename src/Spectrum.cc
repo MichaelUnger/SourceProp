@@ -68,7 +68,10 @@ namespace prop {
     if (!fInj.empty())
       return fInj;
 
-    const unsigned int nBins = fN * fNSubBins;
+    if (fSpectrumType == eExternal) 
+      throw runtime_error("no external spectrum available");
+    
+    const unsigned int nBins = GetNBinsInternal();
     const double dlgE = (fLgEmax - fLgEmin) / nBins;
 
     for (const auto& iter : fFractions) {
@@ -203,16 +206,20 @@ namespace prop {
     if (fSpectrumType == eExponential) {
       const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
       const double Gamma2 = gsl_sf_gamma_inc(fGamma+2, E2 / Emax);
-      return fac*pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) * (Gamma1 - Gamma2);
+      return fac*pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) *
+        (Gamma1 - Gamma2);
     }
     else if (fSpectrumType == eHeavyside) {
       const double energy1 = fmin(E1, Emax);
       const double energy2 = fmin(E2, Emax);
       if (fabs(fGamma+2) < 1e-9)
-        return fac*pow(GetE0(), 2) * (log(energy2 / GetE0()) - log(energy1 / GetE0()));
+        return fac*pow(GetE0(), 2) * (log(energy2 / GetE0()) - log(energy1 /
+                                                                   GetE0()));
       else
-        return fac*pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(), fGamma+2) -
-                                                   pow(energy1 / GetE0(), fGamma+2));
+        return fac*pow(GetE0(), 2) / (fGamma+2) * (pow(energy2 / GetE0(),
+                                                       fGamma+2) -
+                                                   pow(energy1 / GetE0(),
+                                                       fGamma+2));
     }
     else {
       throw runtime_error("integral not implemented for this spectrum");
@@ -246,7 +253,7 @@ namespace prop {
       // no "fac" needed, because already multiplied by frac and fNorm
       GetInjFlux();
       double sum = 0;
-      const unsigned int nBins = fN * fNSubBins;
+      const unsigned int nBins = GetNBinsInternal();
       const double dlgE = (fLgEmax - fLgEmin) / nBins;
       double lgE = fLgEmin + dlgE / 2;
       TMatrixD& m = fInj[A];
@@ -283,8 +290,8 @@ namespace prop {
 
   void
   Spectrum::SetInjectedSpectrum(const VSource* s, const SpecMap& inj,
-                                const double nE, const double lgEmin, const double lgEmax,
-                                const std::map<unsigned int, double>& fractions)
+                                const double nE, const double lgEmin,
+                                const double lgEmax)
   {
     fInj = inj;
     fEscape.clear();
@@ -295,8 +302,13 @@ namespace prop {
     fN = nE;
     fLgEmin = lgEmin;
     fLgEmax = lgEmax;
-    fFractions = fractions;
     fSpectrumType = eExternal;
+    fNorm = 1;
+
+    fFractions.clear();
+    for (const auto& m : inj)
+      fFractions[m.first] = 0;  // values fractions not used for eBoosted
+
   }
 
 
@@ -385,7 +397,7 @@ namespace prop {
     gROOT->cd();
 
     const double dlgEOrig = (fLgEmax - fLgEmin) / fN;
-    const unsigned int nBins = fN * fNSubBins;
+    const unsigned int nBins = GetNBinsInternal();
     const double dlgE = (fLgEmax - fLgEmin) / nBins;
 
     for (const auto& iter : fFractions) {
