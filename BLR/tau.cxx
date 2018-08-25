@@ -1,8 +1,3 @@
-/*
- 
-  compile with g++ `root-config --cflags` tau.cc -o tau `root-config --libs`
- 
-*/
 #include "utl/Units.h"
 #include "utl/PhysicalConstants.h"
 #include "utl/MathConstants.h"
@@ -18,22 +13,6 @@ using namespace blr;
 #include <iostream>
 
 using namespace std;
-
-/*
-  black body number density dn/dE [particles/energy/volume]
-  given temperature
-*/
-double
-BlackBody(const double energy, const double temperature)
-{
-  const double kT = kBoltzmann * temperature;
-  const double preFac =
-    pow(kPi, 2) * pow(kPlanckReduced, 3) * pow(kSpeedOfLight, 3);
-  return pow(energy, 2) / preFac / (exp(energy/kT) - 1);
-}
-
-
-
 
 int
 main()

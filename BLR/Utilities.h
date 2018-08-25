@@ -15,4 +15,21 @@ namespace blr {
   double
   SigmaGammaGamma(const double projectileEnergy, const double targetEnergy,
                   const double cosTheta);
+
+  /*
+    black body number density dn/dE [particles/energy/volume]
+    given temperature
+  */
+  double
+  BlackBody(const double energy, const double temperature);
+
+  /*
+    chord length of intersection of line of sight with spherical shell
+    given radius R of observer and direction cosTheta and the inner
+    and outer shell radius RIn and ROut
+  */
+  double
+  SphericalShellIntersection(const double cosTheta, const double R,
+                             const double RIn, const double ROut);
+
 }

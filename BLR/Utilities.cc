@@ -2,7 +2,10 @@
 #include "utl/PhysicalConstants.h"
 #include "utl/MathConstants.h"
 
+#include <iostream>
+
 using namespace utl;
+using namespace std;
 
 namespace blr {
 
@@ -16,7 +19,7 @@ namespace blr {
     if (gammaCM2 < 1)
       return 0;
     else if (gammaCM2 > 1e6)
-      return (log(2*gammaCM2) - 1) / gammaCM2 *  kSigmaThomson * 3/8;
+      return (log(2*gammaCM2) - 1) / gammaCM2 *  kSigmaThomson * 3./8;
     const double betaCM2 = 1 - 1/gammaCM2;
     const double betaCM4 = betaCM2 * betaCM2;
     const double betaCM = sqrt(betaCM2);
@@ -49,4 +52,87 @@ namespace blr {
     const double gammaCM2 = 0.5 * (eps*eps1*(1-mu));
     return SigmaGammaGamma(gammaCM2);
   }
+
+
+  /*
+    chord length of intersection of line of sight with spherical shell
+    given radius R of observer and direction cosTheta and the inner
+    and outer shell radius RIn and ROut
+  */
+  double
+  SphericalShellIntersection(const double cosTheta, const double R,
+                             const double RIn, const double ROut)
+  {
+    const double sinThetaSq = 1 - cosTheta*cosTheta;
+    const double RSqSinSq = R*R*sinThetaSq;
+    const double t1In = pow(RIn, 2) - RSqSinSq;
+    const double t1Out = pow(ROut, 2) - RSqSinSq;
+    const double t0 = -cosTheta * R;
+    
+    const double badVal = 999;
+    double retVal = badVal;
+
+    if (R <= RIn) // smaller than inner BLR shell?
+      retVal = sqrt(t1Out) - sqrt(t1In);
+    else if  (R <= ROut) { // within the BLR shell?
+      const double outerChord = t0 + sqrt(t1Out);
+      if (t1In <= 0)
+        retVal = outerChord;
+      else {
+        const double solIn1 = t0 + sqrt(t1In);
+        const double solIn2 = t0 - sqrt(t1In);
+        
+        if (solIn1 >= 0 && solIn2 >= 0) {
+          const double innerChord = solIn1 - solIn2;
+          retVal = outerChord - innerChord;
+        }
+        else
+          retVal = outerChord;
+      }
+    }
+    else { // outside BLR!                
+      if (t1Out < 0)
+        retVal = 0;
+      else {
+        const double solOut1 = t0 + sqrt(t1Out);
+        const double solOut2 = t0 - sqrt(t1Out);
+        if(solOut1 < 0 && solOut2 < 0) 
+          retVal = 0;
+        else {
+          const double outerChord = solOut1 - solOut2;
+          if (t1In <= 0) // subtract inside donut? 
+            retVal = outerChord;
+          else {
+            const double solIn1 = t0 + sqrt(t1In);
+            const double solIn2 = t0 - sqrt(t1In);
+            if (solIn1 >= 0 && solIn2 >= 0) {
+              const double innerChord = solIn1 - solIn2;
+              retVal = outerChord - innerChord;
+            }
+            else
+              retVal = outerChord ;
+          }
+        }
+      }
+    }
+    
+    if (retVal == badVal)
+      cout <<  "omg, this should never happen" << endl;
+    return retVal;
+  }
+
+
+  /*
+    black body number density dn/dE [particles/energy/volume]
+    given temperature
+  */
+  double
+  BlackBody(const double energy, const double temperature)
+  {
+    const double kT = kBoltzmann * temperature;
+    const double preFac =
+      pow(kPi, 2) * pow(kPlanckReduced, 3) * pow(kSpeedOfLight, 3);
+    return pow(energy, 2) / preFac / (exp(energy/kT) - 1);
+  }
+  
 }
