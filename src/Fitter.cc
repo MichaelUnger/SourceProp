@@ -369,10 +369,12 @@ namespace prop {
       const double phiB17 = pow(10, par[eLgPhiB17]);
       const double phiU19 = pow(10, par[eLgPhiU19]);
 
-      const double gammaUHEA = par[eGamma];
-      const double gammaUHEB = gammaUHEA - gammaA + gammaB;
-      const double RmaxUHE = pow(10, par[eLgRmaxUHE]);
-      const double boost = RmaxUHE / RmaxA;
+      const double gammaUA = par[eGammaU];
+      const double gammaUB = gammaUA - gammaA + gammaB;
+      const double deltaGammaU = par[eDeltaGammaU];
+      const double RmaxU = pow(10, par[eLgRmaxU]);
+      const double facBU = par[eFacBU];
+      const double boost = RmaxU / RmaxA;
 
 
       auto bplFunc = [](const double E, const double R0,
@@ -430,15 +432,13 @@ namespace prop {
           const double Z = aToZ(A);
           const double f = iter.second;
           const double E = pow(10, lgE);
-          #warning dGamma
-          const double flux = facA * f * bplFunc(E/boost, RmaxA, Z,
-                                                 gammaUHEA, deltaGammaA-2);
+          const double flux =
+            facA * f * bplFunc(E/boost, RmaxA, Z,
+                               gammaUA, deltaGammaA + deltaGammaU);
           m[iE][0] += flux;
           lgE += dlgE;
         }
       }
-      // MU tmp
-      /*
       for (const auto iter : fractionsB) {
         const int A = iter.first;
         TMatrixD& m = extraGal[A];
@@ -449,23 +449,23 @@ namespace prop {
           const double Z = aToZ(A);
           const double f = iter.second;
           const double E = pow(10, lgE);
-          const double flux = facB * f * bplFunc(E/boost, RmaxB, Z,
-                                                 gammaUHEB, deltaGammaB);
+          const double flux =
+          facBU * facB * f * bplFunc(E/boost, RmaxB, Z,
+          gammaUB, deltaGammaB+deltaGammaU);
           m[iE][0] += flux;
           lgE += dlgE;
         }
       }
-      */
       spectrum.SetInjectedSpectrum(source, extraGal, data.fNLgE,
                                    data.fLgEmin, data.fLgEmax);
       data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
 
 
-      const double sumUHE =
+      const double sumU =
         data.fPropagator->GetFluxSumInterpolated(log10(ErefU));
-      const double facUHE = phiU19 / sumUHE;
-      data.fSpectrum.Rescale(facUHE);
-      data.fPropagator->Rescale(facUHE);
+      const double facU = phiU19 / sumU;
+      data.fSpectrum.Rescale(facU);
+      data.fPropagator->Rescale(facU);
       for (unsigned int iMass = 1; iMass <= GetMaxA(); ++iMass) {
         const int A = iMass;
         if (fractionsA.count(A) || fractionsB.count(A)) {
@@ -499,6 +499,22 @@ namespace prop {
       data.fQ0Err = 0;
     }
 
+
+    bool test = false;
+    if (test) {
+      double lgEtest = 15.6;
+      while (lgEtest < 15.9) {
+        const double w = pow(pow(10,lgEtest), 3);
+        cout << " =-=-> " << lgEtest << " "
+             << data.fPropagator->GetFluxSumInterpolated(lgEtest) << " "
+             << w*data.fPropagator->GetFluxSumInterpolated(lgEtest) << " "
+             << data.fPropagator->GetFluxSum(lgEtest) << " "
+             << w*data.fPropagator->GetFluxSum(lgEtest) << " "
+             << endl;
+        lgEtest += 0.01;
+      }
+    }
+    
     data.fChi2Spec = 0;
     data.fChi2SpecLowE = 0;
     double lastLgE = 0;
@@ -509,6 +525,14 @@ namespace prop {
       const double r = (y -  m) / sigma;
       const double r2 = r*r;
       data.fChi2Spec += r2;
+      if (test) {
+        const double w = pow(pow(10, flux.fLgE), 3);
+        cout << "---> " << flux.fLgE << " " << w*y << " " << w*m << " "
+             << w*data.fPropagator->GetFluxSum(flux.fLgE) << " "
+             << y << " " << m << " " << data.fPropagator->GetFluxSum(flux.fLgE)
+             << " "
+             << (m-y)/m << " " << r2 << endl;
+      }
       if (flux.fLgE < 17.5)
         data.fChi2SpecLowE += r2; 
       if (lastLgE == 0 || flux.fLgE > lastLgE)
@@ -543,10 +567,10 @@ namespace prop {
     chi2 = data.GetChi2Tot();
 
     if (!(data.fIteration%10)) {
-      cout << scientific << setprecision(2)
+      cout << scientific << setprecision(4)
            << " iter " << setw(5) << data.fIteration
-           << ", chi2 = " << data.GetChi2Tot()
-           << ", spec = ("
+           << ", chi2 = " << data.GetChi2Tot() << "\n"
+           << setprecision(2) << ", spec = ("
            << data.fChi2SpecLowE << ", "
            << data.fChi2Spec - data.fChi2SpecLowE << ")"
            << ", lnA = " << data.fChi2LnA

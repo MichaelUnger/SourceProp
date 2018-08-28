@@ -1,6 +1,6 @@
 #.PHONY: Make-depend
 
-WITH_OPENMP = 0
+WITH_OPENMP = 0     # warning does not work
 FASTANDFURIOUS = 1
 
 LD            := $(CXX)

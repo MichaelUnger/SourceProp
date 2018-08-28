@@ -50,6 +50,11 @@ namespace prop {
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
     fLowESpectrumDataType = eNoLowESpectrum;
+
+    fSpectrumTypeName = "exponential";
+    fSpectrumDataTypeName = "Auger2013";
+    fLowESpectrumDataTypeName = "";
+    fXmaxDataTypeName = "Auger2014";
     
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
@@ -198,6 +203,7 @@ namespace prop {
           fSpectrumDataType = eTASixYear;
         else
           throw runtime_error("unknown spectrum data type: " + type);
+        fSpectrumDataTypeName = type;
       }
       else if (keyword == "spectrumDataLowE") {
         string type;
@@ -208,7 +214,8 @@ namespace prop {
         else if (type == "GalacticDataA")
           fLowESpectrumDataType = eGalacticDataA;
         else
-          throw runtime_error("unknown spectrum data type: " + type);
+          throw runtime_error("unknown lowE spectrum data type: " + type);
+        fLowESpectrumDataTypeName = type;
       }
       else if (keyword == "xmaxData") {
         string type;
@@ -223,7 +230,8 @@ namespace prop {
         else if (type == "Auger2017fudgeAndSD")
           fXmaxDataType = eAugerXmax2017fudgeAndSD;
         else
-          throw runtime_error("unknown spectrum data type: " + type);
+          throw runtime_error("unknown Xmax data type: " + type);
+        fXmaxDataTypeName = type;
       }
       else if (keyword == "spectrumType") {
         string type;
@@ -247,6 +255,7 @@ namespace prop {
           fSpectrumType = Spectrum::eExternal;
         else
           throw runtime_error("unknown spectrum type" + type);
+        fSpectrumTypeName = type;
       }
       else
         throw runtime_error("unknown keyword " + keyword);
@@ -531,7 +540,74 @@ namespace prop {
     out << "# chi2 spec: (" << fitData.fChi2Spec - fitData.fChi2SpecLowE
         << ", " << fitData.fChi2SpecLowE << "), LnA: " << fitData.fChi2LnA
         << ", V(lnA); " << fitData.fChi2VlnA << endl;
+    out << "OutDir " << fOutDirname << "\n"
+        << "DataDir " << fDataDirname << "\n"
+        << "evolution " << fEvolution << "\n"
+        << "IRB " << fIRB << "\n"
+        << "energyBinShift " << fEnergyBinShift << "\n"
+        << "xmaxSigmaShift " << fXmaxSigmaShift << "\n"
+        << "spectrumData " << fSpectrumDataTypeName << "\n"
+        << "xmaxData " << fXmaxDataTypeName << "\n"
+        << "spectrumType " << fSpectrumTypeName << "\n";
+    out << "minLgEFlux " << fMinFluxLgE << "\n"
+        << "minLgECompo " << fMinCompLgE << "\n"
+        << "boostedModel " << fBoostedModel << endl;
+    if (!fLowESpectrumDataTypeName.empty())
+      out << "spectrumDataLowE " << fLowESpectrumDataTypeName << "\n";
+    for (unsigned int i = 0; i < fPhotonFieldType.size(); ++i) {
+      if (fPhotonFieldType[i] == eBrokenPowerlaw)
+        out << "PhotonBPL " << fEps0[i] << " " << fAlpha[i] << " " << fBeta[i]
+            << "\n";
+      else if (fPhotonFieldType[i] == eBlackBody)
+        out << "PhotonMBB " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
+      else
+        cerr << " unsupported photon field! " << endl;
+    }
+    out << "interactionModel " << fInteractionModel << "\n"
+        << "fitComposition " << fFitCompo << "\n"
+        << "gcrWithKnees " << fGCRWithKnees << "\n"
+        << "rejectOutliers " << fRejectOutliers << "\n";
 
+    for (unsigned int i = 0; i < eNpars; ++i) {
+      const EPar par = EPar(i);
+      const string name = GetParName(par, fBoostedModel);
+      const StartValue& s = fStartValues[par];
+      out << scientific << setprecision(5)
+          << "par " << name << " "
+          << fitData.fFitParameters[i].fValue << " "
+          << s.fStep << " " << s.fMinVal << " " << s.fMaxVal << " "
+          <<  s.fIsFixed << "\n";
+    }
+
+    const string massNameA = fBoostedModel ? "massA" : "mass";
+    map<unsigned int, double> fractionsA;
+    const unsigned int nMassA = fitData.GetNMass();
+    double fracA[nMassA];
+    double zetaA[nMassA-1];
+    for (unsigned int i = 0; i < nMassA - 1; ++i)
+      zetaA[i] = pow(10, fitData.fFitParameters[eNpars + i].fValue);
+    zetaToFraction(nMassA, zetaA, fracA);
+    for (unsigned int i = 0; i < nMassA; ++i) {
+      const double m =
+        fitData.fFitParameters[eNpars + nMassA - 1 + i].fValue;
+      out << massNameA << " " << m << " " << fracA[i] << " 1 56 1 1\n";
+    }
+
+    const string massNameB = fBoostedModel ? "massB" : "galacticMass";
+    map<unsigned int, double> fractionsB;
+    const unsigned int nMassB = fitData.GetNGalMass();
+    double fracB[nMassB];
+    double zetaB[nMassB-1];
+    const unsigned int offset = eNpars + nMassA - 1 + nMassA;
+    for (unsigned int i = 0; i < nMassB - 1; ++i) 
+      zetaB[i] = pow(10, fitData.fFitParameters[offset + i].fValue);
+    zetaToFraction(nMassB, zetaB, fracB);
+    for (unsigned int i = 0; i < nMassB; ++i) {
+      const double m = fitData.fFitParameters[offset + nMassB - 1 + i].fValue;
+      out << massNameB << " " << m << " " << fracB[i] << " 1 56 1 1\n";
+    }
+    
+    
     out.close();
   }
 

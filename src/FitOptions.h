@@ -198,7 +198,10 @@ namespace prop {
     ESpectrumDataType fSpectrumDataType;
     ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
-
+    std::string fSpectrumTypeName;
+    std::string fSpectrumDataTypeName;
+    std::string fLowESpectrumDataTypeName;
+    std::string fXmaxDataTypeName;
     ClassDefNV(FitOptions, 1);
   };
 }

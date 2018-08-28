@@ -154,3 +154,19 @@ v9010 (reduce subBins to 2)
   Q0 5.42e+31 +/- 1.43e+29
   edot: 1.5335241043e+45
   Nnu = 5
+
+v9043 (interpolation of spectrum)
+---------------------------------
+
+ FCN=386.293 FROM MIGRAD    STATUS=CONVERGED     160 CALLS         161 TOTAL
+                     EDM=4.71992e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
+  EXT PARAMETER                                   STEP         FIRST   
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+   1  gammaInj    -1.00000e+00     fixed    
+   2  lgRmax       1.85223e+01   6.98987e-03   2.72136e-05  -7.63290e-01
+   3  lgResc       2.64063e+00   3.79146e-02   5.93484e-06   2.07950e+00
+   4  deltaEsc    -7.64082e-01   4.22984e-02   1.84491e-04   6.22214e-02
+   5  fGal         5.66224e-01   9.81157e-03   7.14922e-05   3.60311e-01
+   6  gammaGal    -4.17721e+00   3.56562e-02   8.08928e-05   5.90201e-02
+ edot: 9.3803930456e+44
+ Nnu: 4.7 (using  crp5/CRPropaG12_SFR2_0)

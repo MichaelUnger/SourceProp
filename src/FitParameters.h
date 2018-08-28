@@ -5,32 +5,35 @@
 
 namespace prop {
   enum EPar {
-    eGamma,   // 0
-    eLgEmax,
-    eLgEscFac, // 2
+    eLgEscFac,
     eEscGamma,
-    eFGal,     // 4
+    eGamma,   
+    eLgEmax,
+    eFGal,     
     eGammaGal,
-    eGammaGalLowE, // 6
+    eGammaGalLowE, 
     eDeltaGammaGal,
-    eLgEmaxGal,    // 8
+    eLgEmaxGal,    
     eNoPhoton,
-    eLgPhotonFieldFac, // 10
+    eLgPhotonFieldFac, 
     eExtraProtonFraction195,
-    eExtraProtonLgEmax,  // 12
+    eExtraProtonLgEmax,
     eExtraProtonGamma,
     eExtraProtonMass,
     eNpars,
-    eGammaA = eGammaGalLowE,
-    eGammaB = eGammaGal,
-    eDeltaGammaA = eDeltaGammaGal,
-    eDeltaGammaB = eExtraProtonGamma,
-    eLgRmaxA = eLgEmaxGal,
-    eLgRmaxB = eLgEmax,
-    eLgPhiA15 = eNoPhoton,
-    eLgPhiB17 = eFGal,
-    eLgPhiU19 = eLgPhotonFieldFac,
-    eLgRmaxUHE = eExtraProtonLgEmax
+    eGammaA = eEscGamma + 1,
+    eDeltaGammaA = eEscGamma + 2,
+    eLgRmaxA = eEscGamma + 3,
+    eLgPhiA15 = eEscGamma + 4,
+    eGammaB = eEscGamma + 5,
+    eDeltaGammaB = eEscGamma + 6,
+    eLgRmaxB = eEscGamma + 7,
+    eLgPhiB17 = eEscGamma + 8,
+    eGammaU = eEscGamma + 9,
+    eDeltaGammaU = eEscGamma + 10,
+    eLgRmaxU = eEscGamma + 11,
+    eLgPhiU19 = eEscGamma + 12,
+    eFacBU = eEscGamma + 13
   };
 
   std::string

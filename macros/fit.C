@@ -428,7 +428,6 @@ DrawValues(const FitData& fitData,
     y -= dy;
   }
 
-  const double eps0Y = y;
   for (unsigned int i = 0; i < fitOptions.GetNPhotonFields(); ++i) {
     stringstream photonString;
     if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBrokenPowerlaw) {
@@ -565,7 +564,8 @@ DrawValues(const FitData& fitData,
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
 
-  const double xEdot = 0.47;
+  const double eps0Y = y-0.035;
+  const double xEdot = 0.55;
   const double lgEmin = 17;
   double edot = -1;
   stringstream powerString;
@@ -582,9 +582,9 @@ DrawValues(const FitData& fitData,
     l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
     l.SetTextSize(textSize*0.7);
 #ifdef _PAPER_
-    l.DrawLatex(xEdot+0.28, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
+    l.DrawLatex(xEdot+0.15, eps0Y+0.005, "#frac{erg}{Mpc^{3} yr}");
 #else
-    l.DrawLatex(xEdot+0.38, eps0Y+0.008, "#frac{erg}{Mpc^{3} yr}");
+    l.DrawLatex(xEdot+0.3, eps0Y+0.005, "#frac{erg}{Mpc^{3} yr}");
 #endif
     l.SetTextSize(textSize);
     y -= dy;
@@ -666,7 +666,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(14, 20.5);
+  plot.SetXRange(14, 21.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
@@ -720,6 +720,12 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
   rootFile.Write(*epsHist);
   plot.SaveHistsToFile(opt.GetOutDirname() + "/" + opt.GetOutFilename() + "Hist");
+
+  opt.WriteFitConfig((opt.GetOutDirname() + "/" +
+                       opt.GetOutFilename() + ".config").c_str(),
+                      fitData);
+
+
 }
 
 

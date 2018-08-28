@@ -9,25 +9,27 @@ namespace prop {
   GetParLatexName(const EPar p, const bool boosted)
   {
     string parNames[eNpars] =
-      {"#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
-       "lg(R_{esc}^{ Fe19})","#delta_{esc}",
+      {"lg(R_{esc}^{ Fe19})","#delta_{esc}",
+       "#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
        "f_{noPhot}", "lg(fphot)", "f(UHEp)", "lg(Emax, UHEp)",
        "#gamma(UHEp)", "m_{extra}"};
 
     if (boosted) {
-      parNames[eGammaA] = "#gamma_{A}";
-      parNames[eGammaB] = "#gamma_{B}";
-      parNames[eGamma] = "#gamma_{UHE}";
-      parNames[eDeltaGammaA] = "#Delta#gamma_{A}";
-      parNames[eDeltaGammaB] = "#Delta#gamma_{B}";
-      parNames[eLgPhiA15] = "lg#Phi_{A}^{15}";
-      parNames[eLgPhiB17] = "lg#Phi_{B}^{17}";
-      parNames[eLgPhiU19] = "lg#Phi_{U}^{19}";
+      parNames[eGammaA] = "\\gamma_{A}";
+      parNames[eGammaB] = "\\gamma_{B}";
+      parNames[eGammaU] = "\\gamma_{U}";
+      parNames[eDeltaGammaA] = "\\Delta\\gamma_{A}";
+      parNames[eDeltaGammaB] = "\\Delta\\gamma_{B}";
+      parNames[eDeltaGammaU] = "\\Delta\\gamma_{U}";
+      parNames[eLgPhiA15] = "lg\\Phi_{A}^{15}";
+      parNames[eLgPhiB17] = "lg\\Phi_{B}^{17}";
+      parNames[eLgPhiU19] = "lg\\Phi_{U}^{19}";
       parNames[eLgRmaxA] = "lg(R_{max}^{A})";
       parNames[eLgRmaxB] = "lg(R_{max}^{B})";
-      parNames[eLgRmaxUHE] = "lg(R_{max}^{UHE})";
+      parNames[eLgRmaxU] = "lg(R_{max}^{U})";
+      parNames[eFacBU] = "f_{B}^{U})";
     }
     return parNames[p];
   }
@@ -36,7 +38,7 @@ namespace prop {
   GetParName(const EPar p, const bool boosted)
   {
     string parNames[eNpars] =
-      {"gammaInj", "lgRmax", "lgResc", "deltaEsc",
+      {"lgResc", "deltaEsc", "gammaInj", "lgRmax", 
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
        "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonFraction",
        "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass"};
@@ -44,15 +46,17 @@ namespace prop {
     if (boosted) {
       parNames[eGammaA] = "gammaA";
       parNames[eGammaB] = "gammaB";
-      parNames[eGamma] = "gammaUHE";
+      parNames[eGammaU] = "gammaU";
       parNames[eDeltaGammaA] = "deltaGammaA";
       parNames[eDeltaGammaB] = "deltaGammaB";
+      parNames[eDeltaGammaU] = "deltaGammaU";
       parNames[eLgPhiA15] = "lgPhiA15";
       parNames[eLgPhiB17] = "lgPhiB17";
       parNames[eLgPhiU19] = "lgPhiU19";
       parNames[eLgRmaxA] = "lgRmaxA";
       parNames[eLgRmaxB] = "lgRmaxB";
-      parNames[eLgRmaxUHE] = "lgRmaxUHE";
+      parNames[eLgRmaxU] = "lgRmaxU";
+      parNames[eFacBU] = "facBU";
     }
 
     return parNames[p];

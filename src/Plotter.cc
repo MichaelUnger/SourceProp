@@ -139,7 +139,7 @@ namespace prop {
                  spectrum.GetN(), x1, x2, eFluxEarth);
 
     DrawSource(spectrum.GetSource(), mGroups, spectrum.GetN(),
-               16.95, x2, drawProtonSourceLines);
+               17., x2, drawProtonSourceLines);
     DrawLnA(prop.GetFluxAtEarth(), spectrum.GetN(), x1, x2);
 
     for (int i = 0; i <= eFluxEarth; ++i)
@@ -469,9 +469,8 @@ namespace prop {
     for (unsigned int i = 0; i < n; ++i) {
       const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
       const double w = pow(pow(10, lgE), gamma);
-      for (unsigned int j = iFirst; j < fHists.size(); ++j) {
+      for (unsigned int j = iFirst; j < fHists.size(); ++j) 
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
-      }
     }
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) 
       fHists[i]->Draw("CSAME");

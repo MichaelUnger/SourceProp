@@ -42,10 +42,11 @@ namespace prop {
     { return fPropMatrices.GetMaximumDistance(); }
 
     void SaveFluxAtEarth() const;
-
+    int LgEtoIndex(const double lgE) const;
+    
   private:
     Propagator();
-    int LgEtoIndex(const double lgE) const;
+
 
     const PropMatrices& fPropMatrices;
     std::map<int, TMatrixD> fResult;

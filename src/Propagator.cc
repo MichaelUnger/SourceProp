@@ -87,21 +87,21 @@ namespace prop {
   Propagator::GetFluxSumInterpolated(const double lgE)
     const
   {
-    const int index = LgEtoIndex(lgE);
-    if (index < 0 || index > int(fPropMatrices.GetN()) - 2)
-      return 0;
     const unsigned int n = fPropMatrices.GetN();
     const double lgEmin = fPropMatrices.GetLgEmin();
     const double lgEmax = fPropMatrices.GetLgEmax();
     const double dlgE = (lgEmax - lgEmin) / n;
-    const double y1 = log(GetFluxSum(index));
-    const double y2 = log(GetFluxSum(index+1));
-    const double x1 = lgEmin + index*dlgE;
-    const double x2 = lgE + dlgE;
+    const int index = LgEtoIndex(lgE - dlgE/2);
+    if (index < 0 || index > int(fPropMatrices.GetN()) - 2)
+      return 0;
+    const double y1 = log10(GetFluxSum(index));
+    const double y2 = log10(GetFluxSum(index+1));
     // fluxes etc are evaluated at bin mid point
-    const double yn = (lgE-dlgE/2)*(y1 - y2) + x1*y2 - x2*y1;
+    const double x1 = lgEmin + index*dlgE + dlgE/2;
+    const double x2 = lgEmin + (index+1)*dlgE + dlgE/2;
+    const double yn = lgE*(y1 - y2) + x1*y2 - x2*y1;
     const double arg = yn / (x1 - x2);
-    return exp(arg);
+    return pow(10, arg);
   }
 
   
