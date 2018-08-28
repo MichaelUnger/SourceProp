@@ -516,6 +516,7 @@ fitLowE(const double scale = 3)
     sumFlux->SetParameter(i, startPar[i]);
     sumFlux->SetParName(i, names[i].c_str());
   }
+  //  sumFlux->FixParameter(1,3.74265e+16);
   sumFlux->FixParameter(4,-0.5);
   //  sumFlux->FixParameter(5,10);
   //sumFlux->SetParLimits(7,1e15, 2.3e+16);

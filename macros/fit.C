@@ -124,7 +124,7 @@ DrawData(const FitData& fitData,
 
   TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
   double lastLgE = 0;
-  const vector<FluxData>& fluxData = fitData.fFluxData;
+  const vector<FluxData>& fluxData = fitData.fFluxDataLowStat;
   for (unsigned int i = 0; i < fluxData.size(); ++i) {
     const double w = pow(pow(10, fluxData[i].fLgE), gammaScaleEarth);
     fitSpectrum->SetPoint(i, fluxData[i].fLgE, w*fluxData[i].fFlux);
@@ -152,6 +152,13 @@ DrawData(const FitData& fitData,
       lgE += dlgE;
     }
   }
+  fitSpectrum->SetMarkerStyle(20);
+  fitSpectrum->SetMarkerColor(kGray+2);
+  fitSpectrum->SetLineColor(kGray+2);
+  TGraphAsymmErrors* fitSpectrum2 = (TGraphAsymmErrors*) fitSpectrum->Clone("specCopy");
+  fitSpectrum2->SetMarkerStyle(24);
+  fitSpectrum2->SetMarkerColor(kBlack);
+
   
   fitSpectrum->SetName("fitSpectrum");
   TFile out("tmp.root","RECREATE");
@@ -182,16 +189,15 @@ DrawData(const FitData& fitData,
     if (thisY > maxY)
       maxY = thisY;
   }
+  allSpectrum->SetMarkerColor(kGray+1);
+  allSpectrum->SetMarkerColor(kGray+1);
+  allSpectrum->SetLineColor(kGray+1);
   allSpectrum->SetMarkerStyle(24);
 
   stringstream histTit;
   histTit << "hEarth" << nMassGroups;
   TH1D* fluxTotAtEarth = (TH1D*) gROOT->FindObject(histTit.str().c_str());
-#ifdef _PAPER_
-  fluxTotAtEarth->SetLineWidth(1);
-#else
-  fluxTotAtEarth->SetLineWidth(2);
-#endif
+
   if (fluxTotAtEarth)
     fluxTotAtEarth->GetYaxis()->SetRangeUser(0, maxY*1.1);
   else
@@ -201,11 +207,14 @@ DrawData(const FitData& fitData,
   can->cd(Plotter::eFluxEarth);
   allSpectrum->Draw("P");
   fitSpectrum->Draw("P");
+  fitSpectrum2->Draw("P");
+  /*
   if (lowESpectrum->GetN()) {
     lowESpectrum->Draw("P");
     lowESpectrum2->SetMarkerStyle(24);
     lowESpectrum2->Draw("P");
   }
+  */
 
   TGraph* globusFlux = new TGraph();
   TGraph* globusLnA = new TGraph();
@@ -264,7 +273,8 @@ DrawData(const FitData& fitData,
      legSpec->AddEntry(globusFlux, " GAP","l");
      legSpec->Draw();
   }
-
+  fluxTotAtEarth->Draw("CSAME");
+  
   TGraphErrors* fitLnA = new TGraphErrors();
   TGraph* fitLnA2 = new TGraph();
   TGraphErrors* fitVlnA = new TGraphErrors();
@@ -384,14 +394,16 @@ DrawValues(const FitData& fitData,
   int fixColor = kGray+1;
   int freeColor = kBlack;
 
-  can->cd(Plotter::eCompEsc)->cd(1);
+  TVirtualPad* fitPanel = can->cd(Plotter::eCompEsc);
+  fitPanel->SetTopMargin(0.001);
+  gPad->Update();
   TLatex l;
-  const double textSize = 0.045;
+  const double textSize = 0.035;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
-  const double yStart = 0.98;
+  const double yStart = 0.99;
   double y = yStart;
-  const double dy = 0.077;
+  const double dy = textSize*1.5;
   const double x = 0.;
   const vector<FitParameter>& fitParameters = fitData.fFitParameters;
   for (unsigned int i = 0; i < eNpars; ++i) {
@@ -654,7 +666,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17.5, 20.5);
+  plot.SetXRange(14, 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);

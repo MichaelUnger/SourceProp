@@ -19,11 +19,12 @@ namespace prop {
     void Propagate(const std::map<int, TMatrixD>& spectrum,
                    const bool onlyNuc = true);
 
-    double GetFluxSum(const unsigned int i) const;
+    double GetFluxSum(const int i) const;
     double GetFluxSum(const double lgE) const;
+    double GetFluxSumInterpolated(const double lgE) const;
     const TMatrixD& GetSum() const { return fSum; }
 
-    std::pair<double, double> GetLnAMoments(const unsigned int i) const;
+    std::pair<double, double> GetLnAMoments(const int i) const;
     std::pair<double, double> GetLnAMoments(const double lgE) const;
 
     const std::map<int, TMatrixD>& GetFluxAtEarth() const
@@ -44,7 +45,7 @@ namespace prop {
 
   private:
     Propagator();
-    unsigned int LgEtoIndex(const double lgE) const;
+    int LgEtoIndex(const double lgE) const;
 
     const PropMatrices& fPropMatrices;
     std::map<int, TMatrixD> fResult;

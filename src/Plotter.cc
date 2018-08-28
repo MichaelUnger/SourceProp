@@ -26,8 +26,8 @@ using namespace utl;
 
 namespace prop {
 
-  Plotter::Plotter(TCanvas* c, const double gammaSource, const double gammaEarth,
-                   const EFluxUnits units) :
+  Plotter::Plotter(TCanvas* c, const double gammaSource,
+                   const double gammaEarth, const EFluxUnits units) :
     fUnits(units),
     fCanvas(c),
     fGammaSource(gammaSource),
@@ -39,8 +39,9 @@ namespace prop {
     gStyle->SetPadLeftMargin(.16);
     if (!fCanvas) {
 #ifdef _PAPER_
+      const double scale = 1.5;
       gStyle->SetTitleOffset(0.9, "Y");
-      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 1190, 600);
+      fCanvas = new TCanvas("plotter", "fit result", 10, 10, 1190*scale, 600*scale);
 #else
       gStyle->SetTitleOffset(1.3, "Y");
       fCanvas = new TCanvas("plotter", "fit result", 10, 10, 800, 700);
@@ -124,7 +125,8 @@ namespace prop {
                  "elMagSource",
                  spectrum.GetN(), x1, x2, eFluxEsc, false);
     */
-    
+
+    /*
     map<int, TMatrixD> nucleons;
     nucleons[1].ResizeTo(prop.GetPrimaryNucleonFluxAtEarth());
     nucleons[1] = prop.GetPrimaryNucleonFluxAtEarth();
@@ -132,12 +134,12 @@ namespace prop {
     nuclGroup.push_back(MassGroup(1, 1, 1, kRed, 2));
     DrawSpectrum(nucleons, nuclGroup, fGammaEarth, "hNucl",
                  spectrum.GetN(), x1, x2, eFluxEarth);
-
+    */
     DrawSpectrum(prop.GetFluxAtEarth(), mGroups, fGammaEarth, "hEarth",
                  spectrum.GetN(), x1, x2, eFluxEarth);
 
     DrawSource(spectrum.GetSource(), mGroups, spectrum.GetN(),
-               x1, x2, drawProtonSourceLines);
+               16.95, x2, drawProtonSourceLines);
     DrawLnA(prop.GetFluxAtEarth(), spectrum.GetN(), x1, x2);
 
     for (int i = 0; i <= eFluxEarth; ++i)
@@ -239,8 +241,6 @@ namespace prop {
         else
           fHists[i]->GetYaxis()->SetRangeUser(yMin*1.01, fmin(1e3, yMax*2));
         fHists[i]->Draw("C");
-        //#warning TMMMMMMMMMMMMMMMMMMMMMMMP
-        //fHists[i]->GetYaxis()->SetRangeUser(1e-12, 1e-3);
       }
       else
         fHists[i]->Draw("CSAME");
@@ -432,7 +432,7 @@ namespace prop {
     }
 
     TH1D* histTot = fHists.back();
-
+    histTot->SetLineWidth(2);
     for (auto& iter : specMap) {
       const unsigned int A = iter.first;
       const TMatrixD& m = iter.second;
@@ -473,16 +473,13 @@ namespace prop {
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
       }
     }
-    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
-      fHists[i]->SetLineWidth(1);
+    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) 
       fHists[i]->Draw("CSAME");
-    }
-
+    
     if (specPad == eFluxInj) {
       fCanvas->cd(eFluxEsc);
       fHists.push_back((TH1D*)histTot->Clone("escSuperimpose"));
       fHists.back()->SetLineStyle(2);
-      fHists.back()->SetLineWidth(2);
       if (escSuperColor > 0)
         fHists.back()->SetLineColor(escSuperColor);
       else
@@ -629,12 +626,12 @@ namespace prop {
     }
 
     fCanvas->cd(1)->SetLogy(1);
-    histTot->Draw("C");
 #ifdef _PAPER_
-    histTot->SetLineWidth(1);
+    histTot->SetLineWidth(2);
 #else
     histTot->SetLineWidth(2);
 #endif
+    histTot->Draw("C");
     for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) {
       //      fHists[i]->SetLineWidth(2);
       fHists[i]->Draw("CSAME");

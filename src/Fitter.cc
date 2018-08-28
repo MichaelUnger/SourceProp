@@ -30,7 +30,7 @@ namespace prop {
   FitData Fitter::fFitData;
   bool Fitter::fGCRKnees = false;
   bool Fitter::fBoostedModel = false;
-  
+
   pair<double, double>
   calcNorm(const FitData& data)
   {
@@ -38,7 +38,7 @@ namespace prop {
     double mywSum = 0;
     double mmwSum = 0;
     for (const auto& flux : data.fFluxData) {
-      const double m = p.GetFluxSum(flux.fLgE);
+      const double m = p.GetFluxSumInterpolated(flux.fLgE);
       const double w = pow(1/flux.fFluxErr, 2);
       const double y = flux.fFlux;
       mywSum += (m*y*w);
@@ -76,17 +76,38 @@ namespace prop {
     VSource* source = data.fSource;
     source->SetEscFac(1);
     source->SetEscGamma(par[eEscGamma]);
+
     
     vector<double> photonScale;
-    const double fScale = pow(10, par[eLgPhotonFieldFac]);
-    photonScale.push_back(fScale);
-    photonScale.push_back((1-fScale));
+    if (!fBoostedModel) {
+      const double fScale = pow(10, par[eLgPhotonFieldFac]);
+      photonScale.push_back(fScale);
+      photonScale.push_back((1-fScale));
+    }
+    else {
+      photonScale.push_back(1);
+      photonScale.push_back(0);
+    }
     source->SetPhotonScaleFactors(photonScale);
     
     const double lambdaI = source->LambdaInt(1e19, 56);
     const double lambdaE = source->LambdaEsc(1e19, 56);
     source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
 
+    const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
+    const double normInternalUnits = 1 / (km2 * year * eV * sr);
+
+    if (!(data.fIteration%10)) {
+      cout << "----------------------------------------" << endl;
+      for (unsigned int i = 0; i < eNpars; ++i)
+        if (!fFitData.fFitParameters[i].fIsFixed) {
+          cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i),
+                                                                fBoostedModel)
+               << " " << setw(11) << scientific << setprecision(5)
+               << setw(5) << par[i] << endl;
+        }
+    }
+    
     if (!fBoostedModel) {
       // extragalactic part
       const unsigned int nMass = data.GetNMass();
@@ -105,14 +126,8 @@ namespace prop {
           if (dm.GetFrac2() > 0)
             fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
         }
-      
+
         if (!(data.fIteration%10)) {
-          cout << "----------------------------------------" << endl;
-          for (unsigned int i = 0; i < eNpars; ++i)
-            cout << setw(2) << i << " " << setw(11) << GetParName(EPar(i),
-                                                                  fBoostedModel)
-                 << " " << setw(11) << scientific << setprecision(5)
-                 << setw(5) << par[i] << endl;
           for (unsigned int i = 0; i < nMass; ++i)
             cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
                  << *(par + eNpars + nMass - 1 + i) << ", f=" << frac[i]
@@ -208,7 +223,8 @@ namespace prop {
       
         const double lgE0 = 17.55;
         const double E0 = pow(10, lgE0);
-        const double extraGalactic = data.fPropagator->GetFluxSum(lgE0);
+        const double extraGalactic =
+          data.fPropagator->GetFluxSumInterpolated(lgE0);
 
         // ------ single power law
         if (!fGCRKnees) {
@@ -286,7 +302,7 @@ namespace prop {
             const double galRef =
               galFunc(refEGal, Eknee, gamma1 - dGamma, gamma2 - dGamma,
                       eps, dGammaGal, Emax);
-            int iTest = -1;
+
             double lgE = data.fLgEmin + dlgE/2;
             for (unsigned int i = 0; i < data.fNLgE; ++i) {
               const double E = pow(10, lgE);
@@ -294,8 +310,6 @@ namespace prop {
                 f[iMass] * galFunc(E, Eknee, gamma1 - dGamma, gamma2 - dGamma,
                                    eps, dGammaGal, Emax) / galRef;
               galactic[i][0] = galNorm * phiGal;
-              if (iTest < 0 && E > E0)
-                iTest = i;
               lgE += dlgE;
             }
             data.fPropagator->AddComponent(galMasses[iMass] + kGalacticOffset,
@@ -303,6 +317,12 @@ namespace prop {
           }
         }
       }
+
+      const pair<double, double> norm = calcNorm(data);
+      data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
+      data.fQ0Err = norm.second / norm.first * data.fQ0;
+      data.fSpectrum.Rescale(norm.first);
+      data.fPropagator->Rescale(norm.first);
     }
     else {
       // component A
@@ -341,15 +361,16 @@ namespace prop {
 
       const double gammaA = par[eGammaA];
       const double gammaB = par[eGammaB];
-      const double deltaGamma = par[eDeltaGammaGal];
+      const double deltaGammaA = par[eDeltaGammaA];
+      const double deltaGammaB = par[eDeltaGammaB];
       const double RmaxA = pow(10, par[eLgRmaxA]);
       const double RmaxB = pow(10, par[eLgRmaxB]);
-      const double fA = par[efA];
+      const double phiA15 = pow(10, par[eLgPhiA15]);
+      const double phiB17 = pow(10, par[eLgPhiB17]);
+      const double phiU19 = pow(10, par[eLgPhiU19]);
 
-      const double fGal = par[eFGal];
       const double gammaUHEA = par[eGamma];
       const double gammaUHEB = gammaUHEA - gammaA + gammaB;
-      const double deltaGammaUHE = deltaGamma;
       const double RmaxUHE = pow(10, par[eLgRmaxUHE]);
       const double boost = RmaxUHE / RmaxA;
 
@@ -358,59 +379,38 @@ namespace prop {
                         const double Z, const double gamma,
                         const double dG) {
         const double Ebreak = Z*R0;
-        //        const double s = 0.024;
+        const double s = 3;
+        /*
         if (E < Ebreak)
           return pow(E, gamma);
         else
           return pow(Ebreak, gamma) * pow(E/Ebreak, dG);
-        //return pow(E, gamma) * pow(1 + pow(E/Ebreak, dG/s), s);
+        */
+        const double corr = Z == 1 ? 0.1 : 0;
+        const double flux =
+        pow(E, gamma - corr) * pow(1 + pow(E/Ebreak, s), dG/s);
+        if (flux != flux)
+          cerr << " nan! " << E <<  " " << Ebreak << " " << E/Ebreak << endl;
+        return flux;
       };
 
-      /*
-      auto bplFunc = [](const double E, const double R0,
-                        const double Z, const double gamma,
-                        const double dG) {
-        const double Ebreak = Z*R0;
-        const double s = 0.024;
-        const double r = E/Ebreak;
-        if (r < 1e-3)
-          return pow(E, gamma);
-        //        else if (r > 1e50)
-        //  return pow(Ebreak, gamma) * pow(r, gamma + dG);
-        else
-          return pow(E, gamma) * pow(1 + pow(r, dG/s), s);
-      };
-      */
-
-      const double ErefAB = 1e17;
+      const double ErefA = pow(10,15.05);
+      const double ErefB = pow(10,17.05);
+      const double ErefU = pow(10,19.05);
       double sumA = 0;
       for (const auto iter : fractionsA) {
         const double Z = aToZ(iter.first);
         const double f = iter.second;
-        sumA += f * bplFunc(ErefAB, RmaxA, Z, gammaA, deltaGamma);
+        sumA += f * bplFunc(ErefA, RmaxA, Z, gammaA, deltaGammaA);
       }
       double sumB = 0;
       for (const auto iter : fractionsB) {
         const double Z = aToZ(iter.first);
         const double f = iter.second;
-        sumB += f * bplFunc(ErefAB, RmaxB, Z, gammaB, deltaGamma);
+        sumB += f * bplFunc(ErefB, RmaxB, Z, gammaB, deltaGammaB);
       }
-      const double facA = fA / (sumA / (sumA + sumB));
-      const double facB = (1 - fA) / (sumB / (sumA + sumB));
-
-      const double ErefABUHE = 1e18;
-      double sumAB = 0;
-      for (const auto iter : fractionsA) {
-        const double Z = aToZ(iter.first);
-        const double f = iter.second;
-        sumAB += facA * f * bplFunc(ErefABUHE, RmaxA, Z, gammaA, deltaGamma);
-      }
-      for (const auto iter : fractionsB) {
-        const double Z = aToZ(iter.first);
-        const double f = iter.second;
-        sumAB += facB * f * bplFunc(ErefABUHE, RmaxB, Z, gammaB, deltaGamma);
-      }
-
+      const double facA = phiA15 / sumA;
+      const double facB = phiB17 / sumB;
 
       Spectrum& spectrum = data.fSpectrum;
       map<unsigned int, double> fractions;
@@ -430,12 +430,15 @@ namespace prop {
           const double Z = aToZ(A);
           const double f = iter.second;
           const double E = pow(10, lgE);
+          #warning dGamma
           const double flux = facA * f * bplFunc(E/boost, RmaxA, Z,
-                                                 gammaUHEA, deltaGammaUHE);
+                                                 gammaUHEA, deltaGammaA-2);
           m[iE][0] += flux;
           lgE += dlgE;
         }
       }
+      // MU tmp
+      /*
       for (const auto iter : fractionsB) {
         const int A = iter.first;
         TMatrixD& m = extraGal[A];
@@ -447,40 +450,67 @@ namespace prop {
           const double f = iter.second;
           const double E = pow(10, lgE);
           const double flux = facB * f * bplFunc(E/boost, RmaxB, Z,
-                                                 gammaUHEB, deltaGammaUHE);
+                                                 gammaUHEB, deltaGammaB);
           m[iE][0] += flux;
           lgE += dlgE;
         }
       }
-
+      */
       spectrum.SetInjectedSpectrum(source, extraGal, data.fNLgE,
                                    data.fLgEmin, data.fLgEmax);
       data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
-        
-        /*   
-      const double facAB = fGal / (sumAB / (sumAB + sumUHE));
-      const double facUHE = (1 - fGal) / (sumAB / (sumAB + sumUHE));
-        */
-      
-      
+
+
+      const double sumUHE =
+        data.fPropagator->GetFluxSumInterpolated(log10(ErefU));
+      const double facUHE = phiU19 / sumUHE;
+      data.fSpectrum.Rescale(facUHE);
+      data.fPropagator->Rescale(facUHE);
+      for (unsigned int iMass = 1; iMass <= GetMaxA(); ++iMass) {
+        const int A = iMass;
+        if (fractionsA.count(A) || fractionsB.count(A)) {
+          const double Z = aToZ(A);
+          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+          double lgE = data.fLgEmin + dlgE/2;
+          TMatrixD galactic(data.fNLgE, 1);
+          for (unsigned int iE = 0; iE < data.fNLgE; ++iE) {
+            const double E = pow(10, lgE);
+            if (fractionsA.count(A)) {
+              const double f = fractionsA[A];
+              const double fac = facA * f;
+              const double flux =
+                bplFunc(E, RmaxA, Z, gammaA, deltaGammaA);
+              galactic[iE][0] += fac * flux;
+            }
+            if (fractionsB.count(A)) {
+              const double f = fractionsB[A];
+              const double fac = facB * f;
+              const double flux =
+                bplFunc(E, RmaxB, Z, gammaB, deltaGammaB);
+              galactic[iE][0] += fac * flux;
+            }
+            lgE += dlgE;
+          }
+          data.fPropagator->AddComponent(A + kGalacticOffset, galactic);
+        }
+      }
+
+      data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
+      data.fQ0Err = 0;
     }
 
-    const pair<double, double> norm = calcNorm(data);
-    const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
-    const double normInternalUnits = 1 / (km2 * year * eV * sr);
-    data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
-    data.fQ0Err = norm.second / norm.first * data.fQ0;
-    data.fSpectrum.Rescale(norm.first);
-    data.fPropagator->Rescale(norm.first);
-
     data.fChi2Spec = 0;
+    data.fChi2SpecLowE = 0;
     double lastLgE = 0;
     for (const auto& flux : data.fFluxData) {
       const double y = flux.fFlux;
       const double sigma = flux.fFluxErr;
-      const double m = data.fPropagator->GetFluxSum(flux.fLgE);
+      const double m = data.fPropagator->GetFluxSumInterpolated(flux.fLgE);
       const double r = (y -  m) / sigma;
-      data.fChi2Spec += pow(r, 2);
+      const double r2 = r*r;
+      data.fChi2Spec += r2;
+      if (flux.fLgE < 17.5)
+        data.fChi2SpecLowE += r2; 
       if (lastLgE == 0 || flux.fLgE > lastLgE)
         lastLgE = flux.fLgE;
     }
@@ -493,7 +523,7 @@ namespace prop {
     while (lgE < data.fLgEmax) {
       const double dE = pow(10, lgE) * kLn10 * dLgE;
       const double nExpected =
-        data.fPropagator->GetFluxSum(lgE) * data.fUHEExposure * dE;
+        data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
       chi2Zero += 2*nExpected;
       lgE += dLgE;
     }
@@ -516,7 +546,9 @@ namespace prop {
       cout << scientific << setprecision(2)
            << " iter " << setw(5) << data.fIteration
            << ", chi2 = " << data.GetChi2Tot()
-           << ", spec = " << data.fChi2Spec
+           << ", spec = ("
+           << data.fChi2SpecLowE << ", "
+           << data.fChi2Spec - data.fChi2SpecLowE << ")"
            << ", lnA = " << data.fChi2LnA
            << ", VlnA = " << data.fChi2VlnA << endl;
       cout << endl;
@@ -526,6 +558,7 @@ namespace prop {
       ++data.fNNan;
     if (data.fNNan > 10)
       throw runtime_error("stuck NaN --> stop fitting");
+
   }
 
   void
@@ -802,8 +835,10 @@ namespace prop {
 
 
           fFitData.fAllFluxData.push_back(flux);
-          if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier)
+          if (flux.fLgE > fOptions.GetMinFluxLgE() && !isSpectrumOutlier) {
             fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
         }
         break;
       }
@@ -836,8 +871,10 @@ namespace prop {
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
-          if (flux.fLgE > fOptions.GetMinFluxLgE())
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
         }
         break;
       }
@@ -869,8 +906,11 @@ namespace prop {
           fluxData.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(fluxData);
-          if (fluxData.fLgE > fOptions.GetMinFluxLgE())
+          if (fluxData.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(fluxData);
+            if (fluxData.fFluxErr/fluxData.fFlux < 0.1)
+              fFitData.fFluxDataLowStat.push_back(fluxData);
+          }          
         }
         break;
       }
@@ -914,6 +954,8 @@ namespace prop {
         if (flux.fLgE > fOptions.GetMinFluxLgE()) {
           fFitData.fFluxData.push_back(flux);
           fFitData.fLowEFluxData.push_back(flux);
+          if (flux.fFluxErr/flux.fFlux < 0.1)
+            fFitData.fFluxDataLowStat.push_back(flux);
         }
       }
     }
@@ -927,7 +969,7 @@ namespace prop {
         if (!inGal.good())
           break;
         const double relErr = ferr/flx;
-        ferr = std::max(0.01, relErr)*flx;
+        ferr = std::max(0.03, relErr)*flx;
         ferrUp = ferr;
         ferrLow = ferr;
         const double fac = 1e6*365*24*3600./1e9;
@@ -949,6 +991,8 @@ namespace prop {
         if (flux.fLgE > fOptions.GetMinFluxLgE()) {
           fFitData.fFluxData.push_back(flux);
           fFitData.fLowEFluxData.push_back(flux);
+          if (flux.fFluxErr/flux.fFlux < 0.1)
+            fFitData.fFluxDataLowStat.push_back(flux);
         }
       }
     }

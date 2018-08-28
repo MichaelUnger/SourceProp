@@ -23,10 +23,13 @@ namespace prop {
     eNpars,
     eGammaA = eGammaGalLowE,
     eGammaB = eGammaGal,
-    eDeltaGamma = eDeltaGammaGal,
+    eDeltaGammaA = eDeltaGammaGal,
+    eDeltaGammaB = eExtraProtonGamma,
     eLgRmaxA = eLgEmaxGal,
     eLgRmaxB = eLgEmax,
-    efA = eNoPhoton,
+    eLgPhiA15 = eNoPhoton,
+    eLgPhiB17 = eFGal,
+    eLgPhiU19 = eLgPhotonFieldFac,
     eLgRmaxUHE = eExtraProtonLgEmax
   };
 

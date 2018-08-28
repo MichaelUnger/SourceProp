@@ -28,7 +28,7 @@ namespace prop {
       }
       for (const auto& mIter : fPropMatrices.GetSecondaryMap(Aprim)) {
         const int Asec = mIter.first;
-        if (onlyNuc && (Asec < 0 || Asec > GetMaxA()))
+        if (onlyNuc && (Asec < 0 || Asec > int(GetMaxA())))
           continue;
         const TMatrixD& m = mIter.second;
         const TMatrixD propSpectrum(m, TMatrixD::kMult, sourceSpectrum);
@@ -62,7 +62,7 @@ namespace prop {
 
 
   std::pair<double, double>
-  Propagator::GetLnAMoments(const unsigned int i)
+  Propagator::GetLnAMoments(const int i)
     const
   {
     return logMassMoments(fResult, i);
@@ -84,6 +84,28 @@ namespace prop {
   }
 
   double
+  Propagator::GetFluxSumInterpolated(const double lgE)
+    const
+  {
+    const int index = LgEtoIndex(lgE);
+    if (index < 0 || index > int(fPropMatrices.GetN()) - 2)
+      return 0;
+    const unsigned int n = fPropMatrices.GetN();
+    const double lgEmin = fPropMatrices.GetLgEmin();
+    const double lgEmax = fPropMatrices.GetLgEmax();
+    const double dlgE = (lgEmax - lgEmin) / n;
+    const double y1 = log(GetFluxSum(index));
+    const double y2 = log(GetFluxSum(index+1));
+    const double x1 = lgEmin + index*dlgE;
+    const double x2 = lgE + dlgE;
+    // fluxes etc are evaluated at bin mid point
+    const double yn = (lgE-dlgE/2)*(y1 - y2) + x1*y2 - x2*y1;
+    const double arg = yn / (x1 - x2);
+    return exp(arg);
+  }
+
+  
+  double
   Propagator::GetFluxAtEarth(const int A,
                              const double lgE)
     const
@@ -103,7 +125,7 @@ namespace prop {
     const
   {
     const int i = LgEtoIndex(lgE);
-    if (i >=  fNucleonResult.GetNoElements()) {
+    if (i < 0 || i >=  fNucleonResult.GetNoElements()) {
       std::cerr << " Propagator::GetPrimaryNucleonFluxAtEarth() - "
                 << i << " is out of bound " << std::endl;
       return 0;
@@ -111,7 +133,7 @@ namespace prop {
     return fNucleonResult[i][0];
   }
 
-  unsigned int
+  int
   Propagator::LgEtoIndex(const double lgE)
     const
   {
@@ -123,10 +145,10 @@ namespace prop {
   }
 
   double
-  Propagator::GetFluxSum(const unsigned int i)
+  Propagator::GetFluxSum(const int i)
     const
   {
-    if (i >=  (unsigned int) fSum.GetNoElements()) {
+    if (i < 0 || i >=  fSum.GetNoElements()) {
       std::cerr << " Propagator::GetFluxSum() - "
                 << i << " is out of bound " << std::endl;
       return 0;
