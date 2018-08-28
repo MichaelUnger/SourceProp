@@ -9,6 +9,8 @@
 
 namespace prop {
 
+  class FitData;
+  
   struct StartValue {
     StartValue() :
       fStart(0), fStep(0), fMinVal(0), fMaxVal(0), fIsFixed(0) {}
@@ -164,6 +166,8 @@ namespace prop {
     EXmaxDataType GetXmaxDataType() const
     { return fXmaxDataType; }
     std::string GetXmaxDataLabel() const;
+
+    void WriteFitConfig(const std::string& filename, const FitData& fitData);
     
   private:
     std::map<EPar, prop::StartValue> fStartValues;

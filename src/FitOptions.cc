@@ -2,6 +2,7 @@
 
 #include "utl/PhysicalConstants.h"
 #include "utl/Units.h"
+#include "FitData.h"
 
 #include <gsl/gsl_sf_lambert.h>
 
@@ -521,6 +522,18 @@ namespace prop {
     }
   }
 
+  void
+  FitOptions::WriteFitConfig(const string& filename, const FitData& fitData)
+  {
+    ofstream out(filename.c_str());
+    out << "# chi2Tot/ndf = " << fitData.GetChi2Tot() << "/"
+        << fitData.GetNdfTot() << endl;
+    out << "# chi2 spec: (" << fitData.fChi2Spec - fitData.fChi2SpecLowE
+        << ", " << fitData.fChi2SpecLowE << "), LnA: " << fitData.fChi2LnA
+        << ", V(lnA); " << fitData.fChi2VlnA << endl;
+
+    out.close();
+  }
 
 
 }

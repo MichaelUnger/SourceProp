@@ -17,6 +17,7 @@
 using namespace std;
 
 #ifdef _WITH_OPENMP_
+#error openmp does not yet work
 #include <omp.h>
 #endif
 
@@ -427,7 +428,8 @@ namespace prop {
       }
 
       // nucleus production
-#ifdef _WITH_OPENMP_      
+#ifdef _WITH_OPENMP_
+      #error openmp does not yet work
       #pragma omp parallel for
 #endif      
       for (int Asec = Ainj - 1; Asec > 0; --Asec) {
