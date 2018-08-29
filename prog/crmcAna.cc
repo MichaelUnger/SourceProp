@@ -68,7 +68,7 @@ main(const int argc, const char** argv)
             name << "nSec_" << prefix << abs(pdgid[j]);
             outFile.cd();
             hNsecMap[pdgid[j]] =
-              new TH2D(name.str().c_str(), ";lg(E/eV);1/N dn/dlgE;",
+              new TH2D(name.str().c_str(), ";lg(E_{proj}/eV);lg(E_{sec}/eV);1/N dn/dlgE;",
                        nX, x1, x2,
                        nY, y1, y2);
             const string zname =
