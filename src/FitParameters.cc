@@ -1,6 +1,7 @@
 #include "FitParameters.h"
 
 #include <stdexcept>
+#include <iostream>
 using namespace std;
 
 namespace prop {
@@ -29,7 +30,7 @@ namespace prop {
       parNames[eLgRmaxA] = "lg(R_{max}^{A})";
       parNames[eLgRmaxB] = "lg(R_{max}^{B})";
       parNames[eLgRmaxU] = "lg(R_{max}^{U})";
-      parNames[eFacBU] = "f_{B}^{U})";
+      parNames[eFacBU] = "f_{B}^{U}";
     }
     return parNames[p];
   }

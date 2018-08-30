@@ -381,7 +381,7 @@ namespace prop {
                         const double Z, const double gamma,
                         const double dG) {
         const double Ebreak = Z*R0;
-        const double s = 3;
+        const double s = 10;
         /*
         if (E < Ebreak)
           return pow(E, gamma);
@@ -569,7 +569,7 @@ namespace prop {
     if (!(data.fIteration%10)) {
       cout << scientific << setprecision(4)
            << " iter " << setw(5) << data.fIteration
-           << ", chi2 = " << data.GetChi2Tot() << "\n"
+           << ", chi2 = " << data.GetChi2Tot()
            << setprecision(2) << ", spec = ("
            << data.fChi2SpecLowE << ", "
            << data.fChi2Spec - data.fChi2SpecLowE << ")"
