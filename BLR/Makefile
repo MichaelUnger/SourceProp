@@ -18,5 +18,5 @@ all: $(EXE)
 
 
 clean:
-	@rm -f $(LIB) $(OBJS) $(EXE) $(XML) *Dict.cc Make-depend
+	@rm -f $(LIB) $(OBJS) $(EXE) $(XML) $(OBJ) *Dict.cc Make-depend
 
