@@ -16,6 +16,11 @@ namespace blr {
   SigmaGammaGamma(const double projectileEnergy, const double targetEnergy,
                   const double cosTheta);
 
+  double
+  SigmaGammaGammaTest(const double projectileEnergy,
+                      const double targetEnergy,
+                      const double cosTheta);
+
   /*
     black body number density dn/dE [particles/energy/volume]
     given temperature

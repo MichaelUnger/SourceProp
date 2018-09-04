@@ -1,13 +1,37 @@
 #include "BLRLines.h"
 #include "utl/Units.h"
+#include "utl/PhysicalConstants.h"
 
 #include <iostream>
+#include <fstream>
 
 using namespace std;
 using namespace utl;
 
 namespace blr {
 
+  BLRLines::BLRLines(const std::string& filename)
+  {
+    cout << " BLRLines::BLRLines() -- reading spectrum from "
+         << filename << endl;
+    double lastE = -1;
+    ifstream in(filename.c_str());
+    int i = 0;
+    while (true) {
+      double eps, F;
+      in >> eps >> F;
+      if (!in.good())
+        break;
+      const double thisE = eps*kElectronMass*pow(kSpeedOfLight, 2);
+      if (lastE > 0) {
+        fLines.push_back(Line("bin" + to_string(i), thisE, thisE-lastE, F));
+      }
+      lastE = thisE;
+      ++i;
+    }
+
+  }
+  
   BLRLines::BLRLines() {
 
     bool fo = true;

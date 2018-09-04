@@ -54,6 +54,28 @@ namespace blr {
   }
 
 
+  double SigmaGammaGammaTest(const double E, const double E1, const double mu)
+  {
+    const double mec2 = 0.5109989461*MeV;
+    const double e1 = E1 / mec2;
+    const double e = E / mec2;
+    double w, beta, x, y;
+    
+    if ((x=e*e1*(1. - mu)) <= 2.) return (0.);
+    
+    if (x > 1.e3)
+      beta = 1. - 1./x;
+    else beta = sqrt(1. - 2./x);
+    if (x > 1.e3)
+      y = 2.*x;
+    else y = (1. + beta)/(1. - beta);
+    const double beta2 = beta*beta;
+    w = (1. - beta2)*((3. - pow(beta, 4.))*log(y) - 2.*beta*(2. - beta2));
+    
+    return 3/16.* kSigmaThomson * w;
+  }
+
+  
   /*
     chord length of intersection of line of sight with spherical shell
     given radius R of observer and direction cosTheta and the inner

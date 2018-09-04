@@ -1,11 +1,12 @@
 void
-drawTau()
+compareTau()
 {
   gStyle->SetOptStat(0);
   gStyle->SetOptLogy(1);
   const unsigned int nGraphs = 5;
   const int colors[nGraphs] = {kBlack, kRed, kGreen+1, kBlue, kGray+1};
-  const int styles[nGraphs] = {1, 2, 2, 2, 2};
+  const int styles[nGraphs] = {1, 1, 1, 1, 1};
+  const int bottIndex[nGraphs] = {6, 8, 10, 12, 14};
   
   TFile* f = TFile::Open("tauBLR.root");
 
@@ -20,11 +21,11 @@ drawTau()
   back->GetYaxis()->CenterTitle();
   back->Draw();
 
-  TLegend* leg = new TLegend(0.76, 0.7, 0.99, 0.94,NULL,"brNDCARC");
+  TLegend* leg = new TLegend(0.84, 0.78, 0.97, 0.989,NULL,"brNDCARC");
   leg->SetFillColor(0);
   leg->SetTextFont(42);
-  leg->SetFillStyle(0);
-  leg->SetBorderSize(0);
+  //  leg->SetFillStyle(1);
+  leg->SetBorderSize(1);
   
   for (unsigned int i = 0; i < 100; ++i) {
     const string graphName = "tau_" + to_string(i);
@@ -38,11 +39,21 @@ drawTau()
     else {
       tauGraph->SetLineStyle(styles[i]);
       tauGraph->SetLineColor(colors[i]);
+      tauGraph->SetMarkerColor(colors[i]);
     }
-    tauGraph->Draw("C");
-    leg->AddEntry(tauGraph, tauGraph->GetTitle(), "L");
+    tauGraph->Draw("P");
+    leg->AddEntry(tauGraph, tauGraph->GetTitle(), "PL");
   }
 
+  for (unsigned int i = 0; i < nGraphs; ++i) {
+    const string refFile =
+      "PKS0736+017/tvd_" + to_string(bottIndex[i]) + ".dat";
+    TGraph* refG = new TGraph(refFile.c_str());
+    refG->SetLineColor(colors[i]);
+    refG->SetLineStyle(styles[i]);
+    refG->Draw("C");
+  }
+  
   const double rBLR = 2.3e17;
   TLine* rIn = new TLine(rBLR*0.9, yMin, rBLR*0.9, yMax);
   rIn->SetLineStyle(2);
