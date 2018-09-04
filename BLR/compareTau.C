@@ -1,6 +1,14 @@
 void
 compareTau()
 {
+  gStyle->SetTitleSize(0.06,"XYZ");
+  gStyle->SetPadTopMargin(0.025);
+  gStyle->SetPadBottomMargin(0.175);
+  gStyle->SetPadLeftMargin(0.15);
+  gStyle->SetPadRightMargin(0.07);
+  gStyle->SetMarkerStyle(20);
+  gStyle->SetMarkerSize(0.7);
+
   gStyle->SetOptStat(0);
   gStyle->SetOptLogy(1);
   const unsigned int nGraphs = 5;

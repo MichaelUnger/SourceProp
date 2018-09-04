@@ -21,8 +21,9 @@ main()
 {
   TFile outFile("tauBLR.root", "RECREATE");
 
-#warning fudge  
-  const double fudge = 1 / kTwoPi;
+  const double fudge = 1; // / kTwoPi;
+  if (fudge != 1)
+    cerr << " WARNING!! fudge by " << fudge << "!!! " << endl;
   
   // BRL properties
   const double uBLR = 1.003561e-02 * erg / cm3;
@@ -142,12 +143,12 @@ main()
       // some printout around 0.9*rBLR
       if (fabs(Rem / rBLR - 0.9) < 0.01)  {
         const double Egamma = gammaEnergies[iGamma];
-        cout << "Rem/rBLR = " << Rem / rBLR << ", Egamma =  "
+        cout << "   --> Rem/rBLR = " << Rem / rBLR << ", Egamma =  "
              << Egamma / GeV << " GeV, tau = " << tau;
         if (iGamma == 0) {
           const double Lreq =
             4./3 * kPi * (pow(rOut, 3)- pow(rIn, 3)) * intensityIntegral * j0;
-          cout << ", Lreq " << Rem / rBLR << " " << Lreq / (erg/s) << endl;
+          cout << ", Lreq " << Lreq / (erg/s) << endl;
         }
         else
           cout << endl;
