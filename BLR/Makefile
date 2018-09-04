@@ -6,6 +6,7 @@ LDFLAGS  += $(shell root-config --libs)  -Wl,--no-as-needed -fPIC
 LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
 
 EXE = $(patsubst %.cxx, %, $(wildcard *.cxx))
+EXE += $(patsubst %.c, %, $(wildcard *.c))
 OBJ = $(patsubst %.cc, %.o, $(wildcard *.cc))
 
 all: $(EXE) 
@@ -15,6 +16,9 @@ all: $(EXE)
 
 %: %.cxx $(OBJ)
 	$(CXX) -o $@ $< $(OBJ) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS)
+
+%: %.c
+	$(CC) -o $@ $< -lm
 
 
 clean:

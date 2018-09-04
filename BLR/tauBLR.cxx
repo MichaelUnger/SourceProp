@@ -19,7 +19,7 @@ using namespace std;
 int
 main()
 {
-  TFile outFile("tauBLRTest.root", "RECREATE");
+  TFile outFile("tauBLR.root", "RECREATE");
 
 #warning fudge  
   const double fudge = 1 / kTwoPi;
@@ -94,7 +94,7 @@ main()
         const double mu = cosMin + iC * dCos;
         const double mu_i = -mu;
         sigmaMu[iC][iE][iGamma] =
-          (1-mu_i) * SigmaGammaGammaTest(Egamma, E, mu_i);
+          (1-mu_i) * SigmaGammaGamma(Egamma, E, mu_i);
       }
     }
   }
