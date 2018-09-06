@@ -360,17 +360,19 @@ namespace prop {
       }
 
       const double gammaA = par[eGammaA];
-      const double gammaB = par[eGammaB];
+      const double gammaBl = par[eGammaBl];
       const double deltaGammaA = par[eDeltaGammaA];
-      const double deltaGammaB = par[eDeltaGammaB];
+      const double deltaGammaBl = par[eDeltaGammaBl];
       const double RmaxA = pow(10, par[eLgRmaxA]);
-      const double RmaxB = pow(10, par[eLgRmaxB]);
+      const double RmaxBl = pow(10, par[eLgRmaxBl]);
+      const double RmaxBd = pow(10, par[eLgRmaxBd]);
       const double phiA15 = pow(10, par[eLgPhiA15]);
-      const double phiB17 = pow(10, par[eLgPhiB17]);
+      const double phiBl17 = pow(10, par[eLgPhiBl17]);
+      const double phiBd18 = pow(10, par[eLgPhiBd18]);
       const double phiU19 = pow(10, par[eLgPhiU19]);
 
       const double gammaUA = par[eGammaU];
-      const double gammaUB = gammaUA - gammaA + gammaB;
+      const double gammaUB = par[eGammaU];
       const double deltaGammaU = par[eDeltaGammaU];
       const double RmaxU = pow(10, par[eLgRmaxU]);
       const double facBU = par[eFacBU];
@@ -381,13 +383,7 @@ namespace prop {
                         const double Z, const double gamma,
                         const double dG) {
         const double Ebreak = Z*R0;
-        const double s = 10;
-        /*
-        if (E < Ebreak)
-          return pow(E, gamma);
-        else
-          return pow(Ebreak, gamma) * pow(E/Ebreak, dG);
-        */
+        const double s = 3;
         const double corr = Z == 1 ? 0.1 : 0;
         const double flux =
         pow(E, gamma - corr) * pow(1 + pow(E/Ebreak, s), dG/s);
@@ -397,7 +393,8 @@ namespace prop {
       };
 
       const double ErefA = pow(10,15.05);
-      const double ErefB = pow(10,17.05);
+      const double ErefBl = pow(10,17.05);
+      const double ErefBd = pow(10,18.05);
       const double ErefU = pow(10,19.05);
       double sumA = 0;
       for (const auto iter : fractionsA) {
@@ -405,14 +402,17 @@ namespace prop {
         const double f = iter.second;
         sumA += f * bplFunc(ErefA, RmaxA, Z, gammaA, deltaGammaA);
       }
-      double sumB = 0;
+      double sumBl = 0;
+      double sumBd = 0;
       for (const auto iter : fractionsB) {
         const double Z = aToZ(iter.first);
         const double f = iter.second;
-        sumB += f * bplFunc(ErefB, RmaxB, Z, gammaB, deltaGammaB);
+        sumBl += f * bplFunc(ErefBl, RmaxBl, Z, gammaBl, deltaGammaBl);
+        sumBd += f * bplFunc(ErefBd, RmaxBd, Z, gammaA, deltaGammaA);
       }
       const double facA = phiA15 / sumA;
-      const double facB = phiB17 / sumB;
+      const double facBl = phiBl17 / sumBl;
+      const double facBd = phiBd18 / sumBd;
 
       Spectrum& spectrum = data.fSpectrum;
       map<unsigned int, double> fractions;
@@ -434,7 +434,7 @@ namespace prop {
           const double E = pow(10, lgE);
           const double flux =
             facA * f * bplFunc(E/boost, RmaxA, Z,
-                               gammaUA, deltaGammaA + deltaGammaU);
+                               gammaUA, deltaGammaU);
           m[iE][0] += flux;
           lgE += dlgE;
         }
@@ -450,8 +450,7 @@ namespace prop {
           const double f = iter.second;
           const double E = pow(10, lgE);
           const double flux =
-          facBU * facB * f * bplFunc(E/boost, RmaxB, Z,
-          gammaUB, deltaGammaB+deltaGammaU);
+            facBU * facBd * f * bplFunc(E/boost, RmaxBd, Z, gammaUB, deltaGammaU);
           m[iE][0] += flux;
           lgE += dlgE;
         }
@@ -484,10 +483,18 @@ namespace prop {
             }
             if (fractionsB.count(A)) {
               const double f = fractionsB[A];
-              const double fac = facB * f;
-              const double flux =
-                bplFunc(E, RmaxB, Z, gammaB, deltaGammaB);
-              galactic[iE][0] += fac * flux;
+              {
+                const double fac = facBl * f;
+                const double flux =
+                  bplFunc(E, RmaxBl, Z, gammaBl, deltaGammaBl);
+                galactic[iE][0] += fac * flux;
+              }
+              {
+                const double fac = facBd * f;
+                const double flux =
+                  bplFunc(E, RmaxBd, Z, gammaA, deltaGammaA);
+                galactic[iE][0] += fac * flux;
+              }
             }
             lgE += dlgE;
           }

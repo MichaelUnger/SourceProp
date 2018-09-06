@@ -45,6 +45,8 @@ namespace prop {
     fStartValues[eExtraProtonLgEmax] = StartValue(22, 0.1, 19, 24, 1);
     fStartValues[eExtraProtonGamma] = StartValue(-1, 0.1, -3, -0.5, 1);
     fStartValues[eExtraProtonMass] = StartValue(1, 0.1, 1, 56, 1);
+    fStartValues[eUnused1] = StartValue(0, 0.1, 0, 0, 1);
+    fStartValues[eUnused2] = StartValue(0, 0.1, 0, 0, 1);
 
     fSpectrumType = Spectrum::eExponential;
     fSpectrumDataType = eAuger2013;
@@ -80,7 +82,7 @@ namespace prop {
         const EPar par = GetPar(parName, fBoostedModel);
         StartValue& s = fStartValues[par];
         if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
-          throw runtime_error("error decoding " + keyword);
+          throw runtime_error("error decoding " + keyword + " " + parName);
       }
       else if (keyword == "mass" || keyword == "massA") {
         fMassValues.push_back(MassValue());

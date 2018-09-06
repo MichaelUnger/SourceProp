@@ -15,20 +15,22 @@ namespace prop {
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
        "f_{noPhot}", "lg(fphot)", "f(UHEp)", "lg(Emax, UHEp)",
-       "#gamma(UHEp)", "m_{extra}"};
+       "#gamma(UHEp)", "m_{extra}", "NA1", "NA2"};
 
     if (boosted) {
       parNames[eGammaA] = "\\gamma_{A}";
-      parNames[eGammaB] = "\\gamma_{B}";
+      parNames[eGammaBl] = "\\gamma_{Bl}";
       parNames[eGammaU] = "\\gamma_{U}";
       parNames[eDeltaGammaA] = "\\Delta\\gamma_{A}";
-      parNames[eDeltaGammaB] = "\\Delta\\gamma_{B}";
+      parNames[eDeltaGammaBl] = "\\Delta\\gamma_{Bl}";
       parNames[eDeltaGammaU] = "\\Delta\\gamma_{U}";
       parNames[eLgPhiA15] = "lg\\Phi_{A}^{15}";
-      parNames[eLgPhiB17] = "lg\\Phi_{B}^{17}";
+      parNames[eLgPhiBl17] = "lg\\Phi_{Bl}^{17}";
+      parNames[eLgPhiBd18] = "lg\\Phi_{Bd}^{18}";
       parNames[eLgPhiU19] = "lg\\Phi_{U}^{19}";
       parNames[eLgRmaxA] = "lg(R_{max}^{A})";
-      parNames[eLgRmaxB] = "lg(R_{max}^{B})";
+      parNames[eLgRmaxBl] = "lg(R_{max}^{Bl})";
+      parNames[eLgRmaxBd] = "lg(R_{max}^{Bd})";
       parNames[eLgRmaxU] = "lg(R_{max}^{U})";
       parNames[eFacBU] = "f_{B}^{U}";
     }
@@ -46,16 +48,18 @@ namespace prop {
 
     if (boosted) {
       parNames[eGammaA] = "gammaA";
-      parNames[eGammaB] = "gammaB";
+      parNames[eGammaBl] = "gammaBl";
       parNames[eGammaU] = "gammaU";
       parNames[eDeltaGammaA] = "deltaGammaA";
-      parNames[eDeltaGammaB] = "deltaGammaB";
+      parNames[eDeltaGammaBl] = "deltaGammaBl";
       parNames[eDeltaGammaU] = "deltaGammaU";
       parNames[eLgPhiA15] = "lgPhiA15";
-      parNames[eLgPhiB17] = "lgPhiB17";
+      parNames[eLgPhiBl17] = "lgPhiBl17";
+      parNames[eLgPhiBd18] = "lgPhiBd18";
       parNames[eLgPhiU19] = "lgPhiU19";
       parNames[eLgRmaxA] = "lgRmaxA";
-      parNames[eLgRmaxB] = "lgRmaxB";
+      parNames[eLgRmaxBl] = "lgRmaxBl";
+      parNames[eLgRmaxBd] = "lgRmaxBd";
       parNames[eLgRmaxU] = "lgRmaxU";
       parNames[eFacBU] = "facBU";
     }
