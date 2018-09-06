@@ -21,7 +21,7 @@ main()
 {
   TFile outFile("tauBLR.root", "RECREATE");
 
-  const double fudge = 1; // / kTwoPi;
+  const double fudge = 1 / kTwoPi;
   if (fudge != 1)
     cerr << " WARNING!! fudge by " << fudge << "!!! " << endl;
   
@@ -34,8 +34,8 @@ main()
 
   // dimensions in R
   const double rMin = 0;
-  const double rMax = 2*rBLR;
-  const int nR = 250;
+  const double rMax = 4*rBLR;
+  const int nR = 500;
   const double dR = (rMax - rMin) / nR;
 
   // renormalize to uBLR at a certain radius?
@@ -45,8 +45,7 @@ main()
   if (renormalize) {
     cout << " renormalizing to uBLR at " << refRadius << endl;
     cout << " radial reference index: " << radialIndexRef
-         << " " << rMin + radialIndexRef*dR << " "
-         << refRadius << endl;
+         << " for " << (rMin + radialIndexRef*dR)/rIn << "*rIn" << endl;
   }
   else
     cout << " normalizing to Lobs " << endl;
@@ -76,8 +75,10 @@ main()
   const unsigned int nGamma = gammaEnergies.size();
 
   // pre-calculate shell intersections
-  double Dmu[nCos+1][nR+1];
+  vector<vector<double>> Dmu;
+  Dmu.resize(nCos+1);
   for (unsigned int iC = 0; iC < nCos+1; ++iC) {
+    Dmu[iC].resize(nR+1);
     const double cosTheta = cosMin + iC * dCos;
     for (unsigned int iR = 0; iR < nR+1; ++iR) {
       const double r = rMin + iR*dR;
@@ -86,15 +87,20 @@ main()
   }
 
   // pre-calculate cross section factor
-  double sigmaMu[nCos+1][nE][nGamma];
+  vector<vector<vector<double>>> sigmaMu;
+  sigmaMu.resize(nGamma);
+  // double sigmaMu[nGamma][nCos+1][nE];
+  
   for (unsigned int iGamma = 0; iGamma < nGamma; ++iGamma) {
+    sigmaMu[iGamma].resize(nCos+1);
     const double Egamma = gammaEnergies[iGamma];
-    for (unsigned int iE = 0; iE < nE; ++iE) {
+    for (unsigned int iC = 0; iC < nCos+1; ++iC) {
+      const double mu = cosMin + iC * dCos;
+      const double mu_i = -mu;
+      sigmaMu[iGamma][iC].resize(nE);
+      for (unsigned int iE = 0; iE < nE; ++iE) {
       const double E = lines[iE].fE;
-      for (unsigned int iC = 0; iC < nCos+1; ++iC) {
-        const double mu = cosMin + iC * dCos;
-        const double mu_i = -mu;
-        sigmaMu[iC][iE][iGamma] =
+        sigmaMu[iGamma][iC][iE] =
           (1-mu_i) * SigmaGammaGamma(Egamma, E, mu_i);
       }
     }
@@ -129,10 +135,11 @@ main()
       double tauSum = 0;
       for (unsigned int iC = 0; iC < nCos+1; ++iC) {
         double eSum = 0;
+        const auto& sMuVec = sigmaMu[iGamma][iC];
         for (unsigned int iE = 0; iE < nE; ++iE) {
           const double f = lines[iE].fRelI;
           const double dE = lines[iE].fDeltaE;
-          eSum += f * dE * sigmaMu[iC][iE][iGamma];
+          eSum += f * dE * sMuVec[iE];
         }
         for (unsigned int iR = iRem; iR < nR+1; ++iR)
           tauSum += eSum * Dmu[iC][iR];
