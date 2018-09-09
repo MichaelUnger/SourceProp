@@ -154,8 +154,8 @@ namespace prop {
           }
         }
 
-        if (par[eExtraProtonFraction195] > 0) {
-          const double refLgE = 19.5;
+        if (par[eExtraProtonLgFraction] > -100) {
+          const double refLgE = par[eExtraProtonLgRefE];
           const double refE = pow(10, refLgE);
           const double sum = spectrum.GetFluxSum(19.5);
           const double lgEmin = spectrum.GetLgEmin();
@@ -173,7 +173,7 @@ namespace prop {
               mm.ResizeTo(n, 1);
           }
         
-          const double f = par[eExtraProtonFraction195];
+          const double f = pow(10, par[eExtraProtonLgFraction]);
           const double gamma = par[eExtraProtonGamma];
           const double Emax = pow(10, par[eExtraProtonLgEmax]);
         
@@ -188,7 +188,6 @@ namespace prop {
             lgE += dlgE;
           }
         }
-
         data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
       }
     
@@ -228,21 +227,31 @@ namespace prop {
 
         // ------ single power law
         if (!fGCRKnees) {
-          const double emaxGal = pow(10, par[eLgEmaxGal]);
           const double gammaGal = par[eGammaGal];
-          const double sE = exp(-E0/emaxGal);
-          const double phi0Gal = fGal * extraGalactic / (sE * (1 - fGal));
-          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
-          double lgE = data.fLgEmin + dlgE/2;
-          TMatrixD galactic(data.fNLgE, 1);
-          for (unsigned int i = 0; i < data.fNLgE; ++i) {
-            const double E = pow(10, lgE);
-            galactic[i][0] = phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
-            lgE += dlgE;
+          double galSum = 0;
+          for (const auto iter : galFractions) {
+            const double Z = aToZ(iter.first);
+            const double emaxGal = pow(10, par[eLgEmaxGal]*Z/26.);
+            const double phiGal = iter.second * exp(-E0/emaxGal);
+            galSum += phiGal;
           }
-          for (const auto iter : galFractions) 
+          const double phi0Gal = fGal * extraGalactic / (galSum * (1 - fGal));
+          
+          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+          for (const auto iter : galFractions) {
+            double lgE = data.fLgEmin + dlgE/2;
+            const double Z = aToZ(iter.first);
+            const double emaxGal = pow(10, par[eLgEmaxGal]*Z/26.);
+            TMatrixD galactic(data.fNLgE, 1);
+            for (unsigned int i = 0; i < data.fNLgE; ++i) {
+              const double E = pow(10, lgE);
+              galactic[i][0] =
+                iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+              lgE += dlgE;
+            }
             data.fPropagator->AddComponent(iter.first + kGalacticOffset,
-                                           iter.second*galactic);
+                                           galactic);
+          }
         }
         else {
           // ------ sum of KASCADE-Grande knees
@@ -325,202 +334,194 @@ namespace prop {
       data.fPropagator->Rescale(norm.first);
     }
     else {
-      // component A
-      map<unsigned int, double> fractionsA;
-      const unsigned int nMassA = data.GetNMass();
-      double fracA[nMassA];
-      double zetaA[nMassA-1];
-      for (unsigned int i = 0; i < nMassA - 1; ++i)
-        zetaA[i] = pow(10, *(par + eNpars + i));
-      zetaToFraction(nMassA, zetaA, fracA);
-      for (unsigned int i = 0; i < nMassA; ++i) {
-        const double m = *(par + eNpars + nMassA - 1 + i);
-        const DoubleMass dm(m);
-        if (dm.GetFrac1() > 0)
-          fractionsA[dm.GetMass1()] += dm.GetFrac1()*fracA[i];
-        if (dm.GetFrac2() > 0)
-          fractionsA[dm.GetMass2()] += dm.GetFrac2()*fracA[i];
-      }
-      // component B
-      map<unsigned int, double> fractionsB;
-      const unsigned int nMassB = data.GetNGalMass();
-      double fracB[nMassB];
-      double zetaB[nMassB-1];
-      const unsigned int offset = eNpars + nMassA - 1 + nMassA;
-      for (unsigned int i = 0; i < nMassB - 1; ++i) 
-        zetaB[i] = pow(10, *(par + offset + i));
-      zetaToFraction(nMassB, zetaB, fracB);
-      for (unsigned int i = 0; i < nMassB; ++i) {
-        const double m = *(par + offset + nMassB - 1 + i);
-        const DoubleMass dm(m);
-        if (dm.GetFrac1() > 0) 
-          fractionsB[dm.GetMass1()] += dm.GetFrac1()*fracB[i];
-        if (dm.GetFrac2() > 0) 
-          fractionsB[dm.GetMass2()] += dm.GetFrac2()*fracB[i];
-      }
+      bool simpleModel = false;
+      if (!simpleModel) {
+        // component A
+        map<unsigned int, double> fractionsA;
+        const unsigned int nMassA = data.GetNMass();
+        double fracA[nMassA];
+        double zetaA[nMassA-1];
+        for (unsigned int i = 0; i < nMassA - 1; ++i)
+          zetaA[i] = pow(10, *(par + eNpars + i));
+        zetaToFraction(nMassA, zetaA, fracA);
+        for (unsigned int i = 0; i < nMassA; ++i) {
+          const double m = *(par + eNpars + nMassA - 1 + i);
+          const DoubleMass dm(m);
+          if (dm.GetFrac1() > 0)
+            fractionsA[dm.GetMass1()] += dm.GetFrac1()*fracA[i];
+          if (dm.GetFrac2() > 0)
+            fractionsA[dm.GetMass2()] += dm.GetFrac2()*fracA[i];
+        }
+        // component B
+        map<unsigned int, double> fractionsB;
+        const unsigned int nMassB = data.GetNGalMass();
+        double fracB[nMassB];
+        double zetaB[nMassB-1];
+        const unsigned int offset = eNpars + nMassA - 1 + nMassA;
+        for (unsigned int i = 0; i < nMassB - 1; ++i) 
+          zetaB[i] = pow(10, *(par + offset + i));
+        zetaToFraction(nMassB, zetaB, fracB);
+        for (unsigned int i = 0; i < nMassB; ++i) {
+          const double m = *(par + offset + nMassB - 1 + i);
+          const DoubleMass dm(m);
+          if (dm.GetFrac1() > 0) 
+            fractionsB[dm.GetMass1()] += dm.GetFrac1()*fracB[i];
+          if (dm.GetFrac2() > 0) 
+            fractionsB[dm.GetMass2()] += dm.GetFrac2()*fracB[i];
+        }
 
-      const double gammaA = par[eGammaA];
-      const double gammaBl = par[eGammaBl];
-      const double deltaGammaA = par[eDeltaGammaA];
-      const double deltaGammaBl = par[eDeltaGammaBl];
-      const double RmaxA = pow(10, par[eLgRmaxA]);
-      const double RmaxBl = pow(10, par[eLgRmaxBl]);
-      const double RmaxBd = pow(10, par[eLgRmaxBd]);
-      const double phiA15 = pow(10, par[eLgPhiA15]);
-      const double phiBl17 = pow(10, par[eLgPhiBl17]);
-      const double phiBd18 = pow(10, par[eLgPhiBd18]);
-      const double phiU19 = pow(10, par[eLgPhiU19]);
+        const double gammaA = par[eGammaA];
+        const double gammaBl = par[eGammaBl];
+        const double deltaGammaA = par[eDeltaGammaA];
+        const double deltaGammaBl = par[eDeltaGammaBl];
+        const double RmaxA = pow(10, par[eLgRmaxA]);
+        const double RmaxBl = pow(10, par[eLgRmaxBl]);
+        const double RmaxBd = pow(10, par[eLgRmaxBd]);
+        const double phiA15 = pow(10, par[eLgPhiA15]);
+        const double phiBl17 = pow(10, par[eLgPhiBl17]);
+        const double phiBd18 = pow(10, par[eLgPhiBd18]);
+        const double phiU19 = pow(10, par[eLgPhiU19]);
 
-      const double gammaUA = par[eGammaU];
-      const double gammaUB = par[eGammaU];
-      const double deltaGammaU = par[eDeltaGammaU];
-      const double RmaxU = pow(10, par[eLgRmaxU]);
-      const double facBU = par[eFacBU];
-      const double boost = RmaxU / RmaxA;
+        const double gammaUA = par[eGammaU];
+        const double gammaUB = par[eGammaU];
+        const double deltaGammaU = par[eDeltaGammaU];
+        const double RmaxU = pow(10, par[eLgRmaxU]);
+        const double facBU = par[eFacBU];
+        const double boost = RmaxU / RmaxA;
 
 
-      auto bplFunc = [](const double E, const double R0,
-                        const double Z, const double gamma,
-                        const double dG) {
-        const double Ebreak = Z*R0;
-        const double s = 3;
-        const double corr = Z == 1 ? 0.1 : 0;
-        const double flux =
-        pow(E, gamma - corr) * pow(1 + pow(E/Ebreak, s), dG/s);
-        if (flux != flux)
-          cerr << " nan! " << E <<  " " << Ebreak << " " << E/Ebreak << endl;
-        return flux;
-      };
+        auto bplFunc = [](const double E, const double R0,
+                          const double Z, const double gamma,
+                          const double dG) {
+          const double Ebreak = Z*R0;
+          const double s = 3;
+          const double corr = Z == 1 ? 0.1 : 0;
+          const double flux =
+          pow(E, gamma - corr) * pow(1 + pow(E/Ebreak, s), dG/s);
+          if (flux != flux)
+            cerr << " nan! " << E <<  " " << Ebreak << " " << E/Ebreak << endl;
+          return flux;
+        };
 
-      const double ErefA = pow(10,15.05);
-      const double ErefBl = pow(10,17.05);
-      const double ErefBd = pow(10,18.05);
-      const double ErefU = pow(10,19.05);
-      double sumA = 0;
-      for (const auto iter : fractionsA) {
-        const double Z = aToZ(iter.first);
-        const double f = iter.second;
-        sumA += f * bplFunc(ErefA, RmaxA, Z, gammaA, deltaGammaA);
-      }
-      double sumBl = 0;
-      double sumBd = 0;
-      for (const auto iter : fractionsB) {
-        const double Z = aToZ(iter.first);
-        const double f = iter.second;
-        sumBl += f * bplFunc(ErefBl, RmaxBl, Z, gammaBl, deltaGammaBl);
-        sumBd += f * bplFunc(ErefBd, RmaxBd, Z, gammaA, deltaGammaA);
-      }
-      const double facA = phiA15 / sumA;
-      const double facBl = phiBl17 / sumBl;
-      const double facBd = phiBd18 / sumBd;
+        const double ErefA = pow(10,15.05);
+        const double ErefBl = pow(10,17.05);
+        const double ErefBd = pow(10,18.05);
+        const double ErefU = pow(10,19.05);
+        double sumA = 0;
+        for (const auto iter : fractionsA) {
+          const double Z = aToZ(iter.first);
+          const double f = iter.second;
+          sumA += f * bplFunc(ErefA, RmaxA, Z, gammaA, deltaGammaA);
+        }
+        double sumBl = 0;
+        double sumBd = 0;
+        for (const auto iter : fractionsB) {
+          const double Z = aToZ(iter.first);
+          const double f = iter.second;
+          sumBl += f * bplFunc(ErefBl, RmaxBl, Z, gammaBl, deltaGammaBl);
+          sumBd += f * bplFunc(ErefBd, RmaxBd, Z, gammaA, deltaGammaA);
+        }
+        const double facA = phiA15 / sumA;
+        const double facBl = phiBl17 / sumBl;
+        const double facBd = phiBd18 / sumBd;
 
-      Spectrum& spectrum = data.fSpectrum;
-      map<unsigned int, double> fractions;
-      spectrum.SetParameters(source, 0, 0, data.fNLgE, data.fLgEmin,
-                             data.fLgEmax, fractions);
-      const unsigned int nBins = spectrum.GetNBinsInternal();
-      const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
+        Spectrum& spectrum = data.fSpectrum;
+        map<unsigned int, double> fractions;
+        spectrum.SetParameters(source, 0, 0, data.fNLgE, data.fLgEmin,
+                               data.fLgEmax, fractions);
+        const unsigned int nBins = spectrum.GetNBinsInternal();
+        const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
       
-      Spectrum::SpecMap extraGal;
-      for (const auto iter : fractionsA) {
-        const int A = iter.first;
-        TMatrixD& m = extraGal[A];
-        if (!m.GetNoElements())
-          m.ResizeTo(nBins, 1);
-        double lgE = data.fLgEmin + dlgE / 2;
-        for (unsigned int iE = 0; iE < nBins; ++iE) {
-          const double Z = aToZ(A);
-          const double f = iter.second;
-          const double E = pow(10, lgE);
-          const double flux =
-            facA * f * bplFunc(E/boost, RmaxA, Z,
-                               gammaUA, deltaGammaU);
-          m[iE][0] += flux;
-          lgE += dlgE;
-        }
-      }
-      for (const auto iter : fractionsB) {
-        const int A = iter.first;
-        TMatrixD& m = extraGal[A];
-        if (!m.GetNoElements())
-          m.ResizeTo(nBins, 1);
-        double lgE = data.fLgEmin + dlgE / 2;
-        for (unsigned int iE = 0; iE < nBins; ++iE) {
-          const double Z = aToZ(A);
-          const double f = iter.second;
-          const double E = pow(10, lgE);
-          const double flux =
-            facBU * facBd * f * bplFunc(E/boost, RmaxBd, Z, gammaUB, deltaGammaU);
-          m[iE][0] += flux;
-          lgE += dlgE;
-        }
-      }
-      spectrum.SetInjectedSpectrum(source, extraGal, data.fNLgE,
-                                   data.fLgEmin, data.fLgEmax);
-      data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
-
-
-      const double sumU =
-        data.fPropagator->GetFluxSumInterpolated(log10(ErefU));
-      const double facU = phiU19 / sumU;
-      data.fSpectrum.Rescale(facU);
-      data.fPropagator->Rescale(facU);
-      for (unsigned int iMass = 1; iMass <= GetMaxA(); ++iMass) {
-        const int A = iMass;
-        if (fractionsA.count(A) || fractionsB.count(A)) {
-          const double Z = aToZ(A);
-          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
-          double lgE = data.fLgEmin + dlgE/2;
-          TMatrixD galactic(data.fNLgE, 1);
-          for (unsigned int iE = 0; iE < data.fNLgE; ++iE) {
+        Spectrum::SpecMap extraGal;
+        for (const auto iter : fractionsA) {
+          const int A = iter.first;
+          TMatrixD& m = extraGal[A];
+          if (!m.GetNoElements())
+            m.ResizeTo(nBins, 1);
+          double lgE = data.fLgEmin + dlgE / 2;
+          for (unsigned int iE = 0; iE < nBins; ++iE) {
+            const double Z = aToZ(A);
+            const double f = iter.second;
             const double E = pow(10, lgE);
-            if (fractionsA.count(A)) {
-              const double f = fractionsA[A];
-              const double fac = facA * f;
-              const double flux =
-                bplFunc(E, RmaxA, Z, gammaA, deltaGammaA);
-              galactic[iE][0] += fac * flux;
-            }
-            if (fractionsB.count(A)) {
-              const double f = fractionsB[A];
-              {
-                const double fac = facBl * f;
-                const double flux =
-                  bplFunc(E, RmaxBl, Z, gammaBl, deltaGammaBl);
-                galactic[iE][0] += fac * flux;
-              }
-              {
-                const double fac = facBd * f;
-                const double flux =
-                  bplFunc(E, RmaxBd, Z, gammaA, deltaGammaA);
-                galactic[iE][0] += fac * flux;
-              }
-            }
+            const double flux =
+              facA * f * bplFunc(E/boost, RmaxA, Z,
+                                 gammaUA, deltaGammaU);
+            m[iE][0] += flux;
             lgE += dlgE;
           }
-          data.fPropagator->AddComponent(A + kGalacticOffset, galactic);
         }
+        for (const auto iter : fractionsB) {
+          const int A = iter.first;
+          TMatrixD& m = extraGal[A];
+          if (!m.GetNoElements())
+            m.ResizeTo(nBins, 1);
+          double lgE = data.fLgEmin + dlgE / 2;
+          for (unsigned int iE = 0; iE < nBins; ++iE) {
+            const double Z = aToZ(A);
+            const double f = iter.second;
+            const double E = pow(10, lgE);
+            const double flux =
+              facBU * facBd * f * bplFunc(E/boost, RmaxBd, Z, gammaUB, deltaGammaU);
+            m[iE][0] += flux;
+            lgE += dlgE;
+          }
+        }
+        spectrum.SetInjectedSpectrum(source, extraGal, data.fNLgE,
+                                     data.fLgEmin, data.fLgEmax);
+        data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
+
+
+        const double sumU =
+          data.fPropagator->GetFluxSumInterpolated(log10(ErefU));
+        const double facU = phiU19 / sumU;
+        data.fSpectrum.Rescale(facU);
+        data.fPropagator->Rescale(facU);
+        for (unsigned int iMass = 1; iMass <= GetMaxA(); ++iMass) {
+          const int A = iMass;
+          if (fractionsA.count(A) || fractionsB.count(A)) {
+            const double Z = aToZ(A);
+            const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+            double lgE = data.fLgEmin + dlgE/2;
+            TMatrixD galactic(data.fNLgE, 1);
+            for (unsigned int iE = 0; iE < data.fNLgE; ++iE) {
+              const double E = pow(10, lgE);
+              if (fractionsA.count(A)) {
+                const double f = fractionsA[A];
+                const double fac = facA * f;
+                const double flux =
+                  bplFunc(E, RmaxA, Z, gammaA, deltaGammaA);
+                galactic[iE][0] += fac * flux;
+              }
+              if (fractionsB.count(A)) {
+                const double f = fractionsB[A];
+                {
+                  const double fac = facBl * f;
+                  const double flux =
+                    bplFunc(E, RmaxBl, Z, gammaBl, deltaGammaBl);
+                  galactic[iE][0] += fac * flux;
+                }
+                {
+                  const double fac = facBd * f;
+                  const double flux =
+                    bplFunc(E, RmaxBd, Z, gammaA, deltaGammaA);
+                  galactic[iE][0] += fac * flux;
+                }
+              }
+              lgE += dlgE;
+            }
+            data.fPropagator->AddComponent(A + kGalacticOffset, galactic);
+          }
+        }
+
+        data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
+        data.fQ0Err = 0;
       }
-
-      data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
-      data.fQ0Err = 0;
-    }
-
-
-    bool test = false;
-    if (test) {
-      double lgEtest = 15.6;
-      while (lgEtest < 15.9) {
-        const double w = pow(pow(10,lgEtest), 3);
-        cout << " =-=-> " << lgEtest << " "
-             << data.fPropagator->GetFluxSumInterpolated(lgEtest) << " "
-             << w*data.fPropagator->GetFluxSumInterpolated(lgEtest) << " "
-             << data.fPropagator->GetFluxSum(lgEtest) << " "
-             << w*data.fPropagator->GetFluxSum(lgEtest) << " "
-             << endl;
-        lgEtest += 0.01;
+      else {
+        throw std::runtime_error("simple model not implemented");
       }
     }
+    
+    const bool debug = false;
     
     data.fChi2Spec = 0;
     data.fChi2SpecLowE = 0;
@@ -532,13 +533,13 @@ namespace prop {
       const double r = (y -  m) / sigma;
       const double r2 = r*r;
       data.fChi2Spec += r2;
-      if (test) {
+      if (debug) {
         const double w = pow(pow(10, flux.fLgE), 3);
         cout << "---> " << flux.fLgE << " " << w*y << " " << w*m << " "
              << w*data.fPropagator->GetFluxSum(flux.fLgE) << " "
              << y << " " << m << " " << data.fPropagator->GetFluxSum(flux.fLgE)
              << " "
-             << (m-y)/m << " " << r2 << endl;
+             << (m-y)/m << " " << r2 << " " << data.fChi2Spec << endl;
       }
       if (flux.fLgE < 17.5)
         data.fChi2SpecLowE += r2; 
@@ -556,6 +557,10 @@ namespace prop {
       const double nExpected =
         data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
       chi2Zero += 2*nExpected;
+      if (debug) 
+        cout << " chi0 ==> " << lgE << " " << nExpected << " "
+             << data.fUHEExposure << " " << chi2Zero << endl;
+
       lgE += dLgE;
     }
     data.fChi2Spec += chi2Zero;

@@ -398,12 +398,12 @@ DrawValues(const FitData& fitData,
   fitPanel->SetTopMargin(0.001);
   gPad->Update();
   TLatex l;
-  const double textSize = 0.035;
+  const double textSize = 0.033;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
-  const double yStart = 0.99;
+  const double yStart = 1;
   double y = yStart;
-  const double dy = textSize*1.5;
+  const double dy = textSize*1.52;
   const double x = 0.;
   const vector<FitParameter>& fitParameters = fitData.fFitParameters;
   for (unsigned int i = 0; i < eNpars; ++i) {
@@ -417,10 +417,12 @@ DrawValues(const FitData& fitData,
          par == eDeltaGammaGal || par == eGammaGalLowE) &&
         fitParameters[i].fIsFixed)
       continue;
-    if ((par == eExtraProtonGamma || par == eExtraProtonMass ||
-         (par == eExtraProtonLgEmax && !fitOptions.BoostedModel())) &&
-        fitParameters[eExtraProtonFraction195].fValue <= 0)
+    if (!fitOptions.BoostedModel()) {
+      if ((par == eExtraProtonGamma || par == eExtraProtonMass ||
+           (par == eExtraProtonLgEmax || par == eExtraProtonLgRefE)) &&
+          fitParameters[eExtraProtonLgFraction].fValue <= -100)
         continue;
+    }
     if (!fitParameters[i].fIsFixed)
       parString << "#pm" << noshowpoint
                 << setprecision(1) << fitParameters[i].fError;
@@ -582,7 +584,7 @@ DrawValues(const FitData& fitData,
     l.DrawLatex(xEdot, eps0Y+0.0075, powerString.str().c_str());
     l.SetTextSize(textSize*0.7);
 #ifdef _PAPER_
-    l.DrawLatex(xEdot+0.15, eps0Y+0.005, "#frac{erg}{Mpc^{3} yr}");
+    l.DrawLatex(xEdot+0.16, eps0Y+0.005, "#frac{erg}{Mpc^{3} yr}");
 #else
     l.DrawLatex(xEdot+0.3, eps0Y+0.005, "#frac{erg}{Mpc^{3} yr}");
 #endif
@@ -654,7 +656,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
                                  kMagenta+2, 3));
   */
   const double gammaScaleSource = 2;
-  const double gammaScaleEarth = 3;
+  const double gammaScaleEarth = 3.;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
   const FitData& fitData = fitter.GetFitData();
@@ -666,7 +668,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(14, 21.5);
+  plot.SetXRange(17, 20.5);
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);

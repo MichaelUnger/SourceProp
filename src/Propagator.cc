@@ -94,8 +94,12 @@ namespace prop {
     const int index = LgEtoIndex(lgE - dlgE/2);
     if (index < 0 || index > int(fPropMatrices.GetN()) - 2)
       return 0;
-    const double y1 = log10(GetFluxSum(index));
-    const double y2 = log10(GetFluxSum(index+1));
+    const double c1 = GetFluxSum(index);
+    const double c2 = GetFluxSum(index+1);
+    if (c1 <= 0 || c2 <= 0)
+      return 0;
+    const double y1 = log10(c1);
+    const double y2 = log10(c2);
     // fluxes etc are evaluated at bin mid point
     const double x1 = lgEmin + index*dlgE + dlgE/2;
     const double x2 = lgEmin + (index+1)*dlgE + dlgE/2;

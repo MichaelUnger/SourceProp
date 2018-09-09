@@ -23,7 +23,7 @@ FitSummary::FitSummary() :
     fNNeutrinosErr[i] = 0;
     fProtonRatio185Err[i] = 0;
     fProtonFraction60Err[i] = 0;
-    fExtraProtonFraction195Err[i] = 0;
+    fExtraProtonLgFractionErr[i] = 0;
     fExtraProtonLgEmaxErr[i] = 0;
     fExtraProtonGammaErr[i] = 0;
   }
@@ -50,8 +50,9 @@ FitSummary::Fill(const prop::FitData& fitData,
   fLgEmaxGal = fitData.fFitParameters[eLgEmaxGal].fValue;
   fNoPhoton = fitData.fFitParameters[eNoPhoton].fValue;
   fLgPhotonField = fitData.fFitParameters[eLgPhotonFieldFac].fValue;
-  fExtraProtonFraction195 = fitData.fFitParameters[eExtraProtonFraction195].fValue;
+  fExtraProtonLgFraction = fitData.fFitParameters[eExtraProtonLgFraction].fValue;
   fExtraProtonLgEmax = fitData.fFitParameters[eExtraProtonLgEmax].fValue;
+  fExtraProtonLgRefE = fitData.fFitParameters[eExtraProtonLgRefE].fValue;
   fExtraProtonGamma = fitData.fFitParameters[eExtraProtonGamma].fValue;
 
   
@@ -64,8 +65,9 @@ FitSummary::Fill(const prop::FitData& fitData,
   fLgEmaxGalErr[0] = fitData.fFitParameters[eLgEmaxGal].fError;
   fNoPhotonErr[0] = fitData.fFitParameters[eNoPhoton].fError;
   fLgPhotonFieldErr[0] = fitData.fFitParameters[eLgPhotonFieldFac].fError;
-  fExtraProtonFraction195Err[0] = fitData.fFitParameters[eExtraProtonFraction195].fError;
+  fExtraProtonLgFractionErr[0] = fitData.fFitParameters[eExtraProtonLgFraction].fError;
   fExtraProtonLgEmaxErr[0] = fitData.fFitParameters[eExtraProtonLgEmax].fError;
+  fExtraProtonLgRefEErr[0] = fitData.fFitParameters[eExtraProtonLgRefE].fError;
   fExtraProtonGammaErr[0] = fitData.fFitParameters[eExtraProtonGamma].fError;
 
   const unsigned int nMass = fitData.GetNMass();

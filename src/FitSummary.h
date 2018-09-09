@@ -40,8 +40,9 @@ public:
   double fNNeutrinos;
   double fProtonRatio185;
   double fProtonFraction60;
-  double fExtraProtonFraction195;
+  double fExtraProtonLgFraction;
   double fExtraProtonLgEmax;
+  double fExtraProtonLgRefE;
   double fExtraProtonGamma;
 
   // 0: symmetric, 1: upErr, 2: lowErr
@@ -58,8 +59,9 @@ public:
   double fNNeutrinosErr[3];
   double fProtonRatio185Err[3];
   double fProtonFraction60Err[3];
-  double fExtraProtonFraction195Err[3];
+  double fExtraProtonLgFractionErr[3];
   double fExtraProtonLgEmaxErr[3];
+  double fExtraProtonLgRefEErr[3];
   double fExtraProtonGammaErr[3];
   
   std::vector<double> fMasses;
@@ -95,6 +97,6 @@ public:
   bool fFitFailed;
   double fFitEDM;
 
-  ClassDefNV(FitSummary, 5);
+  ClassDefNV(FitSummary, 7);
 };
 #endif

@@ -63,7 +63,7 @@ public:
     else if (modelName == "sibyll23c")
       return eSibyll23c;
     else
-      throw std::runtime_error("unknown model" + modelName);
+      throw std::runtime_error("unknown model " + modelName);
   }
 
   TGraphErrors GetMeanLnA(const TGraphErrors& meanXmax, const EModel m) const;

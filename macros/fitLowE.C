@@ -84,7 +84,7 @@ snrFunc(const double* x, const double* p)
   const double eps = p[5];
   const double minMass = p[6];
   const double maxMass = p[7];
-  
+
   double fluxSum = 0;
   double refSum = 0;
   for (unsigned int i = 0; i < gFraction.size(); ++i) {
@@ -516,14 +516,16 @@ fitLowE(const double scale = 3)
     sumFlux->SetParameter(i, startPar[i]);
     sumFlux->SetParName(i, names[i].c_str());
   }
-  //  sumFlux->FixParameter(1,3.74265e+16);
+  //  sumFlux->FixParameter(1,3.74265e+15);
   sumFlux->FixParameter(4,-0.5);
   //  sumFlux->FixParameter(5,10);
   //sumFlux->SetParLimits(7,1e15, 2.3e+16);
   sumFlux->SetParLimits(8,-10+scale, -2+scale);
   sumFlux->SetParLimits(10,0, 1);
   //  sumFlux->FixParameter(10,0);
-  sumFlux->FixParameter(11,4);
+  const double width = 3;
+  sumFlux->FixParameter(11,width);
+  sumFlux->FixParameter(5,width);
   sumFlux->SetLineColor(kBlack);
   all->Fit("sumFlux");
 

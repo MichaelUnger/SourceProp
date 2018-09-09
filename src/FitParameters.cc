@@ -14,8 +14,8 @@ namespace prop {
        "#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
-       "f_{noPhot}", "lg(fphot)", "f(UHEp)", "lg(Emax, UHEp)",
-       "#gamma(UHEp)", "m_{extra}", "NA1", "NA2"};
+       "f_{noPhot}", "lg(fphot)", "lg(f(UHEp))", "lg(Emax, UHEp)",
+       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "N/A"};
 
     if (boosted) {
       parNames[eGammaA] = "\\gamma_{A}";
@@ -43,8 +43,9 @@ namespace prop {
     string parNames[eNpars] =
       {"lgResc", "deltaEsc", "gammaInj", "lgRmax", 
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
-       "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonFraction",
-       "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass"};
+       "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonLgFraction",
+       "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass",
+       "extraProtonLgRefE", "NA"};
 
     if (boosted) {
       parNames[eGammaA] = "gammaA";
