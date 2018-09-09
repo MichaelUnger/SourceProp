@@ -357,6 +357,45 @@ namespace prop {
     return exp(yn / (xLow - xUp));
   }
 
+  double
+  Eval(const TH1D& h, const double xx)
+  {
+    const TAxis& axis = *h.GetXaxis();
+    const int iBin = axis.FindFixBin(xx);
+    if (iBin <= 0 || iBin >= axis.GetNbins() + 1) {
+      cerr << " Eval(): outside TH1 range, "
+           << xx << ", " << axis.GetXmin() << ", "
+           << axis.GetXmax() << ", "
+           << iBin << ", " << axis.GetNbins() << endl;
+      return 0;
+    }
+
+    int i1, i2;
+    if (iBin == 1) {
+      i1 = 1;
+      i2 = 2;
+    }
+    else if (iBin == axis.GetNbins()) {
+      i1 = iBin - 1;
+      i2 = iBin;
+    }
+    else if (xx > axis.GetBinCenter(iBin)) {
+      i1 = iBin;
+      i2 = iBin + 1;
+    }
+    else {
+      i1 = iBin - 1;
+      i2 = iBin;
+    }
+
+    const double xLow = axis.GetBinCenter(i1);
+    const double xUp = axis.GetBinCenter(i2);
+    const double yLow = h.GetBinContent(i1);
+    const double yUp = h.GetBinContent(i2);
+    const double yn = xx*(yLow - yUp) + xLow*yUp - xUp*yLow;
+    return exp(yn / (xLow - xUp));
+  }
+
   void
   Spectrum::CalculateSpectrum()
     const
@@ -410,21 +449,30 @@ namespace prop {
       TH1D pion("pion", "", nBins, fLgEmin, fLgEmax);
 
       vector<TH1D*> prodSpectrum;
+      vector<TH1D*> logProdSpectrum;
       for (int i = 0; i <= Ainj; ++i) {
-        if (i == 0)
+        if (i == 0) {
           prodSpectrum.push_back(NULL); // padding
+          logProdSpectrum.push_back(NULL); // padding
+        }
         else {
           stringstream tit;
           tit << "prodSpec" << i;
           prodSpectrum.push_back(new TH1D(tit.str().c_str(), "",
                                           nBins, fLgEmin, fLgEmax));
+          tit.str("");
+          tit << "logProdSpec" << i;
+          logProdSpectrum.push_back(new TH1D(tit.str().c_str(), "",
+                                             nBins, fLgEmin, fLgEmax));
         }
       }
 
       TH1D& h = *prodSpectrum[Ainj];
+      TH1D& lh = *logProdSpectrum[Ainj];
       for (unsigned int iE = 0; iE < nBins; ++iE) {
         TMatrixD& m = fInj[Ainj];
         h.SetBinContent(iE + 1, m[iE][0]);
+        lh.SetBinContent(iE + 1, m[iE][0] ? log(m[iE][0]) : -1e100);
       }
 
       // nucleus production
@@ -438,7 +486,7 @@ namespace prop {
         for (unsigned int iE = 0; iE < nBins; ++iE) {
           const double E = pow(10, lgE);
           for (int Aprim = Asec + 1; Aprim <= Ainj; ++Aprim) {
-            const TH1D& hPrim = *prodSpectrum[Aprim];
+            const TH1D& loghPrim = *logProdSpectrum[Aprim];
 
             // pd part
             {
@@ -451,7 +499,7 @@ namespace prop {
                   const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                   const double fInt = lambdaE / (lambdaE + lambdaI);
-                  const double Qprim = LogEval(hPrim, log10(Eprim));
+                  const double Qprim = Eval(loghPrim, log10(Eprim));
                   const double pdFrac =
                     fSource->GetProcessFraction(Eprim, Aprim, VSource::ePD);
                   const double flux = pdFrac * fInt * bPD * jacobi * Qprim;
@@ -474,7 +522,7 @@ namespace prop {
                     const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
                     const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                     const double fInt = lambdaE / (lambdaE + lambdaI);
-                    const double Qprim = LogEval(hPrim, log10(Eprim));
+                    const double Qprim = Eval(loghPrim, log10(Eprim));
                     const double ppFrac =
                       fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                     const double flux = ppFrac * fInt * jacobi * Qprim;
@@ -491,7 +539,7 @@ namespace prop {
                     const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
                     const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                     const double fInt = lambdaE / (lambdaE + lambdaI);
-                    const double Qprim = LogEval(hPrim, log10(Eprim));
+                    const double Qprim = Eval(loghPrim, log10(Eprim));
                     const double ppFrac =
                       fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                     const double flux = ppFrac * fInt * jacobi * Qprim;
@@ -507,7 +555,7 @@ namespace prop {
                   const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                   const double fInt = lambdaE / (lambdaE + lambdaI);
-                  const double Qprim = LogEval(hPrim, log10(Eprim));
+                  const double Qprim = Eval(loghPrim, log10(Eprim));
                   const double ppFrac =
                     fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
                   const double flux = ppFrac * fInt * jacobi * Qprim;
@@ -517,6 +565,12 @@ namespace prop {
             }
           }
           lgE += dlgE;
+        }
+        // update log(prod)
+        TH1D& logSec = *logProdSpectrum[Asec];
+        for (unsigned int iE = 0; iE < nBins; ++iE) {
+          const double c = hSec.GetBinContent(iE+1);
+          logSec.SetBinContent(iE+1, c ? log(c) : -1e100);
         }
       }
 
@@ -535,6 +589,7 @@ namespace prop {
             mProtonProd[iE][0] += flux;
         }
         delete prodSpectrum[i];
+        delete logProdSpectrum[i];
       }
 
       double lgE = fLgEmin + dlgEOrig / 2;
