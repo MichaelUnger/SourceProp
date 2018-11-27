@@ -422,6 +422,8 @@ DrawValues(const FitData& fitData,
            (par == eExtraProtonLgEmax || par == eExtraProtonLgRefE)) &&
           fitParameters[eExtraProtonLgFraction].fValue <= -100)
         continue;
+      if (par == eUnused1)
+        continue;
     }
     if (!fitParameters[i].fIsFixed)
       parString << "#pm" << noshowpoint
