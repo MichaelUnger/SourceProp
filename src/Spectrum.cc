@@ -425,6 +425,21 @@ namespace prop {
   Spectrum::CalculateSpectrum()
     const
   {
+
+    // pion fractions in photo-pion production
+#undef _UFA15_    
+#ifdef _UFA15_
+    // Delta+ --> p + pi0, Delta0 --> n + pi0 
+    const double neutralPionFraction = 0.5;
+    // Delta+ --> n + pi+, Delta0 --> p + pi- 
+    const double chargedPionFraction = 0.5; 
+#else
+    // Delta+ --> p + pi0, Delta0 --> n + pi0 
+    const double neutralPionFraction = 2/3.; 
+    // Delta+ --> n + pi+, Delta0 --> p + pi- 
+    const double chargedPionFraction = 1/3.; 
+#endif
+
     // init injected flux
     GetInjFlux();
     
@@ -621,21 +636,22 @@ namespace prop {
       const unsigned int n = fN;
 
       for (unsigned int iE = 0; iE < n; ++iE) {
+        // proton photo-pion production of nuclei
         const double fPP = LogEval(pp, lgE);
         mPP[iE][0] += fPP;
-        mProtonProd[iE][0] += fPP / 2;
-        mNeutronProd[iE][0] += fPP / 2;
+        mProtonProd[iE][0] += fPP * neutralPionFraction;
+        mNeutronProd[iE][0] += fPP * chargedPionFraction;
 
+        // nucleons from photo-dissociation of nuclei
         const double fPD = LogEval(pd, lgE);
         mPD[iE][0] += fPD;
         mProtonProd[iE][0] += fPD / 2;
         mNeutronProd[iE][0] += fPD / 2;
 
         const double fPion = LogEval(pion, lgE);
-       // 50% pi0, 25% pi+, 25% pi-
-        mPionPlus[iE][0] += fPion * 0.25;
-        mPionMinus[iE][0] += fPion * 0.25;
-        mPionZero[iE][0] += fPion * 0.5;
+        mPionPlus[iE][0] += fPion * chargedPionFraction/2;
+        mPionMinus[iE][0] += fPion * chargedPionFraction/2;
+        mPionZero[iE][0] += fPion * neutralPionFraction;
         lgE += dlgEOrig;
       }
     }
@@ -661,7 +677,7 @@ namespace prop {
       const double kappa = 0.8;
 
       // fraction of p + gamma --> p + pi0
-      const double bPP = 0.5;
+      const double bPP = neutralPionFraction;
 
       // test binning
       if (1+log10(kappa)/dlgEOrig > 0.05) {
