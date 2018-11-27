@@ -28,11 +28,12 @@ namespace prop {
     enum ESpectrumType {
       eExponential,
       eBrokenExponential,
-      eHeavyside,
+      eHeaviside,
       eDeltaGamma1,
       eDeltaGamma2,
       eDeltaGamma3,
       eDeltaGamma4,
+      eBoosted,
       eExternal
     };
 

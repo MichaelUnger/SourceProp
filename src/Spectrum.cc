@@ -192,8 +192,24 @@ namespace prop {
       else
         return pow(E / E0, fGamma);
     }
-    else if (fSpectrumType == eHeavyside)
+    else if (fSpectrumType == eHeaviside)
       return E > Emax ? 0 :pow(E / E0, fGamma);
+    else if (fSpectrumType == eBoosted) {
+      const double kappa = 1;
+      const double c = 1;
+      const double gamma = fGamma;
+      const double alpha = 1.5;
+      const double gammaMax = 45;
+      const double Emin = fRmax*aToZ(A)/26.;
+      const double Emax = aToZ(A)*5e17/26.;
+      const double beta = 2-2*gamma+alpha;
+      const double norm = kappa*c/(1-beta);
+      const double gMin = std::min(gammaMax, sqrt(E/Emin));
+      const double gMax = std::max(1., sqrt(E/Emax));
+      const double t1 = pow(gMin, 1 - beta) - pow(gMax, 1 - beta);
+      const double dndE = norm * pow(E, -gamma) * t1;
+      return std::max(0., dndE);
+    }
     else
       throw runtime_error("spectrum type not implemented");
   }
@@ -210,7 +226,7 @@ namespace prop {
       return fac*pow(GetE0(), 2) * pow(Emax / GetE0(), fGamma+2) *
         (Gamma1 - Gamma2);
     }
-    else if (fSpectrumType == eHeavyside) {
+    else if (fSpectrumType == eHeaviside) {
       const double energy1 = fmin(E1, Emax);
       const double energy2 = fmin(E2, Emax);
       if (fabs(fGamma+2) < 1e-9)
@@ -222,6 +238,10 @@ namespace prop {
                                                    pow(energy1 / GetE0(),
                                                        fGamma+2));
     }
+    else if (fSpectrumType == eBoosted) {
+      cerr << " ---> WARNING: boosted integral not implemented " << endl;
+      return 1;
+    }
     else {
       throw runtime_error("integral not implemented for this spectrum");
     }
@@ -232,6 +252,11 @@ namespace prop {
     const
   {
     const double Emax = fRmax * aToZ(A);
+    /*
+    for (const auto tmp : fFractions)
+      cout << " --> " << tmp.first << " " << tmp.second << endl;
+    cout << " A " << A << endl;
+    */
     const double fac = fNorm * fFractions.at(A);
     if (fSpectrumType == eExponential) {
       const double Gamma = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
@@ -239,7 +264,7 @@ namespace prop {
     }
     else if (fSpectrumType == eBrokenExponential)
       throw runtime_error("integral for eBrokenExponential not implemented");
-    else if (fSpectrumType == eHeavyside) {
+    else if (fSpectrumType == eHeaviside) {
       if (fabs(fGamma+2) < 1e-9)
         return numeric_limits<double>::infinity();
       else {
