@@ -157,7 +157,7 @@ namespace prop {
         if (par[eExtraProtonLgFraction] > -100) {
           const double refLgE = par[eExtraProtonLgRefE];
           const double refE = pow(10, refLgE);
-          const double sum = spectrum.GetFluxSum(19.5);
+          const double sum = spectrum.GetFluxSum(refLgE);
           const double lgEmin = spectrum.GetLgEmin();
           const double lgEmax = spectrum.GetLgEmax();
           const double n = spectrum.GetN();
@@ -231,7 +231,7 @@ namespace prop {
           double galSum = 0;
           for (const auto iter : galFractions) {
             const double Z = aToZ(iter.first);
-            const double emaxGal = pow(10, par[eLgEmaxGal]*Z/26.);
+            const double emaxGal = pow(10, par[eLgEmaxGal])*Z/26.;
             const double phiGal = iter.second * exp(-E0/emaxGal);
             galSum += phiGal;
           }
@@ -241,7 +241,7 @@ namespace prop {
           for (const auto iter : galFractions) {
             double lgE = data.fLgEmin + dlgE/2;
             const double Z = aToZ(iter.first);
-            const double emaxGal = pow(10, par[eLgEmaxGal]*Z/26.);
+            const double emaxGal = pow(10, par[eLgEmaxGal])*Z/26.;
             TMatrixD galactic(data.fNLgE, 1);
             for (unsigned int i = 0; i < data.fNLgE; ++i) {
               const double E = pow(10, lgE);
