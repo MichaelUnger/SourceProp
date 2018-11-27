@@ -253,7 +253,9 @@ namespace prop {
         else if (type == "deltaGamma4")
           fSpectrumType = Spectrum::eDeltaGamma4;
         else if (type == "heavyside")
-          fSpectrumType = Spectrum::eHeavyside;
+          fSpectrumType = Spectrum::eHeaviside;
+        else if (type == "boosted")
+          fSpectrumType = Spectrum::eBoosted;
         else if (type == "external")
           fSpectrumType = Spectrum::eExternal;
         else
