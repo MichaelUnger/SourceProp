@@ -204,6 +204,8 @@ namespace prop {
           fSpectrumDataType = eTA2013;
         else if (type == "TASixYear")
           fSpectrumDataType = eTASixYear;
+        else if (type == "TANineYear")
+          fSpectrumDataType = eTANineYear;
         else
           throw runtime_error("unknown spectrum data type: " + type);
         fSpectrumDataTypeName = type;
@@ -496,6 +498,8 @@ namespace prop {
       return "TA 2013";
     case eTASixYear:
       return "TA 6 year";
+    case eTANineYear:
+      return "TA 9 year";
     case eAuger2013:
       return "Auger 2013.";
     case eAuger2017:

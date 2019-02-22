@@ -62,7 +62,8 @@ namespace prop {
       eAuger2013,
       eTA2013,
       eTASixYear,
-      eAuger2017
+      eAuger2017,
+      eTANineYear
     };
 
     enum ELowESpectrumDataType {

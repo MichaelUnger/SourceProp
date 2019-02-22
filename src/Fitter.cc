@@ -916,12 +916,18 @@ namespace prop {
       }
     case FitOptions::eTA2013:
     case FitOptions::eTASixYear:
+    case FitOptions::eTANineYear:
       {
-        throw runtime_error("please implement TA exposure");
         ifstream in(fOptions.GetDataDirname() +
                     (fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
                      "/TA-SD-spectrum-2013.dat" :
-                     "/TA-SD-spectrum-6Year.dat"));
+                     (fOptions.GetSpectrumDataType() == FitOptions::eTASixYear ?
+                      "/TA-SD-spectrum-6Year.dat" :
+                      "/TA-SD-spectrum-9Year.dat")
+                     ));
+        double exposure;
+        in >> exposure;
+        fFitData.fUHEExposure = exposure;
         while (true) {
           FluxData fluxData;
           double flux, fluxDown, fluxUp, N, dummy;
@@ -929,7 +935,10 @@ namespace prop {
           if (!in.good())
             break;
           const double E3 = pow(pow(10, fluxData.fLgE), 3);
-          const double convert = (km2 * year) / (m2 * s) / E3;
+          const double convert =
+            fOptions.GetSpectrumDataType() == FitOptions::eTANineYear ?
+            (km2 * year) / (m2 * s) :
+            (km2 * year) / (m2 * s) / E3;
           fluxData.fFlux = flux * convert;
           const double eyUp = (fluxUp - flux) * convert;
           const double eyDown = (flux - fluxDown) * convert;
@@ -944,7 +953,7 @@ namespace prop {
           fFitData.fAllFluxData.push_back(fluxData);
           if (fluxData.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(fluxData);
-            if (fluxData.fFluxErr/fluxData.fFlux < 0.1)
+            if (fluxData.fFlux > 0)
               fFitData.fFluxDataLowStat.push_back(fluxData);
           }          
         }
