@@ -172,6 +172,7 @@ namespace prop {
       if (m.fRepA > kGalacticOffset)
         continue;
       TH1D* hInt = NULL;
+      TH1D* hLossEP = NULL;
       TH1D* hEsc = NULL;
       TH1D* hRatio = NULL;
       if (!showRatio) {
@@ -181,6 +182,7 @@ namespace prop {
                                   ";lg(E/eV);c #tau  [a.u.]",
                                   n, x1, x2));
         hInt = fHists.back();
+
         name.str("");
         name << "lambdaEsc" << m.fRepA;
         fHists.push_back(new TH1D(name.str().c_str(),
@@ -188,6 +190,17 @@ namespace prop {
                                   n, x1, x2));
         hEsc = fHists.back();
         hEsc->SetLineStyle(2);
+
+        if (source->HasEPP()) {
+          cout << " ok " << source->HasEPP() << endl;
+          name.str("");
+          name << "lambdaLossEP" << m.fRepA;
+          fHists.push_back(new TH1D(name.str().c_str(),
+                                    ";lg(E/eV);c #tau  [a.u.]",
+                                  n, x1, x2));
+          hLossEP = fHists.back();
+          hLossEP->SetLineStyle(3);
+        }
       }
       else {
         stringstream name;
@@ -228,6 +241,17 @@ namespace prop {
               yMin = lEsc;
             hEsc->SetBinContent(i+1, lEsc);
             hEsc->SetLineColor(m.fColor);
+
+            if (hLossEP) {
+              const double lossEP = source->LambdaLossEP(pow(10, lgE), m.fRepA);
+              
+              if (lgE < xMax && (yMax < 0 || lossEP > yMax))
+                yMax = lossEP;
+              if (lgE < xMax && (yMin < 0 || lossEP < yMin))
+                yMin = lossEP;
+              hLossEP->SetBinContent(i+1, lossEP);
+              hLossEP->SetLineColor(m.fColor);
+            }
           }
         }
       }
@@ -254,12 +278,18 @@ namespace prop {
       esc->SetLineStyle(2);
       esc->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
       TLatex l;
-      l.SetTextAlign(23); l.SetTextSize(0.06);
+      l.SetTextAlign(13); l.SetTextSize(0.06);
       l.SetTextFont(42); l.SetNDC(true);
       l.SetTextSize(0.05);
       l.SetTextColor(kBlack);
-      l.DrawLatex(0.75, 0.865, "interaction");
-      l.DrawLatex(0.73, 0.795, "escape");
+      l.DrawLatex(0.66, 0.865, "interaction");
+      l.DrawLatex(0.66, 0.795, "escape");
+      if (source->HasEPP()) {
+        TLine* ep = new TLine();
+        ep->SetLineStyle(3);
+        ep->DrawLineNDC(0.58, 0.71, 0.64, 0.71);
+        l.DrawLatex(0.66, 0.725, "#chi_{loss}(e^{#pm})");
+      }
     }
 
   }

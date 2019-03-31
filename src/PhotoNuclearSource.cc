@@ -26,6 +26,7 @@ namespace prop {
     ReadBranch();
     ReadPD();
     ReadPPP();
+    ReadEPP();
   }
 
 
@@ -36,6 +37,10 @@ namespace prop {
         delete iter.second;
 
     for (auto lambdaMap : fPhotoPionProductions)
+      for (auto iter : lambdaMap)
+        delete iter.second;
+
+    for (auto lambdaMap : fElectronPositronProductions)
       for (auto iter : lambdaMap)
         delete iter.second;
 
@@ -181,7 +186,7 @@ namespace prop {
           const double dLgGamma = (14-6)/200.;
           double lInv;
           while (iss >> lInv) {
-            lambdaInv.push_back(1/(TMath::Max(lInv,1e-99)));
+            lambdaInv.push_back(1/(std::max(lInv,1e-99)));
             // todo: implement  nuclear mass
             lgGammaVec.push_back(lgGamma+log10(Z*gProtonMass+NN*gNeutronMass));
             lgGamma += dLgGamma;
@@ -253,6 +258,69 @@ namespace prop {
     }
   }
 
+  void
+  PhotoNuclearSource::ReadEPP()
+  {
+    cout << " initializing EP tables " << endl;
+
+    for (const auto& field: fFields) {
+
+      fElectronPositronProductions.push_back(Lambda());
+      Lambda& lambdaGraphs = fElectronPositronProductions.back();
+
+      const string filename = fDirectory + "/lossrate_" + field + ".txt";
+      ifstream infile(filename.c_str());
+      if (!infile.good()) {
+        stringstream errMsg;
+        const bool requireEPP = false;
+        if (requireEPP) {
+          errMsg << " error opening " << filename;
+          throw runtime_error(errMsg.str());
+        }
+        else {
+          cerr << " WARNING: could not open EPP file " << filename << "\n"
+               << " proceeding without, you have been warned!!" << endl;
+          for (auto lambdaMap : fElectronPositronProductions)
+            for (auto iter : lambdaMap)
+              delete iter.second;
+          fElectronPositronProductions.clear();
+          return;
+        }
+      }
+      string line;
+      // two header lines
+      getline(infile, line);
+      getline(infile, line);
+
+      int i = 0;
+      while (getline(infile, line)) {
+        std::istringstream iss(line);
+        double lgGamma, lossRate;
+        if (!(iss >> lgGamma >> lossRate))
+          break;
+        for (unsigned int A = 1; A <= GetMaxA(); ++A) {
+          TGraph* lambdaGraph = lambdaGraphs[A];
+          if (!lambdaGraph) {
+            lambdaGraph = new TGraph();
+            lambdaGraphs[A] = lambdaGraph;
+          }
+          const int Z = aToZ(A);
+          // loss rate for nuclei (Chodorowski92 Eq.(3.1)
+          const double lossRateA = Z*Z / A * lossRate;
+          const double energyLossLength = 1 / std::max(lossRateA, 1e-99);
+          const double lgE =
+            lgGamma + log10(Z * gProtonMass + (A-Z) * gNeutronMass);
+          lambdaGraph->SetPoint(i, lgE, energyLossLength);
+        }
+        ++i;
+      }
+      if (lambdaGraphs.size() != GetMaxA())
+        throw runtime_error("incomplete EPP table!");
+      for (const auto g : lambdaGraphs)
+        CheckEqualSpacing(*g.second);
+    }
+  }
+
   const TGraph&
   PhotoNuclearSource::FindGraph(const Lambda& lambda, const unsigned int A)
     const
@@ -300,6 +368,34 @@ namespace prop {
       const double lambdaPD =
         EvalFast(FindGraph(fPhotoDissociations[i], A), lgE) / f;
       lambda = (lambda * lambdaPD) / (lambda + lambdaPD);
+    }
+    return lambda;
+  }
+
+  double
+  PhotoNuclearSource::LambdaLossEP(const double E, const int A)
+    const
+  {
+    if (fFieldScaleFactors.size() < fPhotoDissociations.size()) {
+      ostringstream errMsg;
+      errMsg << " size mismatch, N(scale) = " << fFieldScaleFactors.size()
+             << ", N(field) = " << fPhotoDissociations.size();
+      throw runtime_error(errMsg.str());
+    }
+
+    const double lgE = log10(E);
+    double lambda = 0;
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+      const double lambdaLoss =
+        EvalFast(FindGraph(fElectronPositronProductions[i], A),
+                 lgE) / f;
+      if (lambda == 0)
+        lambda = lambdaLoss;
+      else
+        lambda = (lambda * lambdaLoss) / (lambda + lambdaLoss);
     }
     return lambda;
   }

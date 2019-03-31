@@ -55,6 +55,11 @@ namespace prop {
       fNoInteraction = true;
     }
 
+    virtual bool HasEPP() const { return false; }    
+    
+    double
+    LambdaLossEP(const double /*E*/, const int /*A*/) const { return 0; }
+
     double
     GetProcessFraction(const double /*E*/, const int /*A*/,
                        const EProcess /*p*/) const

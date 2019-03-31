@@ -25,6 +25,11 @@ namespace prop {
     void SetEscFac(const double f) { fEscFac = f; }
     void SetEscGamma(const double g) { fEscGamma = g; }
 
+    virtual
+    double
+    LambdaInt(const double /*E*/, const int /*A*/)
+      const = 0;
+
     double
     LambdaEsc(const double E, const double A)
       const
@@ -34,8 +39,12 @@ namespace prop {
     }
 
     virtual
+    bool
+    HasEPP() const = 0;
+    
+    virtual
     double
-    LambdaInt(const double /*E*/, const int /*A*/)
+    LambdaLossEP(const double /*E*/, const int /*A*/)
       const = 0;
 
     virtual
