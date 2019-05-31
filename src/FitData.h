@@ -69,13 +69,11 @@ namespace prop {
     double fUHEExposure;
     std::vector<FluxData> fFluxData;
     std::vector<FluxData> fLowEFluxData;
-    std::vector<FluxData> fAllFluxData;
-    std::vector<FluxData> fFluxDataLowStat;
     std::vector<CompoData> fCompoData;
+    std::vector<FluxData> fAllFluxData;
     std::vector<CompoData> fAllCompoData;
     bool fFitCompo;
     double fChi2Spec;
-    double fChi2SpecLowE;
     double fChi2LnA;
     double fChi2VlnA;
     double fQ0;
