@@ -9,15 +9,15 @@
 
 namespace prop {
 
-  class FitData; // added by mmuzio from PropNew 11/30/18
+  class FitData;
   
   struct StartValue {
     StartValue() :
       fStart(0), fStep(0), fMinVal(0), fMaxVal(0), fIsFixed(0) {}
 
     StartValue(const double start, const double step,
-                const double minVal, const double maxVal,
-                const bool fixed) :
+               const double minVal, const double maxVal,
+               const bool fixed) :
       fStart(start), fStep(step), fMinVal(minVal), fMaxVal(maxVal),
       fIsFixed(fixed) {}
     double fStart;
@@ -38,12 +38,12 @@ namespace prop {
       fStartMass(startMass), fStartFraction(startFraction),
       fMassMinVal(minMassVal), fMassMaxVal(maxMassVal),
       fMassIsFixed(massFixed), fFractionIsFixed(fractionFixed) {}
-      double fStartMass;
-      double fStartFraction;
-      double fMassMinVal;
-      double fMassMaxVal;
-      double fMassIsFixed;
-      double fFractionIsFixed;
+    double fStartMass;
+    double fStartFraction;
+    double fMassMinVal;
+    double fMassMaxVal;
+    double fMassIsFixed;
+    double fFractionIsFixed;
   };
 
 
@@ -55,20 +55,20 @@ namespace prop {
       eUnknown,
       eBrokenPowerlaw,
       eBlackBody,
-      eUserField,
-      eBPLInterp,
-      eMBBInterp
+      eUserField
     };
 
     enum ESpectrumDataType {
       eAuger2013,
       eTA2013,
       eTASixYear,
-      eAuger2017
+      eAuger2017,
+      eTANineYear
     };
 
     enum ELowESpectrumDataType {
       eKG12,
+      eGalacticDataA,
       eNoLowESpectrum
     };
     
@@ -76,8 +76,7 @@ namespace prop {
       eAugerXmax2014,
       eAugerXmax2017,
       eAugerXmax2017fudge,
-      eAugerXmax2017fudgeAndSD,
-      eAugerXmax2017corrected
+      eAugerXmax2017fudgeAndSD
     };
 
   public:
@@ -110,7 +109,7 @@ namespace prop {
 
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
-    std::vector<std::string> GetPhotIntFilenames();// const;
+    std::vector<std::string> GetPhotIntFilenames() const;
     std::string GetDataDirname() const;
     std::string GetOutDirname() const;
     std::string GetOutFilename() const;
@@ -130,6 +129,9 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
+    bool BoostedModel() const
+    { return fBoostedModel; }
+
     bool RejectOutliers() const
     { return fRejectOutliers; }
 
@@ -138,9 +140,6 @@ namespace prop {
 
     double GetMinCompLgE() const
     { return fMinCompLgE; }
-
-    double GetMaxCompLgE() const
-    { return fMaxCompLgE; }
 
     int GetEnergyBinShift() const
     { return fEnergyBinShift; }
@@ -154,8 +153,8 @@ namespace prop {
     const std::string GetInteractionModel() const
     { return fInteractionModel; }
 
-    Spectrum::ECutoffType GetCutoffType() const
-    { return fCutoffType; }
+    Spectrum::ESpectrumType GetSpectrumType() const
+    { return fSpectrumType; }
 
     ESpectrumDataType GetSpectrumDataType() const
     { return fSpectrumDataType; }
@@ -169,9 +168,8 @@ namespace prop {
     { return fXmaxDataType; }
     std::string GetXmaxDataLabel() const;
 
-    // added from PropNew by mmuzio 11/30/18
     void WriteFitConfig(const std::string& filename, const FitData& fitData);
-
+    
   private:
     std::map<EPar, prop::StartValue> fStartValues;
     std::vector<prop::MassValue> fMassValues;
@@ -187,21 +185,24 @@ namespace prop {
     std::vector<std::string> fBBTemperature;
     std::vector<std::string> fBBSigma;
     std::vector<std::string> fUserPhotonfieldName;
+    bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
     bool fRejectOutliers;
     double fMinFluxLgE;
     double fMinCompLgE;
-    double fMaxCompLgE;
     int fEnergyBinShift;
     double fXmaxSigmaShift;
     std::string fInteractionModel;
-    Spectrum::ECutoffType fCutoffType;
+    Spectrum::ESpectrumType fSpectrumType;
     std::vector<MassValue> fGalMasses;
     ESpectrumDataType fSpectrumDataType;
     ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
-
+    std::string fSpectrumTypeName;
+    std::string fSpectrumDataTypeName;
+    std::string fLowESpectrumDataTypeName;
+    std::string fXmaxDataTypeName;
     ClassDefNV(FitOptions, 1);
   };
 }

@@ -33,6 +33,7 @@ namespace prop {
     delete fPropagator;
     delete fSource;
     fFluxData.clear();
+    fFluxDataLowStat.clear();
     fLowEFluxData.clear();
     fCompoData.clear();
     fAllFluxData.clear();
@@ -46,7 +47,7 @@ namespace prop {
     double chi2 = fChi2Spec;
     if (fFitCompo)
       chi2 += fChi2LnA + fChi2VlnA;
-   return chi2;
+    return chi2;
   }
 
 
@@ -91,8 +92,8 @@ namespace prop {
         fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
     }
     double powerSum = 0;
-    for (auto iter : fractions)
-      powerSum += iter.second * fSpectrum.InjectedPower(Elow, iter.first);
+    for (const auto iter : fractions)
+      powerSum += fSpectrum.InjectedPower(Elow, iter.first);
     return fQ0 * powerSum;
   }
 

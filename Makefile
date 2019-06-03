@@ -3,14 +3,17 @@
 WITH_OPENMP = 0     # warning does not work
 FASTANDFURIOUS = 1
 
+CXX = g++
+CC = gcc
+
 LD            := $(CXX)
 
-SRC_DIR = src
-PROG_DIR = prog
-UTL_DIR = utl
-OBJ_DIR = obj
-LIB_DIR = lib
-BIN_DIR = bin
+SRC_DIR = $(PWD)/src
+PROG_DIR = $(PWD)/prog
+UTL_DIR = $(PWD)/ utl
+OBJ_DIR = $(PWD)/obj
+LIB_DIR = $(PWD)/lib
+BIN_DIR = $(PWD)/bin
 
 CINT = rootcint
 CXXFLAGS += -std=c++11 -O3 -Wall -Wextra -fPIC
@@ -18,8 +21,10 @@ CXXFLAGS += $(shell root-config --cflags)
 CXXFLAGS += -I$(SRC_DIR) -I.
 LDFLAGS  += -fPIC -ggdb3 -Wall
 LDFLAGS  += $(shell root-config --libs)  -Wl,--no-as-needed -fPIC
-LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
+#LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
+LDFLAGS  += $(shell root-config --ldflags) -lMinuit 
 LDFLAGS  += -lgsl -lgslcblas
+LDFLAGS  += -Wl,-rpath,$(LIB_DIR)
 SOFLAGS   = -Wl,--no-as-needed -fPIC -ggdb3 -Wall -shared
 
 ifeq ($(WITH_OPENMP), 1)

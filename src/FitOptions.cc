@@ -2,12 +2,13 @@
 
 #include "utl/PhysicalConstants.h"
 #include "utl/Units.h"
-#include "FitData.h" // added by mmuzio from PropNew 11/30/18
+#include "FitData.h"
 
 #include <gsl/gsl_sf_lambert.h>
 
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <stdexcept>
 #include <sstream>
 
@@ -21,12 +22,12 @@ namespace prop {
     fIRB = "Kneiske04";
     fDataDirname = "./data";
     fOutDirname = "./pdfs";
+    fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
     fRejectOutliers = 0;
-    fMinFluxLgE = 17.5; // changed from 17.0 by mmuzio 11/16/18
-    fMinCompLgE = 17.8; // changed from 17.0 by mmuzio 11/16/18
-    fMaxCompLgE = 22.0; // changed from 17.0 by mmuzio 11/16/18
+    fMinFluxLgE = 17;
+    fMinCompLgE = 17;
     fEnergyBinShift = 0;
     fXmaxSigmaShift = 0;
     fInteractionModel = "eposLHC";
@@ -41,20 +42,22 @@ namespace prop {
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
-    fStartValues[eExtraProtonFraction195] = StartValue(0, 0.1, 0, 0, 1);
+    fStartValues[eExtraProtonLgFraction] = StartValue(-200, 0.1, 0, 0, 1);
     fStartValues[eExtraProtonLgEmax] = StartValue(22, 0.1, 19, 24, 1);
     fStartValues[eExtraProtonGamma] = StartValue(-1, 0.1, -3, -0.5, 1);
     fStartValues[eExtraProtonMass] = StartValue(1, 0.1, 1, 56, 1);
-    fStartValues[eExtraProtonLgRefE] = StartValue(19.0, 0.1, 0, 0, 1); // changed default value from 19.5 by mmuzio 11/16/18
-    fStartValues[eEvolutionM] = StartValue(0, 0.1, -5., 5., 1); // added by mmuzio
-    fStartValues[eEvolutionZ0] = StartValue(2., 0.1, 0., 5., 1); // mmuzio
-    fStartValues[eEvolutionDmin] = StartValue(0., 0.1, 0., 100., 1); // mmuzio
-    fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.); // mmuzio
+    fStartValues[eExtraProtonLgRefE] = StartValue(19.5, 0.1, 0, 0, 1);
+    fStartValues[eUnused1] = StartValue(0, 0.1, 0, 0, 1);
 
-    fCutoffType = Spectrum::eExponential;
+    fSpectrumType = Spectrum::eExponential;
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
     fLowESpectrumDataType = eNoLowESpectrum;
+
+    fSpectrumTypeName = "exponential";
+    fSpectrumDataTypeName = "Auger2013";
+    fLowESpectrumDataTypeName = "";
+    fXmaxDataTypeName = "Auger2014";
     
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
@@ -77,12 +80,12 @@ namespace prop {
         string parName;
         if (!(line >> parName))
           throw runtime_error("error decoding " + keyword);
-        const EPar par = GetPar(parName);
+        const EPar par = GetPar(parName, fBoostedModel);
         StartValue& s = fStartValues[par];
         if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
-          throw runtime_error("error decoding " + keyword);
+          throw runtime_error("error decoding " + keyword + " " + parName);
       }
-      else if (keyword == "mass") {
+      else if (keyword == "mass" || keyword == "massA") {
         fMassValues.push_back(MassValue());
         MassValue& m = fMassValues.back();
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
@@ -94,7 +97,7 @@ namespace prop {
           throw runtime_error("error decoding evolution");
         cout << " read evolution " << fEvolution << endl;
       }
-      else if (keyword == "galacticMass") {
+      else if (keyword == "galacticMass" || keyword == "massB") {
         fGalMasses.push_back(MassValue());
         MassValue& m = fGalMasses.back();
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
@@ -153,30 +156,6 @@ namespace prop {
         fBeta.push_back("n/a");
         fUserPhotonfieldName.push_back("n/a");
       }
-      else if (keyword == "PhotonBPLInterpolator") {
-        fPhotonFieldType.push_back(eBPLInterp);
-        string alpha, beta;
-        if (!(line >> alpha >> beta))
-            throw runtime_error("error decoding PhotonBPLInterpolator");
-        fEps0.push_back("n/a");
-        fAlpha.push_back(alpha);
-        fBeta.push_back(beta);
-        fBBTemperature.push_back("n/a");
-        fBBSigma.push_back("n/a");
-        fUserPhotonfieldName.push_back("n/a");
-      }
-      else if (keyword == "PhotonMBBInterpolator") {
-        fPhotonFieldType.push_back(eMBBInterp);
-        string s;
-        if (!(line >> s))
-          throw runtime_error("error decoding PhotonMBBInterpolator");
-        fBBTemperature.push_back("n/a");
-        fBBSigma.push_back(s);
-        fEps0.push_back("n/a");
-        fAlpha.push_back("n/a");
-        fBeta.push_back("n/a");
-        fUserPhotonfieldName.push_back("n/a");
-      }
       else if (keyword == "interactionModel") {
         if (!(line >> fInteractionModel))
           throw runtime_error("error decoding interactionModel");
@@ -184,6 +163,10 @@ namespace prop {
       else if (keyword == "fitComposition") {
         if (!(line >> fFitCompo))
           throw runtime_error("error decoding fitComposition");
+      }
+      else if (keyword == "boostedModel") {
+        if (!(line >> fBoostedModel))
+          throw runtime_error("error decoding boostedModel");
       }
       else if (keyword == "gcrWithKnees") {
         if (!(line >> fGCRWithKnees))
@@ -209,10 +192,6 @@ namespace prop {
         if (!(line >> fMinCompLgE))
           throw runtime_error("error decoding minLgECompo");
       }
-      else if (keyword == "maxLgECompo") {
-        if (!(line >> fMaxCompLgE))
-          throw runtime_error("error decoding maxLgECompo");
-      }
       else if (keyword == "spectrumData") {
         string type;
         if (!(line >> type))
@@ -225,8 +204,11 @@ namespace prop {
           fSpectrumDataType = eTA2013;
         else if (type == "TASixYear")
           fSpectrumDataType = eTASixYear;
+        else if (type == "TANineYear")
+          fSpectrumDataType = eTANineYear;
         else
           throw runtime_error("unknown spectrum data type: " + type);
+        fSpectrumDataTypeName = type;
       }
       else if (keyword == "spectrumDataLowE") {
         string type;
@@ -234,8 +216,11 @@ namespace prop {
           throw runtime_error("error decoding spectrumDataLowE");
         if (type == "KG2012")
           fLowESpectrumDataType = eKG12;
+        else if (type == "GalacticDataA")
+          fLowESpectrumDataType = eGalacticDataA;
         else
-          throw runtime_error("unknown spectrum data type: " + type);
+          throw runtime_error("unknown lowE spectrum data type: " + type);
+        fLowESpectrumDataTypeName = type;
       }
       else if (keyword == "xmaxData") {
         string type;
@@ -249,31 +234,35 @@ namespace prop {
           fXmaxDataType = eAugerXmax2017fudge;
         else if (type == "Auger2017fudgeAndSD")
           fXmaxDataType = eAugerXmax2017fudgeAndSD;
-	else if (type == "Auger2017corrected")
-          fXmaxDataType = eAugerXmax2017corrected;
         else
-          throw runtime_error("unknown spectrum data type: " + type);
+          throw runtime_error("unknown Xmax data type: " + type);
+        fXmaxDataTypeName = type;
       }
-      else if (keyword == "cutoffType") {
+      else if (keyword == "spectrumType") {
         string type;
         if (!(line >> type))
-          throw runtime_error("error decoding cutoffType");
+          throw runtime_error("error decoding spectrumType");
         if (type == "exponential")
-          fCutoffType = Spectrum::eExponential;
+          fSpectrumType = Spectrum::eExponential;
         else if (type == "brokenExponential")
-          fCutoffType = Spectrum::eBrokenExponential;
+          fSpectrumType = Spectrum::eBrokenExponential;
         else if (type == "deltaGamma1")
-          fCutoffType = Spectrum::eDeltaGamma1;
+          fSpectrumType = Spectrum::eDeltaGamma1;
         else if (type == "deltaGamma2")
-          fCutoffType = Spectrum::eDeltaGamma2;
+          fSpectrumType = Spectrum::eDeltaGamma2;
         else if (type == "deltaGamma3")
-          fCutoffType = Spectrum::eDeltaGamma3;
+          fSpectrumType = Spectrum::eDeltaGamma3;
         else if (type == "deltaGamma4")
-          fCutoffType = Spectrum::eDeltaGamma4;
+          fSpectrumType = Spectrum::eDeltaGamma4;
         else if (type == "heavyside")
-          fCutoffType = Spectrum::eHeavyside;
+          fSpectrumType = Spectrum::eHeaviside;
+        else if (type == "boosted")
+          fSpectrumType = Spectrum::eBoosted;
+        else if (type == "external")
+          fSpectrumType = Spectrum::eExternal;
         else
-          throw runtime_error("unknown cutoff type" + type);
+          throw runtime_error("unknown spectrum type" + type);
+        fSpectrumTypeName = type;
       }
       else
         throw runtime_error("unknown keyword " + keyword);
@@ -326,7 +315,12 @@ namespace prop {
       fGalMasses.push_back(MassValue(defaultGalMass, 1, 1,
                                      defaultGalMass, 1, 1));
     }
-   
+
+    if (fBoostedModel && fSpectrumType != Spectrum::eExternal) {
+      cerr << " warning: override spectrum type " << fSpectrumType << endl;
+      fSpectrumType = Spectrum::eExternal;
+    }
+    
   }
 
   double
@@ -376,7 +370,7 @@ namespace prop {
   }
 
   vector<string> FitOptions::GetPhotIntFilenames()
-    //const
+    const
   {
     vector<string> filenames;
     for (unsigned int i = 0; i < fBBTemperature.size(); ++i) {
@@ -386,14 +380,6 @@ namespace prop {
         filenames.push_back("BPL_" + fEps0[i] + "_" + fBeta[i] + "_" + fAlpha[i]);
       else if (fPhotonFieldType[i] == eUserField)
         filenames.push_back(fUserPhotonfieldName[i]);
-      else if (fPhotonFieldType[i] == eBPLInterp) {
-	fEps0[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
-	filenames.push_back("BPLInterp_" + fBeta[i] + "_" + fAlpha[i]);
-      }
-      else if (fPhotonFieldType[i] == eMBBInterp) {
-	fBBTemperature[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
-	filenames.push_back("MBBInterp_" + fBBSigma[i]);
-      }
       else
         throw runtime_error("unknown photon field type");
     }
@@ -422,9 +408,9 @@ namespace prop {
   FitOptions::GetEps0(unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBrokenPowerlaw || fPhotonFieldType[i] == eBPLInterp)
+    if (fPhotonFieldType[i] == eBrokenPowerlaw)
       return stod(fEps0[i]);
-    else if (fPhotonFieldType[i] == eBlackBody || fPhotonFieldType[i] == eMBBInterp) {
+    else if (fPhotonFieldType[i] == eBlackBody) {
       const double b = GetBBSigma(i) + 2;
       const double x = gsl_sf_lambert_W0(-exp(-b) * b) + b;
       return x * (utl::kBoltzmann * GetBBTemperature(i)) / utl::eV;
@@ -437,7 +423,7 @@ namespace prop {
   FitOptions::GetAlpha(unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBrokenPowerlaw || fPhotonFieldType[i] == eBPLInterp) {
+    if (fPhotonFieldType[i] == eBrokenPowerlaw) {
       if (fAlpha[i].size() != 2) {
         cerr << "FitOptions::GetAlpha() unexpected string format for alpha " << endl;
         return numeric_limits<double>::quiet_NaN();
@@ -453,7 +439,7 @@ namespace prop {
   FitOptions::GetBeta(unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBrokenPowerlaw || fPhotonFieldType[i] == eBPLInterp)
+    if (fPhotonFieldType[i] == eBrokenPowerlaw)
       return -stod(fBeta[i]);
     else
       return numeric_limits<double>::quiet_NaN();
@@ -463,7 +449,7 @@ namespace prop {
   FitOptions::GetBBTemperature(const unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBlackBody || fPhotonFieldType[i] == eMBBInterp)
+    if (fPhotonFieldType[i] == eBlackBody)
       return stod(fBBTemperature[i]);
     else
       return numeric_limits<double>::quiet_NaN();
@@ -473,7 +459,7 @@ namespace prop {
   FitOptions::GetBBSigma(const unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBlackBody || fPhotonFieldType[i] == eMBBInterp)
+    if (fPhotonFieldType[i] == eBlackBody)
       return stod(fBBSigma[i]);
     else
       return numeric_limits<double>::quiet_NaN();
@@ -512,6 +498,8 @@ namespace prop {
       return "TA 2013";
     case eTASixYear:
       return "TA 6 year";
+    case eTANineYear:
+      return "TA 9 year";
     case eAuger2013:
       return "Auger 2013.";
     case eAuger2017:
@@ -528,6 +516,8 @@ namespace prop {
     switch (fLowESpectrumDataType) {
     case eKG12:
       return "KG 2012";
+    case eGalacticDataA:
+      return "TKKGIa";
     default:
       return "unknown";
     }
@@ -545,22 +535,19 @@ namespace prop {
       return "Auger 2017";
     case eAugerXmax2017fudge:
       return "Auger 2017^{*}";
-    case eAugerXmax2017corrected:
-      return "Auger 2017+19";
     default:
       return "unknown";
     }
   }
 
-  // added from PropNew by mmuzio 11/30/18
   void
   FitOptions::WriteFitConfig(const string& filename, const FitData& fitData)
   {
     ofstream out(filename.c_str());
     out << "# chi2Tot/ndf = " << fitData.GetChi2Tot() << "/"
         << fitData.GetNdfTot() << endl;
-    out << "# chi2 spec: (" << fitData.fChi2Spec // - fitData.fChi2SpecLowE
-        << ", " << /*fitData.fChi2SpecLowE <<*/ "), LnA: " << fitData.fChi2LnA
+    out << "# chi2 spec: (" << fitData.fChi2Spec - fitData.fChi2SpecLowE
+        << ", " << fitData.fChi2SpecLowE << "), LnA: " << fitData.fChi2LnA
         << ", V(lnA); " << fitData.fChi2VlnA << endl;
     out << "OutDir " << fOutDirname << "\n"
         << "DataDir " << fDataDirname << "\n"
@@ -568,31 +555,20 @@ namespace prop {
         << "IRB " << fIRB << "\n"
         << "energyBinShift " << fEnergyBinShift << "\n"
         << "xmaxSigmaShift " << fXmaxSigmaShift << "\n"
-        //<< "spectrumData " << fSpectrumDataType/*Name*/ << "\n"
-        << "spectrumData " << GetSpectrumDataLabel() << "\n"
-        //<< "xmaxData " << fXmaxDataType/*Name*/ << "\n"
-        << "xmaxData " << GetXmaxDataLabel() << "\n";
-       // << "spectrumType " << fSpectrumTypeName << "\n";
-    //out << "minLgEFlux " << fMinFluxLgE << "\n"
-     //   << "minLgECompo " << fMinCompLgE << "\n"
-       // << "boostedModel " << fBoostedModel << endl;
-    //if (!fLowESpectrumDataTypeName.empty())
-    //  out << "spectrumDataLowE " << fLowESpectrumDataTypeName << "\n";
+        << "spectrumData " << fSpectrumDataTypeName << "\n"
+        << "xmaxData " << fXmaxDataTypeName << "\n"
+        << "spectrumType " << fSpectrumTypeName << "\n";
+    out << "minLgEFlux " << fMinFluxLgE << "\n"
+        << "minLgECompo " << fMinCompLgE << "\n"
+        << "boostedModel " << fBoostedModel << endl;
+    if (!fLowESpectrumDataTypeName.empty())
+      out << "spectrumDataLowE " << fLowESpectrumDataTypeName << "\n";
     for (unsigned int i = 0; i < fPhotonFieldType.size(); ++i) {
       if (fPhotonFieldType[i] == eBrokenPowerlaw)
         out << "PhotonBPL " << fEps0[i] << " " << fAlpha[i] << " " << fBeta[i]
             << "\n";
       else if (fPhotonFieldType[i] == eBlackBody)
         out << "PhotonMBB " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
-      else if (fPhotonFieldType[i] == eBPLInterp) {
-	fEps0[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
-        out << "PhotonBPLInterpolator " << fEps0[i] << " " << fAlpha[i] << " " << fBeta[i]
-            << "\n";
-      }
-      else if (fPhotonFieldType[i] == eMBBInterp) {
-        fBBTemperature[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
-	out << "PhotonMBBInterpolator " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
-      }
       else
         cerr << " unsupported photon field! " << endl;
     }
@@ -603,7 +579,7 @@ namespace prop {
 
     for (unsigned int i = 0; i < eNpars; ++i) {
       const EPar par = EPar(i);
-      const string name = GetParName(par);//, fBoostedModel);
+      const string name = GetParName(par, fBoostedModel);
       const StartValue& s = fStartValues[par];
       out << scientific << setprecision(5)
           << "par " << name << " "
@@ -611,7 +587,7 @@ namespace prop {
           << s.fStep << " " << s.fMinVal << " " << s.fMaxVal << " "
           <<  s.fIsFixed << "\n";
     }
-/*
+
     const string massNameA = fBoostedModel ? "massA" : "mass";
     map<unsigned int, double> fractionsA;
     const unsigned int nMassA = fitData.GetNMass();
@@ -640,7 +616,7 @@ namespace prop {
       out << massNameB << " " << m << " " << fracB[i] << " 1 56 1 1\n";
     }
     
-  */  
+    
     out.close();
   }
 
