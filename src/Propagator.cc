@@ -1,6 +1,7 @@
 #include "Propagator.h"
 #include "Utilities.h"
 #include "Particles.h"
+#include "FitParameters.h"
 
 
 #include <sstream>
@@ -12,8 +13,23 @@ using namespace std;
 
 namespace prop {
   void
-  Propagator::Propagate(const map<int, TMatrixD>& spectrum, const bool onlyNuc)
+  Propagator::Propagate(const map<int, TMatrixD>& spectrum, const bool onlyNuc, double* const par)
   {
+
+    if(Evolution == "mz0Interpolator") {
+
+     fPropMatrices.UpdateMZ0(M, par[eEvolutionM], Z0, par[eEvolutionZ0]);	
+     M = par[eEvolutionM];
+     Z0 = par[eEvolutionZ0];
+
+    }
+
+    else if(Evolution == "DminInterpolator") {
+     
+     fPropMatrices.UpdateDmin(Dmin, par[eEvolutionDmin]);	
+     Dmin = par[eEvolutionDmin];
+
+    }
 
     fResult.clear();
     fNucleonResult.ResizeTo(0, 0);
