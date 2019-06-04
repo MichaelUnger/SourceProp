@@ -32,7 +32,8 @@ namespace prop {
     fCanvas(c),
     fGammaSource(gammaSource),
     fGammaEarth(gammaEarth),
-    fNNeutrino(0)
+    fNNeutrino(0),
+    fNNeutrino157(0)
   {
     gStyle->SetLineScalePS(1);
     gStyle->SetPadTopMargin(0.1);
@@ -88,6 +89,8 @@ namespace prop {
                  spectrum.GetN(), x1, x2, eFluxEsc);
     DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
                  spectrum.GetNBinsInternal(), x1, x2, eFluxInj);
+    DrawSpectrum(spectrum.GetextraProtonFlux(), mGroups, fGammaSource, "hextraProtonEsc",
+		 spectrum.GetN(), x1, x2, eFluxEsc, false); 
 
     /*
     vector<MassGroup> nucleonGroups;
@@ -413,6 +416,8 @@ namespace prop {
       if (i < mGroups.size()) {
         color = mGroups[i].fColor;
         style = mGroups[i].fLineStyle;
+	if(nameBase == "hextraProtonEsc")
+	  style = 2;
         if (mGroups[i].fFirst > 56)
           title << "galactic (A=" << mGroups[i].fFirst % kGalacticOffset << ")";
         else if (nameBase == "elMagSource") {
@@ -480,7 +485,7 @@ namespace prop {
       }
       TH1D* hist = fHists[histIndex];
       for (unsigned int i = 0; i < n; ++i) {
-        const double sumMass = hist->GetBinContent(i+1) + m[i][0];
+	const double sumMass = hist->GetBinContent(i+1) + m[i][0];
         hist->SetBinContent(i + 1, sumMass);
         const double sumTot = histTot->GetBinContent(i+1) + m[i][0];
         histTot->SetBinContent(i + 1, sumTot);
@@ -521,6 +526,18 @@ namespace prop {
       legEsc->SetBorderSize(0);
       legEsc->AddEntry(fHists.back(), " injected", "L");
       legEsc->Draw();
+    }
+    if (nameBase == "hextraProtonEsc") {
+      fCanvas->cd(eFluxEsc);
+      TLegend* legEsc2 = new TLegend(0.73, 0.68, 0.98, 0.8,NULL,"brNDCARC");
+      fHists.back()->SetLineColor(kRed);
+      fHists.back()->SetLineStyle(2);
+      legEsc2->SetFillColor(0);
+      legEsc2->SetTextFont(42);
+      legEsc2->SetFillStyle(0);
+      legEsc2->SetBorderSize(0);
+      legEsc2->AddEntry(fHists.back(), " extra protons", "L");
+      legEsc2->Draw();
     }
   }
 
@@ -823,6 +840,15 @@ namespace prop {
     events << "#Sigma events = " << int(nEvents*10)/10.;
     l.DrawLatex(0.35, 0.88, events.str().c_str());
     fNNeutrino = nEvents;
+     
+    double nEvents157 = 0;
+    for (unsigned int iBin = 0; iBin < nX; ++iBin) {
+      double lgE = eventsE->GetXaxis()->GetBinLowEdge(iBin+1);
+      if(lgE < 15.7) continue; 
+      nEvents157 += eventsTot->GetBinContent(iBin+1);
+    }
+    fNNeutrino157 = nEvents157;
+
  }
 
 
