@@ -17,6 +17,8 @@ public:
   void Fill(const prop::FitData& fitData, const prop::FitOptions& fitOptions);
   void SetNNeutrinos(const double n)
   { fNNeutrinos = n; }
+  void SetNNeutrinos157(const double n)
+  { fNNeutrinos157 = n; }
   void SetMCMCInfo(const unsigned int walkerId, const unsigned int step)
   { fWalkerId = walkerId; fStep = step; }
 
@@ -38,12 +40,17 @@ public:
   double fNoPhoton;
   double fLgPhotonField;
   double fNNeutrinos;
+  double fNNeutrinos157;
   double fProtonRatio185;
   double fProtonFraction60;
   double fExtraProtonLgFraction;
   double fExtraProtonLgEmax;
   double fExtraProtonLgRefE;
   double fExtraProtonGamma;
+  double fEvolutionM;
+  double fEvolutionZ0;
+  double fEvolutionDmin;
+  double fPhotonPeak;
 
   // 0: symmetric, 1: upErr, 2: lowErr
   double fEdot175Err[3];
@@ -57,12 +64,17 @@ public:
   double fNoPhotonErr[3];
   double fLgPhotonFieldErr[3];
   double fNNeutrinosErr[3];
+  double fNNeutrinos157Err[3];
   double fProtonRatio185Err[3];
   double fProtonFraction60Err[3];
   double fExtraProtonLgFractionErr[3];
   double fExtraProtonLgEmaxErr[3];
   double fExtraProtonLgRefEErr[3];
   double fExtraProtonGammaErr[3];
+  double fEvolutionMErr[3];
+  double fEvolutionZ0Err[3];
+  double fEvolutionDminErr[3];
+  double fPhotonPeakErr[3];  
   
   std::vector<double> fMasses;
   std::vector<double> fFractions;
