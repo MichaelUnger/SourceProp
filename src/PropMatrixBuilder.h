@@ -1145,7 +1145,8 @@ namespace prop {
     ~PropMatrixBuilder();
     void Process(const std::vector<std::string>& filenames);
     void Process(const std::string& filename);
-    const PropMatrices& GetPropMatrices() const;
+    //const PropMatrices& GetPropMatrices() const;
+    PropMatrices& GetPropMatrices();
     void PrintSummary() const;
 
     static double DistributionWeight(const double z,
