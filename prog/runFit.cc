@@ -6,7 +6,8 @@ using namespace std;
 #include <omp.h>
 #endif
 
-void fit(string, bool, bool);
+//void fit(string, bool, bool);
+void fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool allMasses = true, double xmin = 12., double xmax = 22.);
 
 int main(int argc, char** argv)
 {
