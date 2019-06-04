@@ -55,7 +55,9 @@ namespace prop {
       eUnknown,
       eBrokenPowerlaw,
       eBlackBody,
-      eUserField
+      eUserField,
+      eBPLInterp,
+      eMBBInterp
     };
 
     enum ESpectrumDataType {
@@ -76,7 +78,8 @@ namespace prop {
       eAugerXmax2014,
       eAugerXmax2017,
       eAugerXmax2017fudge,
-      eAugerXmax2017fudgeAndSD
+      eAugerXmax2017fudgeAndSD,
+      eAugerXmax2017corrected
     };
 
   public:
@@ -109,7 +112,7 @@ namespace prop {
 
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
-    std::vector<std::string> GetPhotIntFilenames() const;
+    std::vector<std::string> GetPhotIntFilenames();// const;
     std::string GetDataDirname() const;
     std::string GetOutDirname() const;
     std::string GetOutFilename() const;
@@ -140,6 +143,9 @@ namespace prop {
 
     double GetMinCompLgE() const
     { return fMinCompLgE; }
+
+    double GetMaxCompLgE() const
+    { return fMaxCompLgE; }
 
     int GetEnergyBinShift() const
     { return fEnergyBinShift; }
@@ -191,6 +197,7 @@ namespace prop {
     bool fRejectOutliers;
     double fMinFluxLgE;
     double fMinCompLgE;
+    double fMaxCompLgE;
     int fEnergyBinShift;
     double fXmaxSigmaShift;
     std::string fInteractionModel;
