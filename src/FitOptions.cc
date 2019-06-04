@@ -1,5 +1,4 @@
 #include "FitOptions.h"
-
 #include "utl/PhysicalConstants.h"
 #include "utl/Units.h"
 #include "FitData.h"
@@ -26,8 +25,9 @@ namespace prop {
     fFitCompo = true;
     fGCRWithKnees = false;
     fRejectOutliers = 0;
-    fMinFluxLgE = 17;
-    fMinCompLgE = 17;
+    fMinFluxLgE = 17.5; 
+    fMinCompLgE = 17.8; 
+    fMaxCompLgE = 22.0; 
     fEnergyBinShift = 0;
     fXmaxSigmaShift = 0;
     fInteractionModel = "eposLHC";
@@ -46,8 +46,12 @@ namespace prop {
     fStartValues[eExtraProtonLgEmax] = StartValue(22, 0.1, 19, 24, 1);
     fStartValues[eExtraProtonGamma] = StartValue(-1, 0.1, -3, -0.5, 1);
     fStartValues[eExtraProtonMass] = StartValue(1, 0.1, 1, 56, 1);
-    fStartValues[eExtraProtonLgRefE] = StartValue(19.5, 0.1, 0, 0, 1);
+    fStartValues[eExtraProtonLgRefE] = StartValue(19.0, 0.1, 0, 0, 1);
     fStartValues[eUnused1] = StartValue(0, 0.1, 0, 0, 1);
+    fStartValues[eEvolutionM] = StartValue(0, 0.1, -5., 5., 1); 
+    fStartValues[eEvolutionZ0] = StartValue(2., 0.1, 0., 5., 1); 
+    fStartValues[eEvolutionDmin] = StartValue(0., 0.1, 0., 100., 1); 
+    fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.); 
 
     fSpectrumType = Spectrum::eExponential;
     fSpectrumDataType = eAuger2013;
@@ -156,6 +160,30 @@ namespace prop {
         fBeta.push_back("n/a");
         fUserPhotonfieldName.push_back("n/a");
       }
+      else if (keyword == "PhotonBPLInterpolator") {
+        fPhotonFieldType.push_back(eBPLInterp);
+        string alpha, beta;
+        if (!(line >> alpha >> beta))
+            throw runtime_error("error decoding PhotonBPLInterpolator");
+        fEps0.push_back("n/a");
+        fAlpha.push_back(alpha);
+        fBeta.push_back(beta);
+        fBBTemperature.push_back("n/a");
+        fBBSigma.push_back("n/a");
+        fUserPhotonfieldName.push_back("n/a");
+      }
+      else if (keyword == "PhotonMBBInterpolator") {
+        fPhotonFieldType.push_back(eMBBInterp);
+        string s;
+        if (!(line >> s))
+          throw runtime_error("error decoding PhotonMBBInterpolator");
+        fBBTemperature.push_back("n/a");
+        fBBSigma.push_back(s);
+        fEps0.push_back("n/a");
+        fAlpha.push_back("n/a");
+        fBeta.push_back("n/a");
+        fUserPhotonfieldName.push_back("n/a");
+      }
       else if (keyword == "interactionModel") {
         if (!(line >> fInteractionModel))
           throw runtime_error("error decoding interactionModel");
@@ -191,6 +219,10 @@ namespace prop {
       else if (keyword == "minLgECompo") {
         if (!(line >> fMinCompLgE))
           throw runtime_error("error decoding minLgECompo");
+      }
+      else if (keyword == "maxLgECompo") {
+        if (!(line >> fMaxCompLgE))
+          throw runtime_error("error decoding maxLgECompo");
       }
       else if (keyword == "spectrumData") {
         string type;
@@ -234,6 +266,8 @@ namespace prop {
           fXmaxDataType = eAugerXmax2017fudge;
         else if (type == "Auger2017fudgeAndSD")
           fXmaxDataType = eAugerXmax2017fudgeAndSD;
+	else if (type == "Auger2017corrected")
+          fXmaxDataType = eAugerXmax2017corrected;
         else
           throw runtime_error("unknown Xmax data type: " + type);
         fXmaxDataTypeName = type;
@@ -370,7 +404,7 @@ namespace prop {
   }
 
   vector<string> FitOptions::GetPhotIntFilenames()
-    const
+    //const
   {
     vector<string> filenames;
     for (unsigned int i = 0; i < fBBTemperature.size(); ++i) {
@@ -380,6 +414,14 @@ namespace prop {
         filenames.push_back("BPL_" + fEps0[i] + "_" + fBeta[i] + "_" + fAlpha[i]);
       else if (fPhotonFieldType[i] == eUserField)
         filenames.push_back(fUserPhotonfieldName[i]);
+      else if (fPhotonFieldType[i] == eBPLInterp) {
+	fEps0[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
+	filenames.push_back("BPLInterp_" + fBeta[i] + "_" + fAlpha[i]);
+      }
+      else if (fPhotonFieldType[i] == eMBBInterp) {
+	fBBTemperature[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
+	filenames.push_back("MBBInterp_" + fBBSigma[i]);
+      }
       else
         throw runtime_error("unknown photon field type");
     }
@@ -408,9 +450,9 @@ namespace prop {
   FitOptions::GetEps0(unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBrokenPowerlaw)
+    if (fPhotonFieldType[i] == eBrokenPowerlaw || fPhotonFieldType[i] == eBPLInterp)
       return stod(fEps0[i]);
-    else if (fPhotonFieldType[i] == eBlackBody) {
+    else if (fPhotonFieldType[i] == eBlackBody || fPhotonFieldType[i] == eMBBInterp) {
       const double b = GetBBSigma(i) + 2;
       const double x = gsl_sf_lambert_W0(-exp(-b) * b) + b;
       return x * (utl::kBoltzmann * GetBBTemperature(i)) / utl::eV;
@@ -423,7 +465,7 @@ namespace prop {
   FitOptions::GetAlpha(unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBrokenPowerlaw) {
+    if (fPhotonFieldType[i] == eBrokenPowerlaw || fPhotonFieldType[i] == eBPLInterp) {
       if (fAlpha[i].size() != 2) {
         cerr << "FitOptions::GetAlpha() unexpected string format for alpha " << endl;
         return numeric_limits<double>::quiet_NaN();
@@ -439,7 +481,7 @@ namespace prop {
   FitOptions::GetBeta(unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBrokenPowerlaw)
+    if (fPhotonFieldType[i] == eBrokenPowerlaw || fPhotonFieldType[i] == eBPLInterp)
       return -stod(fBeta[i]);
     else
       return numeric_limits<double>::quiet_NaN();
@@ -449,7 +491,7 @@ namespace prop {
   FitOptions::GetBBTemperature(const unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBlackBody)
+    if (fPhotonFieldType[i] == eBlackBody || fPhotonFieldType[i] == eMBBInterp)
       return stod(fBBTemperature[i]);
     else
       return numeric_limits<double>::quiet_NaN();
@@ -459,7 +501,7 @@ namespace prop {
   FitOptions::GetBBSigma(const unsigned int i)
     const
   {
-    if (fPhotonFieldType[i] == eBlackBody)
+    if (fPhotonFieldType[i] == eBlackBody || fPhotonFieldType[i] == eMBBInterp)
       return stod(fBBSigma[i]);
     else
       return numeric_limits<double>::quiet_NaN();
@@ -535,6 +577,8 @@ namespace prop {
       return "Auger 2017";
     case eAugerXmax2017fudge:
       return "Auger 2017^{*}";
+    case eAugerXmax2017corrected:
+      return "Auger 2017+19";
     default:
       return "unknown";
     }
@@ -569,6 +613,15 @@ namespace prop {
             << "\n";
       else if (fPhotonFieldType[i] == eBlackBody)
         out << "PhotonMBB " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
+      else if (fPhotonFieldType[i] == eBPLInterp) {
+	fEps0[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
+        out << "PhotonBPLInterpolator " << fEps0[i] << " " << fAlpha[i] << " " << fBeta[i]
+            << "\n";
+      }
+      else if (fPhotonFieldType[i] == eMBBInterp) {
+        fBBTemperature[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
+	out << "PhotonMBBInterpolator " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
+      }
       else
         cerr << " unsupported photon field! " << endl;
     }
