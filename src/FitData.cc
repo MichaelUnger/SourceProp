@@ -47,7 +47,8 @@ namespace prop {
     double chi2 = fChi2Spec;
     if (fFitCompo)
       chi2 += fChi2LnA + fChi2VlnA;
-    return chi2;
+ 	//cout << fChi2Spec << " "<< fChi2LnA << " " << fChi2VlnA << endl; 
+   return chi2;
   }
 
 
