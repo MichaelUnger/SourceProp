@@ -58,6 +58,10 @@ namespace prop {
                        const EProcess p)
       const = 0;
 
+    virtual
+    void
+    Update(double newPeak) = 0;
+
     void SetPhotonScaleFactors(const std::vector<double>& f)
     { fFieldScaleFactors = f; }
     
