@@ -15,7 +15,10 @@ namespace prop {
   public:
     Neutrinos(const prop::Spectrum& spectrum,
               const std::string& propMatrixFilename,
+	      double evoM = 0., double evoZ0 = 0., double evoDmin = 0., 
               const bool withSourceNu = true);
+              //const bool withSourceNu = false);
+	      //# warning Source neutrinos omitted!!
     ~Neutrinos();
 
     const std::map<int, TMatrixD>& GetFlux() const;
