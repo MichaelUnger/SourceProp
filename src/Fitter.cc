@@ -13,6 +13,8 @@
 #include <TFile.h>
 #include <TGraphErrors.h>
 #include <TGraphAsymmErrors.h>
+#include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_math.h>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
@@ -71,9 +73,15 @@ namespace prop {
                   const int /*iFlag*/)
   {
 
+    for (unsigned int i = 0; i < eNpars; ++i)
+     {
+	if( gsl_isnan(par[i]) ) throw runtime_error(GetParName(EPar(i))+" is NaN --> stop fitting");
+     }
+
     FitData& data = fFitData;
 
     VSource* source = data.fSource;
+    source->Update(par[ePhotonPeak]);     
     source->SetEscFac(1);
     source->SetEscGamma(par[eEscGamma]);
 
@@ -136,6 +144,7 @@ namespace prop {
       
       
         Spectrum& spectrum = data.fSpectrum;
+        if(abs(par[eGamma]) > 10.) throw runtime_error("Injected index too large! Please set upper-bound in steering file.");
         spectrum.SetParameters(source,
                                par[eGamma],
                                pow(10, par[eLgEmax]),
@@ -157,13 +166,18 @@ namespace prop {
         if (par[eExtraProtonLgFraction] > -100) {
           const double refLgE = par[eExtraProtonLgRefE];
           const double refE = pow(10, refLgE);
-          const double sum = spectrum.GetFluxSum(refLgE);
           const double lgEmin = spectrum.GetLgEmin();
           const double lgEmax = spectrum.GetLgEmax();
           const double n = spectrum.GetN();
           const double dlgE = (lgEmax - lgEmin) / n;
           const int mass = int(par[eExtraProtonMass]);
           const int charge = aToZ(mass);
+	  double sum = 0.;
+	  for (double lgE = refLgE; lgE <= lgEmax; lgE += dlgE) {
+	    const double E = pow(10, lgE);
+	    const double dE = utl::kLn10 * E * dlgE;
+	    sum += E * spectrum.GetFluxSum(lgE) * dE;
+	  }
           TMatrixD& m = spectrum.GetEscFlux()[mass];
           if (!m.GetNoElements())
             m.ResizeTo(n, 1);
@@ -172,12 +186,15 @@ namespace prop {
             if (!mm.GetNoElements())
               mm.ResizeTo(n, 1);
           }
-        
+	  TMatrixD& mmm = spectrum.GetextraProtonFlux()[mass]; 
+	  if (!mmm.GetNoElements()) 
+	    mmm.ResizeTo(n, 1); 
+
           const double f = pow(10, par[eExtraProtonLgFraction]);
           const double gamma = par[eExtraProtonGamma];
           const double Emax = pow(10, par[eExtraProtonLgEmax]);
         
-          const double norm = f * sum / (pow(refE, gamma) * exp(-refE/Emax));
+          const double norm = f / (1.-f) * sum / (pow(Emax, gamma+2) * gsl_sf_gamma_inc(gamma+2, refE/Emax)); 
           double lgE = lgEmin + dlgE / 2;
           for (unsigned int iE = 0; iE < n; ++iE) {
             const double E = pow(10, lgE);
@@ -185,10 +202,11 @@ namespace prop {
             m[iE][0] += flux;
             if (mass == 1 && charge == 1) 
               mm[iE][0] += flux;
+	    mmm[iE][0] += flux;
             lgE += dlgE;
           }
         }
-        data.fPropagator->Propagate(data.fSpectrum.GetEscFlux());
+        data.fPropagator->Propagate(data.fSpectrum.GetEscFlux(), true,  par);
       }
     
       // galactic
@@ -227,6 +245,7 @@ namespace prop {
 
         // ------ single power law
         if (!fGCRKnees) {
+	  if(pow(10, par[eLgEmaxGal]) < E0) throw runtime_error("Galactic cut-off too low! Set lower bound of 17.55 on lgEmaxGal in steering file.");
           const double gammaGal = par[eGammaGal];
           double galSum = 0;
           for (const auto iter : galFractions) {
@@ -545,6 +564,8 @@ namespace prop {
         data.fChi2SpecLowE += r2; 
       if (lastLgE == 0 || flux.fLgE > lastLgE)
         lastLgE = flux.fLgE;
+      if (lastLgE == 0 || flux.fLgE > lastLgE)
+        lastLgE = flux.fLgE;
     }
 
     // chi2 from Poisson log-like for zero observations
@@ -608,24 +629,34 @@ namespace prop {
     fBoostedModel = fOptions.BoostedModel();
     
     ReadData();
-    cout << " reading prop matrix from "
-         << fOptions.GetPropmatrixFilename() << endl;
-    PropMatrixFile pmf(fOptions.GetPropmatrixFilename());
-    fPropMatrices = pmf.GetPropMatrices();
+    if( fOptions.GetEvolution() == "mz0Interpolator" ) {
+      cout << "Initiating mz0 interpolation matrices..." << endl;
+      fPropMatrices.InterpInitMZ0(fOptions.GetStartValue(GetPar("evolutionM")), fOptions.GetStartValue(GetPar("evolutionZ0")));
+    }
+    else if( fOptions.GetEvolution() == "DminInterpolator" ) {
+      cout << "Initiating Dmin interpolation matrices..." << endl;
+      fPropMatrices.InterpInitDmin(fOptions.GetStartValue(GetPar("evolutionDmin")));
+    }
+    else { 
+      cout << " reading prop matrix from "
+           << fOptions.GetPropmatrixFilename() << endl;
+      PropMatrixFile pmf(fOptions.GetPropmatrixFilename());
+      fPropMatrices = pmf.GetPropMatrices();
+    }
 
     fFitData.SetBinning(fPropMatrices.GetN(),
                         fPropMatrices.GetLgEmin(),
                         fPropMatrices.GetLgEmax());
 
-    fFitData.fPropagator = new Propagator(fPropMatrices);
-
+    fFitData.fPropagator = new Propagator(fPropMatrices, fOptions.GetStartValue(GetPar("evolutionM")), fOptions.GetStartValue(GetPar("evolutionZ0")), fOptions.GetStartValue(GetPar("evolutionDmin")), fOptions.GetEvolution());
+ 
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
     cout << " interaction lengths: \n";
     for (const auto f : filenames)
       cout << " " << fOptions.GetDataDirname() << "/" << f << endl;
 
     fFitData.fSource = new PhotoNuclearSource(fOptions.GetPhotIntFilenames(),
-                                              fOptions.GetDataDirname());
+                                              fOptions.GetDataDirname(), fOptions.GetStartValue(GetPar("photonPeak")));
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
@@ -918,6 +949,7 @@ namespace prop {
     case FitOptions::eTASixYear:
     case FitOptions::eTANineYear:
       {
+        throw runtime_error("please implement TA exposure");
         ifstream in(fOptions.GetDataDirname() +
                     (fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
                      "/TA-SD-spectrum-2013.dat" :
@@ -1003,6 +1035,52 @@ namespace prop {
             fFitData.fFluxDataLowStat.push_back(flux);
         }
       }
+      if (false) {
+        string kFile = fOptions.GetDataDirname() + "/KAS_q01_All.txt";
+        ifstream inK(kFile.c_str());
+        string line;
+        while (getline(inK, line)){
+          if (!line.empty() && line[0] == '#')
+            continue;
+          stringstream strstr(line);
+          string d;
+          vector<double> data;
+          while (getline(strstr,d, ';')) 
+            data.push_back(stod(d));
+          if (data.size() != 4) {
+            cerr << " error reading " << kFile << endl;
+            break;
+          }
+          FluxData flux;
+          const double energy = data[0];
+          double flx = data[1];
+          double ferrUp = data[2];
+          double ferrLow = data[3];
+          const double fudgeFactor = 0.8;
+          double fac = 1e6*365*24*3600.*fudgeFactor;
+          double ferr = (ferrUp + ferrLow) / 2;
+          flx *= fac;
+          ferr *= fac;
+          ferrUp *= fac;
+          ferrLow *= fac;
+          flux.fFluxErr = ferr; //(ferrUp+ferrLow)/2 ;
+          flux.fFluxErrUp = ferr; //ferrUp;
+          flux.fFluxErrLow = ferr; //ferrLow;
+          flux.fN = 100; // dummy
+          flux.fLgE = log10(energy);
+          flux.fFlux = flx;
+          if (ferr/flx > 0.2)
+            continue;
+          // syst shift?
+          flux.fLgE += deltaLgESys;
+          
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fLowEFluxData.push_back(flux);
+          }
+        }
+      }
     }
     else if (fOptions.GetLowESpectrumDataType() ==
              FitOptions::eGalacticDataA) {
@@ -1044,6 +1122,8 @@ namespace prop {
 
     cout << " spectrum: nAll = " <<  fFitData.fAllFluxData.size()
          << ", nFit = " <<  fFitData.fFluxData.size() << endl;
+
+     if(fFitData.fAllFluxData.size() == 0) throw runtime_error("No spectrum data loaded!");
 
     TGraphErrors* xmaxGraph = nullptr;
     TGraphErrors* sigmaGraph = nullptr;
@@ -1111,9 +1191,82 @@ namespace prop {
         }
         break;
       }
+    case FitOptions::eAugerXmax2017corrected:
+      {
+        /*
+ 	  #  (1) meanLgE:      <lg(E/eV)>
+	  #  (2) nEvts:        number of events
+	  #  (3) mean:         <Xmax> [g/cm^2]
+	  #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+	  #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+	  #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+	  #  (7) mean:         <Xmax> [g/cm^2]
+	  #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+	  #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+	  #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+	*/
+        xmaxGraph = new TGraphErrors();
+        sigmaGraph = new TGraphErrors();
+        xmaxSysGraph = new TGraphAsymmErrors();
+        sigmaXmaxSysGraph = new TGraphAsymmErrors();
+        int i = 0;
+        const string filename = "/xmax2017.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+        break;
+      }
     default:
       {
         cerr << " unknown Xmax data " << endl;
+      }
+    }
+    if (fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2017fudgeAndSD) {
+      const bool calibAugerSD = false;
+      const unsigned int nSD = 14;
+      const double sdLgE[nSD] = {18.55, 18.65, 18.75, 18.85, 18.95, 19.05,
+                                 19.15, 19.25, 19.35, 19.45, 19.55, 19.64,
+                                 19.74, 19.88};
+      const double sdXmax[nSD] = {750.7, 755.2, 756.4, 759.8, 763.0, 766.5,
+                                  769.6, 775, 780, 779, 788, 785, 795, 807};
+        
+      const double sdXmaxErr[nSD] = {0.3, 0.3, 0.4, 0.6, 0.6, 0.7, 0.9, 1.0,
+                                     2.0, 2.0, 2.0, 2.0, 3.0, 3.0};
+      const double sdSysUp[nSD] = {7.34,7.43,7.54,7.67,7.83,8.01,
+                                   8.21, 8.43,8.67,8.93,9.45,9.45,9.45,9.45};
+      const double sdSysLo[nSD] = {9.11, 8.80,8.49, 8.19, 7.88,
+                                   7.61, 7.37, 7.17, 7.03, 6.94,
+                                   6.99, 6.99, 6.99, 6.99};
+        
+      unsigned int i = xmaxGraph->GetN();
+      for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
+        const double shift = calibAugerSD ? 17.5 - sdLgE[iSD]*0.7 : 0;
+        const double E = pow(10, sdLgE[iSD]);
+        xmaxGraph->SetPoint(i, E, sdXmax[iSD]+shift);
+        xmaxSysGraph->SetPoint(i, E, sdXmax[iSD]+shift);
+        xmaxGraph->SetPointError(i, E, sqrt(sdXmaxErr[iSD]*sdXmaxErr[iSD]+25));
+        xmaxSysGraph->SetPointEYhigh(i, sdSysUp[iSD]);
+        xmaxSysGraph->SetPointEYlow(i, sdSysLo[iSD]);
+        ++i;
       }
     }
 
@@ -1146,7 +1299,6 @@ namespace prop {
         ++i;
       }
     }
-
     LnACalculator lnAcalc;
     const LnACalculator::EModel model =
       LnACalculator::GetModel(fOptions.GetInteractionModel());
@@ -1200,12 +1352,14 @@ namespace prop {
         comp.fVlnASysUp = 0;
       }
       fFitData.fAllCompoData.push_back(comp);
-      if (comp.fLgE > fOptions.GetMinCompLgE())
+      if (comp.fLgE > fOptions.GetMinCompLgE() && comp.fLgE <= fOptions.GetMaxCompLgE())
         fFitData.fCompoData.push_back(comp);
     }
     
     cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()
          << ", nFit = " <<  fFitData.fCompoData.size() << endl;
+
+    if(fFitData.fAllCompoData.size() == 0) throw runtime_error("No composition data loaded!");
 
   }
 
