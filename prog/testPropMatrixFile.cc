@@ -24,7 +24,8 @@ main(int argc, char** argv)
   const unsigned int nucleonTest = 14;
 
   PropMatrixFile pmf("ROOT/propMatrix_uniformCutAt3.root");
-  const PropMatrices& matrices = pmf.GetPropMatrices();
+  //const PropMatrices& matrices = pmf.GetPropMatrices();
+  PropMatrices& matrices = pmf.GetPropMatrices();
   Propagator p(matrices);
 
   const unsigned int nBins = matrices.GetN();
