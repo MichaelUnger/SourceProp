@@ -62,6 +62,45 @@ namespace prop {
   }
 
   const
+  Spectrum::SpecMap& 
+  Spectrum::GetextraProtonFlux()
+    const
+  {
+    if (fextraProtons.empty())
+    {
+	      const unsigned int mass = 1;
+	      TMatrixD& m = fextraProtons[mass];
+	      if (!m.GetNoElements())
+		m.ResizeTo(fN, 1);
+
+	      const unsigned int n = fN;
+	      for (unsigned int iE = 0; iE < n; ++iE) {
+		m[iE][0] = 0.;
+	      }
+     }
+    return fextraProtons;
+  }
+
+  Spectrum::SpecMap& 
+  Spectrum::GetextraProtonFlux()
+  {
+
+    if (fextraProtons.empty())
+    {
+	      const unsigned int mass = 1;
+	      TMatrixD& m = fextraProtons[mass];
+	      if (!m.GetNoElements())
+		m.ResizeTo(fN, 1);
+
+	      const unsigned int n = fN;
+	      for (unsigned int iE = 0; iE < n; ++iE) {
+		m[iE][0] = 0.;
+	      }
+     }
+    return fextraProtons;
+  }
+  
+  const
   Spectrum::SpecMap&
   Spectrum::GetInjFlux()
     const
@@ -126,7 +165,6 @@ namespace prop {
     return sum;
 
   }
-
   void
   Spectrum::Rescale(const double f)
   {
@@ -138,6 +176,8 @@ namespace prop {
     for (auto& iter : fEscape)
       iter.second *= f;
     for (auto& iter : fNucleons)
+      iter.second *= f;
+    for (auto& iter : fextraProtons) 
       iter.second *= f;
   }
 
@@ -304,6 +344,7 @@ namespace prop {
     fEscape.clear();
     fInj.clear();
     fNucleons.clear();
+    fextraProtons.clear(); 
     fRmax = Rmax;
     fGamma = gamma;
     fSource = s;
@@ -425,7 +466,7 @@ namespace prop {
   Spectrum::CalculateSpectrum()
     const
   {
-
+    
     // pion fractions in photo-pion production
 #undef _UFA15_    
 #ifdef _UFA15_
