@@ -48,7 +48,7 @@ namespace prop {
           stringstream  name(h->GetName());
           string line;
           while(getline(name, line, '_'))
-            splitname.push_back(line);
+	    splitname.push_back(line);
           if (splitname.size() != 3)
             throw runtime_error("cannot decode" + name.str());
           const unsigned int Aprim = stoi(splitname[1]);
@@ -85,7 +85,8 @@ namespace prop {
   }
 
   void
-  PropMatrixFile::Write(const PropMatrices& pmc)
+  //PropMatrixFile::Write(const PropMatrices& pmc)
+  PropMatrixFile::Write(PropMatrices& pmc)
   {
     if (fReadMode) {
       cerr << " PropMatrixFile::Write() -- ignored (read mode)! " << endl;
