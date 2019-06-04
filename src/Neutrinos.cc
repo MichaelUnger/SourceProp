@@ -14,11 +14,23 @@ namespace prop {
 
   Neutrinos::Neutrinos(const prop::Spectrum& spectrum,
                        const std::string& propMatrixFilename,
+		       double evoM, double evoZ0, double evoDmin,
                        const bool withSourceNu)
   {
 
-    const PropMatrixFile pmf(propMatrixFilename);
-    const PropMatrices& pm = pmf.GetPropMatrices();
+    PropMatrices pm;
+
+    if( propMatrixFilename.find("mz0Interpolator") != std::string::npos ) {
+      pm.InterpInitMZ0(evoM, evoZ0); 
+    }
+    else if( propMatrixFilename.find("DminInterpolator") != std::string::npos ) {
+      pm.InterpInitDmin(evoDmin); 
+    }
+    else {
+      PropMatrixFile pmf(propMatrixFilename);
+      pm = pmf.GetPropMatrices();
+    }
+
     fLgEmin = pm.GetLgEmin();
     fLgEmax = pm.GetLgEmax();
     fN = pm.GetN();
