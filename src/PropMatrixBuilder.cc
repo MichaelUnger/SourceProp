@@ -141,10 +141,10 @@ namespace prop {
   }
 
 
-  const
+  //const
   PropMatrices&
   PropMatrixBuilder::GetPropMatrices()
-    const
+    //const
   {
     if (!fIsNormalized) {
       for (auto& iter1 : fPropMatrices.GetPrimaryMap()) {
