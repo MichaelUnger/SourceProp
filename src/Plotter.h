@@ -26,7 +26,7 @@ namespace prop {
       eCompInj,
       eCompEsc,
       eCompEarth,
-      eNCanvas
+      eNCanvas,
     };
 
     enum EFluxUnits {
@@ -52,6 +52,8 @@ namespace prop {
                           const unsigned int n, const double x1, const double x2);
     double GetNNeutrinos() const
     { return fNNeutrino; }
+    double GetNNeutrinos157() const
+    { return fNNeutrino157; }
 
     // .root and .txt will be added
     void SaveHistsToFile(const std::string& filenameBase) const;
@@ -83,6 +85,7 @@ namespace prop {
     double fGammaEarth;
     std::vector<TH1D*> fHists;
     double fNNeutrino;
+    double fNNeutrino157; // total neutrinos above 10^15.7 eV
   };
 }
 
