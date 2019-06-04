@@ -13,11 +13,13 @@ namespace prop {
   class Propagator {
 
   public:
-    Propagator(const PropMatrices& m) :
-      fPropMatrices(m) {}
+    Propagator(PropMatrices& m, double evoM = 0., double evoZ0 = 0., double evoDmin = 0., std::string fEvolution = "") : 
+      fPropMatrices(m) { M=evoM, Z0=evoZ0, Dmin=evoDmin, Evolution=fEvolution; }
 
+    double M, Z0, Dmin;
+    std::string Evolution; 
     void Propagate(const std::map<int, TMatrixD>& spectrum,
-                   const bool onlyNuc = true);
+                   const bool onlyNuc = true, double* const par = nullptr );
 
     double GetFluxSum(const int i) const;
     double GetFluxSum(const double lgE) const;
@@ -47,8 +49,7 @@ namespace prop {
   private:
     Propagator();
 
-
-    const PropMatrices& fPropMatrices;
+    PropMatrices& fPropMatrices; 
     std::map<int, TMatrixD> fResult;
     TMatrixD fNucleonResult;
     TMatrixD fSum;
