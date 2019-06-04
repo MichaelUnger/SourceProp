@@ -14,9 +14,11 @@ namespace prop {
   public:
     PropMatrixFile(const std::string& outputFilename,
                    const bool read = true);
-    void Write(const PropMatrices& pmc);
+    //void Write(const PropMatrices& pmc);
+    void Write(PropMatrices& pmc);
     void Close();
-    const PropMatrices& GetPropMatrices() const
+    //const PropMatrices& GetPropMatrices() const
+    PropMatrices& GetPropMatrices()
     { return fPropMatrices; }
 
   private:
