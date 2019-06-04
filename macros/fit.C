@@ -133,7 +133,7 @@ DrawData(const FitData& fitData,
     if (lastLgE == 0 || fluxData[i].fLgE > lastLgE)
       lastLgE = fluxData[i].fLgE;
   }
-
+  
   {
     const double dlgE = 0.1;
     double lgE = lastLgE + dlgE;
@@ -343,8 +343,8 @@ DrawData(const FitData& fitData,
   gROOT->GetObject("hvLnA", vlnA);
   vlnA->SetLineColor(kBlack);
   vlnA->Draw("CSAME");
-  vlnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), 20.2);
-  lnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), 20.2);
+  vlnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), min(fitOptions.GetMaxCompLgE(), 20.2));
+  lnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), min(fitOptions.GetMaxCompLgE(), 20.2));
   fitVlnA->Draw("PZ");
   gPad->RedrawAxis();
 
@@ -437,11 +437,11 @@ DrawValues(const FitData& fitData,
     if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBrokenPowerlaw) {
       l.SetTextColor(fixColor);
       photonString << "#varepsilon_{0} = " << fitOptions.GetEps0(i) << " eV";
-      /*
-        l.DrawLatex(x, y, photonString.str().c_str());
-        y -= dy;
-        photonString.str("");
-      */
+      
+      //  l.DrawLatex(x, y, photonString.str().c_str());
+      //  y -= dy;
+      //  photonString.str("");
+      
       photonString << ", #alpha="
                    << fitOptions.GetAlpha(i) << ", #beta="
                    << fitOptions.GetBeta(i);
@@ -451,6 +451,27 @@ DrawValues(const FitData& fitData,
     else if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBlackBody) {
       photonString << "T ="
                    << fitOptions.GetBBTemperature(i) << " K, #sigma ="
+                   << fitOptions.GetBBSigma(i);
+      l.DrawLatex(x, y, photonString.str().c_str());
+      y -= dy;
+    }
+    else if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBPLInterp) {
+      l.SetTextColor(fixColor);
+      photonString << "#varepsilon_{0} = " << fitParameters[GetPar("photonPeak")].fValue << " eV";
+      
+      //  l.DrawLatex(x, y, photonString.str().c_str());
+      //  y -= dy;
+      //  photonString.str("");
+      
+      photonString << ", #alpha="
+                   << fitOptions.GetAlpha(i) << ", #beta="
+                   << fitOptions.GetBeta(i);
+      l.DrawLatex(x, y, photonString.str().c_str());
+      y -= dy;
+    }
+    else if (fitOptions.GetPhotonFieldType(i) == FitOptions::eMBBInterp) {
+      photonString << "T ="
+                   << fitParameters[GetPar("photonPeak")].fValue << " K, #sigma ="
                    << fitOptions.GetBBSigma(i);
       l.DrawLatex(x, y, photonString.str().c_str());
       y -= dy;
@@ -602,9 +623,8 @@ DrawValues(const FitData& fitData,
   l.DrawLatex(xEdot, eps0Y-0.08, pFraction.str().c_str());
 }
 
-
 void
-fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
+fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool allMasses = true, double xmin = 12., double xmax = 22.)
 {
   gROOT->Clear();
   gStyle->SetOptStat(0);
@@ -629,10 +649,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   }
 
   vector<MassGroup> massGroups;
-  bool all = false;
-  if (all) {
-    for (unsigned int i = 1; i <= GetMaxA(); ++i)
+  if (allMasses) {
+    for (unsigned int i = 1; i <= GetMaxA(); ++i) {
       massGroups.push_back(MassGroup(i, i, i, kRed+i));
+      massGroups.push_back(MassGroup(i+kGalacticOffset, i+kGalacticOffset, i+kGalacticOffset, kRed+i));
+    }
   }
   else {
     massGroups.push_back(MassGroup(1, 2, 1, kRed));
@@ -670,13 +691,19 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   plot.Draw(fitData.fSpectrum,
             *fitData.fPropagator,
             massGroups);
-  plot.SetXRange(17, 20.5);
+  plot.SetXRange(xmin, xmax);
+
 
   TCanvas* can = plot.GetCanvas();
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
   can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
+  
+  // added from PropNew by mmuzio 11/30/18
+  opt.WriteFitConfig((opt.GetOutDirname() + "/" +
+                       opt.GetOutFilename() + ".config").c_str(),
+                      fitData);
 
   RootOutFile<FitSummary> rootFile(opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".root");
   FitSummary fitSummary;
@@ -687,7 +714,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
     if (!withSourceNu) 
       cout << "fit(): warning -- withSourceNu = false" << endl;
     Neutrinos neutrinos(fitData.fSpectrum,
-                        opt.GetPropmatrixNuFilename(), withSourceNu);
+                        opt.GetPropmatrixNuFilename(), fitData.fFitParameters[GetPar("evolutionM")].fValue, fitData.fFitParameters[GetPar("evolutionZ0")].fValue, fitData.fFitParameters[GetPar("evolutionDmin")].fValue, withSourceNu);
     TCanvas* neutrinoCanvas;
     bool singleSlide = false;
     if (singleSlide) {
@@ -708,6 +735,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
                            "_nu" + (withSourceNu?"":"NoSource") +
                            ".pdf").c_str());
     fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
+    fitSummary.SetNNeutrinos157(neutrinoPlot.GetNNeutrinos157());
     neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
                                  + opt.GetOutFilename() + "HistNu" +
                                  (withSourceNu?"":"NoSource"));
@@ -728,7 +756,6 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true)
   opt.WriteFitConfig((opt.GetOutDirname() + "/" +
                        opt.GetOutFilename() + ".config").c_str(),
                       fitData);
-
 
 }
 
