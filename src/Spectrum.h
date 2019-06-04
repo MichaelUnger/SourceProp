@@ -71,12 +71,14 @@ namespace prop {
     SpecMap& GetEscFlux();
     const SpecMap& GetNucleonFlux() const;
     SpecMap& GetNucleonFlux();
+    const SpecMap& GetextraProtonFlux() const;
+    SpecMap& GetextraProtonFlux(); 
 
     void AddEscComponent(const unsigned int A, const TMatrixD& flux);
 
     double GetFluxSum(const unsigned int i);
     double GetFluxSum(const double lgE);
-
+    
     double GetN() const
     { return fN; }
     double GetLgEmin() const
@@ -118,6 +120,7 @@ namespace prop {
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
+    mutable SpecMap fextraProtons;
 #ifdef _FASTANDFURIOUS_
     const unsigned int fNSubBins = 2;
 #else
