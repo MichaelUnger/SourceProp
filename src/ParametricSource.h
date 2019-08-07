@@ -12,21 +12,22 @@ namespace prop {
       fNoInteraction(true)
     {}
 
-    ParametricSource(const double escFac, const double escGamma,
+    ParametricSource(const double escFac, const double escGamma, const double hadintFac,
                      const double eps0, const double alpha,
                      const double beta) :
-      VSource(escFac, escGamma),
+      VSource(escFac, escGamma, hadintFac),
       fEps0(eps0), fAlpha(alpha), fBeta(beta),
       fNoInteraction(false)
     {}
 
     void
-    SetParameters(const double escFac, const double escGamma,
+    SetParameters(const double escFac, const double escGamma, const double hadintFac,
                   const double eps0, const double alpha,
                   const double beta, const bool noInteraction = false)
     {
       SetEscFac(escFac);
       SetEscGamma(escGamma);
+      SetHadIntFac(hadintFac);
       fEps0 = eps0;
       fAlpha = alpha;
       fBeta = beta;
@@ -34,7 +35,7 @@ namespace prop {
     }
 
     double
-    LambdaInt(const double E, const int A)
+    LambdaPhotoHadInt(const double E, const int A)
       const
     {
       if (fNoInteraction)
