@@ -51,6 +51,7 @@ public:
   double fEvolutionZ0;
   double fEvolutionDmin;
   double fPhotonPeak;
+  double fLgHadIntFac;
 
   // 0: symmetric, 1: upErr, 2: lowErr
   double fEdot175Err[3];
@@ -74,7 +75,8 @@ public:
   double fEvolutionMErr[3];
   double fEvolutionZ0Err[3];
   double fEvolutionDminErr[3];
-  double fPhotonPeakErr[3];  
+  double fPhotonPeakErr[3]; 
+  double fLgHadIntFacErr[3]; 
   
   std::vector<double> fMasses;
   std::vector<double> fFractions;
