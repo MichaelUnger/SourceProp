@@ -15,20 +15,36 @@ namespace prop {
   public:
 
     PhotoNuclearSource(const std::vector<std::string>& fields,
-                  const std::string& directory, double photonPeak = 0.);
+                  const std::string& directory, const std::string& modelName, double photonPeak = 0.);
 
     virtual ~PhotoNuclearSource();
 
     double
-    LambdaInt(const double E, const int A) const;
+    LambdaPhotoHadInt(const double E, const int A) const;
 
     double
     GetProcessFraction(const double E, const int A,
                        const EProcess p) const;
 
     double
+    GetChannelFraction(const double E, const int A,
+                       const EChannel p) const;
+
+    double
     GetPDBranchingRatio(const double E, const int Asec, const int Aprim) const;
 
+    double
+    GetMPPBranchingRatio(const double E, const int Aprim) const;
+
+    double
+    LambdaPPInt(const double E, const int Aprim) const;
+  
+    double
+    PartialLambdaSPPInt(const double E, const int Aprim, const double epsMax) const;
+
+    double
+    PartialLambdaMPPInt(const double E, const int Aprim, const double epsMax) const;
+    
     virtual
     double
     LambdaLossEP(const double E, const int A) const;
@@ -38,6 +54,9 @@ namespace prop {
 
     void Update(double newPeak);
 
+    double 
+    GetMeanPhotonEnergy() const;
+ 
   private:
     PhotoNuclearSource& operator=(const PhotoNuclearSource&);
     PhotoNuclearSource(PhotoNuclearSource&);
@@ -45,6 +64,9 @@ namespace prop {
     void ReadPD();
     void ReadPPP();
     void ReadEPP();
+    double I1(const double xmin, const int iField) const;
+    double I2(const double xmin, const double xmax, const int iField) const;
+    double I3(const double xmin, const int iField) const;
 
     typedef std::map<unsigned int, TGraph*> Lambda;
     const TGraph& FindGraph(const Lambda& lambda, const unsigned int A) const;
@@ -54,7 +76,7 @@ namespace prop {
     typedef std::map<unsigned int, std::map<unsigned int, TH1D*> > BranchingRatio;
     std::vector<BranchingRatio> fBranchingRatios;
     const std::vector<std::string> fFields;
-    const std::string fDirectory;
+    const std::string fDirectory, fModelName;
    
     void InterpInit(double photonPeak);
     std::vector<Lambda> LoadInterpPD(double photonPeak);  
@@ -67,7 +89,9 @@ namespace prop {
     std::vector<Lambda> InterpPDL, InterpPDR; // interpolation grid points PD = photodissociations, L = left, R = right
     std::vector<Lambda> InterpPPPL, InterpPPPR; // interpolation grid points PPP = photopion productions
     std::vector<BranchingRatio> InterpBRL, InterpBRR; //interpolation grid points BR = branching ratios
-    std::string fieldType, sigma, alpha, beta;
+    std::string sigma, alpha, beta;
+    std::vector<std::string> fieldType;
+    std::vector<double> fsigma, falpha, fbeta, feps0, fT;
     double minPeak, maxPeak, currentPeak;
     int posR;
     
