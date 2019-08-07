@@ -15,7 +15,7 @@ namespace prop {
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
        "f_{noPhot}", "lg(fphot)", "lg(f(UHEp))", "lg(Emax, UHEp)",
-       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "photonPeak", "N/A"};
+       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "photonPeak", "lg(R_{hadint}^{Fe19})", "N/A"};
 
     if (boosted) {
       parNames[eGammaA] = "\\gamma_{A}";
@@ -45,7 +45,7 @@ namespace prop {
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
        "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonLgFraction",
        "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass",
-       "extraProtonLgRefE", "evolutionM", "evolutionZ0", "evolutionDmin", "photonPeak", "NA"};
+       "extraProtonLgRefE", "evolutionM", "evolutionZ0", "evolutionDmin", "photonPeak", "lgRhadint", "NA"};
 
     if (boosted) {
       parNames[eGammaA] = "gammaA";
