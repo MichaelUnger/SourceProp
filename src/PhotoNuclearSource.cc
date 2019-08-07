@@ -6,6 +6,12 @@
 #include <TMath.h>
 #include <TROOT.h>
 
+#include <gsl/gsl_sf_debye.h>
+#include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_sf_lambert.h>
+#include <gsl/gsl_sf_zeta.h>
+#include <gsl/gsl_math.h>
+
 #include <sstream>
 #include <iostream>
 #include <fstream>
@@ -18,13 +24,21 @@ namespace prop {
 
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
+  const double gElectronMass = 0.51099895e6; 
+  const double gkBoltzmann = 8.617333e-5; // eV/K
+  const double gPlanck_SpeedOfLight = 1.239842e-4; // eV*cm
+  const double gmicroBarn_to_cm2 = 1e-30;
+  const double gcm_to_Mpc = 3.241e-25;
+  const double gPi = 3.1415926535897932384626;  
 
   PhotoNuclearSource::PhotoNuclearSource(const std::vector<std::string>& fields,
-                                         const std::string& directory, double photonPeak)  :
-    fFields(fields), fDirectory(directory), currentPeak(photonPeak)
+                                         const std::string& directory, const std::string& modelName, double photonPeak)  :
+    fFields(fields), fDirectory(directory), fModelName(modelName), currentPeak(photonPeak)
   {
     if (fFields.empty())
       throw runtime_error("no photon fields given");
+
+    HadInts = new HadronicInteractions(fModelName, fDirectory);
 
     for(unsigned int i = 0; i < fFields.size(); i++) {
 
@@ -34,21 +48,37 @@ namespace prop {
 	while(getline(ss, info, '_'))
 	  fieldInfo.push_back(info);
 
-	fieldType = fieldInfo[0];
-	if(fieldType == "BPLInterp" || fieldType == "MBBInterp") {
+	fieldType.push_back(fieldInfo[0]);
+	if(fieldType.back() == "MBB") {
+	  fT.push_back(atof(fieldInfo[1].c_str()));
+	  fsigma.push_back(atof(fieldInfo[2].c_str()));
+	  feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
+	}
+	else if(fieldType.back() == "BPL") {
+	  feps0.push_back(atof(fieldInfo[1].c_str()));
+	  fbeta.push_back(-1.*atof(fieldInfo[2].c_str()));
+	  falpha.push_back( (atoi(fieldInfo[3].c_str())/10) / (double)(atoi(fieldInfo[3].c_str())%10) );
+	  fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
+	  fsigma.push_back(0.);
+	}
+	else if(fieldType.back() == "BPLInterp" || fieldType.back() == "MBBInterp") {
 
 	  if(fFields.size() > 1)
 	    throw runtime_error("Interpolation not supported for multiple photon fields");
 
-	  if(fieldType == "MBBInterp") {
-	    sigma = fieldInfo[1];
-	    beta = "n/a";
+	  if(fieldType.back() == "MBBInterp") {
+	    fT.push_back(currentPeak);
+	    sigma = fieldInfo[1]; fsigma.push_back(atof(sigma.c_str()));
+	    feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
+	    beta = "n/a"; 
 	    alpha = "n/a";
 	  }  
-	  else if(fieldType == "BPLInterp") {
-	    beta = fieldInfo[1];
-	    alpha = fieldInfo[2];
-	    sigma = "n/a";
+	  else if(fieldType.back() == "BPLInterp") {
+	    feps0.push_back(currentPeak);
+	    beta = fieldInfo[1]; fbeta.push_back(-1.*atof(beta.c_str()));
+	    alpha = fieldInfo[2]; falpha.push_back( (atoi(alpha.c_str())/10) / (double)(atoi(alpha.c_str())%10) );
+	    fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
+	    sigma = "n/a"; fsigma.push_back(0.);
 	  }
 	  else throw runtime_error("Interpolator field not recognized!");
 		
@@ -407,7 +437,7 @@ namespace prop {
 
 
   double
-  PhotoNuclearSource::LambdaInt(const double E, const int A)
+  PhotoNuclearSource::LambdaPhotoHadInt(const double E, const int A)
     const
   {
     if (fFieldScaleFactors.size() < fPhotoDissociations.size()) {
@@ -528,6 +558,345 @@ namespace prop {
   }
 
   double
+  PhotoNuclearSource::GetMPPBranchingRatio(const double E, const int Aprim)
+    const
+  {
+
+    const bool isMPP = true;
+    const int Z = aToZ(Aprim), N = Aprim - Z;
+    const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, 
+			sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
+   
+    double lambdaSPP = 0., lambdaMPP = 0.;
+
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+  
+      double lambdaInv;
+
+      // single-pion production interaction length
+      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) 
+	            + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
+      lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
+	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+      lambdaInv *= f / gcm_to_Mpc;
+
+      if(lambdaSPP == 0.)
+        lambdaSPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
+      else
+	lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
+
+      // multi-pion production interaction length
+      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
+	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
+      lambdaInv += sigmaInelMPP2 * (I1(EthMPP2/2./gamma, i) - pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i)); // high-energy plateau
+      lambdaInv *= f / gcm_to_Mpc;
+
+      if(lambdaMPP == 0.)
+	lambdaMPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
+      else
+	lambdaMPP = (lambdaInv == 0.)? lambdaMPP : lambdaMPP / lambdaInv / (lambdaMPP + 1./lambdaInv);
+
+    }
+
+    return (isMPP)? lambdaSPP / (lambdaSPP + lambdaMPP) : 0.;
+
+  }
+
+  double
+  PhotoNuclearSource::LambdaPPInt(const double E, const int Aprim)
+    const
+  {
+
+    const int Z = aToZ(Aprim), N = Aprim - Z;
+    const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
+   
+    double lambdaSPP = 0., lambdaMPP = 0.;
+
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+  
+      double lambdaInv;
+
+      // single-pion production interaction length
+      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) 
+	            + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
+      lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
+	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+      lambdaInv *= f / gcm_to_Mpc;
+
+      if(lambdaSPP == 0.)
+        lambdaSPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
+      else
+	lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
+
+      // multi-pion production interaction length
+      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
+	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
+      lambdaInv += sigmaInelMPP2 * (I1(EthMPP2/2./gamma, i) - pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i)); // high-energy plateau
+      lambdaInv *= f / gcm_to_Mpc;
+
+      if(lambdaMPP == 0.)
+	lambdaMPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
+      else
+	lambdaMPP = (lambdaInv == 0.)? lambdaMPP : lambdaMPP / lambdaInv / (lambdaMPP + 1./lambdaInv);
+
+    }
+
+    return (lambdaSPP * lambdaMPP) / (lambdaSPP + lambdaMPP);
+
+  }
+ 
+  // calculates the single-pion interaction length due to interaction with photon field up to energy epsMax 
+  double
+  PhotoNuclearSource::PartialLambdaSPPInt(const double E, const int Aprim, const double epsMax)
+    const
+  {
+
+    const int Z = aToZ(Aprim), N = Aprim - Z;
+    const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
+   
+    double lambdaSPP = 0., lambdaMPP = 0.;
+
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+  
+      double lambdaInv = 0.;
+
+      // single-pion production interaction length
+      if(epsMax <= EthSPP/2./gamma) lambdaInv = 0.;
+      else {
+        lambdaInv += (epsMax <= EthMPP1/2./gamma)? sigmaInelSPP1 * (I2(EthSPP/2./gamma, epsMax, i) 
+	            + pow(EthMPP1/2./gamma, 2)*I3(epsMax, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)) :
+     		  sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) 
+	            + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
+      }
+      if(epsMax <= EthMPP2/2./gamma) {
+        lambdaInv += (epsMax <= EthMPP1/2./gamma)? 0. :
+		      sigmaInelSPP2 * (I2(EthMPP1/2./gamma, epsMax, i) 
+	              + pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+      }
+      else {
+        lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
+	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+      }
+      lambdaInv *= f / gcm_to_Mpc;
+
+      if(lambdaSPP == 0.)
+        lambdaSPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
+      else
+	lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
+
+    }
+
+    return lambdaSPP;
+
+  }
+
+  // calculates the multipion interaction length due to interaction with photon field up to energy epsMax 
+  double
+  PhotoNuclearSource::PartialLambdaMPPInt(const double E, const int Aprim, const double epsMax)
+    const
+  {
+
+    const int Z = aToZ(Aprim), N = Aprim - Z;
+    const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
+   
+    double lambdaSPP = 0., lambdaMPP = 0.;
+
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+  
+      double lambdaInv;
+      
+      // multi-pion production interaction length
+      if(epsMax <= EthMPP1/2./gamma) lambdaInv = 0.;
+      else {
+        lambdaInv = (epsMax <= EthMPP2/2./gamma)?
+			sigmaInelMPP1 * (I2(EthMPP1/2./gamma, epsMax, i)
+ 		    + pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)) :
+			sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
+	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
+        lambdaInv += (epsMax <= EthMPP2/2./gamma)? 0. : 
+			sigmaInelMPP2 * (I2(EthMPP2/2./gamma, epsMax, i) - pow(EthMPP2/2./gamma, 2)*(I3(EthMPP2/2./gamma, i)-I3(epsMax, i))); // high-energy plateau
+      }
+      lambdaInv *= f / gcm_to_Mpc;
+
+      if(lambdaMPP == 0.)
+	lambdaMPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
+      else
+	lambdaMPP = (lambdaInv == 0.)? lambdaMPP : lambdaMPP / lambdaInv / (lambdaMPP + 1./lambdaInv);
+
+    }
+
+    return lambdaMPP;
+
+  }
+
+  double
+  PhotoNuclearSource::I1(const double xmin, const int iField) const { // performs \int_xmin^\infty n(e)de
+
+    double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
+    double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
+
+    if(fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
+
+      double buffdbl;
+      if(fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
+      else if(fsigma[iField] > 4.) throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
+      else if(modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
+
+      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
+     
+      if(abs(fsigma[iField]) < 1e-5) I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
+      else if(abs(fsigma[iField]-1.) < 1e-5) I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
+      else if(abs(fsigma[iField]-2.) < 1e-5) I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
+      else if(abs(fsigma[iField]-3.) < 1e-5) I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
+      else I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
+      I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.) / (fsigma[iField] + 2.);
+      I += gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
+      if(I < 1.e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+     
+      I *= 8. * gPi * n0 * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
+ 
+    }  
+    else {
+
+      if(fbeta[iField] >= -1.) throw runtime_error("Field not integrable for beta >= -1!");
+
+      n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
+
+      I += (feps0[iField] >= xmin)? (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) - 1. / (fbeta[iField]+1.) : 0.;
+      I -= (feps0[iField] < xmin)? pow(xmin/feps0[iField], fbeta[iField]+1.) / (fbeta[iField]+1.) : 0.;
+      I *= n0 * feps0[iField];
+
+    } 
+   
+    return I; 
+  } 
+
+  double
+  PhotoNuclearSource::I2(const double xmin, const double xmax, const int iField) const { // performs \int_xmin^xmax n(e)de
+
+    if(xmin > xmax) throw runtime_error("I2: xmin must be <= xmax!");
+    else if (xmin == xmax) return 0.;
+
+    double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
+    double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
+
+    if(fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
+
+      double buffdbl;     
+      if(fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
+      else if(fsigma[iField] > 4.) throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
+      else if(modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
+
+      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
+
+      if(abs(fsigma[iField]) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmax/gkBoltzmann/fT[iField]) 
+				  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
+      else if(abs(fsigma[iField]-1.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmax/gkBoltzmann/fT[iField]) 
+					  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
+      else if(abs(fsigma[iField]-2.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmax/gkBoltzmann/fT[iField]) 
+					  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
+      else if(abs(fsigma[iField]-3.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmax/gkBoltzmann/fT[iField]) 
+					  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
+      else I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmax/gkBoltzmann/fT[iField]) 
+		- pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]); 
+      I /= (fsigma[iField] + 2.);
+      if(I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+
+      I *= 8. * gPi * n0 * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
+      
+    }
+    else {
+
+      n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
+      if(feps0[iField] >= xmax)
+        I += (pow(xmax/feps0[iField], falpha[iField]+1.) - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.);
+      else if(feps0[iField] < xmax && feps0[iField] >= xmin)
+	I += (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) + (pow(xmax/feps0[iField], fbeta[iField]+1.) - 1.) / (fbeta[iField]+1.);
+      else
+	I += (pow(xmax/feps0[iField], fbeta[iField]+1.) - pow(xmin/feps0[iField], fbeta[iField]+1.)) / (fbeta[iField]+1.);
+      I *= n0 * feps0[iField];
+
+    }
+
+    return I;
+
+  } 
+
+  double
+  PhotoNuclearSource::I3(const double xmin, const int iField) const { // performs \int_xmin^\infty n(e)/e^2 de
+
+    double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
+    double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
+
+    if(fieldType[iField] == "MBB"|| fieldType[iField] == "MBBInterp") {
+    
+      double buffdbl; 
+      if(fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
+      else if(fsigma[iField] > 6.) throw runtime_error("GSL functions not available to integrate field for sigma > 6!");
+      else if(modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
+
+      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
+
+      if(abs(fsigma[iField]) < 1e-5)
+        I += (gsl_isinf(exp(xmin/gkBoltzmann/fT[iField])))? 0. : xmin/gkBoltzmann/fT[iField] - log(exp(xmin/gkBoltzmann/fT[iField]) - 1.);
+       else {
+        if(abs(fsigma[iField]-1.) < 1e-5) I -= gsl_sf_debye_1(xmin/gkBoltzmann/fT[iField]);
+	else if(abs(fsigma[iField]-2.) < 1e-5) I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
+	else if(abs(fsigma[iField]-3.) < 1e-5) I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
+	else if(abs(fsigma[iField]-4.) < 1e-5) I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
+	else if(abs(fsigma[iField]-5.) < 1e-5) I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
+	else I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
+	I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]) / fsigma[iField]; 
+        I += gsl_sf_zeta(fsigma[iField]+1.) * gsl_sf_gamma(fsigma[iField]+1.);
+      }
+      if(I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+      
+      I *= 8. * gPi * n0 / pow(feps0[iField], 2) * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]-2.) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
+
+    }
+    else {
+
+      n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
+
+      if(feps0[iField] >= xmin) {
+	I += (falpha[iField] == 1.)? log(feps0[iField]/xmin) : (1. - pow(xmin/feps0[iField], falpha[iField]-1.)) / (falpha[iField]-1.);
+	I -= 1./(fbeta[iField]-1.);
+      }
+      else
+	I -= pow(xmin/feps0[iField], fbeta[iField]-1.) / (fbeta[iField]-1.);
+      I *= n0 / feps0[iField];
+
+    }
+
+   return I;
+
+  } 
+
+  double
   PhotoNuclearSource::GetProcessFraction(const double E,
                                          const int A,
                                          const EProcess p)
@@ -568,15 +937,51 @@ namespace prop {
       return 1 - frac;
   }
 
+  double
+  PhotoNuclearSource::GetChannelFraction(const double E,
+                                         const int A,
+                                         const EChannel p)
+    const
+  {
+    const double lgE = log10(E);
+    double lambdaPH = 0, lambdaH = 0;
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+      const double lambdaPP =
+        EvalFast(FindGraph(fPhotoPionProductions[i], A),
+                 lgE) / f;
+      if (lambdaPH == 0)
+        lambdaPH = lambdaPP;
+      else
+        lambdaPH = (lambdaPH * lambdaPP) / (lambdaPH + lambdaPP);
+      if (A == 1)
+        continue;
+      const double lambdaPD =
+        EvalFast(FindGraph(fPhotoDissociations[i], A), lgE) / f;
+      lambdaPH = (lambdaPH * lambdaPD) / (lambdaPH + lambdaPD);
+    }
+
+    lambdaH = HadInts->LambdaHadInt(E, A);
+
+    double frac = 1./(1.+lambdaPH/lambdaH);
+
+    if (p == ePH)
+      return frac;
+    else 
+      return 1 - frac;
+  }
+
   void
   PhotoNuclearSource::Update(double newPeak)
   {
 
     // nothing to be done if not interpolating or value hasn't changed 
-    if( (fieldType != "BPLInterp" && fieldType != "MBBInterp") || currentPeak == newPeak )
+    if( (fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") || currentPeak == newPeak )
 	return;
 
-    const std::vector<double>& gridpeaks = (fieldType == "MBBInterp" )? MBBpeaks : BPLpeaks;
+    const std::vector<double>& gridpeaks = (fieldType[0] == "MBBInterp" )? MBBpeaks : BPLpeaks;
 
     if(newPeak < minPeak || newPeak > maxPeak)
 	throw runtime_error("Peak drifted outside range: photonPeak = " + std::to_string(newPeak));
@@ -626,6 +1031,13 @@ namespace prop {
     InterpBR(x, xL, xR);
 
     currentPeak = newPeak;
+    if(fieldType[0] == "MBBInterp") { 
+      fT[0] = currentPeak; 
+      feps0[0] = (gsl_sf_lambert_W0(-(fsigma[0]+2.)*exp(-(fsigma[0]+2.))) + fsigma[0]+2.) * gkBoltzmann*fT[0];
+    }
+    else
+     feps0[0] = currentPeak;
+     fT[0] = feps0[0] / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.);
     posR = newposR;
 
     return;
@@ -635,10 +1047,10 @@ namespace prop {
   PhotoNuclearSource::InterpInit(double photonPeak)
   {
 
-    if(fieldType != "BPLInterp" && fieldType != "MBBInterp") 
+    if(fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") 
 	throw runtime_error("Unrecognized photon field to interpolate");
 
-    const std::vector<double>& gridpeaks = (fieldType == "MBBInterp" )? MBBpeaks : BPLpeaks;
+    const std::vector<double>& gridpeaks = (fieldType[0] == "MBBInterp" )? MBBpeaks : BPLpeaks;
     minPeak = gridpeaks.front();
     maxPeak = gridpeaks.back();
 
@@ -678,12 +1090,12 @@ namespace prop {
     Lambda& lambdaGraphs = newPD.back();
 
     string filename, field;
-    if(fieldType == "MBBInterp") {
+    if(fieldType[0] == "MBBInterp") {
       strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find(".")); 
       field = "MBB_" + strPeak + "_" + sigma;
       filename = fDirectory + "/pd_" + field + ".txt";
     }
-    else if(fieldType == "BPLInterp") {
+    else if(fieldType[0] == "BPLInterp") {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/pd_" + field + ".txt";
     }
@@ -753,12 +1165,12 @@ namespace prop {
     Lambda& lambdaGraphs = newPPP.back();
 
     string filename, field;
-    if(fieldType == "MBBInterp") {
+    if(fieldType[0] == "MBBInterp") {
       strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find(".")); 
       field = "MBB_" + strPeak + "_" + sigma;
       filename = fDirectory + "/ppp_" + field + ".txt";
     }
-    else if(fieldType == "BPLInterp") {
+    else if(fieldType[0] == "BPLInterp") {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/ppp_" + field + ".txt";
     }
@@ -818,12 +1230,12 @@ namespace prop {
     BranchingRatio& branchingRatio = newBR.back();
 
     string filename, field;
-    if(fieldType == "MBBInterp") { 
+    if(fieldType[0] == "MBBInterp") { 
       strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find(".")); 
       field = "MBB_" + strPeak + "_" + sigma;
       filename = fDirectory + "/pd_branching_" + field + ".txt";
     }
-    else if(fieldType == "BPLInterp") {
+    else if(fieldType[0] == "BPLInterp") {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/pd_branching_" + field + ".txt";
     }
@@ -1048,7 +1460,7 @@ namespace prop {
 	const int Asec = secIter.first;
 
 	stringstream histName;
-	histName << "branch_" << fieldType << "_" << A << "_" << Asec;
+	histName << "branch_" << fieldType[0] << "_" << A << "_" << Asec;
 	if(gROOT->FindObject(histName.str().c_str()))
 	  delete gROOT->FindObject(histName.str().c_str());
 	TH1D* hist = new TH1D(histName.str().c_str(), "", nlg, lgmin, lgmax);
@@ -1075,4 +1487,28 @@ namespace prop {
 
     return;
   }
+
+  double PhotoNuclearSource::GetMeanPhotonEnergy() 
+    const 
+  {
+
+    double Eavg = 0.;
+
+    for (unsigned int i = 0; i < fFields.size(); ++i) {
+      
+      const double f = fFieldScaleFactors[i];
+      if (f <= 0)
+        continue;
+
+      if(fieldType[i] == "MBB"|| fieldType[i] == "MBBInterp") 
+        Eavg += f*gkBoltzmann*fT[i]*gsl_sf_zeta(4+fsigma[i])*gsl_sf_gamma(4+fsigma[i]);
+
+      else Eavg += (fbeta[i] >= -2)? f*feps0[i] : f*feps0[i]*(falpha[i]+1.)*(fbeta[i]+1.)/(falpha[i]+2.)/(fbeta[i]+2.);
+
+    }
+
+    return Eavg;    
+
+  }
+
 }
