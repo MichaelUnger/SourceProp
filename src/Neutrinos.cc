@@ -82,6 +82,14 @@ namespace prop {
     const TMatrixD& mPiP = escMapN.find(Spectrum::ePionPlus)->second;
     const TMatrixD& mPiM = escMapN.find(Spectrum::ePionMinus)->second;
 
+    # warning source tau neutrinos omitted
+    const TMatrixD& mNuE = escMapN.find(Spectrum::eElectronNeutrino)->second;
+    const TMatrixD& mNuM = escMapN.find(Spectrum::eMuonNeutrino)->second;
+    //const TMatrixD& mNuT = escMapN.find(Spectrum::eTauNeutrino)->second;
+    const TMatrixD& mANuE = escMapN.find(Spectrum::eAntiElectronNeutrino)->second;
+    const TMatrixD& mANuM = escMapN.find(Spectrum::eAntiMuonNeutrino)->second;
+    //const TMatrixD& mANuT = escMapN.find(Spectrum::eAntiTauNeutrino)->second;
+
     TMatrixD& mP = escFluxResized[1];
     mP.ResizeTo(nProp, 1);
     TMatrixD& mN = escFluxResized[eNeutron];
@@ -91,6 +99,18 @@ namespace prop {
     TMatrixD& mPionMinus = escFluxResized[ePionMinus];
     mPionMinus.ResizeTo(nProp, 1);
 
+    TMatrixD& mNeutrinoE = escFluxResized[eElectronNeutrino];
+    mNeutrinoE.ResizeTo(nProp, 1);
+    TMatrixD& mNeutrinoM = escFluxResized[eMuonNeutrino];
+    mNeutrinoM.ResizeTo(nProp, 1);
+    //TMatrixD& mNeutrinoT = escFluxResized[eTauNeutrino];
+    //mNeutrinoT.ResizeTo(nProp, 1);
+    TMatrixD& mANeutrinoE = escFluxResized[eAntiElectronNeutrino];
+    mANeutrinoE.ResizeTo(nProp, 1);
+    TMatrixD& mANeutrinoM = escFluxResized[eAntiMuonNeutrino];
+    mANeutrinoM.ResizeTo(nProp, 1);
+    //TMatrixD& mANeutrinoT = escFluxResized[eAntiTauNeutrino];
+    //mANeutrinoT.ResizeTo(nProp, 1);
 
     if (withSourceNu) {
       for (unsigned int i = 0; i < nEsc; ++i) {
@@ -98,6 +118,12 @@ namespace prop {
         mN(i + deltaIndex, 0) = mNOrig (i, 0);
         mPionPlus(i + deltaIndex, 0) = mPiP(i, 0);
         mPionMinus(i + deltaIndex, 0) = mPiM(i, 0);
+        mNeutrinoE(i + deltaIndex, 0) = mNuE(i, 0);
+        mNeutrinoM(i + deltaIndex, 0) = mNuM(i, 0);
+        //mNeutrinoT(i + deltaIndex, 0) = mNuT(i, 0);
+        mANeutrinoE(i + deltaIndex, 0) = mANuE(i, 0);
+        mANeutrinoM(i + deltaIndex, 0) = mANuM(i, 0);
+        //mANeutrinoT(i + deltaIndex, 0) = mANuT(i, 0);
       }
     }
     else {
@@ -106,6 +132,12 @@ namespace prop {
         mN(i + deltaIndex, 0) = 0;
         mPionPlus(i + deltaIndex, 0) = 0;
         mPionMinus(i + deltaIndex, 0) = 0;
+        mNeutrinoE(i + deltaIndex, 0) = 0;
+        mNeutrinoM(i + deltaIndex, 0) = 0;
+      //  mNeutrinoT(i + deltaIndex, 0) = 0;
+        mANeutrinoE(i + deltaIndex, 0) = 0;
+        mANeutrinoM(i + deltaIndex, 0) = 0;
+      //  mANeutrinoT(i + deltaIndex, 0) = 0;
       }
     }     
     fPropagator->Propagate(escFluxResized, false);
