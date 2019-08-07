@@ -22,7 +22,14 @@ namespace prop {
       eNeutronEsc,
       ePionPlus,
       ePionMinus,
-      ePionZero
+      ePionZero,
+      eElectronNeutrino,
+      eAntiElectronNeutrino,
+      eMuonNeutrino,
+      eAntiMuonNeutrino,
+      eTauNeutrino,
+      eAntiTauNeutrino,
+      ePhoton
     };
 
     enum ESpectrumType {
@@ -72,7 +79,7 @@ namespace prop {
     const SpecMap& GetNucleonFlux() const;
     SpecMap& GetNucleonFlux();
     const SpecMap& GetextraProtonFlux() const;
-    SpecMap& GetextraProtonFlux(); 
+    SpecMap& GetextraProtonFlux();
 
     void AddEscComponent(const unsigned int A, const TMatrixD& flux);
 
@@ -95,6 +102,12 @@ namespace prop {
 
     static double GetE0(); 
 
+    static double GetMPPMultiplicity(const double Eph);
+    
+    static double GetMPPEprim(double lgEprim, void* pars);
+
+    struct MPP_pars { double A; double Asec; double kappaMPP; double Eph; double Esec; };
+
     // P = int_E1^E2 E * f(E/E0) dE
     double InjectedPower(const double E1, const double E2, const double A) const;
     // P = int_E1^\infty E * f(E/E0) dE
@@ -107,6 +120,7 @@ namespace prop {
     void CalculateSpectrum() const;
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
+
 
     ESpectrumType fSpectrumType;
     double fRmax;
