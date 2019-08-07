@@ -13,7 +13,12 @@
 #include <limits>
 #include <iostream>
 #include <stdexcept>
+
 #include <gsl/gsl_sf_gamma.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_roots.h>
+#include <gsl/gsl_errno.h>
+
 using namespace std;
 
 #ifdef _WITH_OPENMP_
@@ -24,6 +29,9 @@ using namespace std;
 
 namespace prop {
 
+  const double gProtonMass = 938.272046e6;
+  const double gNeutronMass = 939.565379e6;
+  
   const
   Spectrum::SpecMap&
   Spectrum::GetEscFlux()
@@ -466,7 +474,7 @@ namespace prop {
   Spectrum::CalculateSpectrum()
     const
   {
-    
+   
     // pion fractions in photo-pion production
 #undef _UFA15_    
 #ifdef _UFA15_
@@ -476,9 +484,9 @@ namespace prop {
     const double chargedPionFraction = 0.5; 
 #else
     // Delta+ --> p + pi0, Delta0 --> n + pi0 
-    const double neutralPionFraction = 2/3.; 
+    const double neutralPionFraction = 0.5; //2/3.; 
     // Delta+ --> n + pi+, Delta0 --> p + pi- 
-    const double chargedPionFraction = 1/3.; 
+    const double chargedPionFraction = 0.5; //1/3.; 
 #endif
 
     // init injected flux
@@ -511,8 +519,36 @@ namespace prop {
     TMatrixD& mPionZero = fNucleons[ePionZero];
     if (!mPionZero.GetNoElements())
       mPionZero.ResizeTo(fN, 1);
+    TMatrixD& mPhoton = fNucleons[ePhoton];
+    if (!mPhoton.GetNoElements())
+      mPhoton.ResizeTo(fN, 1);
+
+    TMatrixD& mNeutrinoE = fNucleons[eElectronNeutrino];
+    if (!mNeutrinoE.GetNoElements())
+      mNeutrinoE.ResizeTo(fN, 1);
+    TMatrixD& mANeutrinoE = fNucleons[eAntiElectronNeutrino];
+    if (!mANeutrinoE.GetNoElements())
+      mANeutrinoE.ResizeTo(fN, 1);
+    TMatrixD& mNeutrinoM = fNucleons[eMuonNeutrino];
+    if (!mNeutrinoM.GetNoElements())
+      mNeutrinoM.ResizeTo(fN, 1);
+    TMatrixD& mANeutrinoM = fNucleons[eAntiMuonNeutrino];
+    if (!mANeutrinoM.GetNoElements())
+      mANeutrinoM.ResizeTo(fN, 1);
+    TMatrixD& mNeutrinoT = fNucleons[eTauNeutrino];
+    if (!mNeutrinoT.GetNoElements())
+      mNeutrinoT.ResizeTo(fN, 1);
+    TMatrixD& mANeutrinoT = fNucleons[eAntiTauNeutrino];
+    if (!mANeutrinoT.GetNoElements())
+      mANeutrinoT.ResizeTo(fN, 1);
 
     const double Emax  = pow(10, fLgEmax);
+
+    gsl_function consistentMPP;
+    consistentMPP.function = &Spectrum::GetMPPEprim;
+    MPP_pars MPPpars;
+    const gsl_root_fsolver_type * T = gsl_root_fsolver_brent;
+    gsl_root_fsolver * MPP_solve = gsl_root_fsolver_alloc (T);
 
     TDirectory* save = gDirectory;
     gROOT->cd();
@@ -526,8 +562,14 @@ namespace prop {
 
       // knock-off nucleon and pion production
       TH1D pd("pd", "", nBins, fLgEmin, fLgEmax);
-      TH1D pp("pp", "", nBins, fLgEmin, fLgEmax);
-      TH1D pion("pion", "", nBins, fLgEmin, fLgEmax);
+      TH1D pp("pp", "", nBins, fLgEmin, fLgEmax); // single-pion production
+      TH1D pion("pion", "", nBins, fLgEmin, fLgEmax); // single-pion production
+      TH1D mpp("mpp", "", nBins, fLgEmin, fLgEmax); // multipion production
+      TH1D mpion("mpion", "", nBins, fLgEmin, fLgEmax); // multipion production
+
+      // nucleon production from hadronic interactions
+      TH1D had_p("had_p", "", nBins, fLgEmin, fLgEmax);
+      TH1D had_n("had_n", "", nBins, fLgEmin, fLgEmax);
 
       vector<TH1D*> prodSpectrum;
       vector<TH1D*> logProdSpectrum;
@@ -577,13 +619,17 @@ namespace prop {
                 const double bPD =
                   fSource->GetPDBranchingRatio(Eprim, Asec, Aprim);
                 if (bPD > 0) {
-                  const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
+                  const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, Aprim);
+                  const double lambdaI_H = fSource->LambdaHadInt(Eprim, Aprim);
+		  const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                   const double fInt = lambdaE / (lambdaE + lambdaI);
                   const double Qprim = Eval(loghPrim, log10(Eprim));
+                  const double phFrac =
+                    fSource->GetChannelFraction(Eprim, Aprim, VSource::ePH);
                   const double pdFrac =
                     fSource->GetProcessFraction(Eprim, Aprim, VSource::ePD);
-                  const double flux = pdFrac * fInt * bPD * jacobi * Qprim;
+                  const double flux = phFrac * pdFrac * fInt * bPD * jacobi * Qprim;
                   hSec.Fill(lgE, flux);
                   if (Asec == 1)
                     pd.Fill(lgE, flux);
@@ -596,36 +642,114 @@ namespace prop {
               if (Asec == 1) {
                 // nucleons
                 {
+		  //single pion production
                   const double kappa = 0.8;
                   const double jacobi = double(Aprim) / Asec / kappa;
                   const double Eprim = jacobi * E;
                   if (Eprim < Emax) {
-                    const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
+                    const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, Aprim);
+                    const double lambdaI_H = fSource->LambdaHadInt(Eprim, Aprim);
+		    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
                     const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                     const double fInt = lambdaE / (lambdaE + lambdaI);
                     const double Qprim = Eval(loghPrim, log10(Eprim));
+                    const double phFrac =
+                      fSource->GetChannelFraction(Eprim, Aprim, VSource::ePH);
                     const double ppFrac =
                       fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
-                    const double flux = ppFrac * fInt * jacobi * Qprim;
+		    const double bSPP = 1. -
+		      fSource->GetMPPBranchingRatio(Eprim, Aprim);
+                    const double flux = bSPP * phFrac * ppFrac * fInt * jacobi * Qprim;
                     hSec.Fill(lgE, flux);
                     pp.Fill(lgE, flux);
                   }
+
+		  // multipion production
+		  const double kappaMPP = 0.65;
+		  const double jacobiMPP = double(Aprim) / Asec / kappaMPP;
+		  const double EprimMPP = jacobiMPP * E;
+		  if(EprimMPP < Emax) {
+                    const double lambdaI_PH = fSource->LambdaPhotoHadInt(EprimMPP, Aprim);
+                    const double lambdaI_H = fSource->LambdaHadInt(EprimMPP, Aprim);
+		    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+                    const double lambdaE = fSource->LambdaEsc(EprimMPP, Aprim);
+                    const double fInt = lambdaE / (lambdaE + lambdaI);
+                    const double Qprim = Eval(loghPrim, log10(EprimMPP));
+                    const double phFrac =
+                      fSource->GetChannelFraction(EprimMPP, Aprim, VSource::ePH);
+                    const double ppFrac =
+                      fSource->GetProcessFraction(EprimMPP, Aprim, VSource::ePP);
+		    const double bMPP = 
+		      fSource->GetMPPBranchingRatio(EprimMPP, Aprim);
+                    const double flux = bMPP * phFrac * ppFrac * fInt * jacobiMPP * Qprim;
+		    hSec.Fill(lgE, flux);
+		    mpp.Fill(lgE, flux);
+		  }
                 }
                 // pions
                 {
+		  // single pion production
                   const double kappa = 0.2;
                   const double jacobi = double(Aprim) / Asec / kappa;
                   const double Eprim = jacobi * E;
                   if (Eprim < Emax) {
-                    const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
+                    const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, Aprim);
+                    const double lambdaI_H = fSource->LambdaHadInt(Eprim, Aprim);
+		    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
                     const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                     const double fInt = lambdaE / (lambdaE + lambdaI);
                     const double Qprim = Eval(loghPrim, log10(Eprim));
+                    const double phFrac =
+                      fSource->GetChannelFraction(Eprim, Aprim, VSource::ePH);
                     const double ppFrac =
                       fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
-                    const double flux = ppFrac * fInt * jacobi * Qprim;
+		    const double bSPP = 1. -
+		      fSource->GetMPPBranchingRatio(Eprim, Aprim);
+                    const double flux = bSPP * phFrac * ppFrac * fInt * jacobi * Qprim;
                     pion.Fill(lgE, flux);
                   }
+                  
+		  //multipion production
+		  const double kappaMPP = 0.35;
+		  const double Eph = fSource->GetMeanPhotonEnergy();
+		  double EprimMPP;
+		  MPPpars.A = Aprim;
+		  MPPpars.Asec = Asec;
+		  MPPpars.kappaMPP = kappaMPP;
+		  MPPpars.Eph = Eph;
+		  MPPpars.Esec = E;
+		  consistentMPP.params = &MPPpars;
+		  gsl_root_fsolver_set(MPP_solve, &consistentMPP, 0., 2.*fLgEmax);
+		  int status, Niter = 0, Nmaxiter = 1000;
+		  do { // ensures multiplicity and primary energy are self-consistent
+		    Niter++;
+		    status = gsl_root_fsolver_iterate(MPP_solve);
+		    EprimMPP = pow(10., gsl_root_fsolver_root(MPP_solve));
+		  }
+		  while(status == GSL_CONTINUE && Niter < Nmaxiter);
+		  if(status == GSL_CONTINUE) throw runtime_error("GSL root finder did not converge! MPP can't be made self-consistent!");
+		  const int Z = aToZ(Aprim), N = Aprim - Z;
+		  const double gamma = EprimMPP / (Z*gProtonMass + N*gNeutronMass);
+		  const double multiplicity = std::max(2., Spectrum::GetMPPMultiplicity(2.*gamma*Eph));
+		  const double jacobiMPP = double(Aprim) / Asec / (kappaMPP/multiplicity);
+		  EprimMPP = jacobiMPP * E;
+                  if (EprimMPP < Emax) {
+                    const double lambdaI_PH = fSource->LambdaPhotoHadInt(EprimMPP, Aprim);
+                    const double lambdaI_H = fSource->LambdaHadInt(EprimMPP, Aprim);
+		    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+                    const double lambdaE = fSource->LambdaEsc(EprimMPP, Aprim);
+                    const double fInt = lambdaE / (lambdaE + lambdaI);
+                    const double Qprim = Eval(loghPrim, log10(EprimMPP));
+                    const double phFrac =
+                      fSource->GetChannelFraction(EprimMPP, Aprim, VSource::ePH);
+                    const double ppFrac =
+                      fSource->GetProcessFraction(EprimMPP, Aprim, VSource::ePP);
+		    const double bMPP =
+		      fSource->GetMPPBranchingRatio(EprimMPP, Aprim);
+                    const double flux = multiplicity * bMPP * phFrac * ppFrac * fInt * jacobiMPP * Qprim;
+                    mpion.Fill(lgE, flux);
+                  }
+
                 }
               }
               else { // Asec + 1 == Aprim
@@ -633,13 +757,17 @@ namespace prop {
                 const double jacobi = double(Aprim) / Asec;
                 const double Eprim = jacobi * E;
                 if (Eprim < Emax) {
-                  const double lambdaI = fSource->LambdaInt(Eprim, Aprim);
+                  const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, Aprim);
+                  const double lambdaI_H = fSource->LambdaHadInt(Eprim, Aprim);
+		  const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
                   const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
                   const double fInt = lambdaE / (lambdaE + lambdaI);
                   const double Qprim = Eval(loghPrim, log10(Eprim));
+                  const double phFrac =
+                    fSource->GetChannelFraction(Eprim, Aprim, VSource::ePH);
                   const double ppFrac =
                     fSource->GetProcessFraction(Eprim, Aprim, VSource::ePP);
-                  const double flux = ppFrac * fInt * jacobi * Qprim;
+                  const double flux = phFrac * ppFrac * fInt * jacobi * Qprim;
                   hSec.Fill(lgE, flux);
                 }
               }
@@ -652,6 +780,115 @@ namespace prop {
         for (unsigned int iE = 0; iE < nBins; ++iE) {
           const double c = hSec.GetBinContent(iE+1);
           logSec.SetBinContent(iE+1, c ? log(c) : -1e100);
+        }
+      }
+
+      // hadronic part
+      if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
+        for (int Asec = Ainj - 1; Asec > 0; --Asec) {
+          TH1D& hSec = *prodSpectrum[Asec];
+          double lgEprim = fLgEmin + dlgEOrig / 2;
+          for (unsigned int iE = 0; iE < fN; ++iE) {
+            const double Eprim = pow(10, lgEprim);
+            for (int Aprim = Asec + 1; Aprim <= Ainj; ++Aprim) {
+              const TH1D& loghPrim = *logProdSpectrum[Aprim];
+	      const double hFrac =
+	        fSource->GetChannelFraction(Eprim, Aprim, VSource::eH);
+	      const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, Aprim);
+	      const double lambdaI_H = fSource->LambdaHadInt(Eprim, Aprim);
+	      const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+	      const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
+	      const double fInt = lambdaE / (lambdaE + lambdaI);
+	      const double Qprim = Eval(loghPrim, log10(Eprim));
+	      double lgE = fLgEmin + dlgEOrig / 2;
+              for (unsigned int jE = 0; jE <= iE; ++jE) {
+                const double E = pow(10, lgE);
+		const double jacobi = Eprim / E;
+		if(hFrac > 1e-10) {
+		  const double Nsec = fSource->GetNSecondaries(E, Eprim, Asec, Aprim);
+		  if(Nsec > 0) {
+		    const double flux = hFrac * fInt * Nsec * jacobi * Qprim;
+		    hSec.Fill(lgE, flux);
+		    if ( Asec == 1) {
+		      const double Nsec_p = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("proton"), Aprim)
+		  			    + fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("antiproton"), Aprim);
+		      const double flux_p = hFrac * fInt * Nsec_p * jacobi * Qprim;
+		      had_p.Fill(lgE, flux_p);
+		      const double Nsec_n = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("neutron"), Aprim)
+		  			    + fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("antineutron"), Aprim);
+		      const double flux_n = hFrac * fInt * Nsec_n * jacobi * Qprim;
+		      had_n.Fill(lgE, flux_n);
+		    }
+	          }
+                }
+
+                lgE += dlgEOrig;
+              }
+  
+            }
+            lgEprim += dlgEOrig;
+          }
+        }
+      }
+
+      // pions, neutrinos, and photons from hadronic interactions of nuclei
+      if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
+       double lgEprim = fLgEmin + dlgEOrig / 2;
+       for (unsigned int iE = 0; iE < fN; ++iE) {
+          const double Eprim = pow(10, lgEprim);
+          for (int Aprim = 2; Aprim <= Ainj; ++Aprim) {
+            const TH1D& loghPrim = *logProdSpectrum[Aprim];
+	    const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, Aprim);
+	    const double lambdaI_H = fSource->LambdaHadInt(Eprim, Aprim);
+	    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+	    const double lambdaE = fSource->LambdaEsc(Eprim, Aprim);
+	    const double fInt = lambdaE / (lambdaE + lambdaI);
+	    const double Qprim = Eval(loghPrim, log10(Eprim));
+	    const double hFrac =
+	      fSource->GetChannelFraction(Eprim, Aprim, VSource::eH);
+
+            double lgE = fLgEmin + dlgEOrig / 2;
+            for (unsigned int jE = 0; jE <= iE; ++jE) {
+              const double E = pow(10, lgE);
+	      const double jacobi = Eprim / E;
+	      if(hFrac > 1e-10) {
+	        const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi0"), Aprim);
+	        const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * Qprim;
+	        mPionZero[jE][0] += flux_pi0;
+	        const double Nsec_pip = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi+"), Aprim);
+	        const double flux_pip = hFrac * fInt * Nsec_pip * jacobi * Qprim;
+	        mPionPlus[jE][0] += flux_pip;
+	        const double Nsec_pim = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi-"), Aprim);
+	        const double flux_pim = hFrac * fInt * Nsec_pim * jacobi * Qprim;
+	        mPionMinus[jE][0] += flux_pim;
+	        const double Nsec_nu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_e"), Aprim);
+	        const double flux_nu_e = hFrac * fInt * Nsec_nu_e * jacobi * Qprim;
+	        mNeutrinoE[jE][0] += flux_nu_e;
+	        const double Nsec_anu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_e"), Aprim);
+	        const double flux_anu_e = hFrac * fInt * Nsec_anu_e * jacobi * Qprim;
+	        mANeutrinoE[jE][0] += flux_anu_e;
+	        const double Nsec_nu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_mu"), Aprim);
+	        const double flux_nu_m = hFrac * fInt * Nsec_nu_m * jacobi * Qprim;
+	        mNeutrinoM[jE][0] += flux_nu_m;
+	        const double Nsec_anu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_mu"), Aprim);
+	        const double flux_anu_m = hFrac * fInt * Nsec_anu_m * jacobi * Qprim;
+	        mANeutrinoM[jE][0] += flux_anu_m;
+	        const double Nsec_nu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_tau"), Aprim);
+	        const double flux_nu_t = hFrac * fInt * Nsec_nu_t * jacobi * Qprim;
+	        mNeutrinoT[jE][0] += flux_nu_t;
+	        const double Nsec_anu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_tau"), Aprim);
+	        const double flux_anu_t = hFrac * fInt * Nsec_anu_t * jacobi * Qprim;
+	        mANeutrinoT[jE][0] += flux_anu_t;
+	        const double Nsec_photon = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("photon"), Aprim);
+	        const double flux_photon = hFrac * fInt * Nsec_photon * jacobi * Qprim;
+	        mPhoton[jE][0] += flux_photon;
+	      }
+
+              lgE += dlgEOrig;
+            }
+          }
+	  
+	  lgEprim += dlgEOrig;
         }
       }
 
@@ -677,11 +914,16 @@ namespace prop {
       const unsigned int n = fN;
 
       for (unsigned int iE = 0; iE < n; ++iE) {
-        // proton photo-pion production of nuclei
+        // nucleons from single photo-pion production of nuclei
         const double fPP = LogEval(pp, lgE);
         mPP[iE][0] += fPP;
         mProtonProd[iE][0] += fPP * neutralPionFraction;
         mNeutronProd[iE][0] += fPP * chargedPionFraction;
+
+	// nucleons from multipion production of nuclei
+	const double fMPP = LogEval(mpp, lgE);
+	mPP[iE][0] += fMPP;
+	mProtonProd[iE][0] += fMPP;
 
         // nucleons from photo-dissociation of nuclei
         const double fPD = LogEval(pd, lgE);
@@ -689,11 +931,25 @@ namespace prop {
         mProtonProd[iE][0] += fPD / 2;
         mNeutronProd[iE][0] += fPD / 2;
 
+	// pions from single pion production
         const double fPion = LogEval(pion, lgE);
         mPionPlus[iE][0] += fPion * chargedPionFraction/2;
         mPionMinus[iE][0] += fPion * chargedPionFraction/2;
         mPionZero[iE][0] += fPion * neutralPionFraction;
+
+	// pions from multipion production
+	const double fMPion = LogEval(mpion, lgE);
+	mPionPlus[iE][0] += fMPion / 3.;
+	mPionMinus[iE][0] += fMPion / 3.;
+	mPionZero[iE][0] += fMPion / 3.;
+
+        // nucleons from hadronic interactions of nuclei
+        const double fHad_p = LogEval(had_p, lgE);
+        mProtonProd[iE][0] += fHad_p;
+	const double fHad_n = LogEval(had_n, lgE);
+	mNeutronProd[iE][0] += fHad_n;
         lgE += dlgEOrig;
+	
       }
     }
 
@@ -716,6 +972,7 @@ namespace prop {
 
       // proton energy loss in photo-pion production
       const double kappa = 0.8;
+      const double kappa_MPP = 0.65;
 
       // fraction of p + gamma --> p + pi0
       const double bPP = neutralPionFraction;
@@ -725,6 +982,12 @@ namespace prop {
         stringstream errMsg;
         errMsg << " proton interaction only implemented for kappa ~ dlgE"
                << kappa << " " << dlgEOrig;
+        throw runtime_error(errMsg.str().c_str());
+      }
+      if (1+log10(kappa_MPP)/dlgEOrig > 0.05) {
+        stringstream errMsg;
+        errMsg << " proton interaction only implemented for kappa_MPP ~ dlgE"
+               << kappa_MPP << " " << dlgEOrig;
         throw runtime_error(errMsg.str().c_str());
       }
 
@@ -738,19 +1001,76 @@ namespace prop {
         double pSum =  mProtonProd[iE][0];
         double nSum =  mNeutronProd[iE][0];
         if (iE < fN - 1) {
+          // photohadronic part
           const int iENext = iE + 1;
-          const double qNext = protonFlux[iENext];
+          double qNext = protonFlux[iENext];
           const double Enext = pow(10, lgE + dlgEOrig);
-          const double lambdaI = fSource->LambdaInt(Enext, 1);
-          const double lambdaE = fSource->LambdaEsc(Enext, 1);
-          const double fInt = lambdaE / (lambdaE + lambdaI);
-          pSum += bPP * fInt * qNext / kappa;
-          nSum += (1-bPP) * fInt * qNext / kappa;
+	  double lambdaI_PH = fSource->LambdaPhotoHadInt(Enext, 1);
+	  double lambdaI_H = fSource->LambdaHadInt(Enext, 1);
+	  double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+          double lambdaE = fSource->LambdaEsc(Enext, 1);
+          double fInt = lambdaE / (lambdaE + lambdaI);
+	  const double phFrac =
+	    fSource->GetChannelFraction(Enext, 1, VSource::ePH);
+	  const double bSPP = 1. -
+            fSource->GetMPPBranchingRatio(Enext, 1); 
+          pSum += bPP * bSPP * phFrac * fInt * qNext / kappa;
+          nSum += (1-bPP) * bSPP * phFrac * fInt * qNext / kappa;
+        
+	  // hadronic part
+          if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
+	    double lgEprim = lgE;
+            for (unsigned int jE = iE; jE < n; ++jE) {
+	      qNext = protonFlux[jE];
+	      const double E = pow(10., lgE);
+	      const double Eprim = pow(10., lgEprim);
+	      const double jacobi = Eprim / E;
+	      lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, 1);
+	      lambdaI_H = fSource->LambdaHadInt(Eprim, 1);
+	      lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+	      lambdaE = fSource->LambdaEsc(Eprim, 1);
+	      fInt = lambdaE / (lambdaE + lambdaI);
+              const double hFrac =
+                fSource->GetChannelFraction(Eprim, 1, VSource::eH);
+	      if(hFrac > 1e-10) {
+	        const double Nsec_p = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("proton"), 1)
+	                              + fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("antiproton"), 1);
+	        const double flux_p = hFrac * fInt * Nsec_p * jacobi * qNext;
+	        pSum += flux_p;
+	        const double Nsec_n = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("neutron"), 1)
+	    		              + fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("antineutron"), 1);
+	        const double flux_n = hFrac * fInt * Nsec_n * jacobi * qNext;
+	        nSum += flux_n;
+              }
+
+	      lgEprim += dlgEOrig;
+            }
+	  }
         }
+
+	// multipion production
+	if(iE < fN - 2) { 
+	  const int iENext = iE + 2;
+          double qNext = protonFlux[iENext];
+          const double Enext = pow(10, lgE + 2 * dlgEOrig);
+	  double lambdaI_PH = fSource->LambdaPhotoHadInt(Enext, 1);
+	  double lambdaI_H = fSource->LambdaHadInt(Enext, 1);
+	  double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+          double lambdaE = fSource->LambdaEsc(Enext, 1);
+          double fInt = lambdaE / (lambdaE + lambdaI);
+	  const double phFrac =
+	    fSource->GetChannelFraction(Enext, 1, VSource::ePH);
+	  const double bMPP =
+	    fSource->GetMPPBranchingRatio(Enext, 1);
+	  pSum += bMPP * phFrac * fInt * qNext / kappa_MPP;
+	}
+
         protonFlux[iE] = pSum;
 
         const double E = pow(10, lgE);
-        const double lambdaI = fSource->LambdaInt(E, 1);
+	const double lambdaI_PH = fSource->LambdaPhotoHadInt(E, 1);
+	const double lambdaI_H = fSource->LambdaHadInt(E, 1);
+	const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
         const double lambdaE = fSource->LambdaEsc(E, 1);
         const double fEsc = lambdaI / (lambdaE + lambdaI);
         mProtonEsc[iE][0] = fEsc * pSum;
@@ -761,19 +1081,125 @@ namespace prop {
 
       // pi+ from p + gamma -> n + pi+
       lgE = fLgEmin + dlgEOrig / 2;
-      for (unsigned int iE = 0; iE < n - 8; ++iE) {
+      for (unsigned int iE = 0; iE < n - 7; ++iE) {
         const int iENext = iE + 7;
         const double qNext = protonFlux[iENext];
         const double Enext = pow(10, lgE + 7 * dlgEOrig);
-        const double lambdaI = fSource->LambdaInt(Enext, 1);
+	const double lambdaI_PH = fSource->LambdaPhotoHadInt(Enext, 1);
+	const double lambdaI_H = fSource->LambdaHadInt(Enext, 1);
+	const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
         const double lambdaE = fSource->LambdaEsc(Enext, 1);
         const double fInt = lambdaE / (lambdaE + lambdaI);
-        mPionPlus[iE][0] += bPP * fInt * qNext / (1-kappa);
-        mPionZero[iE][0] += (1 - bPP) * fInt * qNext / (1-kappa);
+	const double phFrac =
+	  fSource->GetChannelFraction(Enext, 1, VSource::ePH);
+	const double bSPP =  1. -
+	  fSource->GetMPPBranchingRatio(Enext, 1);
+        mPionPlus[iE][0] += (1 - bPP) * bSPP * phFrac * fInt * qNext / (1-kappa);
+        mPionZero[iE][0] += bPP * bSPP * phFrac * fInt * qNext / (1-kappa);
         lgE += dlgEOrig;
       }
+
+      // multipion production
+      lgE = fLgEmin + dlgEOrig / 2;
+      for (unsigned int iE = 0; iE < n - 5; ++iE) {
+	const double E = pow(10., lgE);
+	const double Eph = fSource->GetMeanPhotonEnergy();
+	double Enext;
+	MPPpars.A = 1;
+	MPPpars.Asec = 1;
+	MPPpars.kappaMPP = 1. - kappa_MPP;
+	MPPpars.Eph = Eph;
+	MPPpars.Esec = E;
+	consistentMPP.params = &MPPpars;
+	gsl_root_fsolver_set(MPP_solve, &consistentMPP, 0., 2.*fLgEmax);
+	int status, Niter = 0, Nmaxiter = 1000;
+	do { // ensures multiplicity and primary energy are self-consistent
+	  Niter++;
+	  status = gsl_root_fsolver_iterate(MPP_solve);
+	  Enext = pow(10., gsl_root_fsolver_root(MPP_solve));
+	}
+	while(status == GSL_CONTINUE && Niter < Nmaxiter);
+	if(status == GSL_CONTINUE) throw runtime_error("GSL root finder did not converge! Trickle-down MPP can't be made self-consistent!");
+	const double gamma = Enext / gProtonMass;
+	const double multiplicity = std::max(2., Spectrum::GetMPPMultiplicity(2.*gamma*Eph));
+	const double jacobiMPP = 1. / ((1.-kappa_MPP)/multiplicity);
+	Enext = jacobiMPP * E;
+	const unsigned int iENext = (int) std::floor((log10(Enext)-fLgEmin)/dlgEOrig);
+	if(iENext >  n-1 || Enext > pow(10., fLgEmax)) continue; 
+	const double qNext = protonFlux[iENext];
+	const double lambdaI_PH = fSource->LambdaPhotoHadInt(Enext, 1);
+	const double lambdaI_H = fSource->LambdaHadInt(Enext, 1);
+	const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+        const double lambdaE = fSource->LambdaEsc(Enext, 1);
+        const double fInt = lambdaE / (lambdaE + lambdaI);
+	const double phFrac =
+	  fSource->GetChannelFraction(Enext, 1, VSource::ePH);
+	const double bMPP = 
+	  fSource->GetMPPBranchingRatio(Enext, 1);
+	mPionPlus[iE][0] += multiplicity / 3. * bMPP * phFrac * fInt * qNext * jacobiMPP;
+	mPionMinus[iE][0] += multiplicity / 3. * bMPP * phFrac * fInt * qNext * jacobiMPP;
+	mPionZero[iE][0] += multiplicity / 3. * bMPP * phFrac * fInt * qNext * jacobiMPP;
+	lgE += dlgEOrig;
+      }
+
+      // hadronic production of pions, neutrinos, and photons from nucleons
+      if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
+        lgE = fLgEmin + dlgEOrig / 2;
+        for (unsigned int iE = 0; iE < n; ++iE) {
+	  const double E = pow(10, lgE);
+	  double lgEprim = lgE;
+	  for (unsigned int jE = iE; jE < n; ++jE) {
+	    const double Eprim = pow(10, lgEprim);
+	    const double jacobi = Eprim / E;
+	    const double qNext = protonFlux[jE];
+            const double lambdaI_PH = fSource->LambdaPhotoHadInt(Eprim, 1);
+	    const double lambdaI_H = fSource->LambdaHadInt(Eprim, 1);
+	    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
+	    const double lambdaE = fSource->LambdaEsc(Eprim, 1);
+	    const double fInt = lambdaE / (lambdaE + lambdaI);
+	    const double hFrac =
+	      fSource->GetChannelFraction(Eprim, 1, VSource::eH);
+	    if( hFrac > 1e-10 ) {
+	      const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi0"), 1);
+	      const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * qNext;
+	      mPionZero[iE][0] += flux_pi0;
+	      const double Nsec_pip = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi+"), 1);
+	      const double flux_pip = hFrac * fInt * Nsec_pip * jacobi * qNext;
+	      mPionPlus[iE][0] += flux_pip;
+	      const double Nsec_pim = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi-"), 1);
+	      const double flux_pim = hFrac * fInt * Nsec_pim * jacobi * qNext;
+	      mPionMinus[iE][0] += flux_pim;
+	      const double Nsec_nu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_e"), 1);
+	      const double flux_nu_e = hFrac * fInt * Nsec_nu_e * jacobi * qNext;
+	      mNeutrinoE[iE][0] += flux_nu_e;
+	      const double Nsec_anu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_e"), 1);
+	      const double flux_anu_e = hFrac * fInt * Nsec_anu_e * jacobi * qNext;
+	      mANeutrinoE[iE][0] += flux_anu_e;
+	      const double Nsec_nu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_mu"), 1);
+	      const double flux_nu_m = hFrac * fInt * Nsec_nu_m * jacobi * qNext;
+	      mNeutrinoM[iE][0] += flux_nu_m;
+	      const double Nsec_anu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_mu"), 1);
+	      const double flux_anu_m = hFrac * fInt * Nsec_anu_m * jacobi * qNext;
+	      mANeutrinoM[iE][0] += flux_anu_m;
+	      const double Nsec_nu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_tau"), 1);
+	      const double flux_nu_t = hFrac * fInt * Nsec_nu_t * jacobi * qNext;
+	      mANeutrinoT[iE][0] += flux_nu_t;
+	      const double Nsec_anu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_tau"), 1);
+	      const double flux_anu_t = hFrac * fInt * Nsec_anu_t * jacobi * qNext;
+	      mANeutrinoT[iE][0] += flux_anu_t;
+	      const double Nsec_photon = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("photon"), 1);
+	      const double flux_photon = hFrac * fInt * Nsec_photon * jacobi * qNext;
+	      mPhoton[iE][0] += flux_photon;
+            }
+	    lgEprim += dlgEOrig;
+          }
+	  lgE += dlgEOrig;
+        }
+      }
+      
     }
 
+    gsl_root_fsolver_free(MPP_solve);
 
     // multiply flux of nuclei with fEscape
     for (auto& iter : fEscape) {
@@ -784,7 +1210,9 @@ namespace prop {
       double lgE = fLgEmin + dlgEOrig / 2;
       for (unsigned int iE = 0; iE < fN; ++iE) {
         const double E = pow(10, lgE);
-        const double lambdaI = fSource->LambdaInt(E, A);
+	const double lambdaI_PH = fSource->LambdaPhotoHadInt(E, A);
+	const double lambdaI_H = fSource->LambdaHadInt(E, A);
+	const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H);
         const double lambdaE = fSource->LambdaEsc(E, A);
         const double fEsc = lambdaI / (lambdaE + lambdaI);
         m[iE][0] *= fEsc;
@@ -792,6 +1220,33 @@ namespace prop {
       }
     }
     save->cd();
+  }
+
+  double Spectrum::GetMPPMultiplicity(const double Eph)  
+  {
+ 
+    const double lgEph = log10(Eph);
+
+    return 0.85886507*pow(lgEph, 2) - 13.08070077*lgEph + 50.04741721; // parametrization based on SOPHIA
+
+  }
+
+  double Spectrum::GetMPPEprim(double lgEprim, void* pars)
+  {
+
+    double Eprim = pow(10., lgEprim);
+    struct Spectrum::MPP_pars* params = (struct Spectrum::MPP_pars *)pars;
+    double A = (params->A);
+    double Asec = (params->Asec);
+    double kappaMPP = (params->kappaMPP);
+    double Eph = (params->Eph);
+    double Esec = (params->Esec);
+    double mass = aToZ(A)*gProtonMass + (A-aToZ(A))*gNeutronMass;
+    double multiplicity = GetMPPMultiplicity(2.*Eprim*Eph/mass);
+    double jacobi = A / Asec * multiplicity/ kappaMPP;
+
+    return Eprim - jacobi * Esec;
+
   }
 
   double Spectrum::GetE0() { return 1e18*utl::eV; }
