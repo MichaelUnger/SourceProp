@@ -59,6 +59,7 @@ FitSummary::Fill(const prop::FitData& fitData,
   fEvolutionZ0 = fitData.fFitParameters[eEvolutionZ0].fValue;
   fEvolutionDmin = fitData.fFitParameters[eEvolutionDmin].fValue;
   fPhotonPeak = fitData.fFitParameters[ePhotonPeak].fValue;
+  fLgHadIntFac = fitData.fFitParameters[eLgHadIntFac].fValue;
 
   
   fGammaErr[0] = fitData.fFitParameters[eGamma].fError;
@@ -78,6 +79,7 @@ FitSummary::Fill(const prop::FitData& fitData,
   fEvolutionZ0Err[0] = fitData.fFitParameters[eEvolutionZ0].fError;
   fEvolutionDminErr[0] = fitData.fFitParameters[eEvolutionDmin].fError;
   fPhotonPeakErr[0] = fitData.fFitParameters[ePhotonPeak].fError;
+  fLgHadIntFacErr[0] = fitData.fFitParameters[eLgHadIntFac].fError;
 
   const unsigned int nMass = fitData.GetNMass();
   fMasses.clear();
