@@ -1,7 +1,7 @@
 #.PHONY: Make-depend
 
 WITH_OPENMP = 0     # warning does not work
-FASTANDFURIOUS = 1
+FASTANDFURIOUS = 0 #1
 
 CXX = g++
 CC = gcc
@@ -50,6 +50,9 @@ CLIBS = $(LIB_DIR)/libProp.so
 all: $(CLIBS) $(EXE)
 
 $(BIN_DIR)/runFit: $(PROG_DIR)/runFit.cc macros/fit.C
+	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp
+
+$(BIN_DIR)/runFit_massgroups: $(PROG_DIR)/runFit_massgroups.cc macros/fit.C
 	$(CXX) -o $@ $^ $(CXXFLAGS)  $(LDFLAGS) -Llib -lProp
 
 $(BIN_DIR)/%: $(PROG_DIR)/%.cc
