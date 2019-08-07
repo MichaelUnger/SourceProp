@@ -83,6 +83,7 @@ namespace prop {
     VSource* source = data.fSource;
     source->Update(par[ePhotonPeak]);     
     source->SetEscFac(1);
+    source->SetHadIntFac(1);
     source->SetEscGamma(par[eEscGamma]);
 
     
@@ -98,7 +99,10 @@ namespace prop {
     }
     source->SetPhotonScaleFactors(photonScale);
     
-    const double lambdaI = source->LambdaInt(1e19, 56);
+    const double lambdaI_PH = source->LambdaPhotoHadInt(1e19, 56); // photohadronic interaction length
+    const double lambdaI_H = source->LambdaHadInt(1e19, 56); // hadronic interaction length
+    source->SetHadIntFac(pow(10, par[eLgHadIntFac]) * lambdaI_PH / lambdaI_H);
+    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H); // total interaction length
     const double lambdaE = source->LambdaEsc(1e19, 56);
     source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
 
@@ -656,7 +660,7 @@ namespace prop {
       cout << " " << fOptions.GetDataDirname() << "/" << f << endl;
 
     fFitData.fSource = new PhotoNuclearSource(fOptions.GetPhotIntFilenames(),
-                                              fOptions.GetDataDirname(), fOptions.GetStartValue(GetPar("photonPeak")));
+                                              fOptions.GetDataDirname(), fOptions.GetInteractionModel(), fOptions.GetStartValue(GetPar("photonPeak")));
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
@@ -898,6 +902,7 @@ namespace prop {
               (flux.fLgE > 18 && flux.fLgE < 18.2);
 
           // syst shift?
+          flux.fFlux /= pow(10., deltaLgESys);
           flux.fLgE += deltaLgESys;
 
 
@@ -935,6 +940,7 @@ namespace prop {
           flux.fN = 0;
 
           // syst shift?
+          flux.fFlux /= pow(10., deltaLgESys);
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -980,6 +986,7 @@ namespace prop {
           fluxData.fN = N;
 
           // syst shift?
+          fluxData.fFlux /= pow(10., deltaLgESys);
           fluxData.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(fluxData);
@@ -1025,6 +1032,7 @@ namespace prop {
         flux.fFlux = flx;
 
         // syst shift?
+        flux.fFlux /= pow(10., deltaLgESys);
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
@@ -1072,6 +1080,7 @@ namespace prop {
           if (ferr/flx > 0.2)
             continue;
           // syst shift?
+          flux.fFlux /= pow(10., deltaLgESys);
           flux.fLgE += deltaLgESys;
           
           fFitData.fAllFluxData.push_back(flux);
@@ -1108,6 +1117,7 @@ namespace prop {
         flux.fFlux = flx;
         
         // syst shift?
+        flux.fFlux /= pow(10., deltaLgESys);
         flux.fLgE += deltaLgESys;
         
         fFitData.fAllFluxData.push_back(flux);
