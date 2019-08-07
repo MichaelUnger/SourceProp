@@ -34,6 +34,7 @@ steering file parameters:
      gammaInj
      lgRmax
      lgResc
+     lgRhadint
      deltaEsc
      fGal
      gammaGal
