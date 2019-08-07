@@ -106,7 +106,7 @@ namespace prop {
                  n, x1, x2, eFluxEsc, false);
     */
 
-    /*
+    
     vector<MassGroup> nucleonGroups;
     nucleonGroups.push_back(MassGroup(Spectrum::ePionPlus,
                                       Spectrum::ePionPlus,
@@ -124,10 +124,14 @@ namespace prop {
                                       Spectrum::eNeutronEsc,
                                       Spectrum::eNeutronEsc,
                                       kMagenta+1, 4));
+    nucleonGroups.push_back(MassGroup(Spectrum::ePhoton,
+                                      Spectrum::ePhoton,
+                                      Spectrum::ePhoton,
+                                      kMagenta+1, 6));
     DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource,
                  "elMagSource",
                  spectrum.GetN(), x1, x2, eFluxEsc, false);
-    */
+    
 
     /*
     map<int, TMatrixD> nucleons;
@@ -174,17 +178,26 @@ namespace prop {
     for (auto& m : mGroups) {
       if (m.fRepA > kGalacticOffset)
         continue;
-      TH1D* hInt = NULL;
+      TH1D* hInt_PH = NULL;
+      TH1D* hInt_H = NULL;
       TH1D* hLossEP = NULL;
       TH1D* hEsc = NULL;
       TH1D* hRatio = NULL;
       if (!showRatio) {
         stringstream name;
-        name << "lambdaInt" << m.fRepA;
+        name << "lambdaInt_PH" << m.fRepA;
         fHists.push_back(new TH1D(name.str().c_str(),
                                   ";lg(E/eV);c #tau  [a.u.]",
                                   n, x1, x2));
-        hInt = fHists.back();
+        hInt_PH = fHists.back();
+
+	name.str("");
+        name << "lambdaInt_H" << m.fRepA;
+        fHists.push_back(new TH1D(name.str().c_str(),
+                                  ";lg(E/eV);c #tau  [a.u.]",
+                                  n, x1, x2));
+        hInt_H = fHists.back();
+	hInt_H->SetLineStyle(3);
 
         name.str("");
         name << "lambdaEsc" << m.fRepA;
@@ -202,7 +215,7 @@ namespace prop {
                                     ";lg(E/eV);c #tau  [a.u.]",
                                   n, x1, x2));
           hLossEP = fHists.back();
-          hLossEP->SetLineStyle(3);
+          hLossEP->SetLineStyle(4);
         }
       }
       else {
@@ -218,7 +231,9 @@ namespace prop {
         if (drawProtonLines || m.fRepA != 1) {
           if (showRatio) {
             const double lgE = hRatio->GetXaxis()->GetBinCenter(i+1);
-            const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
+            const double lInt_PH = source->LambdaPhotoHadInt(pow(10, lgE), m.fRepA);
+	    const double lInt_H = source->LambdaHadInt(pow(10, lgE), m.fRepA);
+            const double lInt = ( lInt_H * lInt_PH ) / ( lInt_H + lInt_PH );
             const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
             const double ratio = fmax(1e-4,lEsc / lInt);
             if (lgE < xMax && (yMax < 0 || ratio > yMax))
@@ -229,15 +244,22 @@ namespace prop {
             hRatio->SetLineColor(m.fColor);
           }
           else {
-            const double lgE = hInt->GetXaxis()->GetBinCenter(i+1);
-            const double lInt = source->LambdaInt(pow(10, lgE), m.fRepA);
+            const double lgE = hInt_PH->GetXaxis()->GetBinCenter(i+1);
+            const double lInt_PH = source->LambdaPhotoHadInt(pow(10, lgE), m.fRepA);
+	    const double lInt_H = source->LambdaHadInt(pow(10, lgE), m.fRepA);
             const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
-            if (lgE < xMax && (yMax < 0 || lInt > yMax))
-              yMax = lInt;
-            if (lgE < xMax && (yMin < 0 || lInt < yMin))
-              yMin = lInt;
-            hInt->SetBinContent(i+1, lInt);
-            hInt->SetLineColor(m.fColor);
+            if (lgE < xMax && (yMax < 0 || lInt_PH > yMax))
+              yMax = lInt_PH;
+            if (lgE < xMax && (yMin < 0 || lInt_PH < yMin))
+              yMin = lInt_PH;
+            hInt_PH->SetBinContent(i+1, lInt_PH);
+            hInt_PH->SetLineColor(m.fColor);
+            if (lgE < xMax && (yMax < 0 || lInt_H > yMax))
+              yMax = lInt_H;
+            if (lgE < xMax && (yMin < 0 || lInt_H < yMin))
+              yMin = lInt_H;
+            hInt_H->SetBinContent(i+1, lInt_H);
+            hInt_H->SetLineColor(m.fColor);
             if (lgE < xMax && (yMax < 0 || lEsc > yMax))
               yMax = lEsc;
             if (lgE < xMax && (yMin < 0 || lEsc < yMin))
@@ -275,23 +297,27 @@ namespace prop {
 
     if (!showRatio) {
       fCanvas->cd(eCompInj);
-      TLine* inj = new TLine();
-      inj->DrawLineNDC(0.58, 0.85, 0.64, 0.85);
+      TLine* inj_ph = new TLine();
+      inj_ph->DrawLineNDC(0.58, 0.85, 0.64, 0.85);
+      TLine* inj_h = new TLine();
+      inj_h->SetLineStyle(3);
+      inj_h->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
       TLine* esc = new TLine();
       esc->SetLineStyle(2);
-      esc->DrawLineNDC(0.58, 0.78, 0.64, 0.78);
+      esc->DrawLineNDC(0.58, 0.71, 0.64, 0.71);
       TLatex l;
       l.SetTextAlign(13); l.SetTextSize(0.06);
       l.SetTextFont(42); l.SetNDC(true);
       l.SetTextSize(0.05);
       l.SetTextColor(kBlack);
-      l.DrawLatex(0.66, 0.865, "interaction");
-      l.DrawLatex(0.66, 0.795, "escape");
+      l.DrawLatex(0.66, 0.865, "PH interaction");
+      l.DrawLatex(0.66, 0.795, "H interaction");
+      l.DrawLatex(0.66, 0.725, "escape");
       if (source->HasEPP()) {
         TLine* ep = new TLine();
-        ep->SetLineStyle(3);
-        ep->DrawLineNDC(0.58, 0.71, 0.64, 0.71);
-        l.DrawLatex(0.66, 0.725, "#chi_{loss}(e^{#pm})");
+        ep->SetLineStyle(4);
+        ep->DrawLineNDC(0.58, 0.64, 0.64, 0.64);
+        l.DrawLatex(0.66, 0.655, "#chi_{loss}(e^{#pm})");
       }
     }
 
@@ -430,6 +456,8 @@ namespace prop {
               title << " pionMinus";
             else if (mGroups[i].fFirst == Spectrum::ePionZero)
               title << " pionZero";
+            else if (mGroups[i].fFirst == Spectrum::ePhoton)
+              title << " photon";
             else
               title << " unknown";
           }
