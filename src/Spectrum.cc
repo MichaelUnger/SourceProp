@@ -568,15 +568,17 @@ namespace prop {
       TH1D mpion("mpion", "", nBins, fLgEmin, fLgEmax); // multipion production
 
       // nucleon production from hadronic interactions
-      TH1D had_p("had_p", "", nBins, fLgEmin, fLgEmax);
-      TH1D had_n("had_n", "", nBins, fLgEmin, fLgEmax);
+      TH1D had_p("had_p", "", fN, fLgEmin, fLgEmax);
+      TH1D had_n("had_n", "", fN, fLgEmin, fLgEmax);
 
       vector<TH1D*> prodSpectrum;
       vector<TH1D*> logProdSpectrum;
+      vector<TH1D*> prodHadSpectrum;
       for (int i = 0; i <= Ainj; ++i) {
         if (i == 0) {
           prodSpectrum.push_back(NULL); // padding
           logProdSpectrum.push_back(NULL); // padding
+          prodHadSpectrum.push_back(NULL); // padding
         }
         else {
           stringstream tit;
@@ -587,6 +589,10 @@ namespace prop {
           tit << "logProdSpec" << i;
           logProdSpectrum.push_back(new TH1D(tit.str().c_str(), "",
                                              nBins, fLgEmin, fLgEmax));
+          tit.str("");
+          tit << "prodHadSpec" << i;
+          prodHadSpectrum.push_back(new TH1D(tit.str().c_str(), "",
+                                             fN, fLgEmin, fLgEmax));
         }
       }
 
@@ -597,6 +603,7 @@ namespace prop {
         h.SetBinContent(iE + 1, m[iE][0]);
         lh.SetBinContent(iE + 1, m[iE][0] ? log(m[iE][0]) : -1e100);
       }
+
 
       // nucleus production
 #ifdef _WITH_OPENMP_
@@ -786,7 +793,7 @@ namespace prop {
       // hadronic part
       if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
         for (int Asec = Ainj - 1; Asec > 0; --Asec) {
-          TH1D& hSec = *prodSpectrum[Asec];
+          TH1D& hSec = *prodHadSpectrum[Asec];
           double lgEprim = fLgEmin + dlgEOrig / 2;
           for (unsigned int iE = 0; iE < fN; ++iE) {
             const double Eprim = pow(10, lgEprim);
@@ -804,7 +811,7 @@ namespace prop {
               for (unsigned int jE = 0; jE <= iE; ++jE) {
                 const double E = pow(10, lgE);
 		const double jacobi = Eprim / E;
-		if(hFrac > 1e-10) {
+		if(true) {//hFrac > 1e-10) {
 		  const double Nsec = fSource->GetNSecondaries(E, Eprim, Asec, Aprim);
 		  if(Nsec > 0) {
 		    const double flux = hFrac * fInt * Nsec * jacobi * Qprim;
@@ -851,7 +858,7 @@ namespace prop {
             for (unsigned int jE = 0; jE <= iE; ++jE) {
               const double E = pow(10, lgE);
 	      const double jacobi = Eprim / E;
-	      if(hFrac > 1e-10) {
+	      if(true) {//hFrac > 1e-10) {
 	        const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi0"), Aprim);
 	        const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * Qprim;
 	        mPionZero[jE][0] += flux_pi0;
@@ -894,6 +901,7 @@ namespace prop {
 
       for (int i = 1; i <= Ainj; ++i) {
         TH1D& h = *prodSpectrum[i];
+        TH1D& hHad = *prodHadSpectrum[i];
         TMatrixD& m = fEscape[i];
         if (!m.GetNoElements())
           m.ResizeTo(fN, 1);
@@ -901,6 +909,8 @@ namespace prop {
         for (unsigned int iE = 0; iE < fN; ++iE) {
           const double flux = LogEval(h, lgE);
           m[iE][0] += flux;
+	  const double hadflux = LogEval(hHad, lgE);
+	  m[iE][0] += hadflux;
           lgE += dlgEOrig;
           // add primary protons
           if (Ainj == 1)
@@ -908,6 +918,7 @@ namespace prop {
         }
         delete prodSpectrum[i];
         delete logProdSpectrum[i];
+        delete prodHadSpectrum[i];
       }
 
       double lgE = fLgEmin + dlgEOrig / 2;
@@ -1020,7 +1031,7 @@ namespace prop {
 	  // hadronic part
           if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
 	    double lgEprim = lgE;
-            for (unsigned int jE = iE; jE < n; ++jE) {
+            for (unsigned int jE = iE; jE <= n; ++jE) {
 	      qNext = protonFlux[jE];
 	      const double E = pow(10., lgE);
 	      const double Eprim = pow(10., lgEprim);
@@ -1032,7 +1043,7 @@ namespace prop {
 	      fInt = lambdaE / (lambdaE + lambdaI);
               const double hFrac =
                 fSource->GetChannelFraction(Eprim, 1, VSource::eH);
-	      if(hFrac > 1e-10) {
+	      if(true) { //hFrac > 1e-10) {
 	        const double Nsec_p = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("proton"), 1)
 	                              + fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("antiproton"), 1);
 	        const double flux_p = hFrac * fInt * Nsec_p * jacobi * qNext;
@@ -1159,7 +1170,7 @@ namespace prop {
 	    const double fInt = lambdaE / (lambdaE + lambdaI);
 	    const double hFrac =
 	      fSource->GetChannelFraction(Eprim, 1, VSource::eH);
-	    if( hFrac > 1e-10 ) {
+	    if(true) {  //hFrac > 1e-10 ) {
 	      const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi0"), 1);
 	      const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * qNext;
 	      mPionZero[iE][0] += flux_pi0;
