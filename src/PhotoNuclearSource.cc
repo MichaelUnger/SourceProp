@@ -22,14 +22,26 @@ using namespace std;
 
 namespace prop {
 
+  // if these vectors are modified they must be initialized so that they are
+  // in ascending order numerically
+  const std::vector<double> BPLpeaks = {0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05,
+                                        0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15,
+                                        0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35, 0.4, 0.45, 0.5,
+                                        0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+  const std::vector<double> MBBpeaks = {10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100,
+                                        110, 120, 130, 140, 150, 175, 200, 225, 250, 275, 300, 350,
+                                        400, 450, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000,
+                                        8000, 9000};
+
+
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
-  const double gElectronMass = 0.51099895e6; 
+  const double gElectronMass = 0.51099895e6;
   const double gkBoltzmann = 8.617333e-5; // eV/K
   const double gPlanck_SpeedOfLight = 1.239842e-4; // eV*cm
   const double gmicroBarn_to_cm2 = 1e-30;
   const double gcm_to_Mpc = 3.241e-25;
-  const double gPi = 3.1415926535897932384626;  
+  const double gPi = 3.1415926535897932384626;
 
   PhotoNuclearSource::PhotoNuclearSource(const std::vector<std::string>& fields,
                                          const std::string& directory, const std::string& modelName, double photonPeak)  :
@@ -40,56 +52,56 @@ namespace prop {
 
     HadInts = new HadronicInteractions(fModelName, fDirectory);
 
-    for(unsigned int i = 0; i < fFields.size(); i++) {
+    for (unsigned int i = 0; i < fFields.size(); i++) {
 
-	std::vector<std::string> fieldInfo;
-	stringstream ss(fFields[i]);
-	string info;
-	while(getline(ss, info, '_'))
-	  fieldInfo.push_back(info);
+      std::vector<std::string> fieldInfo;
+      stringstream ss(fFields[i]);
+      string info;
+      while(getline(ss, info, '_'))
+        fieldInfo.push_back(info);
 
-	fieldType.push_back(fieldInfo[0]);
-	if(fieldType.back() == "MBB") {
-	  fT.push_back(atof(fieldInfo[1].c_str()));
-	  fsigma.push_back(atof(fieldInfo[2].c_str()));
-	  feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
-	}
-	else if(fieldType.back() == "BPL") {
-	  feps0.push_back(atof(fieldInfo[1].c_str()));
-	  fbeta.push_back(-1.*atof(fieldInfo[2].c_str()));
-	  falpha.push_back( (atoi(fieldInfo[3].c_str())/10) / (double)(atoi(fieldInfo[3].c_str())%10) );
-	  fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
-	  fsigma.push_back(0.);
-	}
-	else if(fieldType.back() == "BPLInterp" || fieldType.back() == "MBBInterp") {
+      fieldType.push_back(fieldInfo[0]);
+      if (fieldType.back() == "MBB") {
+        fT.push_back(atof(fieldInfo[1].c_str()));
+        fsigma.push_back(atof(fieldInfo[2].c_str()));
+        feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
+      }
+      else if (fieldType.back() == "BPL") {
+        feps0.push_back(atof(fieldInfo[1].c_str()));
+        fbeta.push_back(-1.*atof(fieldInfo[2].c_str()));
+        falpha.push_back( (atoi(fieldInfo[3].c_str())/10) / (double)(atoi(fieldInfo[3].c_str())%10) );
+        fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
+        fsigma.push_back(0.);
+      }
+      else if (fieldType.back() == "BPLInterp" || fieldType.back() == "MBBInterp") {
 
-	  if(fFields.size() > 1)
-	    throw runtime_error("Interpolation not supported for multiple photon fields");
+        if (fFields.size() > 1)
+          throw runtime_error("Interpolation not supported for multiple photon fields");
 
-	  if(fieldType.back() == "MBBInterp") {
-	    fT.push_back(currentPeak);
-	    sigma = fieldInfo[1]; fsigma.push_back(atof(sigma.c_str()));
-	    feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
-	    beta = "n/a"; 
-	    alpha = "n/a";
-	  }  
-	  else if(fieldType.back() == "BPLInterp") {
-	    feps0.push_back(currentPeak);
-	    beta = fieldInfo[1]; fbeta.push_back(-1.*atof(beta.c_str()));
-	    alpha = fieldInfo[2]; falpha.push_back( (atoi(alpha.c_str())/10) / (double)(atoi(alpha.c_str())%10) );
-	    fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
-	    sigma = "n/a"; fsigma.push_back(0.);
-	  }
-	  else throw runtime_error("Interpolator field not recognized!");
-		
-	  // initiate interpolation tables
-	  InterpInit(currentPeak); 
- 
-	  return;
-	}
+        if (fieldType.back() == "MBBInterp") {
+          fT.push_back(currentPeak);
+          sigma = fieldInfo[1]; fsigma.push_back(atof(sigma.c_str()));
+          feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
+          beta = "n/a";
+          alpha = "n/a";
+        }
+        else if (fieldType.back() == "BPLInterp") {
+          feps0.push_back(currentPeak);
+          beta = fieldInfo[1]; fbeta.push_back(-1.*atof(beta.c_str()));
+          alpha = fieldInfo[2]; falpha.push_back( (atoi(alpha.c_str())/10) / (double)(atoi(alpha.c_str())%10) );
+          fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
+          sigma = "n/a"; fsigma.push_back(0.);
+        }
+        else throw runtime_error("Interpolator field not recognized!");
+
+        // initiate interpolation tables
+        InterpInit(currentPeak);
+
+        return;
+      }
 
     }
-      
+
     ReadBranch();
     ReadPD();
     ReadPPP();
@@ -102,23 +114,23 @@ namespace prop {
     for (auto lambdaMap : fPhotoDissociations)
       for (auto iter : lambdaMap)
         delete iter.second;
-    for (auto lambdaMap : InterpPDL)
+    for (auto lambdaMap : fInterpPDL)
       for (auto iter : lambdaMap)
         delete iter.second;
-    for (auto lambdaMap : InterpPDR)
+    for (auto lambdaMap : fInterpPDR)
       for (auto iter : lambdaMap)
         delete iter.second;
 
     for (auto lambdaMap : fPhotoPionProductions)
       for (auto iter : lambdaMap)
         delete iter.second;
-    for (auto lambdaMap : InterpPPPL)
+    for (auto lambdaMap : fInterpPPPL)
       for (auto iter : lambdaMap)
         delete iter.second;
-    for (auto lambdaMap : InterpPPPR)
+    for (auto lambdaMap : fInterpPPPR)
       for (auto iter : lambdaMap)
         delete iter.second;
-    
+
     for (auto lambdaMap : fElectronPositronProductions)
       for (auto iter : lambdaMap)
         delete iter.second;
@@ -128,11 +140,11 @@ namespace prop {
       for (auto& iter2 : br)
         for (auto iter3 : iter2.second)
           delete iter3.second;
-    for (auto& br : InterpBRL)
+    for (auto& br : fInterpBRL)
       for (auto& iter2 : br)
         for (auto iter3 : iter2.second)
           delete iter3.second;
-    for (auto& br : InterpBRR)
+    for (auto& br : fInterpBRR)
       for (auto& iter2 : br)
         for (auto iter3 : iter2.second)
           delete iter3.second;
@@ -194,7 +206,7 @@ namespace prop {
           nNeutron + nProton + 2 * nH2 + 3 * nH3 + 3 * nHe3 + 4 * nHe4;
         const int remnantA = A - dA;
 
-   
+
         map<int, int> secondaryMap;
 
         int nNucleon = nNeutron + nProton;
@@ -354,7 +366,7 @@ namespace prop {
         CheckEqualSpacing(*g.second);
     }
   }
-  
+
   void
   PhotoNuclearSource::ReadEPP()
   {
@@ -496,7 +508,7 @@ namespace prop {
     }
     return lambda;
   }
-  
+
   double
   PhotoNuclearSource::GetPDBranchingRatio(const double E,
                                           const int Asec,
@@ -565,39 +577,39 @@ namespace prop {
     const bool isMPP = true;
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, 
-			sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
-    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
-   
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2,
+      sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
+
     double lambdaSPP = 0., lambdaMPP = 0.;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
-      
+
       const double f = fFieldScaleFactors[i];
       if (f <= 0)
         continue;
-  
+
       double lambdaInv;
 
       // single-pion production interaction length
-      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) 
-	            + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
-      lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
-	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i)
+                                   + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
+      lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i)
+                                    + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
       lambdaInv *= f / gcm_to_Mpc;
 
-      if(lambdaSPP == 0.)
+      if (lambdaSPP == 0.)
         lambdaSPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
       else
 	lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
 
       // multi-pion production interaction length
-      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
-	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
+      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i)
+                                   + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
       lambdaInv += sigmaInelMPP2 * (I1(EthMPP2/2./gamma, i) - pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i)); // high-energy plateau
       lambdaInv *= f / gcm_to_Mpc;
 
-      if(lambdaMPP == 0.)
+      if (lambdaMPP == 0.)
 	lambdaMPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
       else
 	lambdaMPP = (lambdaInv == 0.)? lambdaMPP : lambdaMPP / lambdaInv / (lambdaMPP + 1./lambdaInv);
@@ -616,37 +628,37 @@ namespace prop {
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
     const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
-    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
-   
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
+
     double lambdaSPP = 0., lambdaMPP = 0.;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
-      
+
       const double f = fFieldScaleFactors[i];
       if (f <= 0)
         continue;
-  
+
       double lambdaInv;
 
       // single-pion production interaction length
-      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) 
-	            + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
-      lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
-	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i)
+                                   + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
+      lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i)
+                                    + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
       lambdaInv *= f / gcm_to_Mpc;
 
-      if(lambdaSPP == 0.)
+      if (lambdaSPP == 0.)
         lambdaSPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
       else
 	lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
 
       // multi-pion production interaction length
-      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
-	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
+      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i)
+                                   + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
       lambdaInv += sigmaInelMPP2 * (I1(EthMPP2/2./gamma, i) - pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i)); // high-energy plateau
       lambdaInv *= f / gcm_to_Mpc;
 
-      if(lambdaMPP == 0.)
+      if (lambdaMPP == 0.)
 	lambdaMPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
       else
 	lambdaMPP = (lambdaInv == 0.)? lambdaMPP : lambdaMPP / lambdaInv / (lambdaMPP + 1./lambdaInv);
@@ -656,8 +668,8 @@ namespace prop {
     return (lambdaSPP * lambdaMPP) / (lambdaSPP + lambdaMPP);
 
   }
- 
-  // calculates the single-pion interaction length due to interaction with photon field up to energy epsMax 
+
+  // calculates the single-pion interaction length due to interaction with photon field up to energy epsMax
   double
   PhotoNuclearSource::PartialLambdaSPPInt(const double E, const int Aprim, const double epsMax)
     const
@@ -666,38 +678,38 @@ namespace prop {
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
     const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
-    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
-   
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
+
     double lambdaSPP = 0., lambdaMPP = 0.;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
-      
+
       const double f = fFieldScaleFactors[i];
       if (f <= 0)
         continue;
-  
+
       double lambdaInv = 0.;
 
       // single-pion production interaction length
-      if(epsMax <= EthSPP/2./gamma) lambdaInv = 0.;
+      if (epsMax <= EthSPP/2./gamma) lambdaInv = 0.;
       else {
-        lambdaInv += (epsMax <= EthMPP1/2./gamma)? sigmaInelSPP1 * (I2(EthSPP/2./gamma, epsMax, i) 
-	            + pow(EthMPP1/2./gamma, 2)*I3(epsMax, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)) :
-     		  sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) 
-	            + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
+        lambdaInv += (epsMax <= EthMPP1/2./gamma)? sigmaInelSPP1 * (I2(EthSPP/2./gamma, epsMax, i)
+                                                                    + pow(EthMPP1/2./gamma, 2)*I3(epsMax, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)) :
+          sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i)
+                           + pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
       }
-      if(epsMax <= EthMPP2/2./gamma) {
+      if (epsMax <= EthMPP2/2./gamma) {
         lambdaInv += (epsMax <= EthMPP1/2./gamma)? 0. :
-		      sigmaInelSPP2 * (I2(EthMPP1/2./gamma, epsMax, i) 
-	              + pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+          sigmaInelSPP2 * (I2(EthMPP1/2./gamma, epsMax, i)
+                           + pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
       }
       else {
-        lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
-	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
+        lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i)
+                                      + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
       }
       lambdaInv *= f / gcm_to_Mpc;
 
-      if(lambdaSPP == 0.)
+      if (lambdaSPP == 0.)
         lambdaSPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
       else
 	lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
@@ -708,7 +720,7 @@ namespace prop {
 
   }
 
-  // calculates the multipion interaction length due to interaction with photon field up to energy epsMax 
+  // calculates the multipion interaction length due to interaction with photon field up to energy epsMax
   double
   PhotoNuclearSource::PartialLambdaMPPInt(const double E, const int Aprim, const double epsMax)
     const
@@ -717,32 +729,32 @@ namespace prop {
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
     const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
-    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9) 
-   
+    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
+
     double lambdaSPP = 0., lambdaMPP = 0.;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
-      
+
       const double f = fFieldScaleFactors[i];
       if (f <= 0)
         continue;
-  
+
       double lambdaInv;
-      
+
       // multi-pion production interaction length
-      if(epsMax <= EthMPP1/2./gamma) lambdaInv = 0.;
+      if (epsMax <= EthMPP1/2./gamma) lambdaInv = 0.;
       else {
         lambdaInv = (epsMax <= EthMPP2/2./gamma)?
-			sigmaInelMPP1 * (I2(EthMPP1/2./gamma, epsMax, i)
- 		    + pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)) :
-			sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) 
-	            + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
-        lambdaInv += (epsMax <= EthMPP2/2./gamma)? 0. : 
-			sigmaInelMPP2 * (I2(EthMPP2/2./gamma, epsMax, i) - pow(EthMPP2/2./gamma, 2)*(I3(EthMPP2/2./gamma, i)-I3(epsMax, i))); // high-energy plateau
+          sigmaInelMPP1 * (I2(EthMPP1/2./gamma, epsMax, i)
+                           + pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)) :
+          sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i)
+                           + pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
+        lambdaInv += (epsMax <= EthMPP2/2./gamma)? 0. :
+          sigmaInelMPP2 * (I2(EthMPP2/2./gamma, epsMax, i) - pow(EthMPP2/2./gamma, 2)*(I3(EthMPP2/2./gamma, i)-I3(epsMax, i))); // high-energy plateau
       }
       lambdaInv *= f / gcm_to_Mpc;
 
-      if(lambdaMPP == 0.)
+      if (lambdaMPP == 0.)
 	lambdaMPP = (lambdaInv == 0.)? 1e100 : 1./lambdaInv;
       else
 	lambdaMPP = (lambdaInv == 0.)? lambdaMPP : lambdaMPP / lambdaInv / (lambdaMPP + 1./lambdaInv);
@@ -753,36 +765,50 @@ namespace prop {
 
   }
 
+  // performs \int_xmin^\infty n(e)de
   double
-  PhotoNuclearSource::I1(const double xmin, const int iField) const { // performs \int_xmin^\infty n(e)de
+  PhotoNuclearSource::I1(const double xmin, const int iField)
+    const
+  {
 
     double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
     double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
 
-    if(fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
+    if (fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
 
       double buffdbl;
-      if(fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
-      else if(fsigma[iField] > 4.) throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
-      else if(modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
+      if (fsigma[iField] < 0.)
+        throw runtime_error("Field not integrable for sigma < 0!");
+      else if (fsigma[iField] > 4.)
+        throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
+      else if (modf(fsigma[iField], &buffdbl) != 0.)
+        throw runtime_error("Field only integrable for integer values of sigma!");
 
       n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
-     
-      if(abs(fsigma[iField]) < 1e-5) I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
-      else if(abs(fsigma[iField]-1.) < 1e-5) I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
-      else if(abs(fsigma[iField]-2.) < 1e-5) I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
-      else if(abs(fsigma[iField]-3.) < 1e-5) I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
-      else I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
+
+      if (abs(fsigma[iField]) < 1e-5)
+        I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
+      else if (abs(fsigma[iField]-1.) < 1e-5)
+        I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
+      else if (abs(fsigma[iField]-2.) < 1e-5)
+        I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
+      else if (abs(fsigma[iField]-3.) < 1e-5)
+        I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
+      else
+        I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
       I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.) / (fsigma[iField] + 2.);
       I += gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
-      if(I < 1.e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
-     
+
+      // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+      if (I < 1.e-10)
+        I = 0;
+
       I *= 8. * gPi * n0 * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
- 
-    }  
+
+    }
     else {
 
-      if(fbeta[iField] >= -1.) throw runtime_error("Field not integrable for beta >= -1!");
+      if (fbeta[iField] >= -1.) throw runtime_error("Field not integrable for beta >= -1!");
 
       n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
 
@@ -790,51 +816,57 @@ namespace prop {
       I -= (feps0[iField] < xmin)? pow(xmin/feps0[iField], fbeta[iField]+1.) / (fbeta[iField]+1.) : 0.;
       I *= n0 * feps0[iField];
 
-    } 
-   
-    return I; 
-  } 
+    }
 
+    return I;
+  }
+
+  // performs \int_xmin^xmax n(e)de
   double
-  PhotoNuclearSource::I2(const double xmin, const double xmax, const int iField) const { // performs \int_xmin^xmax n(e)de
+  PhotoNuclearSource::I2(const double xmin, const double xmax, const int iField)
+    const
+  {
 
-    if(xmin > xmax) throw runtime_error("I2: xmin must be <= xmax!");
-    else if (xmin == xmax) return 0.;
+    if (xmin > xmax)
+      throw runtime_error("I2: xmin must be <= xmax!");
+    else if (xmin == xmax)
+      return 0.;
 
     double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
     double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
 
-    if(fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
+    if (fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
 
-      double buffdbl;     
-      if(fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
-      else if(fsigma[iField] > 4.) throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
-      else if(modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
+      double buffdbl;
+      if (fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
+      else if (fsigma[iField] > 4.) throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
+      else if (modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
 
       n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
 
-      if(abs(fsigma[iField]) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmax/gkBoltzmann/fT[iField]) 
-				  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
-      else if(abs(fsigma[iField]-1.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmax/gkBoltzmann/fT[iField]) 
-					  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
-      else if(abs(fsigma[iField]-2.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmax/gkBoltzmann/fT[iField]) 
-					  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
-      else if(abs(fsigma[iField]-3.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmax/gkBoltzmann/fT[iField]) 
-					  - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
-      else I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmax/gkBoltzmann/fT[iField]) 
-		- pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]); 
+      if (abs(fsigma[iField]) < 1e-5)
+        I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmax/gkBoltzmann/fT[iField])
+                                       - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
+      else if (abs(fsigma[iField]-1.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmax/gkBoltzmann/fT[iField])
+                                               - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
+      else if (abs(fsigma[iField]-2.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmax/gkBoltzmann/fT[iField])
+                                               - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
+      else if (abs(fsigma[iField]-3.) < 1e-5) I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmax/gkBoltzmann/fT[iField])
+                                               - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
+      else I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmax/gkBoltzmann/fT[iField])
+             - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
       I /= (fsigma[iField] + 2.);
-      if(I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+      if (I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
 
       I *= 8. * gPi * n0 * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
-      
+
     }
     else {
 
       n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
-      if(feps0[iField] >= xmax)
+      if (feps0[iField] >= xmax)
         I += (pow(xmax/feps0[iField], falpha[iField]+1.) - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.);
-      else if(feps0[iField] < xmax && feps0[iField] >= xmin)
+      else if (feps0[iField] < xmax && feps0[iField] >= xmin)
 	I += (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) + (pow(xmax/feps0[iField], fbeta[iField]+1.) - 1.) / (fbeta[iField]+1.);
       else
 	I += (pow(xmax/feps0[iField], fbeta[iField]+1.) - pow(xmin/feps0[iField], fbeta[iField]+1.)) / (fbeta[iField]+1.);
@@ -844,37 +876,40 @@ namespace prop {
 
     return I;
 
-  } 
+  }
 
+  // performs \int_xmin^\infty n(e)/e^2 de
   double
-  PhotoNuclearSource::I3(const double xmin, const int iField) const { // performs \int_xmin^\infty n(e)/e^2 de
+  PhotoNuclearSource::I3(const double xmin, const int iField)
+    const
+  {
 
     double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
     double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
 
-    if(fieldType[iField] == "MBB"|| fieldType[iField] == "MBBInterp") {
-    
-      double buffdbl; 
-      if(fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
-      else if(fsigma[iField] > 6.) throw runtime_error("GSL functions not available to integrate field for sigma > 6!");
-      else if(modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
+    if (fieldType[iField] == "MBB"|| fieldType[iField] == "MBBInterp") {
+
+      double buffdbl;
+      if (fsigma[iField] < 0.) throw runtime_error("Field not integrable for sigma < 0!");
+      else if (fsigma[iField] > 6.) throw runtime_error("GSL functions not available to integrate field for sigma > 6!");
+      else if (modf(fsigma[iField], &buffdbl) != 0.) throw runtime_error("Field only integrable for integer values of sigma!");
 
       n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
 
-      if(abs(fsigma[iField]) < 1e-5)
+      if (abs(fsigma[iField]) < 1e-5)
         I += (gsl_isinf(exp(xmin/gkBoltzmann/fT[iField])))? 0. : xmin/gkBoltzmann/fT[iField] - log(exp(xmin/gkBoltzmann/fT[iField]) - 1.);
-       else {
-        if(abs(fsigma[iField]-1.) < 1e-5) I -= gsl_sf_debye_1(xmin/gkBoltzmann/fT[iField]);
-	else if(abs(fsigma[iField]-2.) < 1e-5) I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
-	else if(abs(fsigma[iField]-3.) < 1e-5) I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
-	else if(abs(fsigma[iField]-4.) < 1e-5) I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
-	else if(abs(fsigma[iField]-5.) < 1e-5) I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
+      else {
+        if (abs(fsigma[iField]-1.) < 1e-5) I -= gsl_sf_debye_1(xmin/gkBoltzmann/fT[iField]);
+	else if (abs(fsigma[iField]-2.) < 1e-5) I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
+	else if (abs(fsigma[iField]-3.) < 1e-5) I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
+	else if (abs(fsigma[iField]-4.) < 1e-5) I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
+	else if (abs(fsigma[iField]-5.) < 1e-5) I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
 	else I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
-	I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]) / fsigma[iField]; 
+	I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]) / fsigma[iField];
         I += gsl_sf_zeta(fsigma[iField]+1.) * gsl_sf_gamma(fsigma[iField]+1.);
       }
-      if(I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
-      
+      if (I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+
       I *= 8. * gPi * n0 / pow(feps0[iField], 2) * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]-2.) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
 
     }
@@ -882,7 +917,7 @@ namespace prop {
 
       n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
 
-      if(feps0[iField] >= xmin) {
+      if (feps0[iField] >= xmin) {
 	I += (falpha[iField] == 1.)? log(feps0[iField]/xmin) : (1. - pow(xmin/feps0[iField], falpha[iField]-1.)) / (falpha[iField]-1.);
 	I -= 1./(fbeta[iField]-1.);
       }
@@ -892,9 +927,9 @@ namespace prop {
 
     }
 
-   return I;
+    return I;
 
-  } 
+  }
 
   double
   PhotoNuclearSource::GetProcessFraction(const double E,
@@ -969,7 +1004,7 @@ namespace prop {
 
     if (p == ePH)
       return frac;
-    else 
+    else
       return 1 - frac;
   }
 
@@ -977,52 +1012,58 @@ namespace prop {
   PhotoNuclearSource::Update(double newPeak)
   {
 
-    // nothing to be done if not interpolating or value hasn't changed 
-    if( (fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") || currentPeak == newPeak )
-	return;
+    // nothing to be done if not interpolating or value hasn't changed
+    if ( (fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") || currentPeak == newPeak )
+      return;
 
     const std::vector<double>& gridpeaks = (fieldType[0] == "MBBInterp" )? MBBpeaks : BPLpeaks;
 
-    if(newPeak < minPeak || newPeak > maxPeak)
-	throw runtime_error("Peak drifted outside range: photonPeak = " + std::to_string(newPeak));
-    
+    if (newPeak < minPeak || newPeak > maxPeak)
+      throw runtime_error("Peak drifted outside range: photonPeak = " + std::to_string(newPeak));
+
     int newposR = (upper_bound(gridpeaks.begin(), gridpeaks.end(), newPeak) - gridpeaks.begin());
     int deltapos = newposR - posR;
     double xL = gridpeaks[newposR-1], xR = gridpeaks[newposR];
 
     // if in new region update both grid points
-    if( abs(deltapos) > 1 ) {
+    if ( abs(deltapos) > 1 ) {
 
-      InterpPDL = LoadInterpPD(xL); InterpPDR = LoadInterpPD(xR);
-      InterpPPPL = LoadInterpPPP(xL); InterpPPPR = LoadInterpPPP(xR);
-      InterpBRL = LoadInterpBR(xL); InterpBRR = LoadInterpBR(xR);
+      fInterpPDL = LoadInterpPD(xL); fInterpPDR = LoadInterpPD(xR);
+      fInterpPPPL = LoadInterpPPP(xL); fInterpPPPR = LoadInterpPPP(xR);
+      fInterpBRL = LoadInterpBR(xL); fInterpBRR = LoadInterpBR(xR);
 
     }
-    
-    // if in adjacent region update one grid point
-    else if( abs(deltapos) == 1 ) {
-   
-      // +
-      if(deltapos > 0) {
 
-        InterpPDL = InterpPDR; InterpPDR = LoadInterpPD(xR);
-	InterpPPPL = InterpPPPR; InterpPPPR = LoadInterpPPP(xR);
-        InterpBRL = InterpBRR; InterpBRR = LoadInterpBR(xR);
+    // if in adjacent region update one grid point
+    else if ( abs(deltapos) == 1 ) {
+
+      // +
+      if (deltapos > 0) {
+
+        fInterpPDL = fInterpPDR;
+        fInterpPDR = LoadInterpPD(xR);
+	fInterpPPPL = fInterpPPPR;
+        fInterpPPPR = LoadInterpPPP(xR);
+        fInterpBRL = fInterpBRR;
+        fInterpBRR = LoadInterpBR(xR);
 
       }
       // -
       else {
 
-        InterpPDR = InterpPDL; InterpPDL = LoadInterpPD(xL);
-	InterpPPPR = InterpPPPL; InterpPPPL = LoadInterpPPP(xL);
-        InterpBRR = InterpBRL; InterpBRL = LoadInterpBR(xL);
+        fInterpPDR = fInterpPDL;
+        fInterpPDL = LoadInterpPD(xL);
+	fInterpPPPR = fInterpPPPL;
+        fInterpPPPL = LoadInterpPPP(xL);
+        fInterpBRR = fInterpBRL;
+        fInterpBRL = LoadInterpBR(xL);
 
       }
 
     }
 
     // if in same region just update interpolation
-    
+
     // perform interpolation
     double x = newPeak;
 
@@ -1031,13 +1072,14 @@ namespace prop {
     InterpBR(x, xL, xR);
 
     currentPeak = newPeak;
-    if(fieldType[0] == "MBBInterp") { 
-      fT[0] = currentPeak; 
+    if (fieldType[0] == "MBBInterp") {
+      fT[0] = currentPeak;
       feps0[0] = (gsl_sf_lambert_W0(-(fsigma[0]+2.)*exp(-(fsigma[0]+2.))) + fsigma[0]+2.) * gkBoltzmann*fT[0];
     }
-    else
-     feps0[0] = currentPeak;
-     fT[0] = feps0[0] / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.);
+    else {
+      feps0[0] = currentPeak;
+      fT[0] = feps0[0] / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.);
+    }
     posR = newposR;
 
     return;
@@ -1047,22 +1089,25 @@ namespace prop {
   PhotoNuclearSource::InterpInit(double photonPeak)
   {
 
-    if(fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") 
-	throw runtime_error("Unrecognized photon field to interpolate");
+    if (fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp")
+      throw runtime_error("Unrecognized photon field to interpolate");
 
     const std::vector<double>& gridpeaks = (fieldType[0] == "MBBInterp" )? MBBpeaks : BPLpeaks;
     minPeak = gridpeaks.front();
     maxPeak = gridpeaks.back();
 
-    if(photonPeak < minPeak || photonPeak > maxPeak)
-	throw runtime_error("Initial peak outside range: photonPeak = " + std::to_string(photonPeak));
+    if (photonPeak < minPeak || photonPeak > maxPeak)
+      throw runtime_error("Initial peak outside range: photonPeak = " + std::to_string(photonPeak));
 
     posR = (upper_bound(gridpeaks.begin(), gridpeaks.end(), photonPeak) - gridpeaks.begin());
     double x = photonPeak, xL = gridpeaks[posR-1], xR = gridpeaks[posR];
 
-    InterpPDL = LoadInterpPD(xL); InterpPDR = LoadInterpPD(xR);
-    InterpPPPL = LoadInterpPPP(xL); InterpPPPR = LoadInterpPPP(xR);
-    InterpBRL = LoadInterpBR(xL); InterpBRR = LoadInterpBR(xR);
+    fInterpPDL = LoadInterpPD(xL);
+    fInterpPDR = LoadInterpPD(xR);
+    fInterpPPPL = LoadInterpPPP(xL);
+    fInterpPPPR = LoadInterpPPP(xR);
+    fInterpBRL = LoadInterpBR(xL);
+    fInterpBRR = LoadInterpBR(xR);
 
     // PD interpolation
     fPhotoDissociations.push_back(Lambda());
@@ -1079,23 +1124,25 @@ namespace prop {
     return;
   }
 
-  std::vector<PhotoNuclearSource::Lambda> PhotoNuclearSource::LoadInterpPD(double photonPeak) {
+  std::vector<PhotoNuclearSource::Lambda>
+  PhotoNuclearSource::LoadInterpPD(double photonPeak)
+  {
 
     std::vector<Lambda> newPD;
     std::string strPeak = std::to_string(photonPeak);
     strPeak.erase ( strPeak.find_last_not_of('0') + 1, std::string::npos );
-    if(strPeak.back() == '.') strPeak += "0";
+    if (strPeak.back() == '.') strPeak += "0";
 
     newPD.push_back(Lambda());
     Lambda& lambdaGraphs = newPD.back();
 
     string filename, field;
-    if(fieldType[0] == "MBBInterp") {
-      strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find(".")); 
+    if (fieldType[0] == "MBBInterp") {
+      strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find("."));
       field = "MBB_" + strPeak + "_" + sigma;
       filename = fDirectory + "/pd_" + field + ".txt";
     }
-    else if(fieldType[0] == "BPLInterp") {
+    else if (fieldType[0] == "BPLInterp") {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/pd_" + field + ".txt";
     }
@@ -1150,32 +1197,34 @@ namespace prop {
       throw runtime_error(errMsg.str());
     }
 
-  
+
     return newPD;
   }
 
-  std::vector<PhotoNuclearSource::Lambda> PhotoNuclearSource::LoadInterpPPP(double photonPeak) {
+  std::vector<PhotoNuclearSource::Lambda>
+  PhotoNuclearSource::LoadInterpPPP(double photonPeak)
+  {
 
     std::vector<Lambda> newPPP;
     std::string strPeak = std::to_string(photonPeak);
     strPeak.erase ( strPeak.find_last_not_of('0') + 1, std::string::npos );
-    if(strPeak.back() == '.') strPeak += "0";
+    if (strPeak.back() == '.') strPeak += "0";
 
     newPPP.push_back(Lambda());
     Lambda& lambdaGraphs = newPPP.back();
 
     string filename, field;
-    if(fieldType[0] == "MBBInterp") {
-      strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find(".")); 
+    if (fieldType[0] == "MBBInterp") {
+      strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find("."));
       field = "MBB_" + strPeak + "_" + sigma;
       filename = fDirectory + "/ppp_" + field + ".txt";
     }
-    else if(fieldType[0] == "BPLInterp") {
+    else if (fieldType[0] == "BPLInterp") {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/ppp_" + field + ".txt";
     }
     else throw runtime_error("Unrecognized interpolator field type!");
-    
+
     ifstream infile(filename.c_str());
     if (!infile.good()) {
       stringstream errMsg;
@@ -1215,12 +1264,14 @@ namespace prop {
     return newPPP;
   }
 
-  std::vector<PhotoNuclearSource::BranchingRatio> PhotoNuclearSource::LoadInterpBR(double photonPeak) {  
+  std::vector<PhotoNuclearSource::BranchingRatio>
+  PhotoNuclearSource::LoadInterpBR(double photonPeak)
+  {
 
     std::vector<BranchingRatio> newBR;
     std::string strPeak = std::to_string(photonPeak);
     strPeak.erase ( strPeak.find_last_not_of('0') + 1, std::string::npos );
-    if(strPeak.back() == '.') strPeak += "0";
+    if (strPeak.back() == '.') strPeak += "0";
 
     const double lgmin = 6; // minimum log10(Lorentz-factor)
     const double lgmax = 14; // maximum log10(Lorentz-factor)
@@ -1230,12 +1281,12 @@ namespace prop {
     BranchingRatio& branchingRatio = newBR.back();
 
     string filename, field;
-    if(fieldType[0] == "MBBInterp") { 
-      strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find(".")); 
+    if (fieldType[0] == "MBBInterp") {
+      strPeak.erase(strPeak.find("."), strPeak.length()-strPeak.find("."));
       field = "MBB_" + strPeak + "_" + sigma;
       filename = fDirectory + "/pd_branching_" + field + ".txt";
     }
-    else if(fieldType[0] == "BPLInterp") {
+    else if (fieldType[0] == "BPLInterp") {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/pd_branching_" + field + ".txt";
     }
@@ -1276,7 +1327,7 @@ namespace prop {
 	nNeutron + nProton + 2 * nH2 + 3 * nH3 + 3 * nHe3 + 4 * nHe4;
       const int remnantA = A - dA;
 
- 
+
       map<int, int> secondaryMap;
 
       int nNucleon = nNeutron + nProton;
@@ -1302,8 +1353,8 @@ namespace prop {
 
 	//const double E = pow(10, lgmin + i * (lgmax - lgmin) / nlg) * 1e9 * 28;
 	//if (Z == 14 && A == 28 && E > 1.e+19 && E < 1.1e+19)
-	 // cout << E
-	 //      << " " << remnantA << " " << r << endl;
+        // cout << E
+        //      << " " << remnantA << " " << r << endl;
 
 	for (const auto secondaryIter : secondaryMap) {
 	  const int Asec = secondaryIter.first;
@@ -1315,7 +1366,7 @@ namespace prop {
 	  else {
 	    stringstream histName;
 	    histName << "branch_" << field << "_" << A << "_" << Asec;
-	    if(gROOT->FindObject(histName.str().c_str()))
+	    if (gROOT->FindObject(histName.str().c_str()))
 	      delete gROOT->FindObject(histName.str().c_str());
 	    hist = new TH1D(histName.str().c_str(), "", nlg, lgmin, lgmax);
 	    secondaryTable[Asec] = hist;
@@ -1328,32 +1379,35 @@ namespace prop {
 
     return newBR;
   }
- 
-  void PhotoNuclearSource::InterpPD(double x, double xL, double xR) {
- 
+
+  void
+  PhotoNuclearSource::InterpPD(double x, double xL, double xR)
+  {
+
     double dx = xR - xL;
 
     Lambda& lambdaGraphs = fPhotoDissociations.back();
-    Lambda& lambdaL = InterpPDL.back();
-    Lambda& lambdaR = InterpPDR.back();
+    Lambda& lambdaL = fInterpPDL.back();
+    Lambda& lambdaR = fInterpPDR.back();
 
-    for( auto const& iter : lambdaL) {
+    for ( auto const& iter : lambdaL) {
       const unsigned int A = iter.first;
       if (A > GetMaxA())
 	break;
-      if(lambdaL[A]->GetN() != lambdaR[A]->GetN())
+      if (lambdaL[A]->GetN() != lambdaR[A]->GetN())
 	throw runtime_error("Incompatible PD table dimensions");
       vector<double> lambdaInv;
       const vector<double> lambdaInvL(lambdaL[A]->GetY(), lambdaL[A]->GetY() + lambdaL[A]->GetN());
       const vector<double> lambdaInvR(lambdaR[A]->GetY(), lambdaR[A]->GetY() + lambdaR[A]->GetN());
-      if(lambdaInvL.size() != lambdaInvR.size())
-	throw runtime_error("Incompatible PPP lambdaInv dimensions"); 
+      if (lambdaInvL.size() != lambdaInvR.size())
+	throw runtime_error("Incompatible PPP lambdaInv dimensions");
       vector<double> lgGammaVec;
       const vector<double> lgGammaVecL(lambdaL[A]->GetX(), lambdaL[A]->GetX() + lambdaL[A]->GetN());
       const vector<double> lgGammaVecR(lambdaR[A]->GetX(), lambdaR[A]->GetX() + lambdaR[A]->GetN());
       double lInv, valL, valR;
-      for(unsigned int i = 0; i < lambdaInvL.size(); i++) {
-	// performs simple cubic interpolation with zero derivative at endpoints (to ensure smooth derivatives at grid points)
+      for (unsigned int i = 0; i < lambdaInvL.size(); i++) {
+	// performs simple cubic interpolation with zero derivative at endpoints
+        // (to ensure smooth derivatives at grid points)
 	valL = lambdaInvL[i]; valR = lambdaInvR[i];
 	double A, B, C;
 	A = -2.*(valR-valL)/pow(dx, 3);
@@ -1362,7 +1416,7 @@ namespace prop {
 	lInv = A*pow(x-xL, 3) + B*pow(x-xL, 2) + C;
 	lambdaInv.push_back(lInv);
 	// todo: implement  nuclear mass
-	if(lgGammaVecL[i] != lgGammaVecR[i])
+	if (lgGammaVecL[i] != lgGammaVecR[i])
 	  throw runtime_error("Misaligned PD axes for interpolation!");
 	lgGammaVec.push_back(lgGammaVecL[i]);
       }
@@ -1384,27 +1438,29 @@ namespace prop {
     return;
   }
 
-  void PhotoNuclearSource::InterpPPP(double x, double xL, double xR) {
+  void
+  PhotoNuclearSource::InterpPPP(double x, double xL, double xR)
+  {
 
     double dx = xR - xL;
 
     Lambda& lambdaGraphs = fPhotoPionProductions.back();
-    Lambda& lambdaL = InterpPPPL.back();
-    Lambda& lambdaR = InterpPPPR.back();
-    
+    Lambda& lambdaL = fInterpPPPL.back();
+    Lambda& lambdaR = fInterpPPPR.back();
+
     for (unsigned int A = 1; A <= GetMaxA(); ++A) {
-      if(lambdaL[A]->GetN() != lambdaR[A]->GetN())
+      if (lambdaL[A]->GetN() != lambdaR[A]->GetN())
 	throw runtime_error("Incompatible PPP table dimensions");
       vector<double> lambdaInv;
       const vector<double> lambdaInvL(lambdaL[A]->GetY(), lambdaL[A]->GetY() + lambdaL[A]->GetN());
       const vector<double> lambdaInvR(lambdaR[A]->GetY(), lambdaR[A]->GetY() + lambdaR[A]->GetN());
-      if(lambdaInvL.size() != lambdaInvR.size())
-	throw runtime_error("Incompatible PPP lambdaInv dimensions"); 
+      if (lambdaInvL.size() != lambdaInvR.size())
+	throw runtime_error("Incompatible PPP lambdaInv dimensions");
       vector<double> lgEVec;
       const vector<double> lgEVecL(lambdaL[A]->GetX(), lambdaL[A]->GetX() + lambdaL[A]->GetN());
       const vector<double> lgEVecR(lambdaR[A]->GetX(), lambdaR[A]->GetX() + lambdaR[A]->GetN());
       double lInv, valL, valR;
-      for(unsigned int i = 0; i < lambdaInvL.size(); i++) {
+      for (unsigned int i = 0; i < lambdaInvL.size(); i++) {
 	// performs simple cubic interpolation with zero derivative at endpoints (to ensure smooth derivatives at grid points)
 	valL = lambdaInvL[i]; valR = lambdaInvR[i];
 	double A, B, C;
@@ -1414,14 +1470,14 @@ namespace prop {
 	lInv = A*pow(x-xL, 3) + B*pow(x-xL, 2) + C;
 	lambdaInv.push_back(lInv);
 	// todo: implement  nuclear mass
-	if(lgEVecL[i] != lgEVecR[i])
+	if (lgEVecL[i] != lgEVecR[i])
 	  throw runtime_error("Misaligned PPP axes for interpolation!");
 	lgEVec.push_back(lgEVecL[i]);
       }
       TGraph* lambdaGraph = new TGraph(lambdaInv.size(),
 				       &lgEVec.front(),
 				       &lambdaInv.front());
-      
+
       CheckEqualSpacing(*lambdaGraph);
       lambdaGraphs[A] = lambdaGraph;
     }
@@ -1431,45 +1487,48 @@ namespace prop {
     return;
   }
 
-  void PhotoNuclearSource::InterpBR(double x, double xL, double xR) {
+  void
+  PhotoNuclearSource::InterpBR(double x, double xL, double xR)
+  {
 
     double dx = xR - xL;
 
     BranchingRatio& branchingRatio = fBranchingRatios.back();
-    BranchingRatio& bRL = InterpBRL.back();
-    BranchingRatio& bRR = InterpBRR.back();
-    
+    BranchingRatio& bRL = fInterpBRL.back();
+    BranchingRatio& bRR = fInterpBRR.back();
+
     const double lgmin = 6; // minimum log10(Lorentz-factor)
     const double lgmax = 14; // maximum log10(Lorentz-factor)
     const size_t nlg = 201; // number of Lorentz-factor steps
-  
-    if(bRL.size() != bRR.size())
+
+    if (bRL.size() != bRR.size())
       throw runtime_error("Branching ratio primary tables incompatible!");
- 
-    for(const auto primIter : bRL ) {
+
+    for (const auto primIter : bRL ) {
       const int A = primIter.first;
 
       map<unsigned int, TH1D*>& secondaryTable = branchingRatio[A];
       map<unsigned int, TH1D*>& secTableL = bRL[A];
       map<unsigned int, TH1D*>& secTableR = bRR[A];
 
-      if(secTableL.size() != secTableR.size())
+      if (secTableL.size() != secTableR.size())
 	throw runtime_error("Branching ratio secondary tables incompatible!");
 
-      for(const auto secIter : secTableL) {
+      for (const auto secIter : secTableL) {
 	const int Asec = secIter.first;
 
 	stringstream histName;
 	histName << "branch_" << fieldType[0] << "_" << A << "_" << Asec;
-	if(gROOT->FindObject(histName.str().c_str()))
+	if (gROOT->FindObject(histName.str().c_str()))
 	  delete gROOT->FindObject(histName.str().c_str());
 	TH1D* hist = new TH1D(histName.str().c_str(), "", nlg, lgmin, lgmax);
 	const TH1D* histL = secTableL[Asec];
 	const TH1D* histR = secTableR[Asec];
-	  
+
 	for (size_t i = 0; i < nlg; i++) {
-	
-	  // performs simple cubic interpolation with zero derivative at endpoints (to ensure smooth derivatives at grid points)
+
+	  // performs simple cubic interpolation with zero derivative at endpoints
+          // (to ensure smooth derivatives at grid points)
 	  double val, valL, valR;
 	  valL = histL->GetBinContent(i+1); valR = histR->GetBinContent(i+1);
 	  double A, B, C;
@@ -1478,9 +1537,9 @@ namespace prop {
 	  C = valL;
 	  val = A*pow(x-xL, 3) + B*pow(x-xL, 2) + C;
 	  hist->SetBinContent(i+1, val);
-	
+
 	}
-	
+
 	secondaryTable[Asec] = hist;
       }
     }
@@ -1488,26 +1547,30 @@ namespace prop {
     return;
   }
 
-  double PhotoNuclearSource::GetMeanPhotonEnergy() 
-    const 
+  double
+  PhotoNuclearSource::GetMeanPhotonEnergy()
+    const
   {
 
     double Eavg = 0.;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
-      
+
       const double f = fFieldScaleFactors[i];
       if (f <= 0)
         continue;
 
-      if(fieldType[i] == "MBB"|| fieldType[i] == "MBBInterp") 
+      if (fieldType[i] == "MBB" || fieldType[i] == "MBBInterp")
         Eavg += f*gkBoltzmann*fT[i]*gsl_sf_zeta(4+fsigma[i])*gsl_sf_gamma(4+fsigma[i]);
-
-      else Eavg += (fbeta[i] >= -2)? f*feps0[i] : f*feps0[i]*(falpha[i]+1.)*(fbeta[i]+1.)/(falpha[i]+2.)/(fbeta[i]+2.);
+      else
+        Eavg +=
+          (fbeta[i] >= -2)?
+          f*feps0[i] :
+          f*feps0[i]*(falpha[i]+1.)*(fbeta[i]+1.)/(falpha[i]+2.)/(fbeta[i]+2.);
 
     }
 
-    return Eavg;    
+    return Eavg;
 
   }
 
