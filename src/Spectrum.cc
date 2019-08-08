@@ -1031,7 +1031,7 @@ namespace prop {
 	  // hadronic part
           if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
 	    double lgEprim = lgE;
-            for (unsigned int jE = iE; jE <= n; ++jE) {
+            for (unsigned int jE = iE; jE < n; ++jE) {
 	      qNext = protonFlux[jE];
 	      const double E = pow(10., lgE);
 	      const double Eprim = pow(10., lgEprim);
