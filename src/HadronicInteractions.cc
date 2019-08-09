@@ -1,4 +1,5 @@
 #include "HadronicInteractions.h"
+#include "Utilities.h"
 
 #include <TFile.h>
 #include <TTree.h>
@@ -75,7 +76,7 @@ namespace prop {
     else if ( fModelName == "sibyll23c" ) fileModel = "Sibyll23c";
 
     
-    const int Amin = 1, Amax = 56;
+    const int Amin = 1, Amax = GetMaxA();
 
     for(int A = Amin; A <= Amax; A++) {
    
@@ -119,6 +120,39 @@ namespace prop {
     }
 
     return;
+  }
+
+  void 
+  HadronicInteractions::CheckMatrixBinning(const double dlgE)
+  {
+    
+    for (auto& Aprim : fMatrix) {
+      for (auto Asec : Aprim.second) {
+
+        TH2D& h = *Asec.second;
+        const int Nxbins = h.GetNbinsX();
+        const int Nybins = h.GetNbinsY();
+        const double xMax = h.GetXaxis()->GetXmax();
+        const double xMin = h.GetXaxis()->GetXmin();
+        const double yMax = h.GetYaxis()->GetXmax();
+        const double yMin = h.GetYaxis()->GetXmin();
+
+        const double dx = (xMax - xMin) / Nxbins;
+        const double dy = (yMax - yMin) / Nybins;
+
+        if (dlgE/dx == 1. && dlgE/dy == 1.) {
+          continue;
+        } else if(dlgE/dx == int(dlgE/dx) && dlgE/dy == int(dlgE/dy)) {
+          h.Rebin2D(int(dlgE/dx), int(dlgE/dy));
+        } else {
+          throw runtime_error("Internal binning incompatible with interaction matrices!");
+        }
+
+      }
+    }
+
+    return;
+
   }
 
   TH2D* HadronicInteractions::GetMatrix(const int Aprim, const int Asec) {
@@ -171,13 +205,12 @@ namespace prop {
       // sum over neutrons and anti-neutrons
       N += (fMatrix[Aprim].count(2112))? fMatrix[Aprim][2112]->GetBinContent(fMatrix[Aprim][2112]->FindBin(lgEprim, lgEsec)) : 0.; //->Interpolate(lgEprim, lgEsec) : 0.;
       N += (fMatrix[Aprim].count(-2112))? fMatrix[Aprim][-2112]->GetBinContent(fMatrix[Aprim][-2112]->FindBin(lgEprim, lgEsec)) : 0.; //Interpolate(lgEprim, lgEsec) : 0.;
-//cout << lgEprim << " " << lgEsec << " " << fMatrix[Aprim][2212]->GetXaxis()->GetBinCenter(fMatrix[Aprim][2212]->GetXaxis()->FindBin(lgEprim)) << " " << fMatrix[Aprim][2212]->GetYaxis()->GetBinCenter(fMatrix[Aprim][2212]->GetYaxis()->FindBin(lgEsec)) << endl;
 
     }
     else {
 
       // sum over all possible Z
-      for(int Z = 0; Z < Asec; Z++) {
+      for(int Z = 0; Z <= Asec; Z++) {
 
         int code = 1000000000 + Z*10000 + Asec*10; // pdg nuclear code
         N += (fMatrix[Aprim].count(code))? fMatrix[Aprim][code]->Interpolate(lgEprim, lgEsec) : 0.;
@@ -258,18 +291,10 @@ namespace prop {
 
   int HadronicInteractions::GetPDGID(const int A, const int Z = -1, bool isAntimatter = false) {
 
-    if(A < 0 || A > 56) throw runtime_error("Unsupport mass number: A = " + std::to_string(A));
+    if(A < 1 || unsigned(A) > GetMaxA()) throw runtime_error("Unsupported mass number: A = " + std::to_string(A));
     if(Z > A) throw runtime_error("Z cannot be larger than A: Z = " + std::to_string(Z) + ", A = " + std::to_string(A));
-    
-    int defaultZ[56] = {1, 1, 2, 2, 3, 3, 3, 5, // default Z's in UFA scheme
-			4, 5, 5, 6, 6, 7, 7, 8,
-			8, 8, 9, 10, 10, 10, 11, 12,
-			12, 12, 13, 14, 14, 14, 15, 16,
-			16, 16, 17, 18, 17, 18, 19, 19,
-			19, 20, 20, 20, 21, 22, 22, 22,
-			22, 24, 23, 24, 24, 24, 25, 26};
 
-    int z = (Z == -1)? defaultZ[A-1] : Z;
+    int z = (Z == -1)? aToZ(A) : Z;
 
     if(isAntimatter)
       return -1000000000 + z*10000 + A*10; // pdg nuclear code
