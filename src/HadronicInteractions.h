@@ -19,6 +19,7 @@ namespace prop {
     virtual ~HadronicInteractions();
 
     void SetHadIntRatio(double f);
+    void CheckMatrixBinning(const double dlgE);
 
     TH2D* GetMatrix(const int Aprim, const int Asec); 
     double GetsigmaInel(const int Aprim, const double lgE);
