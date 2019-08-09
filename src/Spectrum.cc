@@ -557,6 +557,8 @@ namespace prop {
     const unsigned int nBins = GetNBinsInternal();
     const double dlgE = (fLgEmax - fLgEmin) / nBins;
 
+    fSource->CheckMatrixBinning(dlgEOrig);
+
     for (const auto& iter : fFractions) {
       const int Ainj = iter.first;
 
