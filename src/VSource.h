@@ -84,6 +84,8 @@ namespace prop {
     double
     PartialLambdaMPPInt(const double /*E*/, const int /*Aprim*/, const double /*epsMax*/) 
       const = 0;
+
+    void CheckMatrixBinning(const double dlgE) const { return HadInts->CheckMatrixBinning(dlgE); } 
     
     double GetNSecondaries(const double Esec, const double Eprim, const int Asec, const int Aprim) const { return HadInts->GetNSecondaries(Esec, Eprim, Asec, Aprim); }
 
