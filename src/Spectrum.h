@@ -8,8 +8,6 @@
 
 namespace prop {
 
-  class VSource;
-
   class Spectrum {
 
   public:
@@ -67,7 +65,7 @@ namespace prop {
                        const double Emax, const double nE,
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions);
-    
+
     void SetInjectedSpectrum(const VSource* s, const SpecMap& inj,
                              const double nE, const double lgEmin,
                              const double lgEmax);
@@ -85,7 +83,7 @@ namespace prop {
 
     double GetFluxSum(const unsigned int i);
     double GetFluxSum(const double lgE);
-    
+
     double GetN() const
     { return fN; }
     double GetLgEmin() const
@@ -98,12 +96,12 @@ namespace prop {
 
     void Rescale(const double f);
 
-    const VSource* GetSource() const { return fSource; }
+    const VSource* GetSource(const int indx = 0) const { return fSource + indx; }
 
-    static double GetE0(); 
+    static double GetE0();
 
     static double GetMPPMultiplicity(const double Eph);
-    
+
     static double GetMPPEprim(double lgEprim, void* pars);
 
     struct MPP_pars { double A; double Asec; double kappaMPP; double Eph; double Esec; };
@@ -115,9 +113,9 @@ namespace prop {
 
     unsigned int GetNBinsInternal() const
     { return fN * fNSubBins; }
-    
+
   private:
-    void CalculateSpectrum() const;
+    void CalculateSpectrum(const int indx = 0) const;
     double InjectedFlux(const double E, const double A) const;
     unsigned int LgEtoIndex(const double lgE) const;
 
@@ -139,7 +137,7 @@ namespace prop {
     const unsigned int fNSubBins = 2;
 #else
     const unsigned int fNSubBins = 10;
-#endif    
+#endif
   };
 }
 #endif
