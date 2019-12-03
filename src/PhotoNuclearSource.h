@@ -15,7 +15,9 @@ namespace prop {
   public:
 
     PhotoNuclearSource(const std::vector<std::string>& fields,
-                  const std::string& directory, const std::string& modelName, double photonPeak = 0.);
+                       const std::string& directory,
+                       const std::string& modelName,
+                       const double photonPeak = 0.);
 
     virtual ~PhotoNuclearSource();
 
@@ -99,7 +101,8 @@ namespace prop {
     std::string sigma, alpha, beta;
     std::vector<std::string> fieldType;
     std::vector<double> fsigma, falpha, fbeta, feps0, fT;
-    double minPeak, maxPeak, currentPeak;
+    double minPeak, maxPeak;
+    double fCurrentPeak;
     int posR;
 
   };

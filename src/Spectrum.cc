@@ -471,7 +471,7 @@ namespace prop {
   }
 
   void
-  Spectrum::CalculateSpectrum(const int indx)
+  Spectrum::CalculateSpectrum(const int /*indx*/)
     const
   {
 

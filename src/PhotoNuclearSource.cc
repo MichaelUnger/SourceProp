@@ -24,15 +24,16 @@ namespace prop {
 
   // if these vectors are modified they must be initialized so that they are
   // in ascending order numerically
-  const std::vector<double> BPLpeaks = {0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05,
-                                        0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15,
-                                        0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35, 0.4, 0.45, 0.5,
-                                        0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
-  const std::vector<double> MBBpeaks = {10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100,
-                                        110, 120, 130, 140, 150, 175, 200, 225, 250, 275, 300, 350,
-                                        400, 450, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000,
-                                        8000, 9000};
-
+  const std::vector<double> BPLpeaks =
+    {0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05,
+     0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15,
+     0.175, 0.2, 0.225, 0.25, 0.275, 0.3, 0.35, 0.4, 0.45, 0.5,
+     0.75, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0};
+  const std::vector<double> MBBpeaks =
+    {10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 70, 80, 90, 100,
+     110, 120, 130, 140, 150, 175, 200, 225, 250, 275, 300, 350,
+     400, 450, 500, 750, 1000, 2000, 3000, 4000, 5000, 6000, 7000,
+     8000, 9000};
 
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
@@ -44,8 +45,13 @@ namespace prop {
   const double gPi = 3.1415926535897932384626;
 
   PhotoNuclearSource::PhotoNuclearSource(const std::vector<std::string>& fields,
-                                         const std::string& directory, const std::string& modelName, double photonPeak)  :
-    fFields(fields), fDirectory(directory), fModelName(modelName), currentPeak(photonPeak)
+                                         const std::string& directory,
+                                         const std::string& modelName,
+                                         const double photonPeak)  :
+    fFields(fields),
+    fDirectory(directory),
+    fModelName(modelName),
+    fCurrentPeak(photonPeak)
   {
     if (fFields.empty())
       throw runtime_error("no photon fields given");
@@ -79,14 +85,14 @@ namespace prop {
           throw runtime_error("Interpolation not supported for multiple photon fields");
 
         if (fieldType.back() == "MBBInterp") {
-          fT.push_back(currentPeak);
+          fT.push_back(fCurrentPeak);
           sigma = fieldInfo[1]; fsigma.push_back(atof(sigma.c_str()));
           feps0.push_back( (gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + fsigma.back()+2.) * gkBoltzmann * fT.back() );
           beta = "n/a";
           alpha = "n/a";
         }
         else if (fieldType.back() == "BPLInterp") {
-          feps0.push_back(currentPeak);
+          feps0.push_back(fCurrentPeak);
           beta = fieldInfo[1]; fbeta.push_back(-1.*atof(beta.c_str()));
           alpha = fieldInfo[2]; falpha.push_back( (atoi(alpha.c_str())/10) / (double)(atoi(alpha.c_str())%10) );
           fT.push_back( feps0.back() / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) );
@@ -95,7 +101,7 @@ namespace prop {
         else throw runtime_error("Interpolator field not recognized!");
 
         // initiate interpolation tables
-        InterpInit(currentPeak);
+        InterpInit(fCurrentPeak);
 
         return;
       }
@@ -577,11 +583,17 @@ namespace prop {
     const bool isMPP = true;
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2,
-      sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
-    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2;
+    const double sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2;
+    const double sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2;
+    // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2;
+    // thresholds from Dermer section 9.2.2 equation (9.9)
+    const double EthSPP = 390.*gElectronMass;
+    const double EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass;
 
-    double lambdaSPP = 0., lambdaMPP = 0.;
+    double lambdaSPP = 0;
+    double lambdaMPP = 0;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
 
@@ -616,7 +628,7 @@ namespace prop {
 
     }
 
-    return (isMPP)? lambdaSPP / (lambdaSPP + lambdaMPP) : 0.;
+    return (isMPP)? lambdaSPP / (lambdaSPP + lambdaMPP) : 0;
 
   }
 
@@ -630,7 +642,8 @@ namespace prop {
     const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
     const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
 
-    double lambdaSPP = 0., lambdaMPP = 0.;
+    double lambdaSPP = 0;
+    double lambdaMPP = 0;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
 
@@ -677,10 +690,13 @@ namespace prop {
 
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2;
+    const double sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2;
+    //sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
     const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
 
-    double lambdaSPP = 0., lambdaMPP = 0.;
+    double lambdaSPP = 0;
+    //, lambdaMPP = 0;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
 
@@ -688,10 +704,11 @@ namespace prop {
       if (f <= 0)
         continue;
 
-      double lambdaInv = 0.;
+      double lambdaInv = 0;
 
       // single-pion production interaction length
-      if (epsMax <= EthSPP/2./gamma) lambdaInv = 0.;
+      if (epsMax <= EthSPP/2./gamma)
+        lambdaInv = 0;
       else {
         lambdaInv += (epsMax <= EthMPP1/2./gamma)? sigmaInelSPP1 * (I2(EthSPP/2./gamma, epsMax, i)
                                                                     + pow(EthMPP1/2./gamma, 2)*I3(epsMax, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)) :
@@ -728,10 +745,18 @@ namespace prop {
 
     const int Z = aToZ(Aprim), N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2, sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2, sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2, sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
-    const double EthSPP = 390.*gElectronMass, EthMPP1 = 980.*gElectronMass, EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
+    /*
+    const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2;
+    const double sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2;
+    */
+    const double sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2;
+    const double sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2; // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
+    //    const double EthSPP = 390.*gElectronMass;
+    const double EthMPP1 = 980.*gElectronMass;
+    const double EthMPP2 = 2940.*gElectronMass; // thresholds from Dermer section 9.2.2 equation (9.9)
 
-    double lambdaSPP = 0., lambdaMPP = 0.;
+    // double lambdaSPP = 0;
+    double lambdaMPP = 0;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
 
@@ -742,7 +767,8 @@ namespace prop {
       double lambdaInv;
 
       // multi-pion production interaction length
-      if (epsMax <= EthMPP1/2./gamma) lambdaInv = 0.;
+      if (epsMax <= EthMPP1/2./gamma)
+        lambdaInv = 0;
       else {
         lambdaInv = (epsMax <= EthMPP2/2./gamma)?
           sigmaInelMPP1 * (I2(EthMPP1/2./gamma, epsMax, i)
@@ -812,8 +838,8 @@ namespace prop {
 
       n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
 
-      I += (feps0[iField] >= xmin)? (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) - 1. / (fbeta[iField]+1.) : 0.;
-      I -= (feps0[iField] < xmin)? pow(xmin/feps0[iField], fbeta[iField]+1.) / (fbeta[iField]+1.) : 0.;
+      I += (feps0[iField] >= xmin)? (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) - 1. / (fbeta[iField]+1.) : 0;
+      I -= (feps0[iField] < xmin)? pow(xmin/feps0[iField], fbeta[iField]+1.) / (fbeta[iField]+1.) : 0;
       I *= n0 * feps0[iField];
 
     }
@@ -830,7 +856,7 @@ namespace prop {
     if (xmin > xmax)
       throw runtime_error("I2: xmin must be <= xmax!");
     else if (xmin == xmax)
-      return 0.;
+      return 0;
 
     double I = 0., b = fsigma[iField]+2., TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
     double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
@@ -856,7 +882,8 @@ namespace prop {
       else I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmax/gkBoltzmann/fT[iField])
              - pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
       I /= (fsigma[iField] + 2.);
-      if (I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+      if (I < 1e-10)
+        I = 0; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
 
       I *= 8. * gPi * n0 * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
 
@@ -908,7 +935,8 @@ namespace prop {
 	I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]) / fsigma[iField];
         I += gsl_sf_zeta(fsigma[iField]+1.) * gsl_sf_gamma(fsigma[iField]+1.);
       }
-      if (I < 1e-10) I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
+      if (I < 1e-10)
+        I = 0; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
 
       I *= 8. * gPi * n0 / pow(feps0[iField], 2) * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]-2.) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
 
@@ -1013,7 +1041,7 @@ namespace prop {
   {
 
     // nothing to be done if not interpolating or value hasn't changed
-    if ( (fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") || currentPeak == newPeak )
+    if ( (fieldType[0] != "BPLInterp" && fieldType[0] != "MBBInterp") || fCurrentPeak == newPeak )
       return;
 
     const std::vector<double>& gridpeaks = (fieldType[0] == "MBBInterp" )? MBBpeaks : BPLpeaks;
@@ -1071,13 +1099,13 @@ namespace prop {
     InterpPPP(x, xL, xR);
     InterpBR(x, xL, xR);
 
-    currentPeak = newPeak;
+    fCurrentPeak = newPeak;
     if (fieldType[0] == "MBBInterp") {
-      fT[0] = currentPeak;
+      fT[0] = fCurrentPeak;
       feps0[0] = (gsl_sf_lambert_W0(-(fsigma[0]+2.)*exp(-(fsigma[0]+2.))) + fsigma[0]+2.) * gkBoltzmann*fT[0];
     }
     else {
-      feps0[0] = currentPeak;
+      feps0[0] = fCurrentPeak;
       fT[0] = feps0[0] / gkBoltzmann / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.);
     }
     posR = newposR;
@@ -1552,7 +1580,7 @@ namespace prop {
     const
   {
 
-    double Eavg = 0.;
+    double Eavg = 0;
 
     for (unsigned int i = 0; i < fFields.size(); ++i) {
 
