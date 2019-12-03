@@ -31,7 +31,7 @@ namespace prop {
 
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
-  
+
   const
   Spectrum::SpecMap&
   Spectrum::GetEscFlux()
@@ -70,7 +70,7 @@ namespace prop {
   }
 
   const
-  Spectrum::SpecMap& 
+  Spectrum::SpecMap&
   Spectrum::GetextraProtonFlux()
     const
   {
@@ -89,7 +89,7 @@ namespace prop {
     return fextraProtons;
   }
 
-  Spectrum::SpecMap& 
+  Spectrum::SpecMap&
   Spectrum::GetextraProtonFlux()
   {
 
@@ -107,7 +107,7 @@ namespace prop {
      }
     return fextraProtons;
   }
-  
+
   const
   Spectrum::SpecMap&
   Spectrum::GetInjFlux()
@@ -116,9 +116,9 @@ namespace prop {
     if (!fInj.empty())
       return fInj;
 
-    if (fSpectrumType == eExternal) 
+    if (fSpectrumType == eExternal)
       throw runtime_error("no external spectrum available");
-    
+
     const unsigned int nBins = GetNBinsInternal();
     const double dlgE = (fLgEmax - fLgEmin) / nBins;
 
@@ -185,7 +185,7 @@ namespace prop {
       iter.second *= f;
     for (auto& iter : fNucleons)
       iter.second *= f;
-    for (auto& iter : fextraProtons) 
+    for (auto& iter : fextraProtons)
       iter.second *= f;
   }
 
@@ -352,7 +352,7 @@ namespace prop {
     fEscape.clear();
     fInj.clear();
     fNucleons.clear();
-    fextraProtons.clear(); 
+    fextraProtons.clear();
     fRmax = Rmax;
     fGamma = gamma;
     fSource = s;
@@ -471,27 +471,27 @@ namespace prop {
   }
 
   void
-  Spectrum::CalculateSpectrum()
+  Spectrum::CalculateSpectrum(const int indx)
     const
   {
-   
+
     // pion fractions in photo-pion production
-#undef _UFA15_    
+#undef _UFA15_
 #ifdef _UFA15_
-    // Delta+ --> p + pi0, Delta0 --> n + pi0 
+    // Delta+ --> p + pi0, Delta0 --> n + pi0
     const double neutralPionFraction = 0.5;
-    // Delta+ --> n + pi+, Delta0 --> p + pi- 
-    const double chargedPionFraction = 0.5; 
+    // Delta+ --> n + pi+, Delta0 --> p + pi-
+    const double chargedPionFraction = 0.5;
 #else
-    // Delta+ --> p + pi0, Delta0 --> n + pi0 
-    const double neutralPionFraction = 0.5; //2/3.; 
-    // Delta+ --> n + pi+, Delta0 --> p + pi- 
-    const double chargedPionFraction = 0.5; //1/3.; 
+    // Delta+ --> p + pi0, Delta0 --> n + pi0
+    const double neutralPionFraction = 0.5; //2/3.;
+    // Delta+ --> n + pi+, Delta0 --> p + pi-
+    const double chargedPionFraction = 0.5; //1/3.;
 #endif
 
     // init injected flux
     GetInjFlux();
-    
+
     TMatrixD& mPD = fNucleons[eKnockOutPD];
     if (!mPD.GetNoElements())
       mPD.ResizeTo(fN, 1);
@@ -611,7 +611,7 @@ namespace prop {
 #ifdef _WITH_OPENMP_
       #error openmp does not yet work
       #pragma omp parallel for
-#endif      
+#endif
       for (int Asec = Ainj - 1; Asec > 0; --Asec) {
         TH1D& hSec = *prodSpectrum[Asec];
         double lgE = fLgEmin + dlgE / 2;
@@ -688,7 +688,7 @@ namespace prop {
                       fSource->GetChannelFraction(EprimMPP, Aprim, VSource::ePH);
                     const double ppFrac =
                       fSource->GetProcessFraction(EprimMPP, Aprim, VSource::ePP);
-		    const double bMPP = 
+		    const double bMPP =
 		      fSource->GetMPPBranchingRatio(EprimMPP, Aprim);
                     const double flux = bMPP * phFrac * ppFrac * fInt * jacobiMPP * Qprim;
 		    hSec.Fill(lgE, flux);
@@ -717,7 +717,7 @@ namespace prop {
                     const double flux = bSPP * phFrac * ppFrac * fInt * jacobi * Qprim;
                     pion.Fill(lgE, flux);
                   }
-                  
+
 		  //multipion production
 		  const double kappaMPP = 0.35;
 		  const double Eph = fSource->GetMeanPhotonEnergy();
@@ -833,7 +833,7 @@ namespace prop {
 
                 lgE += dlgEOrig;
               }
-  
+
             }
             lgEprim += dlgEOrig;
           }
@@ -896,7 +896,7 @@ namespace prop {
               lgE += dlgEOrig;
             }
           }
-	  
+
 	  lgEprim += dlgEOrig;
         }
       }
@@ -962,7 +962,7 @@ namespace prop {
 	const double fHad_n = LogEval(had_n, lgE);
 	mNeutronProd[iE][0] += fHad_n;
         lgE += dlgEOrig;
-	
+
       }
     }
 
@@ -1026,10 +1026,10 @@ namespace prop {
 	  const double phFrac =
 	    fSource->GetChannelFraction(Enext, 1, VSource::ePH);
 	  const double bSPP = 1. -
-            fSource->GetMPPBranchingRatio(Enext, 1); 
+            fSource->GetMPPBranchingRatio(Enext, 1);
           pSum += bPP * bSPP * phFrac * fInt * qNext / kappa;
           nSum += (1-bPP) * bSPP * phFrac * fInt * qNext / kappa;
-        
+
 	  // hadronic part
           if(fSource->LambdaHadInt(1e19, 56) / fSource->LambdaPhotoHadInt(1e19, 56) < 1e10) {
 	    double lgEprim = lgE;
@@ -1062,7 +1062,7 @@ namespace prop {
         }
 
 	// multipion production
-	if(iE < fN - 2) { 
+	if(iE < fN - 2) {
 	  const int iENext = iE + 2;
           double qNext = protonFlux[iENext];
           const double Enext = pow(10, lgE + 2 * dlgEOrig);
@@ -1138,7 +1138,7 @@ namespace prop {
 	const double jacobiMPP = 1. / ((1.-kappa_MPP)/multiplicity);
 	Enext = jacobiMPP * E;
 	const unsigned int iENext = (int) std::floor((log10(Enext)-fLgEmin)/dlgEOrig);
-	if(iENext >  n-1 || Enext > pow(10., fLgEmax)) continue; 
+	if(iENext >  n-1 || Enext > pow(10., fLgEmax)) continue;
 	const double qNext = protonFlux[iENext];
 	const double lambdaI_PH = fSource->LambdaPhotoHadInt(Enext, 1);
 	const double lambdaI_H = fSource->LambdaHadInt(Enext, 1);
@@ -1147,7 +1147,7 @@ namespace prop {
         const double fInt = lambdaE / (lambdaE + lambdaI);
 	const double phFrac =
 	  fSource->GetChannelFraction(Enext, 1, VSource::ePH);
-	const double bMPP = 
+	const double bMPP =
 	  fSource->GetMPPBranchingRatio(Enext, 1);
 	mPionPlus[iE][0] += multiplicity / 3. * bMPP * phFrac * fInt * qNext * jacobiMPP;
 	mPionMinus[iE][0] += multiplicity / 3. * bMPP * phFrac * fInt * qNext * jacobiMPP;
@@ -1209,7 +1209,7 @@ namespace prop {
 	  lgE += dlgEOrig;
         }
       }
-      
+
     }
 
     gsl_root_fsolver_free(MPP_solve);
@@ -1235,9 +1235,9 @@ namespace prop {
     save->cd();
   }
 
-  double Spectrum::GetMPPMultiplicity(const double Eph)  
+  double Spectrum::GetMPPMultiplicity(const double Eph)
   {
- 
+
     const double lgEph = log10(Eph);
 
     return 0.85886507*pow(lgEph, 2) - 13.08070077*lgEph + 50.04741721; // parametrization based on SOPHIA
@@ -1263,6 +1263,5 @@ namespace prop {
   }
 
   double Spectrum::GetE0() { return 1e18*utl::eV; }
-  
-}
 
+}
