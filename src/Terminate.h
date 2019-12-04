@@ -58,7 +58,7 @@ void crit_err_hdlr(int sig_num, siginfo_t * info, void * ucontext) {
 }
 
 void my_terminate() {
-  static bool tried_throw = false;
+  static unsigned int tried_throw = 0;
 
   try {
     // try once to re-throw currently active exception
