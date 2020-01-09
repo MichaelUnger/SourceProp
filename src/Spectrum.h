@@ -62,7 +62,7 @@ namespace prop {
     }
 
     void SetParameters(const VSource* s, const double gamma,
-                       const double Emax, const double nE,
+                       const double Emax, const double nE, unsigned int nSubBins,
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions);
 
@@ -86,6 +86,8 @@ namespace prop {
 
     double GetN() const
     { return fN; }
+    double GetNSubBins() const
+    { return fnSubBins; }
     double GetLgEmin() const
     { return fLgEmin; }
     double GetLgEmax() const
@@ -104,7 +106,7 @@ namespace prop {
 
     static double GetMPPEprim(double lgEprim, void* pars);
 
-    struct MPP_pars { double A; double Asec; double kappaMPP; double Eph; double Esec; };
+    struct MPP_pars { double A; double Asec; double kappaMPP; double Esec; VSource* source;};
 
     // P = int_E1^E2 E * f(E/E0) dE
     double InjectedPower(const double E1, const double E2, const double A) const;
@@ -112,7 +114,7 @@ namespace prop {
     double InjectedPower(const double E1, const double A) const;
 
     unsigned int GetNBinsInternal() const
-    { return fN * fNSubBins; }
+    { return fN * fnSubBins; }
 
   private:
     void CalculateSpectrum(const int indx = 0) const;
@@ -125,6 +127,7 @@ namespace prop {
     double fGamma;
     const VSource* fSource;
     double fN;
+    unsigned int fnSubBins;
     double fLgEmin;
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
@@ -133,11 +136,6 @@ namespace prop {
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
     mutable SpecMap fextraProtons;
-#ifdef _FASTANDFURIOUS_
-    const unsigned int fNSubBins = 2;
-#else
-    const unsigned int fNSubBins = 10;
-#endif
   };
 }
 #endif
