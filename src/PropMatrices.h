@@ -55,13 +55,13 @@ namespace prop {
     double fLgEmax;
     double fMaxDistance;
     PrimaryMap fMatrices;
-    PrimaryMap InterpMatrixUL, InterpMatrixUR, InterpMatrixDL, InterpMatrixDR; // interpolation matrices U = up, D = down, L = left, R = right
-    double dM = 0.2, dZ0 = 0.25, Mmin = -5.0, Mmax = 5.0, Z0min = 0., Z0max = 5.0;
+    // interpolation matrices U = up, D = down, L = left, R = right
+    PrimaryMap InterpMatrixUL;
+    PrimaryMap InterpMatrixUR;
+    PrimaryMap InterpMatrixDL;
+    PrimaryMap InterpMatrixDR; 
     PrimaryMap InterpMatrixL, InterpMatrixR;
     
-    // if these vectors are modified they must be initialized so that they are in ascending order numerically
-    std::vector<double> DminGrid = {0, 1, 5, 7, 10, 20, 30, 40, 50, 75, 100};
-    double DminMin = DminGrid.front(), DminMax = DminGrid.back();
     int posR;
    };
 }
