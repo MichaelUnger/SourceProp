@@ -81,12 +81,12 @@ namespace prop {
     FitData& data = fFitData;
 
     VSource* source = data.fSource;
-    source->Update(par[ePhotonPeak]);     
+    source->Update(par[ePhotonPeak]);
     source->SetEscFac(1);
     source->SetHadIntFac(1);
     source->SetEscGamma(par[eEscGamma]);
 
-    
+
     vector<double> photonScale;
     if (!fBoostedModel) {
       const double fScale = pow(10, par[eLgPhotonFieldFac]);
@@ -98,7 +98,7 @@ namespace prop {
       photonScale.push_back(0);
     }
     source->SetPhotonScaleFactors(photonScale);
-    
+
     const double lambdaI_PH = source->LambdaPhotoHadInt(1e19, 56); // photohadronic interaction length
     const double lambdaI_H = source->LambdaHadInt(1e19, 56); // hadronic interaction length
     source->SetHadIntFac(pow(10, par[eLgHadIntFac]) * lambdaI_PH / lambdaI_H);
@@ -119,7 +119,7 @@ namespace prop {
                << setw(5) << par[i] << endl;
         }
     }
-    
+
     if (!fBoostedModel) {
       // extragalactic part
       const unsigned int nMass = data.GetNMass();
@@ -145,8 +145,8 @@ namespace prop {
                  << *(par + eNpars + nMass - 1 + i) << ", f=" << frac[i]
                  << endl;
         }
-      
-      
+
+
         Spectrum& spectrum = data.fSpectrum;
         if(abs(par[eGamma]) > 10.) throw runtime_error("Injected index too large! Please set upper-bound in steering file.");
         spectrum.SetParameters(source,
@@ -155,7 +155,7 @@ namespace prop {
                                data.fNLgE,
                                data.fLgEmin, data.fLgEmax,
                                fractions);
-      
+
         if (par[eNoPhoton] > 0) {
           const Spectrum::SpecMap& injFlux = spectrum.GetInjFlux();
           for (Spectrum::SpecMap::const_iterator iter = injFlux.begin();
@@ -190,21 +190,21 @@ namespace prop {
             if (!mm.GetNoElements())
               mm.ResizeTo(n, 1);
           }
-	  TMatrixD& mmm = spectrum.GetextraProtonFlux()[mass]; 
-	  if (!mmm.GetNoElements()) 
-	    mmm.ResizeTo(n, 1); 
+	  TMatrixD& mmm = spectrum.GetextraProtonFlux()[mass];
+	  if (!mmm.GetNoElements())
+	    mmm.ResizeTo(n, 1);
 
           const double f = pow(10, par[eExtraProtonLgFraction]);
           const double gamma = par[eExtraProtonGamma];
           const double Emax = pow(10, par[eExtraProtonLgEmax]);
-        
-          const double norm = f / (1.-f) * sum / (pow(Emax, gamma+2) * gsl_sf_gamma_inc(gamma+2, refE/Emax)); 
+
+          const double norm = f / (1.-f) * sum / (pow(Emax, gamma+2) * gsl_sf_gamma_inc(gamma+2, refE/Emax));
           double lgE = lgEmin + dlgE / 2;
           for (unsigned int iE = 0; iE < n; ++iE) {
             const double E = pow(10, lgE);
             const double flux = norm * pow(E, gamma) * exp(-E/Emax);
             m[iE][0] += flux;
-            if (mass == 1 && charge == 1) 
+            if (mass == 1 && charge == 1)
               mm[iE][0] += flux;
 	    mmm[iE][0] += flux;
             lgE += dlgE;
@@ -212,7 +212,7 @@ namespace prop {
         }
         data.fPropagator->Propagate(data.fSpectrum.GetEscFlux(), true,  par);
       }
-    
+
       // galactic
       const double fGal = par[eFGal];
       if (fGal > 0) {
@@ -222,15 +222,15 @@ namespace prop {
         double fracGal[nGalMass];
         double zetaGal[nGalMass-1];
         const unsigned int offset = eNpars + nMass - 1 + nMass;
-        for (unsigned int i = 0; i < nGalMass - 1; ++i) 
+        for (unsigned int i = 0; i < nGalMass - 1; ++i)
           zetaGal[i] = pow(10, *(par + offset + i));
         zetaToFraction(nGalMass, zetaGal, fracGal);
         for (unsigned int i = 0; i < nGalMass; ++i) {
           const double m = *(par + offset + nGalMass - 1 + i);
           const DoubleMass dm(m);
-          if (dm.GetFrac1() > 0) 
+          if (dm.GetFrac1() > 0)
             galFractions[dm.GetMass1()] += dm.GetFrac1()*fracGal[i];
-          if (dm.GetFrac2() > 0) 
+          if (dm.GetFrac2() > 0)
             galFractions[dm.GetMass2()] += dm.GetFrac2()*fracGal[i];
         }
 
@@ -241,7 +241,7 @@ namespace prop {
                  << *(par + offset + nGalMass - 1 + i)
                  << ", f=" << fracGal[i] << endl;
         }
-      
+
         const double lgE0 = 17.55;
         const double E0 = pow(10, lgE0);
         const double extraGalactic =
@@ -259,7 +259,7 @@ namespace prop {
             galSum += phiGal;
           }
           const double phi0Gal = fGal * extraGalactic / (galSum * (1 - fGal));
-          
+
           const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
           for (const auto iter : galFractions) {
             double lgE = data.fLgEmin + dlgE/2;
@@ -292,7 +292,7 @@ namespace prop {
           const double gamma2 = par[eGammaGal];
           const double eps = 20;
           const double refEGal = 1e12;//pow(10, 16.5+deltaLgESys);
-        
+
           auto galFunc = [](const double E, const double Eknee,
                             const double gamma1, const double gamma2,
                             const double eps, const double delta,
@@ -322,7 +322,7 @@ namespace prop {
           }
 
           const double galNorm = extraGalactic * fGal / (1 - fGal) / galSum;
-        
+
           const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
 
           for (unsigned int iMass = 0; iMass < nMass; ++iMass) {
@@ -381,15 +381,15 @@ namespace prop {
         double fracB[nMassB];
         double zetaB[nMassB-1];
         const unsigned int offset = eNpars + nMassA - 1 + nMassA;
-        for (unsigned int i = 0; i < nMassB - 1; ++i) 
+        for (unsigned int i = 0; i < nMassB - 1; ++i)
           zetaB[i] = pow(10, *(par + offset + i));
         zetaToFraction(nMassB, zetaB, fracB);
         for (unsigned int i = 0; i < nMassB; ++i) {
           const double m = *(par + offset + nMassB - 1 + i);
           const DoubleMass dm(m);
-          if (dm.GetFrac1() > 0) 
+          if (dm.GetFrac1() > 0)
             fractionsB[dm.GetMass1()] += dm.GetFrac1()*fracB[i];
-          if (dm.GetFrac2() > 0) 
+          if (dm.GetFrac2() > 0)
             fractionsB[dm.GetMass2()] += dm.GetFrac2()*fracB[i];
         }
 
@@ -454,7 +454,7 @@ namespace prop {
                                data.fLgEmax, fractions);
         const unsigned int nBins = spectrum.GetNBinsInternal();
         const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
-      
+
         Spectrum::SpecMap extraGal;
         for (const auto iter : fractionsA) {
           const int A = iter.first;
@@ -543,9 +543,9 @@ namespace prop {
         throw std::runtime_error("simple model not implemented");
       }
     }
-    
+
     const bool debug = false;
-    
+
     data.fChi2Spec = 0;
     data.fChi2SpecLowE = 0;
     double lastLgE = 0;
@@ -565,7 +565,7 @@ namespace prop {
              << (m-y)/m << " " << r2 << " " << data.fChi2Spec << endl;
       }
       if (flux.fLgE < 17.5)
-        data.fChi2SpecLowE += r2; 
+        data.fChi2SpecLowE += r2;
       if (lastLgE == 0 || flux.fLgE > lastLgE)
         lastLgE = flux.fLgE;
       if (lastLgE == 0 || flux.fLgE > lastLgE)
@@ -582,14 +582,14 @@ namespace prop {
       const double nExpected =
         data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
       chi2Zero += 2*nExpected;
-      if (debug) 
+      if (debug)
         cout << " chi0 ==> " << lgE << " " << nExpected << " "
              << data.fUHEExposure << " " << chi2Zero << endl;
 
       lgE += dLgE;
     }
     data.fChi2Spec += chi2Zero;
-    
+
     data.fChi2LnA = 0;
     data.fChi2VlnA = 0;
     for (const auto& compo : data.fCompoData) {
@@ -597,7 +597,7 @@ namespace prop {
         data.fPropagator->GetLnAMoments(compo.fLgE);
       if (compo.fLnAErr > 0)
         data.fChi2LnA += pow((compo.fLnA - m.first) / compo.fLnAErr, 2);
-      if (compo.fVlnAErr > 0) 
+      if (compo.fVlnAErr > 0)
         data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
     }
 
@@ -631,7 +631,7 @@ namespace prop {
 
     fGCRKnees = fOptions.GCRWithKnees();
     fBoostedModel = fOptions.BoostedModel();
-    
+
     ReadData();
     if( fOptions.GetEvolution() == "mz0Interpolator" ) {
       cout << "Initiating mz0 interpolation matrices..." << endl;
@@ -641,7 +641,7 @@ namespace prop {
       cout << "Initiating Dmin interpolation matrices..." << endl;
       fPropMatrices.InterpInitDmin(fOptions.GetStartValue(GetPar("evolutionDmin")));
     }
-    else { 
+    else {
       cout << " reading prop matrix from "
            << fOptions.GetPropmatrixFilename() << endl;
       PropMatrixFile pmf(fOptions.GetPropmatrixFilename());
@@ -653,7 +653,7 @@ namespace prop {
                         fPropMatrices.GetLgEmax());
 
     fFitData.fPropagator = new Propagator(fPropMatrices, fOptions.GetStartValue(GetPar("evolutionM")), fOptions.GetStartValue(GetPar("evolutionZ0")), fOptions.GetStartValue(GetPar("evolutionDmin")), fOptions.GetEvolution());
- 
+
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
     cout << " interaction lengths: \n";
     for (const auto f : filenames)
@@ -728,7 +728,7 @@ namespace prop {
         }
         ++iMass;
       }
-      
+
       const unsigned int nMass = masses.size();
       if (iMassClass == 0)
         fFitData.fNMass = nMass;
@@ -750,7 +750,7 @@ namespace prop {
         }
         else
           fFitData.fFitParameters[iPar].fIsFixed = false;
-        
+
         cout << setw(2) << iPar << setw(10) << parName.str()
              << setw(11) << scientific << setprecision(3) << log10(zeta[i])
              << setw(11) << step
@@ -776,7 +776,7 @@ namespace prop {
         }
         else
           fFitData.fFitParameters[iPar].fIsFixed = false;
-        
+
         cout << setw(2) << iPar << setw(10) << parName.str()
              << setw(11) << scientific << setprecision(3) << m.fStartMass
              << setw(11) << step
@@ -823,16 +823,26 @@ namespace prop {
     else
       fFitData.fFitFailed = false;
 
+    // parameters at minimum
+    vector<double> pars;
     for (unsigned int i = 0; i < GetNParameters(); ++i) {
       FitParameter& par = fFitData.fFitParameters[i];
       fMinuit.GetParameter(i, par.fValue, par.fError);
     }
+
+    // call FCN at minimum again to make sure all local
+    // variables are at the minimum state
+    double chi2Min = 0;
+    fMinuit.Eval(pars.size(), nullptr, chi2Min,  &pars.front(), 0);
 
     double amin, edm, errdef;
     int nvpar, nparx, icstat;
     fMinuit.mnstat(amin, edm, errdef, nvpar, nparx, icstat);
     fFitData.fFitStatus = icstat;
     fFitData.fFitEDM = edm;
+
+    // cout << amin << " " << chi2Min << endl;
+
     fFitData.fProtonRatio185 =
       fFitData.fPropagator->GetPrimaryNucleonFluxAtEarth(18.3) /
       fFitData.fPropagator->GetFluxAtEarth(1, 18.3);
@@ -849,7 +859,7 @@ namespace prop {
         for (unsigned int i = 0; i < fFitData.fNLgE; ++i) {
           if (lgE >= lgEref) {
             const double dE = pow(10, lgE + dlgE) - pow(10, lgE);
-            if (m.first == 1) 
+            if (m.first == 1)
               nucleonSum += m.second(i, 0)*dE;
             allSum += m.second(i, 0)*dE;
           }
@@ -919,8 +929,8 @@ namespace prop {
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2017.dat");
         /*
         # E*J in  [m^-2 s^-1 sr^-1] units
-        # log10E = center of the energy bin 
-        # log10E    E*J       Err_up       Err_low  
+        # log10E = center of the energy bin
+        # log10E    E*J       Err_up       Err_low
         */
         double exposure;
         in >> exposure;
@@ -932,7 +942,7 @@ namespace prop {
           if (!in.good())
             break;
           // to  [ eV^-1 km^-1 sr^-1 yr^-1 ]
-          const double conv = 1e6 * 365*24*3600 / pow(10, flux.fLgE); 
+          const double conv = 1e6 * 365*24*3600 / pow(10, flux.fLgE);
           flux.fFlux = fluxE * conv;
           flux.fFluxErr = (eyUp+eyDown)/2 * conv;
           flux.fFluxErrUp = eyUp * conv;
@@ -994,7 +1004,7 @@ namespace prop {
             fFitData.fFluxData.push_back(fluxData);
             if (fluxData.fFlux > 0)
               fFitData.fFluxDataLowStat.push_back(fluxData);
-          }          
+          }
         }
         break;
       }
@@ -1053,7 +1063,7 @@ namespace prop {
           stringstream strstr(line);
           string d;
           vector<double> data;
-          while (getline(strstr,d, ';')) 
+          while (getline(strstr,d, ';'))
             data.push_back(stod(d));
           if (data.size() != 4) {
             cerr << " error reading " << kFile << endl;
@@ -1082,7 +1092,7 @@ namespace prop {
           // syst shift?
           flux.fFlux /= pow(10., deltaLgESys);
           flux.fLgE += deltaLgESys;
-          
+
           fFitData.fAllFluxData.push_back(flux);
           if (flux.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(flux);
@@ -1115,11 +1125,11 @@ namespace prop {
         flux.fN = 100; // dummy
         flux.fLgE = lgE;
         flux.fFlux = flx;
-        
+
         // syst shift?
         flux.fFlux /= pow(10., deltaLgESys);
         flux.fLgE += deltaLgESys;
-        
+
         fFitData.fAllFluxData.push_back(flux);
         if (flux.fLgE > fOptions.GetMinFluxLgE()) {
           fFitData.fFluxData.push_back(flux);
@@ -1258,7 +1268,7 @@ namespace prop {
                                  19.74, 19.88};
       const double sdXmax[nSD] = {750.7, 755.2, 756.4, 759.8, 763.0, 766.5,
                                   769.6, 775, 780, 779, 788, 785, 795, 807};
-        
+
       const double sdXmaxErr[nSD] = {0.3, 0.3, 0.4, 0.6, 0.6, 0.7, 0.9, 1.0,
                                      2.0, 2.0, 2.0, 2.0, 3.0, 3.0};
       const double sdSysUp[nSD] = {7.34,7.43,7.54,7.67,7.83,8.01,
@@ -1266,7 +1276,7 @@ namespace prop {
       const double sdSysLo[nSD] = {9.11, 8.80,8.49, 8.19, 7.88,
                                    7.61, 7.37, 7.17, 7.03, 6.94,
                                    6.99, 6.99, 6.99, 6.99};
-        
+
       unsigned int i = xmaxGraph->GetN();
       for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
         const double shift = calibAugerSD ? 17.5 - sdLgE[iSD]*0.7 : 0;
@@ -1288,7 +1298,7 @@ namespace prop {
                                  19.74, 19.88};
       const double sdXmax[nSD] = {750.7, 755.2, 756.4, 759.8, 763.0, 766.5,
                                   769.6, 775, 780, 779, 788, 785, 795, 807};
-        
+
       const double sdXmaxErr[nSD] = {0.3, 0.3, 0.4, 0.6, 0.6, 0.7, 0.9, 1.0,
                                      2.0, 2.0, 2.0, 2.0, 3.0, 3.0};
       const double sdSysUp[nSD] = {7.34,7.43,7.54,7.67,7.83,8.01,
@@ -1296,7 +1306,7 @@ namespace prop {
       const double sdSysLo[nSD] = {9.11, 8.80,8.49, 8.19, 7.88,
                                    7.61, 7.37, 7.17, 7.03, 6.94,
                                    6.99, 6.99, 6.99, 6.99};
-        
+
       unsigned int i = xmaxGraph->GetN();
       for (unsigned int iSD = 0; iSD < nSD; ++iSD) {
         const double shift = calibAugerSD ? 17.5 - sdLgE[iSD]*0.7 : 0;
@@ -1312,7 +1322,7 @@ namespace prop {
     LnACalculator lnAcalc;
     const LnACalculator::EModel model =
       LnACalculator::GetModel(fOptions.GetInteractionModel());
-    
+
     const double energyScaleUncertainty = 0.14;
     TGraphAsymmErrors lnASys =
       lnAcalc.GetMeanLnASys(*xmaxSysGraph, energyScaleUncertainty, model);
@@ -1322,7 +1332,7 @@ namespace prop {
 
     const int nSigma = sigmaGraph->GetN();
     for (int i = 0; i < xmaxGraph->GetN(); ++i) {
-      
+
       const double relativeAugerTAShift =
         fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
         0.1 : // approx one bin
@@ -1337,7 +1347,7 @@ namespace prop {
       else if (sigmaSys < 0)
         xMax += sigmaSys * xmaxSysGraph->GetEYlow()[i];
       const double xMaxErr = xmaxGraph->GetEY()[i];
-      
+
       CompoData comp;
       comp.fLgE = lgE;
       comp.fLnA = lnAcalc.GetMeanLnA(xMax, E, model);
@@ -1365,7 +1375,7 @@ namespace prop {
       if (comp.fLgE > fOptions.GetMinCompLgE() && comp.fLgE <= fOptions.GetMaxCompLgE())
         fFitData.fCompoData.push_back(comp);
     }
-    
+
     cout << " composition: nAll = " <<  fFitData.fAllCompoData.size()
          << ", nFit = " <<  fFitData.fCompoData.size() << endl;
 
