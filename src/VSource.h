@@ -18,6 +18,13 @@ namespace prop {
       ePH,
       eH
     };
+    enum ENucleonType {
+      eProton,
+      eNeutron,
+      ePionPlus,
+      ePionMinus,
+      ePionZero
+    };
   public:
 
     VSource(const double escFac = 1, const double escGamma = 1) :
@@ -26,7 +33,9 @@ namespace prop {
     {}
 
     virtual ~VSource() {}
-    
+
+    void SetHadIntStatus(const bool status) { HadInts->SetHadIntStatus(status); };   
+ 
     void SetEscFac(const double f) { fEscFac = f; }
     void SetEscGamma(const double g) { fEscGamma = g; }
     void SetHadIntFac(const double h) { HadInts->SetHadIntRatio(h);}
@@ -40,7 +49,7 @@ namespace prop {
     LambdaHadInt(const double E, const int Aprim)
       const
     {
-	return HadInts->LambdaHadInt(E, Aprim);
+    	return HadInts->LambdaHadInt(E, Aprim);
     }
 
     double
@@ -116,8 +125,112 @@ namespace prop {
     GetMeanPhotonEnergy()
       const = 0;
 
+    virtual
+    double
+    GetMeanPhotonEnergyAboveE(const double Eth)
+      const = 0;
+    
+    virtual
+    double
+    GetPhotonWeight(const double /*lgEph*/, const double /*Eprim*/, const int /*Aprim*/)
+      const = 0;
+
+    virtual
+    double
+    GetInteractionWeight(const double /*lgk*/, const double /*lgEprim*/, const int /*Aprim*/, const ENucleonType /*type*/)
+      const = 0;
+
+    virtual
+    TMatrixD* GetPPWeightMatrix(const int /*Aprim*/, const ENucleonType /*type*/)
+      const = 0;
+
+    virtual
+    double
+    GetTrickleDownWeight(const double /*lgEprim*/, const double /*lgEsec*/, const ENucleonType /*type*/)
+      const = 0;
+
+    virtual
+    double 
+    GetNucleonMultiplicity(const double /*lgE0*/, const double /*lgeps*/, const double /*lgk*/, const double /*lgkSample*/)
+      const = 0;
+
+    virtual
+    double
+    GetProtonFraction(const double lgE0, const double lgeps)
+      const = 0;
+
+    virtual
+    double
+    GetPionMultiplicity(const double lgE0, const double lgeps, const double lgk, const double dlgkSample)
+      const = 0; 
+    
+    virtual
+    double 
+    GetChargedPionFraction(const double lgE0, const double lgeps) 
+      const = 0;
+
+    virtual
+    double
+    GetLgEphMin()
+      const = 0;
+
+    virtual
+    double
+    GetLgEphMax()
+      const = 0;
+
+    virtual
+    double
+    GetdLgEph()
+      const = 0;
+
+    virtual
+    double
+    GetLgkMin()
+      const = 0;
+
+    virtual
+    double
+    GetLgkMax()
+      const = 0;
+
+    virtual
+    double
+    GetdLgk()
+      const = 0;
+
+    virtual
+    void
+    SetBuildParameters(const double /*lgEmin*/, const double /*lgEmax*/, const double /*dlgE*/, const unsigned int /*nSubBins*/) { };
+
+    virtual
+    void
+    BuildPhotonWeights() { };
+
+    virtual
+    void
+    BuildInteractionWeights() { };
+
+    virtual
+    void
+    BuildPPWeightMatrix() { };
+
+    virtual
+    void
+    BuildTrickleDownWeights() { };
+ 
+
     void SetPhotonScaleFactors(const std::vector<double>& f)
     { fFieldScaleFactors = f; }
+    
+    void BuildPhotopionWeights(const double lgEmin, const double lgEmax, const double dlgE, const unsigned int nSubBins)
+    {
+      SetBuildParameters(lgEmin, lgEmax, dlgE, nSubBins);
+      BuildPhotonWeights();
+      BuildInteractionWeights();
+      BuildTrickleDownWeights();
+      BuildPPWeightMatrix();
+    }
     
   protected:
     std::vector<double> fFieldScaleFactors;
