@@ -1,8 +1,6 @@
 #ifndef _HadronicInteractions_h_
 #define _HadronicInteractions_h_
 
-//#include "VSource.h"
-
 #include <TTree.h>
 #include <TH2D.h>
 
@@ -18,7 +16,11 @@ namespace prop {
     HadronicInteractions(const std::string& modelName, const std::string& directory);
     virtual ~HadronicInteractions();
 
-    void SetHadIntRatio(double f);
+    void SetHadIntStatus(const bool status) { fStatus = status; CheckHadIntStatus(); };
+    bool GetHadIntStatus() { return fStatus; } ;
+    void CheckHadIntStatus() { if(fStatus == true && fMatrix.empty()) ReadHI(); };
+
+    void SetHadIntRatio(const double f);
     void CheckMatrixBinning(const double dlgE);
 
     TH2D* GetMatrix(const int Aprim, const int Asec); 
@@ -46,6 +48,7 @@ namespace prop {
     const std::string fModelName;
     const std::string fDirectory;
     double fHadIntRatio;
+    bool fStatus;
 
     ClassDef(HadronicInteractions, 1)
 
