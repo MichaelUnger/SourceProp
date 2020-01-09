@@ -73,10 +73,10 @@ namespace prop {
                   const int /*iFlag*/)
   {
 
-    for (unsigned int i = 0; i < eNpars; ++i)
-     {
-	if( gsl_isnan(par[i]) ) throw runtime_error(GetParName(EPar(i))+" is NaN --> stop fitting");
-     }
+    for (unsigned int i = 0; i < eNpars; ++i) {
+	     if( gsl_isnan(par[i]) )
+         throw runtime_error(GetParName(EPar(i))+" is NaN --> stop fitting");
+    }
 
     FitData& data = fFitData;
 
@@ -87,6 +87,11 @@ namespace prop {
     source->SetEscGamma(par[eEscGamma]);
 
 
+#ifdef _FASTANDFURIOUS_
+    const unsigned int nSubBins = 2;
+#else
+    const unsigned int nSubBins = 10;
+#endif
     vector<double> photonScale;
     if (!fBoostedModel) {
       const double fScale = pow(10, par[eLgPhotonFieldFac]);
@@ -98,7 +103,8 @@ namespace prop {
       photonScale.push_back(0);
     }
     source->SetPhotonScaleFactors(photonScale);
-
+    source->BuildPhotopionWeights(data.fLgEmin, data.fLgEmax, (data.fLgEmax-data.fLgEmin)/data.fNLgE, nSubBins);     
+    
     const double lambdaI_PH = source->LambdaPhotoHadInt(1e19, 56); // photohadronic interaction length
     const double lambdaI_H = source->LambdaHadInt(1e19, 56); // hadronic interaction length
     source->SetHadIntFac(pow(10, par[eLgHadIntFac]) * lambdaI_PH / lambdaI_H);
@@ -152,7 +158,7 @@ namespace prop {
         spectrum.SetParameters(source,
                                par[eGamma],
                                pow(10, par[eLgEmax]),
-                               data.fNLgE,
+                               data.fNLgE, nSubBins,
                                data.fLgEmin, data.fLgEmax,
                                fractions);
 
@@ -450,7 +456,7 @@ namespace prop {
 
         Spectrum& spectrum = data.fSpectrum;
         map<unsigned int, double> fractions;
-        spectrum.SetParameters(source, 0, 0, data.fNLgE, data.fLgEmin,
+        spectrum.SetParameters(source, 0, 0, data.fNLgE, nSubBins, data.fLgEmin,
                                data.fLgEmax, fractions);
         const unsigned int nBins = spectrum.GetNBinsInternal();
         const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
@@ -633,13 +639,17 @@ namespace prop {
     fBoostedModel = fOptions.BoostedModel();
 
     ReadData();
+    
+    const double evoM = fOptions.GetStartValue(GetPar("evolutionM"));
+    const double evoZ0 = fOptions.GetStartValue(GetPar("evolutionZ0"));
+    const double evoDmin = fOptions.GetStartValue(GetPar("evolutionDmin"));
     if( fOptions.GetEvolution() == "mz0Interpolator" ) {
       cout << "Initiating mz0 interpolation matrices..." << endl;
-      fPropMatrices.InterpInitMZ0(fOptions.GetStartValue(GetPar("evolutionM")), fOptions.GetStartValue(GetPar("evolutionZ0")));
+      fPropMatrices.InterpInitMZ0(evoM, evoZ0);
     }
     else if( fOptions.GetEvolution() == "DminInterpolator" ) {
       cout << "Initiating Dmin interpolation matrices..." << endl;
-      fPropMatrices.InterpInitDmin(fOptions.GetStartValue(GetPar("evolutionDmin")));
+      fPropMatrices.InterpInitDmin(evoDmin);
     }
     else {
       cout << " reading prop matrix from "
@@ -647,12 +657,11 @@ namespace prop {
       PropMatrixFile pmf(fOptions.GetPropmatrixFilename());
       fPropMatrices = pmf.GetPropMatrices();
     }
-
     fFitData.SetBinning(fPropMatrices.GetN(),
                         fPropMatrices.GetLgEmin(),
                         fPropMatrices.GetLgEmax());
 
-    fFitData.fPropagator = new Propagator(fPropMatrices, fOptions.GetStartValue(GetPar("evolutionM")), fOptions.GetStartValue(GetPar("evolutionZ0")), fOptions.GetStartValue(GetPar("evolutionDmin")), fOptions.GetEvolution());
+    fFitData.fPropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
 
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
     cout << " interaction lengths: \n";
@@ -661,6 +670,14 @@ namespace prop {
 
     fFitData.fSource = new PhotoNuclearSource(fOptions.GetPhotIntFilenames(),
                                               fOptions.GetDataDirname(), fOptions.GetInteractionModel(), fOptions.GetStartValue(GetPar("photonPeak")));
+
+    // check if hadronic interactions are in use
+    const double lgRhadint = fOptions.GetStartValue(GetPar("lgRhadint"));
+    const bool isLgRhadintFixed = fOptions.IsFixed(GetPar("lgRhadint"));
+    if(lgRhadint >= 10. && isLgRhadintFixed == true)
+      fFitData.fSource->SetHadIntStatus(false);
+    else
+      fFitData.fSource->SetHadIntStatus(true); 
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
@@ -842,7 +859,7 @@ namespace prop {
     fFitData.fFitStatus = icstat;
     fFitData.fFitEDM = edm;
 
-    // cout << amin << " " << chi2Min << endl;
+    //cout << amin << " " << chi2Min << endl;
 
     fFitData.fProtonRatio185 =
       fFitData.fPropagator->GetPrimaryNucleonFluxAtEarth(18.3) /
@@ -948,6 +965,78 @@ namespace prop {
           flux.fFluxErr = (eyUp+eyDown)/2 * conv;
           flux.fFluxErrUp = eyUp * conv;
           flux.fFluxErrLow = eyDown * conv;
+          flux.fN = 0;
+
+          // syst shift?
+          flux.fFlux /= pow(10., deltaLgESys);
+          flux.fLgE += deltaLgESys;
+
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
+        }
+        break;
+      }
+    case FitOptions::eAuger2019:
+      {
+        ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019.dat");
+        /*
+        # J in  [km^-2 yr^-1 sr^-1 eV^-1] units
+        # log10E = center of the energy bin 
+        # log10E    J       J-Err_low       J+Err_up  
+        */
+        double exposure;
+        in >> exposure;
+        fFitData.fUHEExposure = exposure;
+        while (true) {
+          FluxData flux;
+          double eyDown, eyUp, fluxE;
+          in >> flux.fLgE >> fluxE >> eyDown >> eyUp;
+          if (!in.good())
+            break;
+          eyUp = eyUp - fluxE;
+          eyDown = fluxE - eyDown;
+          flux.fFlux = fluxE;
+          flux.fFluxErr = (eyUp+eyDown)/2;
+          flux.fFluxErrUp = eyUp;
+          flux.fFluxErrLow = eyDown;
+          flux.fN = 0;
+
+          // syst shift?
+          flux.fFlux /= pow(10., deltaLgESys);
+          flux.fLgE += deltaLgESys;
+
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
+        }
+        break;
+      }
+    case FitOptions::eAuger2019SD:
+      {
+        ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019_SD.dat");
+        /*
+        # J in  [km^-2 yr^-1 sr^-1 eV^-1] units
+        # log10E = center of the energy bin 
+        # log10E    J       Err_low       Err_up  
+        */
+        double exposure;
+        in >> exposure;
+        fFitData.fUHEExposure = exposure;
+        while (true) {
+          FluxData flux;
+          double eyDown, eyUp, fluxE;
+          in >> flux.fLgE >> fluxE >> eyDown >> eyUp;
+          if (!in.good())
+            break;
+          flux.fFlux = fluxE;
+          flux.fFluxErr = (eyUp+eyDown)/2;
+          flux.fFluxErrUp = eyUp;
+          flux.fFluxErrLow = eyDown;
           flux.fN = 0;
 
           // syst shift?
