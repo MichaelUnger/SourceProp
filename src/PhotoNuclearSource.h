@@ -8,6 +8,8 @@
 
 class TGraph;
 class TH1D;
+class TH2D;
+class TH3D;
 
 namespace prop {
   class PhotoNuclearSource : public VSource {
@@ -59,6 +61,54 @@ namespace prop {
     double
     GetMeanPhotonEnergy() const;
 
+    double  
+    GetMeanPhotonEnergyAboveE(const double Eth) const;
+
+    double
+    GetPhotonWeight(const double lgEph, const double Eprim, const int Aprim) const;
+    
+    double
+    GetInteractionWeight(const double lgk, const double lgEprim, const int Aprim, const VSource::ENucleonType type) const;
+
+    TMatrixD*
+    GetPPWeightMatrix(const int Aprim, const VSource::ENucleonType type) const;
+
+    double
+    GetTrickleDownWeight(const double lgEprim, const double lgEsec, const VSource::ENucleonType type) const;
+    
+    double
+    GetPhotonDensity(double Eph, int iField) const;
+
+    double
+    GetNucleonMultiplicity(const double lgE0, const double lgeps, const double lgk, const double dlgkSample) const;
+
+    double
+    GetProtonFraction(const double lgE0, const double lgeps) const; 
+ 
+    double
+    GetPionMultiplicity(const double lgE0, const double lgeps, const double lgk, const double dlgkSample) const;
+  
+    double 
+    GetChargedPionFraction(const double lgE0, const double lgeps) const;
+
+    double
+    GetLgEphMin() const { return lgEphMin; };
+
+    double
+    GetLgEphMax() const { return lgEphMax; };
+
+    double
+    GetdLgEph() const { return dlgEph; };
+
+    double
+    GetLgkMin() const { return lgkMin; };
+
+    double
+    GetLgkMax() const { return lgkMax; };
+    
+    double
+    GetdLgk() const { return dlgk; };
+
   private:
     PhotoNuclearSource& operator=(const PhotoNuclearSource&);
     PhotoNuclearSource(PhotoNuclearSource&);
@@ -66,6 +116,13 @@ namespace prop {
     void ReadPD();
     void ReadPPP();
     void ReadEPP();
+    void ReadElasticityDistributions();
+    void SetBuildParameters(const double lgEmin, const double lgEmax, const double dlgE, const unsigned int nSubBins);
+    void BuildPhotonWeights();
+    void BuildInteractionWeights();
+    void BuildPPWeightMatrix();
+    void BuildTrickleDownWeights();
+    void ClearBuilds();
     double I1(const double xmin, const int iField) const;
     double I2(const double xmin, const double xmax, const int iField) const;
     double I3(const double xmin, const int iField) const;
@@ -79,6 +136,25 @@ namespace prop {
     std::vector<BranchingRatio> fBranchingRatios;
     const std::vector<std::string> fFields;
     const std::string fDirectory, fModelName;
+    double flgEmin;
+    double flgEmax;
+    double fdlgEOrig;
+    int fnSubBins;
+    double lgEphMin;
+    double lgEphMax;
+    double dlgEph;
+    double lgkMin;
+    double lgkMax;
+    double dlgk;
+    TH3D* elasticityDistribution_pion;
+    TH3D* elasticityDistribution_nucleon;
+    TH2D* chargedPionFraction;
+    TH2D* protonFraction;
+    TH1D* crossSectionIntegral; 
+    std::map<unsigned int, TH2D*> fPhotonWeights;
+    std::map<unsigned int, std::map<ENucleonType, TH2D*> > fInteractionWeights;
+    std::map<unsigned int, std::map<ENucleonType, TMatrixD*> > fWeightMatrix;
+    std::map<ENucleonType, TH2D*> ftrickleDownWeights;
 
     void InterpInit(double photonPeak);
     std::vector<Lambda> LoadInterpPD(double photonPeak);
