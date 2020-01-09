@@ -828,6 +828,7 @@ namespace prop {
     for (unsigned int i = 0; i < GetNParameters(); ++i) {
       FitParameter& par = fFitData.fFitParameters[i];
       fMinuit.GetParameter(i, par.fValue, par.fError);
+      pars.push_back(par.fValue);
     }
 
     // call FCN at minimum again to make sure all local
