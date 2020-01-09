@@ -65,7 +65,9 @@ namespace prop {
       eTA2013,
       eTASixYear,
       eAuger2017,
-      eTANineYear
+      eTANineYear,
+      eAuger2019,
+      eAuger2019SD
     };
 
     enum ELowESpectrumDataType {
@@ -147,7 +149,7 @@ namespace prop {
     double GetMaxCompLgE() const
     { return fMaxCompLgE; }
 
-    int GetEnergyBinShift() const
+    double GetEnergyBinShift() const
     { return fEnergyBinShift; }
 
     double GetXmaxSigmaShift() const
@@ -198,7 +200,7 @@ namespace prop {
     double fMinFluxLgE;
     double fMinCompLgE;
     double fMaxCompLgE;
-    int fEnergyBinShift;
+    double fEnergyBinShift;
     double fXmaxSigmaShift;
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
