@@ -233,6 +233,10 @@ namespace prop {
           fSpectrumDataType = eAuger2013;
         else if (type == "Auger2017")
           fSpectrumDataType = eAuger2017;
+        else if (type == "Auger2019")
+          fSpectrumDataType = eAuger2019;
+        else if (type == "Auger2019SD")
+          fSpectrumDataType = eAuger2019SD;
         else if (type == "TA2013")
           fSpectrumDataType = eTA2013;
         else if (type == "TASixYear")
@@ -547,6 +551,10 @@ namespace prop {
       return "Auger 2013.";
     case eAuger2017:
       return "Auger 2017";
+    case eAuger2019:
+      return "Auger 2019";
+    case eAuger2019SD:
+      return "Auger 2019 SD";
     default:
       return "unknown";
     }
