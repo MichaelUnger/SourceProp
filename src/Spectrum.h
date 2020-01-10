@@ -135,7 +135,7 @@ namespace prop {
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
-    mutable SpecMap fextraProtons;
+    mutable SpecMap fExtraProtons;
   };
 }
 #endif

@@ -33,7 +33,7 @@ namespace prop {
   const double gProtonMass = 938.272046e6;
   const double gNeutronMass = 939.565379e6;
   const double gPionMass = 139.57061e6;
-  
+
   const
   Spectrum::SpecMap&
   Spectrum::GetEscFlux()
@@ -76,38 +76,36 @@ namespace prop {
   Spectrum::GetextraProtonFlux()
     const
   {
-    if (fextraProtons.empty())
-    {
-	      const unsigned int mass = 1;
-	      TMatrixD& m = fextraProtons[mass];
-	      if (!m.GetNoElements())
-		m.ResizeTo(fN, 1);
+    if (fExtraProtons.empty()) {
+      const unsigned int mass = 1;
+      TMatrixD& m = fExtraProtons[mass];
+      if (!m.GetNoElements())
+        m.ResizeTo(fN, 1);
 
-	      const unsigned int n = fN;
-	      for (unsigned int iE = 0; iE < n; ++iE) {
-		m[iE][0] = 0.;
-	      }
-     }
-    return fextraProtons;
+      const unsigned int n = fN;
+      for (unsigned int iE = 0; iE < n; ++iE) {
+        m[iE][0] = 0.;
+      }
+    }
+    return fExtraProtons;
   }
 
   Spectrum::SpecMap&
   Spectrum::GetextraProtonFlux()
   {
 
-    if (fextraProtons.empty())
-    {
-	      const unsigned int mass = 1;
-	      TMatrixD& m = fextraProtons[mass];
-	      if (!m.GetNoElements())
-       		m.ResizeTo(fN, 1);
+    if (fExtraProtons.empty()) {
+      const unsigned int mass = 1;
+      TMatrixD& m = fExtraProtons[mass];
+      if (!m.GetNoElements())
+        m.ResizeTo(fN, 1);
 
-	      const unsigned int n = fN;
-	      for (unsigned int iE = 0; iE < n; ++iE) {
-		      m[iE][0] = 0.;
-	      }
-     }
-    return fextraProtons;
+      const unsigned int n = fN;
+      for (unsigned int iE = 0; iE < n; ++iE) {
+        m[iE][0] = 0.;
+      }
+    }
+    return fExtraProtons;
   }
 
   const
@@ -187,7 +185,7 @@ namespace prop {
       iter.second *= f;
     for (auto& iter : fNucleons)
       iter.second *= f;
-    for (auto& iter : fextraProtons)
+    for (auto& iter : fExtraProtons)
       iter.second *= f;
   }
 
@@ -354,7 +352,7 @@ namespace prop {
     fEscape.clear();
     fInj.clear();
     fNucleons.clear();
-    fextraProtons.clear();
+    fExtraProtons.clear();
     fRmax = Rmax;
     fGamma = gamma;
     fSource = s;
@@ -556,18 +554,19 @@ namespace prop {
 
     fSource->CheckMatrixBinning(dlgEOrig);
 
+#warning MU: make new neutrino calculation a runtime option?
     // set to true for UFA15 photopion calculation
-    const bool isFixedPPElasticity = false; 
+    const bool isFixedPPElasticity = false;
 
     for (const auto& iter : fFractions) {
       const int Ainj = iter.first;
 
       // knock-off nucleon and pion production
       TH1D pd("pd", "", nBins, fLgEmin, fLgEmax);
-      TH1D pp("pp", "", nBins, fLgEmin, fLgEmax); 
+      TH1D pp("pp", "", nBins, fLgEmin, fLgEmax);
       TH1D ppp("pp protons", "", nBins, fLgEmin, fLgEmax);
       TH1D ppn("pp neutrons", "", nBins, fLgEmin, fLgEmax);
-      TH1D pion("pion", "", nBins, fLgEmin, fLgEmax); 
+      TH1D pion("pion", "", nBins, fLgEmin, fLgEmax);
       TH1D chpion("charged pion", "", nBins, fLgEmin, fLgEmax);
       TH1D neutpion("neutral pion", "", nBins, fLgEmin, fLgEmax);
 
@@ -680,7 +679,7 @@ namespace prop {
                 // pions
                 {
                   // single pion production
-                  if(isFixedPPElasticity) { 
+                  if(isFixedPPElasticity) {
                     const double kappa = 0.2;
                     const double jacobi = double(Aprim) / Asec / kappa;
                     const double Eprim = jacobi * E;
@@ -733,13 +732,13 @@ namespace prop {
           logSec.SetBinContent(iE+1, c ? log(c) : -1e100);
         }
       }
-      
+
       // updated photopion calculation
       if(!isFixedPPElasticity){
-        int Asec = 1;  
-        
+        int Asec = 1;
+
         for (int Aprim = Asec + 1; Aprim <= Ainj; ++Aprim) {
-           
+
           const TH1D& hPrim = *prodSpectrum[Aprim];
 
           TVectorD primVec(nBins);
@@ -1010,11 +1009,11 @@ namespace prop {
             const double phFrac =
               fSource->GetChannelFraction(Enext, 1, VSource::ePH);
             const double bSPP = 1. -
-                    fSource->GetMPPBranchingRatio(Enext, 1); 
+                    fSource->GetMPPBranchingRatio(Enext, 1);
             pSum += bPP * bSPP * phFrac * fInt * qNext / kappa;
             nSum += (1-bPP) * bSPP * phFrac * fInt * qNext / kappa;
           }
-        } 
+        }
         else {
           for(unsigned int jE = iE + 1; jE < n; ++jE) {
             const double qNext = protonFlux[jE];
@@ -1030,7 +1029,7 @@ namespace prop {
             pSum += pweight * fInt * qNext;
             nSum += nweight * fInt * qNext;
           }
-        } 
+        }
 
         if (iE < fN - 1) {
           // hadronic part
@@ -1225,7 +1224,7 @@ namespace prop {
     const double jacobi = A / Asec * multiplicity/ kappaMPP;
 
     return 1. - jacobi * Esec / Eprim;
-  
+
   }
 
   double Spectrum::GetE0() { return 1e18*utl::eV; }
