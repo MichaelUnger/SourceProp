@@ -81,7 +81,14 @@ namespace prop {
       eAugerXmax2017,
       eAugerXmax2017fudge,
       eAugerXmax2017fudgeAndSD,
-      eAugerXmax2017corrected
+      eAugerXmax2017corrected,
+      eAugerXmax2019
+    };
+
+    enum EEnergyShiftType {
+      eConstant,
+      eAugerTA2019,
+      eShiftedAugerTA2019
     };
 
   public:
@@ -134,11 +141,17 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
+    bool GCRWithGSFIron() const
+    { return fGCRWithGSFIron; }
+
     bool BoostedModel() const
     { return fBoostedModel; }
 
     bool RejectOutliers() const
     { return fRejectOutliers; }
+
+    bool DoFixPPElasticity() const
+    { return fisFixedPPElasticity; }
 
     double GetMinFluxLgE() const
     { return fMinFluxLgE; }
@@ -149,8 +162,10 @@ namespace prop {
     double GetMaxCompLgE() const
     { return fMaxCompLgE; }
 
-    double GetEnergyBinShift() const
-    { return fEnergyBinShift; }
+    EEnergyShiftType GetEnergyShiftType() const
+    { return fEnergyShiftType; }
+    double GetEnergyBinShift(const double lgE = 0.) const;
+    double GetEnergyShiftJacobian(const double lgE) const; 
 
     double GetXmaxSigmaShift() const
     { return fXmaxSigmaShift; }
@@ -196,7 +211,9 @@ namespace prop {
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
+    bool fGCRWithGSFIron;
     bool fRejectOutliers;
+    bool fisFixedPPElasticity;
     double fMinFluxLgE;
     double fMinCompLgE;
     double fMaxCompLgE;
@@ -208,6 +225,7 @@ namespace prop {
     ESpectrumDataType fSpectrumDataType;
     ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
+    EEnergyShiftType fEnergyShiftType;
     std::string fSpectrumTypeName;
     std::string fSpectrumDataTypeName;
     std::string fLowESpectrumDataTypeName;
