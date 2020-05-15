@@ -109,6 +109,8 @@ namespace prop {
         // initiate interpolation tables
         InterpInit(fCurrentPeak);
 
+        ReadElasticityDistributions();
+
         return;
       }
 
@@ -619,6 +621,7 @@ namespace prop {
     flgEmax = lgEmax;
     fdlgEOrig = dlgE;
     fnSubBins = nSubBins;
+    fisFixedPPElasticity = false;
 
     return;
   }
@@ -969,6 +972,17 @@ namespace prop {
   void
   PhotoNuclearSource::ClearBuilds()
   {
+    for (auto& iter : fPhotonWeights)
+      delete iter.second;
+    for (auto& iter : fInteractionWeights)
+      for (auto& iter2 : iter.second)
+        delete iter2.second;
+    for (auto& iter : fWeightMatrix)
+      for (auto& iter2 : iter.second)
+        delete iter2.second;
+    for (auto& iter : ftrickleDownWeights)
+      delete iter.second;
+    
     fPhotonWeights.clear();
     fInteractionWeights.clear();
     fWeightMatrix.clear();
@@ -1678,11 +1692,13 @@ namespace prop {
     posR = newposR;
 
     // rebuild weights and matrices
-    ClearBuilds();
-    BuildPhotonWeights();
-    BuildInteractionWeights();
-    BuildTrickleDownWeights();
-    BuildPPWeightMatrix(); 
+    if(!fisFixedPPElasticity) {
+      ClearBuilds();
+      BuildPhotonWeights();
+      BuildInteractionWeights();
+      BuildTrickleDownWeights();
+      BuildPPWeightMatrix(); 
+    }
 
     return;
   }
