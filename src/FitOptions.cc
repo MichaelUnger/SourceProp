@@ -24,17 +24,21 @@ namespace prop {
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
+    fGCRWithGSFIron = false;
+    fisFixedPPElasticity = false;
     fRejectOutliers = 0;
     fMinFluxLgE = 17.5; 
     fMinCompLgE = 17.8; 
     fMaxCompLgE = 22.0; 
     fEnergyBinShift = 0;
+    fEnergyShiftType = eConstant;
     fXmaxSigmaShift = 0;
     fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,18, 22, 0);
     fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,-10, 10, 0);
     fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
+    fStartValues[eLgRdiff] = StartValue(-100, 0.1 ,0, 0, 1);
     fStartValues[eFGal] = StartValue(0.6, 0.1, 0, 1, 0);
     fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, -2, -10, 0);
     fStartValues[eGammaGalLowE] = StartValue(-2.7e+00, 0.1, -2, -10, 1);
@@ -201,9 +205,30 @@ namespace prop {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
       }
+      else if (keyword == "gcrWithGSFIron") {
+        if (!(line >> fGCRWithGSFIron))
+          throw runtime_error("error decoding gcrWithKnees");
+      }
+      else if (keyword == "isFixedPPElasticity") {
+        if (!(line >> fisFixedPPElasticity))
+          throw runtime_error("error decoding isFixedPPElasticity");
+      }
       else if (keyword == "energyBinShift") {
         if (!(line >> fEnergyBinShift))
           throw runtime_error("error decoding energyBinShift");
+      }
+      else if (keyword == "energyShiftType") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding energyShiftType");
+        if(type == "Constant")
+          fEnergyShiftType = eConstant;
+        else if(type == "AugerTA2019")
+          fEnergyShiftType = eAugerTA2019;
+        else if(type == "ShiftedAugerTA2019")
+          fEnergyShiftType = eShiftedAugerTA2019;
+        else
+          throw runtime_error("unknown energy shift type "+type); 
       }
       else if (keyword == "xmaxSigmaShift") {
         if (!(line >> fXmaxSigmaShift))
@@ -273,6 +298,8 @@ namespace prop {
           fXmaxDataType = eAugerXmax2017fudgeAndSD;
 	else if (type == "Auger2017corrected")
           fXmaxDataType = eAugerXmax2017corrected;
+	else if (type == "Auger2019")
+          fXmaxDataType = eAugerXmax2019;
         else
           throw runtime_error("unknown Xmax data type: " + type);
         fXmaxDataTypeName = type;
@@ -588,6 +615,8 @@ namespace prop {
       return "Auger 2017^{*}";
     case eAugerXmax2017corrected:
       return "Auger 2017+19";
+    case eAugerXmax2019:
+      return "Auger 2019";
     default:
       return "unknown";
     }
@@ -634,6 +663,11 @@ namespace prop {
       else
         cerr << " unsupported photon field! " << endl;
     }
+    if(fitData.fNNeutrinos > 0) {
+      out << "fNNeutrinos " << fitData.fNNeutrinos << "\n"
+          << "fNNeutrinos157 " << fitData.fNNeutrinos157 << "\n";
+    }
+
     out << "interactionModel " << fInteractionModel << "\n"
         << "fitComposition " << fFitCompo << "\n"
         << "gcrWithKnees " << fGCRWithKnees << "\n"
@@ -682,5 +716,57 @@ namespace prop {
     out.close();
   }
 
+  double FitOptions::GetEnergyBinShift(const double lgE) 
+    const 
+  {
+    if(fEnergyShiftType == eConstant)
+      return fEnergyBinShift;
+    else if(fEnergyShiftType == eAugerTA2019) {
+      const double lgEth = 19.0;
+      double energyFactor = 1.052;
+      if(lgE > lgEth)
+        energyFactor += 0.1*(lgE-lgEth);
+      const double energyShift = log10(energyFactor);
+      const double energyBinShift = 10*energyShift;
+      return energyBinShift;
+    }
+    else if(fEnergyShiftType == eShiftedAugerTA2019) {
+      const double lgEth = 19.0;
+      double energyFactor = 1.052;
+      if(lgE > lgEth)
+        energyFactor += 0.1*(lgE-lgEth);
+      const double energyShift = log10(energyFactor);
+      const double energyBinShift = 10*energyShift + fEnergyBinShift;
+      return energyBinShift;
+    }
+    else     
+      throw runtime_error("unknown energy shift type");
+  }
+
+  double FitOptions::GetEnergyShiftJacobian(const double lgE = 0.)
+    const
+  {
+    double jacobian;
+    if(fEnergyShiftType == eConstant)
+      jacobian = 1./pow(10., 0.1*fEnergyBinShift);
+    else if(fEnergyShiftType == eAugerTA2019) {
+      const double lgEth = 19.0;
+      jacobian = 1.052;
+      if(lgE > lgEth)
+        jacobian += 0.1/log(10.) + 0.1*(lgE-lgEth);
+      jacobian = 1./jacobian;
+    }
+    else if(fEnergyShiftType == eShiftedAugerTA2019) {
+      const double lgEth = 19.0;
+      jacobian = 1.052*pow(10, 0.1*fEnergyBinShift);
+      if(lgE > lgEth)
+        jacobian += 0.1/log(10.) + 0.1*(lgE-lgEth);
+      jacobian = 1./jacobian;
+    }
+    else
+      throw runtime_error("unknown energy shift jacobian");
+    
+    return jacobian;
+  }
 
 }
