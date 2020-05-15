@@ -36,6 +36,7 @@ steering file parameters:
      lgResc
      lgRhadint
      deltaEsc
+     lgRdiff
      fGal
      gammaGal
      lgEmaxGal
@@ -78,10 +79,12 @@ steering file parameters:
   - eposLHC, qgsjetII04 or sibyll21
 * cutoffType [type]
   - exponential, brokenExponential, heavyside, deltaGamma1..4
+* energyShiftType [type]
+  - Constant [default], AugerTA2019, ShiftedAugerTA2019
 * energyBinShift [n]
-  - e.g. -1 or +2 or 0
+  - e.g. -1 or +2.2 or 0
 * xmaxSigmaShift [nSigma]
-  - e.g. -1, 0, +1
+  - e.g. -1, 0, +1.1
 * spectrumData [type]
   - Auger2013, TA2013, Auger2017
 * xmaxData [type]
