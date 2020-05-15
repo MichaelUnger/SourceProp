@@ -57,6 +57,10 @@ namespace prop {
     double GetTotalPower(const double Elow) const;
     unsigned int GetNMass() const { return fNMass; }
     unsigned int GetNGalMass() const { return fNGalMass; }
+    void SetNNeutrinos(const double n)
+    { fNNeutrinos = n; }
+    void SetNNeutrinos157(const double n)
+    { fNNeutrinos157 = n; }
 
     unsigned int fIteration;
     unsigned int fNNan;
@@ -82,6 +86,8 @@ namespace prop {
     double fQ0Err;
     double fProtonRatio185;
     double fProtonFraction60;
+    double fNNeutrinos = -1;
+    double fNNeutrinos157;
     std::vector<FitParameter> fFitParameters;
     int fFitStatus;
     bool fFitFailed;
