@@ -4,6 +4,8 @@
 #include <map>
 #include <TMatrixD.h>
 
+class TClass;
+
 namespace prop {
 
   class PropMatrices {
