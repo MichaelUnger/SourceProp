@@ -6,7 +6,9 @@
 namespace prop {
   enum EPar {
     eLgEscFac,
+    eLgHadIntFac, 
     eEscGamma,
+    eLgRdiff,
     eGamma,   
     eLgEmax,
     eFGal,     
@@ -25,7 +27,6 @@ namespace prop {
     eEvolutionZ0,
     eEvolutionDmin,
     ePhotonPeak,
-    eLgHadIntFac, 
     eUnused1,
     eNpars,
     eGammaA = eEscGamma + 1,
