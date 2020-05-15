@@ -34,6 +34,7 @@ public:
   double fLgEmax;
   double fLgEscFac;
   double fEscGamma;
+  double fLgRdiff;
   double fFGal;
   double fGammaGal;
   double fLgEmaxGal;
@@ -59,6 +60,7 @@ public:
   double fLgEmaxErr[3];
   double fLgEscFacErr[3];
   double fEscGammaErr[3];
+  double fLgRdiffErr[3];
   double fFGalErr[3];
   double fGammaGalErr[3];
   double fLgEmaxGalErr[3];
