@@ -21,8 +21,15 @@ namespace prop {
   {
     for (auto A : fsigmaInel)
       delete A.second;
+    
+    for (auto A : fsigmaInel_lowE)
+      delete A.second;
 
     for (auto& Aprim : fMatrix)
+      for (auto Asec : Aprim.second)
+        delete Asec.second;
+    
+    for (auto& Aprim : fMatrix_lowE)
       for (auto Asec : Aprim.second)
         delete Asec.second;
   }
@@ -76,6 +83,7 @@ namespace prop {
 
     const int Amin = 1;
     const int Amax = GetMaxA();
+    const int Amax_lowE = 1;
 
     for(int A = Amin; A <= Amax; A++) {
       const string filename = fDirectory + "/hadints_m" + fileModel + "_A" + std::to_string(A) + ".root";
@@ -118,6 +126,48 @@ namespace prop {
       infile->Close();
     }
 
+    // read-in low energy tables
+    for(int A = Amin; A <= Amax_lowE; A++) {
+      const string filename = fDirectory + "/hadints_lowE_m" + fileModel + "_A" + std::to_string(A) + ".root";
+
+      TFile* infile = TFile::Open(filename.c_str());
+      if (!infile || infile->IsZombie()) {
+        stringstream errMsg;
+        errMsg << " error opening " << filename;
+        throw runtime_error(errMsg.str());
+      }
+
+      TTree* tree;
+
+      stringstream treename, sigmaname, Nsecname;
+      treename << "p" << std::to_string(A) << "Ints_lowE";
+      if(!infile->GetListOfKeys()->Contains(treename.str().c_str())) {
+        cerr << "Cannot find " << treename.str() << " in tree. Omitting A="
+             << std::to_string(A) << " data." << endl;    
+        continue;
+      }
+      infile->GetObject(treename.str().c_str(), tree);
+     
+      TH1D* buffsigma = 0;
+      SecondaryMatrix* buffNsec = 0;
+
+      TBranch* br = 0;
+
+      sigmaname << "hsigmaInel_lowE" << std::to_string(A);
+      tree->SetBranchAddress(sigmaname.str().c_str(), &buffsigma, &br);
+      br->GetEntry(0);
+
+      fsigmaInel_lowE[A] = buffsigma;
+
+      Nsecname << "hNsecMap_lowE" << std::to_string(A);
+      tree->SetBranchAddress(Nsecname.str().c_str(), &buffNsec, &br);
+      br->GetEntry(0);
+
+      fMatrix_lowE[A] = *buffNsec;      
+
+      infile->Close();
+    }
+
     return;
   }
 
@@ -145,23 +195,39 @@ namespace prop {
           throw runtime_error("Internal binning incompatible with interaction matrices!");
       }
     }
+    
+    for (auto& Aprim : fMatrix_lowE) {
+      for (auto Asec : Aprim.second) {
+        TH2D& h = *Asec.second;
+        const int Nxbins = h.GetNbinsX();
+        const int Nybins = h.GetNbinsY();
+        const double xMax = h.GetXaxis()->GetXmax();
+        const double xMin = h.GetXaxis()->GetXmin();
+        const double yMax = h.GetYaxis()->GetXmax();
+        const double yMin = h.GetYaxis()->GetXmin();
+
+        const double dx = (xMax - xMin) / Nxbins;
+        const double dy = (yMax - yMin) / Nybins;
+
+        if (dlgE/dx == 1. && dlgE/dy == 1.) 
+          continue;
+        else if(dlgE/dx == int(dlgE/dx) && dlgE/dy == int(dlgE/dy)) 
+          h.Rebin2D(int(dlgE/dx), int(dlgE/dy));
+        else 
+          throw runtime_error("Internal binning incompatible with low energy interaction matrices!");
+      }
+    }
 
     return;
-  }
-
-  TH2D*
-  HadronicInteractions::GetMatrix(const int Aprim, const int Asec)
-  {
-    if(fMatrix[Aprim].find(Asec) == fMatrix[Aprim].end()) 
-      throw runtime_error("Secondary not found: "+std::to_string(Asec));
-
-    return fMatrix[Aprim][Asec];
   }
 
   double 
   HadronicInteractions::GetsigmaInel(const int Aprim, const double lgE)
   {
-    return (fsigmaInel.count(Aprim))? fsigmaInel[Aprim]->Interpolate(lgE) : 1e-100;
+    if(lgE < lgEmax_lowE)
+      return (fsigmaInel_lowE.count(Aprim))? fsigmaInel[Aprim]->Interpolate(lgE) : 1e-100;
+    else
+      return (fsigmaInel.count(Aprim))? fsigmaInel[Aprim]->Interpolate(lgE) : 1e-100;
   }
 
   double 
@@ -171,12 +237,25 @@ namespace prop {
       return 1e100;
 
     const double lgE = log10(E);
-    if(lgE < lgEmin || lgE > lgEmax) 
-      return 1e100;
-      //throw runtime_error("Primary energy out of range: lgEprim = " + std::to_string(lgEprim));
-    const double sigma = fsigmaInel[Aprim]->Interpolate(lgE);
+    #warning hadronic interaction cross section tables for sibyll23c are ignored, using superposition instead
+    // temporary fix for sibyll until crmc bugs are sorted out
+    if(fModelName == "sibyll23c") {
+      const double lgEnuc = log10(E/Aprim);
+      if(lgEnuc < lgEmin || lgEnuc > lgEmax) 
+        return 1e100;
+      const double sigma = pow(Aprim, 2./3.)*GetsigmaInel(1, lgEnuc);
+      
+      return fHadIntRatio/sigma;
+    }
+    else {
+      if(lgE < lgEmin || lgE > lgEmax) 
+        return 1e100;
+        //throw runtime_error("Primary energy out of range: lgEprim = " + std::to_string(lgEprim));
+      const double sigma = GetsigmaInel(Aprim, lgE);
+    
+      return fHadIntRatio/sigma;
+    }
 
-    return fHadIntRatio/sigma;
   }
 
   double
@@ -186,34 +265,40 @@ namespace prop {
       throw runtime_error("Secondary outside viable range:  Asec = " + std::to_string(Asec) + ", Aprim = " + std::to_string(Aprim));
 
     const double lgEsec = log10(Esec), lgEprim = log10(Eprim);
-    if(lgEprim < lgEmin || lgEprim > lgEmax) 
-      return 0.;
-      //throw runtime_error("Primary energy out of range: lgEprim = " + std::to_string(lgEprim));
     if(lgEsec < lgEsecmin || lgEsec > lgEsecmax) 
       return 0.;
-      //throw runtime_error("Secondary energy out of range: lgEsec = " + std::to_string(lgEsec));
-
-    if(!fMatrix.count(Aprim)) 
-      return 0.;
+    if(lgEprim < lgEmax_lowE) {
+      if(lgEprim < lgEmin_lowE || lgEprim > lgEmax_lowE) 
+        return 0.;
+      if(!fMatrix_lowE.count(Aprim)) 
+        return 0.;
+    } 
+    else {
+      if(lgEprim < lgEmin || lgEprim > lgEmax) 
+        return 0.;
+      if(!fMatrix.count(Aprim)) 
+        return 0.;
+    }
+    SecondaryMatrix& secMatrix = (lgEprim < lgEmax_lowE)? fMatrix_lowE[Aprim] : fMatrix[Aprim];
 
     double N = 0;
 
     if(Asec == 1) {
       // sum over protons and anti-protons
-      N += (fMatrix[Aprim].count(2212))? fMatrix[Aprim][2212]->Interpolate(lgEprim, lgEsec) : 0.;
-      N += (fMatrix[Aprim].count(-2212))? fMatrix[Aprim][-2212]->Interpolate(lgEprim, lgEsec) : 0.;
+      N += (secMatrix.count(2212))? secMatrix[2212]->Interpolate(lgEprim, lgEsec) : 0.;
+      N += (secMatrix.count(-2212))? secMatrix[-2212]->Interpolate(lgEprim, lgEsec) : 0.;
 
       // sum over neutrons and anti-neutrons
-      N += (fMatrix[Aprim].count(2112))? fMatrix[Aprim][2112]->Interpolate(lgEprim, lgEsec) : 0.; 
-      N += (fMatrix[Aprim].count(-2112))? fMatrix[Aprim][-2112]->Interpolate(lgEprim, lgEsec) : 0.;
+      N += (secMatrix.count(2112))? secMatrix[2112]->Interpolate(lgEprim, lgEsec) : 0.; 
+      N += (secMatrix.count(-2112))? secMatrix[-2112]->Interpolate(lgEprim, lgEsec) : 0.;
     }
     else {
       // sum over all possible Z
       for(int Z = 0; Z <= Asec; Z++) {
         const int code = 1000000000 + Z*10000 + Asec*10; // pdg nuclear code
-        N += (fMatrix[Aprim].count(code))? fMatrix[Aprim][code]->Interpolate(lgEprim, lgEsec) : 0.;
+        N += (secMatrix.count(code))? secMatrix[code]->Interpolate(lgEprim, lgEsec) : 0.;
         // check for anti-nuclei just in case
-        N += (fMatrix[Aprim].count(-1*code))? fMatrix[Aprim][-1*code]->Interpolate(lgEprim, lgEsec) : 0.;
+        N += (secMatrix.count(-1*code))? secMatrix[-1*code]->Interpolate(lgEprim, lgEsec) : 0.;
       }
     }
 
@@ -224,29 +309,25 @@ namespace prop {
   HadronicInteractions::GetNByPDGID(const double Esec, const double Eprim, const int pdgID, const int Aprim) 
   {
     const double lgEsec = log10(Esec), lgEprim = log10(Eprim);
-    if(lgEprim < lgEmin || lgEprim > lgEmax) 
-      return 0.;
-      //throw runtime_error("Primary energy out of range: lgEprim = " + std::to_string(lgEprim));
+    if(lgEprim < lgEmin_lowE) {
+      if(lgEprim < lgEmin_lowE || lgEprim > lgEmax_lowE) 
+        return 0.;
+      if(!fMatrix_lowE.count(Aprim))
+        return 0.;
+    }
+    else {
+      if(lgEprim < lgEmin || lgEprim > lgEmax) 
+        return 0.;
+      if(!fMatrix.count(Aprim))
+        return 0.;
+    }
     if(lgEsec < lgEsecmin || lgEsec > lgEsecmax)
       return 0.;
-      //throw runtime_error("Secondary energy out of range: lgEsec = " + std::to_string(lgEsec));
 
-    if(!fMatrix.count(Aprim))
-      return 0.;
+    SecondaryMatrix& secMatrix = (lgEprim < lgEmax_lowE)? fMatrix_lowE[Aprim] : fMatrix[Aprim];
 
-    return (fMatrix[Aprim].count(pdgID))? fMatrix[Aprim][pdgID]->Interpolate(lgEprim, lgEsec) : 0.;
+    return (secMatrix.count(pdgID))? secMatrix[pdgID]->Interpolate(lgEprim, lgEsec) : 0.;
   }  
-
-  vector<int>
-  HadronicInteractions::GetSecondaryIDs(const int Aprim) 
-  {
-    vector<int> ids;
-
-    for(auto iter : fMatrix[Aprim])
-    	ids.push_back(iter.first);
-
-    return ids;
-  }
 
   int 
   HadronicInteractions::GetPDGID(string name) 
