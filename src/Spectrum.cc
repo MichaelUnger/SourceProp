@@ -554,9 +554,8 @@ namespace prop {
 
     fSource->CheckMatrixBinning(dlgEOrig);
 
-#warning MU: make new neutrino calculation a runtime option?
     // set to true for UFA15 photopion calculation
-    const bool isFixedPPElasticity = false;
+    //const bool isFixedPPElasticity = false;
 
     for (const auto& iter : fFractions) {
       const int Ainj = iter.first;
@@ -652,8 +651,8 @@ namespace prop {
               if (Asec == 1) {
                 // nucleons
                 {
-		              //single pion production
-		              if(isFixedPPElasticity) {
+	        //single pion production
+		if(isFixedPPElasticity) {
                     const double kappa = 0.8;
                     const double jacobi = double(Aprim) / Asec / kappa;
                     const double Eprim = jacobi * E;
@@ -843,34 +842,44 @@ namespace prop {
               const double E = pow(10, lgE);
               const double jacobi = Eprim / E;
               if(true) {//hFrac > 1e-10) {
-                const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi0"), Aprim);
+                const int id_pi0 = fSource->GetPDGID("pi0");
+                const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, id_pi0, Aprim);
                 const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * Qprim;
                 mPionZero[jE][0] += flux_pi0;
-                const double Nsec_pip = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi+"), Aprim);
+                const int id_pip = fSource->GetPDGID("pi+");
+                const double Nsec_pip = fSource->GetNByPDGID(E, Eprim, id_pip, Aprim);
                 const double flux_pip = hFrac * fInt * Nsec_pip * jacobi * Qprim;
                 mPionPlus[jE][0] += flux_pip;
-                const double Nsec_pim = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi-"), Aprim);
+                const int id_pim = fSource->GetPDGID("pi-");
+                const double Nsec_pim = fSource->GetNByPDGID(E, Eprim, id_pim, Aprim);
                 const double flux_pim = hFrac * fInt * Nsec_pim * jacobi * Qprim;
                 mPionMinus[jE][0] += flux_pim;
-                const double Nsec_nu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_e"), Aprim);
+                const int id_nue = fSource->GetPDGID("nu_e");
+                const double Nsec_nu_e = fSource->GetNByPDGID(E, Eprim, id_nue, Aprim);
                 const double flux_nu_e = hFrac * fInt * Nsec_nu_e * jacobi * Qprim;
                 mNeutrinoE[jE][0] += flux_nu_e;
-                const double Nsec_anu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_e"), Aprim);
+                const int id_anue = fSource->GetPDGID("-nu_e");
+                const double Nsec_anu_e = fSource->GetNByPDGID(E, Eprim, id_anue, Aprim);
                 const double flux_anu_e = hFrac * fInt * Nsec_anu_e * jacobi * Qprim;
                 mANeutrinoE[jE][0] += flux_anu_e;
-                const double Nsec_nu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_mu"), Aprim);
+                const int id_num = fSource->GetPDGID("nu_mu");
+                const double Nsec_nu_m = fSource->GetNByPDGID(E, Eprim, id_num, Aprim);
                 const double flux_nu_m = hFrac * fInt * Nsec_nu_m * jacobi * Qprim;
                 mNeutrinoM[jE][0] += flux_nu_m;
-                const double Nsec_anu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_mu"), Aprim);
+                const int id_anum = fSource->GetPDGID("-nu_mu");
+                const double Nsec_anu_m = fSource->GetNByPDGID(E, Eprim, id_anum, Aprim);
                 const double flux_anu_m = hFrac * fInt * Nsec_anu_m * jacobi * Qprim;
                 mANeutrinoM[jE][0] += flux_anu_m;
-                const double Nsec_nu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_tau"), Aprim);
+                const int id_nut = fSource->GetPDGID("nu_tau");
+                const double Nsec_nu_t = fSource->GetNByPDGID(E, Eprim, id_nut, Aprim);
                 const double flux_nu_t = hFrac * fInt * Nsec_nu_t * jacobi * Qprim;
                 mNeutrinoT[jE][0] += flux_nu_t;
-                const double Nsec_anu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_tau"), Aprim);
+                const int id_anut = fSource->GetPDGID("-nu_tau");
+                const double Nsec_anu_t = fSource->GetNByPDGID(E, Eprim, id_anut, Aprim);
                 const double flux_anu_t = hFrac * fInt * Nsec_anu_t * jacobi * Qprim;
                 mANeutrinoT[jE][0] += flux_anu_t;
-                const double Nsec_photon = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("photon"), Aprim);
+                const int id_photon = fSource->GetPDGID("photon");
+                const double Nsec_photon = fSource->GetNByPDGID(E, Eprim, id_photon, Aprim);
                 const double flux_photon = hFrac * fInt * Nsec_photon * jacobi * Qprim;
                 mPhoton[jE][0] += flux_photon;
               }
