@@ -32,9 +32,24 @@ namespace prop {
   FitData Fitter::fFitData;
   bool Fitter::fGCRKnees = false;
   bool Fitter::fBoostedModel = false;
+  bool Fitter::fisFixedPPElasticity = false;
+  bool Fitter::fGCRGSFIron = false;
+  
+  double
+  GetGSFIronFlux(const double lgE)
+  {
+    const double E0 = pow(10, 15.5);
+    const double Ecut = pow(10, 15.85);
+    const double E = pow(10, lgE);
+    // GCR Component A iron inferred from global spline fit of Dembinski+17 arXiv:1711.11432
+    // Normalization given in units of eV2/km2/sr/yr
+    const double phi = 5.5e36*pow(E/E0, -2.6+3)*exp(-(E-E0)/26/Ecut)/pow(E, 3);
+    
+    return phi;
+  }
 
   pair<double, double>
-  calcNorm(const FitData& data)
+  calcNorm(const FitData& data, const bool GSFIron = false)
   {
     const Propagator& p = *data.fPropagator;
     double mywSum = 0;
@@ -42,13 +57,16 @@ namespace prop {
     for (const auto& flux : data.fFluxData) {
       const double m = p.GetFluxSumInterpolated(flux.fLgE);
       const double w = pow(1/flux.fFluxErr, 2);
-      const double y = flux.fFlux;
+      double y = flux.fFlux;
+      if(GSFIron) {
+        const double phiGCRA = GetGSFIronFlux(flux.fLgE);
+        y -= phiGCRA;
+      }
       mywSum += (m*y*w);
       mmwSum += (m*m*w);
     }
     return  pair<double, double>(mywSum / mmwSum, sqrt(1/mmwSum));
   }
-
 
 
   Fitter::Fitter(const FitOptions& opt) :
@@ -85,6 +103,7 @@ namespace prop {
     source->SetEscFac(1);
     source->SetHadIntFac(1);
     source->SetEscGamma(par[eEscGamma]);
+    source->SetRdiff(pow(10, par[eLgRdiff]));
 
 
 #ifdef _FASTANDFURIOUS_
@@ -103,12 +122,14 @@ namespace prop {
       photonScale.push_back(0);
     }
     source->SetPhotonScaleFactors(photonScale);
-    source->BuildPhotopionWeights(data.fLgEmin, data.fLgEmax, (data.fLgEmax-data.fLgEmin)/data.fNLgE, nSubBins);     
+    if(!fisFixedPPElasticity)
+      source->BuildPhotopionWeights(data.fLgEmin, data.fLgEmax, (data.fLgEmax-data.fLgEmin)/data.fNLgE, nSubBins);     
     
     const double lambdaI_PH = source->LambdaPhotoHadInt(1e19, 56); // photohadronic interaction length
     const double lambdaI_H = source->LambdaHadInt(1e19, 56); // hadronic interaction length
-    source->SetHadIntFac(pow(10, par[eLgHadIntFac]) * lambdaI_PH / lambdaI_H);
-    const double lambdaI = (lambdaI_PH * lambdaI_H) / (lambdaI_PH + lambdaI_H); // total interaction length
+    const double HadIntFac = pow(10, par[eLgHadIntFac]) * lambdaI_PH / lambdaI_H;
+    source->SetHadIntFac(HadIntFac);
+    const double lambdaI = (lambdaI_PH * HadIntFac*lambdaI_H) / (lambdaI_PH + HadIntFac*lambdaI_H); // total interaction length
     const double lambdaE = source->LambdaEsc(1e19, 56);
     source->SetEscFac(pow(10, par[eLgEscFac]) * lambdaI / lambdaE);
 
@@ -161,6 +182,7 @@ namespace prop {
                                data.fNLgE, nSubBins,
                                data.fLgEmin, data.fLgEmax,
                                fractions);
+        spectrum.SetFixedPPElasticity(fisFixedPPElasticity);
 
         if (par[eNoPhoton] > 0) {
           const Spectrum::SpecMap& injFlux = spectrum.GetInjFlux();
@@ -356,11 +378,24 @@ namespace prop {
         }
       }
 
-      const pair<double, double> norm = calcNorm(data);
+      const pair<double, double> norm = calcNorm(data, fGCRGSFIron);
       data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
       data.fQ0Err = norm.second / norm.first * data.fQ0;
       data.fSpectrum.Rescale(norm.first);
       data.fPropagator->Rescale(norm.first);
+      
+      if(fGCRGSFIron) {
+        const double A = 56;
+        const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+        double lgE = data.fLgEmin + dlgE/2;
+        TMatrixD galactic(data.fNLgE, 1);
+        for (unsigned int i = 0; i < data.fNLgE; ++i) {
+          galactic[i][0] = GetGSFIronFlux(lgE);
+          lgE += dlgE;
+        }
+        data.fPropagator->AddComponent(A + kGalacticOffset,
+                                       galactic);
+      }
     }
     else {
       bool simpleModel = false;
@@ -636,7 +671,9 @@ namespace prop {
     fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
 
     fGCRKnees = fOptions.GCRWithKnees();
+    fGCRGSFIron = fOptions.GCRWithGSFIron();
     fBoostedModel = fOptions.BoostedModel();
+    fisFixedPPElasticity = fOptions.DoFixPPElasticity();
 
     ReadData();
     
@@ -668,8 +705,9 @@ namespace prop {
     for (const auto f : filenames)
       cout << " " << fOptions.GetDataDirname() << "/" << f << endl;
 
+    const double photonPeak = fOptions.GetStartValue(GetPar("photonPeak"));
     fFitData.fSource = new PhotoNuclearSource(fOptions.GetPhotIntFilenames(),
-                                              fOptions.GetDataDirname(), fOptions.GetInteractionModel(), fOptions.GetStartValue(GetPar("photonPeak")));
+                                              fOptions.GetDataDirname(), fOptions.GetInteractionModel(), photonPeak);
 
     // check if hadronic interactions are in use
     const double lgRhadint = fOptions.GetStartValue(GetPar("lgRhadint"));
@@ -677,7 +715,14 @@ namespace prop {
     if(lgRhadint >= 10. && isLgRhadintFixed == true)
       fFitData.fSource->SetHadIntStatus(false);
     else
-      fFitData.fSource->SetHadIntStatus(true); 
+      fFitData.fSource->SetHadIntStatus(true);
+
+    // check diffusion type
+    const double lgRdiff = fOptions.GetStartValue(GetPar("lgRdiff"));
+    if(lgRdiff <= -100)
+      cout << " using single-power law diffusion constant \n";
+    else
+      cout << " using rigidity-dependent diffusion constant \n"; 
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
@@ -895,7 +940,6 @@ namespace prop {
   Fitter::ReadData()
   {
 
-    const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift();
 
     // spectrum
     switch (fOptions.GetSpectrumDataType()) {
@@ -930,7 +974,9 @@ namespace prop {
               (flux.fLgE > 18 && flux.fLgE < 18.2);
 
           // syst shift?
-          flux.fFlux /= pow(10., deltaLgESys);
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
           flux.fLgE += deltaLgESys;
 
 
@@ -968,7 +1014,9 @@ namespace prop {
           flux.fN = 0;
 
           // syst shift?
-          flux.fFlux /= pow(10., deltaLgESys);
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -983,9 +1031,9 @@ namespace prop {
       {
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019.dat");
         /*
-        # J in  [km^-2 yr^-1 sr^-1 eV^-1] units
+        # J in  [m^-2 s^-1 sr^-1] units
         # log10E = center of the energy bin 
-        # log10E    J       J-Err_low       J+Err_up  
+        # log10E    E*J       Err_up       Err_down  
         */
         double exposure;
         in >> exposure;
@@ -993,19 +1041,21 @@ namespace prop {
         while (true) {
           FluxData flux;
           double eyDown, eyUp, fluxE;
-          in >> flux.fLgE >> fluxE >> eyDown >> eyUp;
+          in >> flux.fLgE >> fluxE >> eyUp >> eyDown;
           if (!in.good())
             break;
-          eyUp = eyUp - fluxE;
-          eyDown = fluxE - eyDown;
-          flux.fFlux = fluxE;
-          flux.fFluxErr = (eyUp+eyDown)/2;
-          flux.fFluxErrUp = eyUp;
-          flux.fFluxErrLow = eyDown;
+          // to  [ eV^-1 km^-1 sr^-1 yr^-1 ]
+          const double conv = 1e6 * 365*24*3600 / pow(10, flux.fLgE);
+          flux.fFlux = fluxE * conv;
+          flux.fFluxErr = (eyUp+eyDown)/2 * conv;
+          flux.fFluxErrUp = eyUp * conv;
+          flux.fFluxErrLow = eyDown * conv;
           flux.fN = 0;
 
           // syst shift?
-          flux.fFlux /= pow(10., deltaLgESys);
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1040,7 +1090,9 @@ namespace prop {
           flux.fN = 0;
 
           // syst shift?
-          flux.fFlux /= pow(10., deltaLgESys);
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1086,7 +1138,9 @@ namespace prop {
           fluxData.fN = N;
 
           // syst shift?
-          fluxData.fFlux /= pow(10., deltaLgESys);
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(fluxData.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(fluxData.fLgE);
+          fluxData.fFlux *= jacobian;
           fluxData.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(fluxData);
@@ -1132,7 +1186,9 @@ namespace prop {
         flux.fFlux = flx;
 
         // syst shift?
-        flux.fFlux /= pow(10., deltaLgESys);
+        const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+        const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+        flux.fFlux *= jacobian;
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
@@ -1180,7 +1236,9 @@ namespace prop {
           if (ferr/flx > 0.2)
             continue;
           // syst shift?
-          flux.fFlux /= pow(10., deltaLgESys);
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1217,7 +1275,9 @@ namespace prop {
         flux.fFlux = flx;
 
         // syst shift?
-        flux.fFlux /= pow(10., deltaLgESys);
+        const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+        const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+        flux.fFlux *= jacobian;
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
@@ -1345,6 +1405,50 @@ namespace prop {
         }
         break;
       }
+    case FitOptions::eAugerXmax2019:
+      {
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        xmaxGraph = new TGraphErrors();
+        sigmaGraph = new TGraphErrors();
+        xmaxSysGraph = new TGraphAsymmErrors();
+        sigmaXmaxSysGraph = new TGraphAsymmErrors();
+        int i = 0;
+        const string filename = "/elongationRate19.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+        break;
+      }
     default:
       {
         cerr << " unknown Xmax data " << endl;
@@ -1427,6 +1531,7 @@ namespace prop {
         fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
         0.1 : // approx one bin
         0;
+      const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(log10(xmaxGraph->GetX()[i]));
       const double lgE =
         log10(xmaxGraph->GetX()[i]) + deltaLgESys + relativeAugerTAShift;
       const double E = pow(10, lgE);
@@ -1489,4 +1594,5 @@ namespace prop {
     FitFunc(nPar, &dummy, chi2, const_cast<double* const>(&par.front()), iFlag);
     return chi2;
   }
+  
 }
