@@ -38,6 +38,7 @@ namespace prop {
  
     void SetEscFac(const double f) { fEscFac = f; }
     void SetEscGamma(const double g) { fEscGamma = g; }
+    void SetRdiff(const double g) { fRdiff = g; }
     void SetHadIntFac(const double h) { HadInts->SetHadIntRatio(h);}
 
     virtual
@@ -57,7 +58,12 @@ namespace prop {
       const
     {
       const double Z = aToZ(A);
-      return fEscFac*pow(E/1e19/Z, fEscGamma);
+      if(log10(fRdiff) <= -100)
+        // diffusion constant given by single power law 
+        return fEscFac*pow(E/1e19/Z, fEscGamma);
+      else
+        // diffusion constant adapted from equation in section 3.1 of Globus et al. 2007 arXiv:0709.1541
+        return fEscFac/(pow(E/Z/fRdiff, 1./3.) + 2./3.*pow(E/Z/fRdiff, 2) + 0.5*(E/Z/fRdiff));
     }
 
     virtual
@@ -236,6 +242,7 @@ namespace prop {
     std::vector<double> fFieldScaleFactors;
     double fEscFac;
     double fEscGamma;
+    double fRdiff;
     HadronicInteractions* HadInts;
   };
 }
