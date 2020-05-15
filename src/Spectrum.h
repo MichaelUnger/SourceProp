@@ -66,6 +66,8 @@ namespace prop {
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions);
 
+    void SetFixedPPElasticity(const bool f) { isFixedPPElasticity = f; };
+
     void SetInjectedSpectrum(const VSource* s, const SpecMap& inj,
                              const double nE, const double lgEmin,
                              const double lgEmax);
@@ -132,6 +134,7 @@ namespace prop {
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
     double fNorm = 1;
+    bool isFixedPPElasticity;
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
