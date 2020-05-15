@@ -140,6 +140,7 @@ namespace prop {
     double flgEmax;
     double fdlgEOrig;
     int fnSubBins;
+    bool fisFixedPPElasticity = true;
     double lgEphMin;
     double lgEphMax;
     double dlgEph;
