@@ -10,12 +10,12 @@ namespace prop {
   GetParLatexName(const EPar p, const bool boosted)
   {
     string parNames[eNpars] =
-      {"lg(R_{esc}^{ Fe19})","#delta_{esc}",
-       "#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
+      {"lg(R_{esc}^{ Fe19})", "lg(R_{hadint}^{Fe19})", "#delta_{esc}",
+       "lg(R_{diff})", "#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
        "f_{noPhot}", "lg(fphot)", "lg(f(UHEp))", "lg(Emax, UHEp)",
-       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "photonPeak", "lg(R_{hadint}^{Fe19})", "N/A"};
+       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "photonPeak", "N/A"};
 
     if (boosted) {
       parNames[eGammaA] = "\\gamma_{A}";
@@ -41,11 +41,11 @@ namespace prop {
   GetParName(const EPar p, const bool boosted)
   {
     string parNames[eNpars] =
-      {"lgResc", "deltaEsc", "gammaInj", "lgRmax", 
+      {"lgResc", "lgRhadint", "deltaEsc", "lgRdiff", "gammaInj", "lgRmax", 
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal",
        "lgEmaxGal",  "fNoPhoton", "lgfPhoton", "extraProtonLgFraction",
        "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass",
-       "extraProtonLgRefE", "evolutionM", "evolutionZ0", "evolutionDmin", "photonPeak", "lgRhadint", "NA"};
+       "extraProtonLgRefE", "evolutionM", "evolutionZ0", "evolutionDmin", "photonPeak", "NA"};
 
     if (boosted) {
       parNames[eGammaA] = "gammaA";
