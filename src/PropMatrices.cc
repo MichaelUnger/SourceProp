@@ -4,6 +4,7 @@
 #include <sstream>
 #include <stdexcept>
 
+#include<TClass.h>
 #include <TFile.h>
 #include <TKey.h>
 #include <TH2D.h>
