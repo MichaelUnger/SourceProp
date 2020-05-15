@@ -23,13 +23,11 @@ namespace prop {
     void SetHadIntRatio(const double f);
     void CheckMatrixBinning(const double dlgE);
 
-    TH2D* GetMatrix(const int Aprim, const int Asec); 
     double GetsigmaInel(const int Aprim, const double lgE);
 
     double LambdaHadInt(const double E, const int Aprim);
     double GetNSecondaries(const double Esec, const double Eprim, const int Asec, const int Aprim);
     double GetNByPDGID(const double Esec, const double Eprim, const int pdgID, const int Aprim);
-    std::vector<int> GetSecondaryIDs(const int Aprim);
     int GetPDGID(std::string name);
     int GetPDGID(const int A, const int Z, bool isAntimatter);
 
@@ -40,11 +38,17 @@ namespace prop {
     typedef std::map<int, SecondaryMatrix> PrimaryMatrix;
     typedef std::map<int, TH1D*> sigmaInelMap;
 
-    const double lgEmin = 15., lgEmax = 21.;
-    const double lgEsecmin = 12., lgEsecmax = 21.;
+    const double lgEmin = 15.;
+    const double lgEmax = 21.;
+    const double lgEmin_lowE = 12.;
+    const double lgEmax_lowE = lgEmin;
+    const double lgEsecmin = 12.;
+    const double lgEsecmax = 21.;
 
     PrimaryMatrix fMatrix;
+    PrimaryMatrix fMatrix_lowE;
     sigmaInelMap fsigmaInel;
+    sigmaInelMap fsigmaInel_lowE;
     const std::string fModelName;
     const std::string fDirectory;
     double fHadIntRatio;
