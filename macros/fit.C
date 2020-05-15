@@ -16,6 +16,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <fstream>
+#include <sys/resource.h>
 
 #include <TCanvas.h>
 #include <TLatex.h>
@@ -480,10 +481,23 @@ DrawValues(const FitData& fitData,
 
   l.SetTextColor(fixColor);
   stringstream sys;
-  sys << "#DeltalgE_{sys} = ";
-  if (fitOptions.GetEnergyBinShift() > 0)
-    sys << "+";
-  sys << fitOptions.GetEnergyBinShift() * 0.1;
+  if(fitOptions.GetEnergyShiftType() == FitOptions::eConstant) {
+    sys << "#DeltalgE_{sys} = ";
+    if (fitOptions.GetEnergyBinShift() > 0)
+      sys << "+";
+    sys << fitOptions.GetEnergyBinShift() * 0.1;
+  }
+  else if(fitOptions.GetEnergyShiftType() == FitOptions::eAugerTA2019) {
+    sys << "#DeltalgE_{sys} = Auger-TA 2019";
+  }
+  else if(fitOptions.GetEnergyShiftType() == FitOptions::eShiftedAugerTA2019) {
+    sys << "#DeltalgE_{sys} = ";
+    if (fitOptions.GetEnergyBinShift() > 0)
+      sys << "+";
+    sys << fitOptions.GetEnergyBinShift() * 0.1 << " + Auger-TA 2019";
+  }
+  else
+    throw runtime_error("Unkown energy shift name");
   sys << ", n_{sys}(X_{max}) = ";
   if (fitOptions.GetXmaxSigmaShift() > 0)
     sys << "+";
@@ -626,6 +640,12 @@ DrawValues(const FitData& fitData,
 void
 fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool allMasses = true, double xmin = 12., double xmax = 22.)
 {
+  #warning setting core dump file limit to zero
+  struct rlimit         core_limits;
+  core_limits.rlim_cur = 0;
+  core_limits.rlim_max = 0;
+  setrlimit( RLIMIT_CORE, &core_limits );
+
   gROOT->Clear();
   gStyle->SetOptStat(0);
   gStyle->SetOptTitle(0);
@@ -713,8 +733,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     const bool withSourceNu = true;
     if (!withSourceNu) 
       cout << "fit(): warning -- withSourceNu = false" << endl;
+    const double evoM = fitData.fFitParameters[GetPar("evolutionM")].fValue;
+    const double evoZ0 = fitData.fFitParameters[GetPar("evolutionZ0")].fValue;
+    const double evoDmin = fitData.fFitParameters[GetPar("evolutionDmin")].fValue;
     Neutrinos neutrinos(fitData.fSpectrum,
-                        opt.GetPropmatrixNuFilename(), fitData.fFitParameters[GetPar("evolutionM")].fValue, fitData.fFitParameters[GetPar("evolutionZ0")].fValue, fitData.fFitParameters[GetPar("evolutionDmin")].fValue, withSourceNu);
+                        opt.GetPropmatrixNuFilename(), evoM, evoZ0, evoDmin, withSourceNu);
     TCanvas* neutrinoCanvas;
     bool singleSlide = false;
     if (singleSlide) {
@@ -734,8 +757,13 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     neutrinoCanvas->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() +
                            "_nu" + (withSourceNu?"":"NoSource") +
                            ".pdf").c_str());
-    fitSummary.SetNNeutrinos(neutrinoPlot.GetNNeutrinos());
-    fitSummary.SetNNeutrinos157(neutrinoPlot.GetNNeutrinos157());
+
+    const double NNeutrinos = neutrinoPlot.GetNNeutrinos();
+    const double NNeutrinos157 = neutrinoPlot.GetNNeutrinos157();
+    fitSummary.SetNNeutrinos(NNeutrinos);
+    fitSummary.SetNNeutrinos157(NNeutrinos157);
+    fitter.GetFitData().SetNNeutrinos(NNeutrinos);
+    fitter.GetFitData().SetNNeutrinos157(NNeutrinos157);
     neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
                                  + opt.GetOutFilename() + "HistNu" +
                                  (withSourceNu?"":"NoSource"));
