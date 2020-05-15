@@ -46,6 +46,7 @@ FitSummary::Fill(const prop::FitData& fitData,
   fLgEmax = fitData.fFitParameters[eLgEmax].fValue;
   fLgEscFac = fitData.fFitParameters[eLgEscFac].fValue;
   fEscGamma = fitData.fFitParameters[eEscGamma].fValue;
+  fLgRdiff = fitData.fFitParameters[eLgRdiff].fValue;
   fFGal = fitData.fFitParameters[eFGal].fValue;
   fGammaGal = fitData.fFitParameters[eGammaGal].fValue;
   fLgEmaxGal = fitData.fFitParameters[eLgEmaxGal].fValue;
@@ -66,6 +67,7 @@ FitSummary::Fill(const prop::FitData& fitData,
   fLgEmaxErr[0] = fitData.fFitParameters[eLgEmax].fError;
   fLgEscFacErr[0] = fitData.fFitParameters[eLgEscFac].fError;
   fEscGammaErr[0] = fitData.fFitParameters[eEscGamma].fError;
+  fLgRdiffErr[0] = fitData.fFitParameters[eLgRdiff].fError;
   fFGalErr[0] = fitData.fFitParameters[eFGal].fError;
   fGammaGalErr[0] = fitData.fFitParameters[eGammaGal].fError;
   fLgEmaxGalErr[0] = fitData.fFitParameters[eLgEmaxGal].fError;
