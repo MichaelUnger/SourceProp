@@ -66,16 +66,117 @@ namespace prop {
   }
 
   void
+  Propagator::Propagate(const map<int, TMatrixD>& spectrum, const map<int, map<int , TMatrixD> >& secondaries, double* const par)
+  {
+
+    if(Evolution == "mz0Interpolator") {
+
+     fPropMatrices.UpdateMZ0(M, par[eEvolutionM], Z0, par[eEvolutionZ0]);	
+     M = par[eEvolutionM];
+     Z0 = par[eEvolutionZ0];
+
+    }
+
+    else if(Evolution == "DminInterpolator") {
+     
+     fPropMatrices.UpdateDmin(Dmin, par[eEvolutionDmin]);	
+     Dmin = par[eEvolutionDmin];
+
+    }
+
+    int ePions[2] = {ePionPlus, ePionMinus};
+    int eNeutrinos[6] = {eElectronNeutrino, eMuonNeutrino, eTauNeutrino,
+                         eAntiElectronNeutrino, eAntiMuonNeutrino, eAntiTauNeutrino};
+    fPropSec.clear();
+    fSourceSec.clear();
+
+    // propagate CRs (except neutrons)
+    for (auto iter = spectrum.begin(); iter != spectrum.end(); ++iter) {
+      const int Aprim = iter->first;
+      bool isPionPrim = find(begin(ePions), end(ePions), Aprim) != end(ePions);
+      bool isNuPrim = find(begin(eNeutrinos), end(eNeutrinos), Aprim) != end(eNeutrinos);
+      if (Aprim == eNeutron || isPionPrim || isNuPrim) // these all handled separately below 
+        continue;
+      const TMatrixD& sourceSpectrum = iter->second;
+      if (!fPropMatrices.HasPrimary(Aprim)) {
+        stringstream errMsg;
+        errMsg << "no matrix for primary " << Aprim;
+        throw runtime_error(errMsg.str());
+      }
+      for (const auto& mIter : fPropMatrices.GetSecondaryMap(Aprim)) {
+        const int Asec = mIter.first;
+        bool isNuSec = find(begin(eNeutrinos), end(eNeutrinos), Asec) != end(eNeutrinos);
+        if (!isNuSec)
+          continue;
+        const TMatrixD& m = mIter.second;
+        const TMatrixD propSpectrum(m, TMatrixD::kMult, sourceSpectrum);
+        TMatrixD& r = fPropSec[Asec];
+        if (!r.GetNoElements())
+          r.ResizeTo(propSpectrum);
+        r += propSpectrum;
+      }
+    }
+   
+    // propagate secondaries (i.e. particles that will decay to/are neutrinos)
+    for (auto iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
+      const int Aprim = iter->first;
+      const map<int, TMatrixD>& sourceSecondary = iter->second;
+      if (!fPropMatrices.HasPrimary(Aprim)) {
+        stringstream errMsg;
+        errMsg << "no matrix for primary " << Aprim;
+        throw runtime_error(errMsg.str());
+      }
+      for(auto& iter2 : sourceSecondary) {
+        const int channel = iter2.first;
+        const TMatrixD& sourceSpectrum = iter2.second;
+        for (const auto& mIter : fPropMatrices.GetSecondaryMap(Aprim)) {
+          const int Asec = mIter.first;
+          bool isNuSec = find(begin(eNeutrinos), end(eNeutrinos), Asec) != end(eNeutrinos);
+          if (!isNuSec)
+            continue;
+          const TMatrixD& m = mIter.second;
+          const TMatrixD propSpectrum(m, TMatrixD::kMult, sourceSpectrum);
+          bool isPionPrim = find(begin(ePions), end(ePions), Aprim) != end(ePions);
+          bool isNuPrim = find(begin(eNeutrinos), end(eNeutrinos), Aprim) != end(eNeutrinos);
+          if(Aprim == eNeutron) {
+            const TMatrixD& mp = fPropMatrices.GetSecondaryMap(1)[Asec];
+            const TMatrixD propOnlySpectrum(mp, TMatrixD::kMult, sourceSpectrum);
+            TMatrixD& rProp = fPropSec[Asec];
+            if (!rProp.GetNoElements())
+              rProp.ResizeTo(propSpectrum);
+            rProp += propOnlySpectrum;
+            TMatrixD& rSrc = fSourceSec[Asec][channel];
+            if (!rSrc.GetNoElements())
+              rSrc.ResizeTo(propSpectrum);
+            rSrc += propSpectrum - propOnlySpectrum;
+          }
+          else if(isPionPrim || isNuPrim) {
+            TMatrixD& r = fSourceSec[Asec][channel];
+            if(!r.GetNoElements())
+              r.ResizeTo(propSpectrum);
+            r += propSpectrum;
+          }
+          else {
+            throw runtime_error("Unexpected secondary detected! "+std::to_string(Aprim));
+          }
+        }
+      }
+    }
+  }
+  
+  void
   Propagator::Rescale(const double f)
   {
     for (auto& iter : fResult)
       iter.second *= f;
     fSum *= f;
     fNucleonResult *= f;
+    for (auto& iter : fPropSec)
+      iter.second *= f;
+    for (auto& iter1 : fSourceSec)
+      for (auto& iter2 : iter1.second)
+        iter2.second *= f;
   }
-
-
-
 
   std::pair<double, double>
   Propagator::GetLnAMoments(const int i)
@@ -185,6 +286,24 @@ namespace prop {
       spectrum.ResizeTo(flux);
     spectrum += flux;
     fSum += flux;
+  }
+
+  void
+  Propagator::AddNuComponent(const unsigned int id,
+                             const TMatrixD& flux)
+  {
+    TMatrixD& propSpectrum = fPropSec[id];
+    if (!propSpectrum.GetNoElements())
+      propSpectrum.ResizeTo(flux);
+    propSpectrum += flux;
+
+    map<int, TMatrixD>& sourceSpectrum = fSourceSec[id];
+    if (!sourceSpectrum[ePhotohadronic].GetNoElements())
+      sourceSpectrum[ePhotohadronic].ResizeTo(flux);
+    sourceSpectrum[ePhotohadronic] += flux;
+    if (!sourceSpectrum[eHadronic].GetNoElements())
+      sourceSpectrum[eHadronic].ResizeTo(flux);
+    sourceSpectrum[eHadronic] += flux;
   }
 
   void
