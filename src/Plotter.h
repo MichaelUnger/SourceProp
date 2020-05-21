@@ -84,6 +84,7 @@ namespace prop {
     double fGammaSource;
     double fGammaEarth;
     std::vector<TH1D*> fHists;
+    std::vector<TH1D*> fHistsNoDraw;
     double fNNeutrino;
     double fNNeutrino157; // total neutrinos above 10^15.7 eV
   };
