@@ -72,6 +72,24 @@ namespace prop {
   }
 
   const
+  Spectrum::SecMap&
+  Spectrum::GetSecondaryFlux()
+    const
+  {
+    if (fSecondaries.empty())
+      CalculateSpectrum();
+    return fSecondaries;
+  }
+
+  Spectrum::SecMap&
+  Spectrum::GetSecondaryFlux()
+  {
+    if (fSecondaries.empty())
+      CalculateSpectrum();
+    return fSecondaries;
+  }
+
+  const
   Spectrum::SpecMap&
   Spectrum::GetextraProtonFlux()
     const
@@ -185,6 +203,9 @@ namespace prop {
       iter.second *= f;
     for (auto& iter : fNucleons)
       iter.second *= f;
+    for (auto& iter1 : fSecondaries)
+      for (auto& iter2 :  iter1.second)
+        iter2.second *= f;
     for (auto& iter : fExtraProtons)
       iter.second *= f;
   }
@@ -352,6 +373,7 @@ namespace prop {
     fEscape.clear();
     fInj.clear();
     fNucleons.clear();
+    fSecondaries.clear();
     fExtraProtons.clear();
     fRmax = Rmax;
     fGamma = gamma;
@@ -372,6 +394,7 @@ namespace prop {
     fInj = inj;
     fEscape.clear();
     fNucleons.clear();
+    fSecondaries.clear();
     fRmax = 0;
     fGamma = 0;
     fSource = s;
@@ -511,37 +534,75 @@ namespace prop {
     TMatrixD& mNeutronEsc = fNucleons[eNeutronEsc];
     if (!mNeutronEsc.GetNoElements())
       mNeutronEsc.ResizeTo(fN, 1);
-    TMatrixD& mPionPlus = fNucleons[ePionPlus];
-    if (!mPionPlus.GetNoElements())
-      mPionPlus.ResizeTo(fN, 1);
-    TMatrixD& mPionMinus = fNucleons[ePionMinus];
-    if (!mPionMinus.GetNoElements())
-      mPionMinus.ResizeTo(fN, 1);
-    TMatrixD& mPionZero = fNucleons[ePionZero];
-    if (!mPionZero.GetNoElements())
-      mPionZero.ResizeTo(fN, 1);
-    TMatrixD& mPhoton = fNucleons[ePhoton];
-    if (!mPhoton.GetNoElements())
-      mPhoton.ResizeTo(fN, 1);
+    TMatrixD& mTotalPionPlus = fNucleons[ePionPlus];
+    if (!mTotalPionPlus.GetNoElements())
+      mTotalPionPlus.ResizeTo(fN, 1);
+    TMatrixD& mTotalPionMinus = fNucleons[ePionMinus];
+    if (!mTotalPionMinus.GetNoElements())
+      mTotalPionMinus.ResizeTo(fN, 1);
+    TMatrixD& mTotalPionZero = fNucleons[ePionZero];
+    if (!mTotalPionZero.GetNoElements())
+      mTotalPionZero.ResizeTo(fN, 1);
+    TMatrixD& mTotalPhoton = fNucleons[ePhoton];
+    if (!mTotalPhoton.GetNoElements())
+      mTotalPhoton.ResizeTo(fN, 1);
 
-    TMatrixD& mNeutrinoE = fNucleons[eElectronNeutrino];
-    if (!mNeutrinoE.GetNoElements())
-      mNeutrinoE.ResizeTo(fN, 1);
-    TMatrixD& mANeutrinoE = fNucleons[eAntiElectronNeutrino];
-    if (!mANeutrinoE.GetNoElements())
-      mANeutrinoE.ResizeTo(fN, 1);
-    TMatrixD& mNeutrinoM = fNucleons[eMuonNeutrino];
-    if (!mNeutrinoM.GetNoElements())
-      mNeutrinoM.ResizeTo(fN, 1);
-    TMatrixD& mANeutrinoM = fNucleons[eAntiMuonNeutrino];
-    if (!mANeutrinoM.GetNoElements())
-      mANeutrinoM.ResizeTo(fN, 1);
-    TMatrixD& mNeutrinoT = fNucleons[eTauNeutrino];
-    if (!mNeutrinoT.GetNoElements())
-      mNeutrinoT.ResizeTo(fN, 1);
-    TMatrixD& mANeutrinoT = fNucleons[eAntiTauNeutrino];
-    if (!mANeutrinoT.GetNoElements())
-      mANeutrinoT.ResizeTo(fN, 1);
+    SpecMap& mNeutronSec = fSecondaries[eNeutronSec];
+    if (!mNeutronSec[ePhotohadronic].GetNoElements())
+      mNeutronSec[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mNeutronSec[eHadronic].GetNoElements())
+      mNeutronSec[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mPionPlus = fSecondaries[ePionPlus];
+    if (!mPionPlus[ePhotohadronic].GetNoElements())
+      mPionPlus[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mPionPlus[eHadronic].GetNoElements())
+      mPionPlus[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mPionMinus = fSecondaries[ePionMinus];
+    if (!mPionMinus[ePhotohadronic].GetNoElements())
+      mPionMinus[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mPionMinus[eHadronic].GetNoElements())
+      mPionMinus[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mPionZero = fSecondaries[ePionZero];
+    if (!mPionZero[ePhotohadronic].GetNoElements())
+      mPionZero[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mPionZero[eHadronic].GetNoElements())
+      mPionZero[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mPhoton = fSecondaries[ePhoton];
+    if (!mPhoton[ePhotohadronic].GetNoElements())
+      mPhoton[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mPhoton[eHadronic].GetNoElements())
+      mPhoton[eHadronic].ResizeTo(fN, 1);
+
+    SpecMap& mNeutrinoE = fSecondaries[eElectronNeutrino];
+    if (!mNeutrinoE[ePhotohadronic].GetNoElements())
+      mNeutrinoE[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mNeutrinoE[eHadronic].GetNoElements())
+      mNeutrinoE[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mANeutrinoE = fSecondaries[eAntiElectronNeutrino];
+    if (!mANeutrinoE[ePhotohadronic].GetNoElements())
+      mANeutrinoE[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mANeutrinoE[eHadronic].GetNoElements())
+      mANeutrinoE[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mNeutrinoM = fSecondaries[eMuonNeutrino];
+    if (!mNeutrinoM[ePhotohadronic].GetNoElements())
+      mNeutrinoM[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mNeutrinoM[eHadronic].GetNoElements())
+      mNeutrinoM[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mANeutrinoM = fSecondaries[eAntiMuonNeutrino];
+    if (!mANeutrinoM[ePhotohadronic].GetNoElements())
+      mANeutrinoM[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mANeutrinoM[eHadronic].GetNoElements())
+      mANeutrinoM[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mNeutrinoT = fSecondaries[eTauNeutrino];
+    if (!mNeutrinoT[ePhotohadronic].GetNoElements())
+      mNeutrinoT[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mNeutrinoT[eHadronic].GetNoElements())
+      mNeutrinoT[eHadronic].ResizeTo(fN, 1);
+    SpecMap& mANeutrinoT = fSecondaries[eAntiTauNeutrino];
+    if (!mANeutrinoT[ePhotohadronic].GetNoElements())
+      mANeutrinoT[ePhotohadronic].ResizeTo(fN, 1);
+    if (!mANeutrinoT[eHadronic].GetNoElements())
+      mANeutrinoT[eHadronic].ResizeTo(fN, 1);
 
     const double Emax  = pow(10, fLgEmax);
 
@@ -845,43 +906,43 @@ namespace prop {
                 const int id_pi0 = fSource->GetPDGID("pi0");
                 const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, id_pi0, Aprim);
                 const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * Qprim;
-                mPionZero[jE][0] += flux_pi0;
+                mPionZero[eHadronic][jE][0] += flux_pi0;
                 const int id_pip = fSource->GetPDGID("pi+");
                 const double Nsec_pip = fSource->GetNByPDGID(E, Eprim, id_pip, Aprim);
                 const double flux_pip = hFrac * fInt * Nsec_pip * jacobi * Qprim;
-                mPionPlus[jE][0] += flux_pip;
+                mPionPlus[eHadronic][jE][0] += flux_pip;
                 const int id_pim = fSource->GetPDGID("pi-");
                 const double Nsec_pim = fSource->GetNByPDGID(E, Eprim, id_pim, Aprim);
                 const double flux_pim = hFrac * fInt * Nsec_pim * jacobi * Qprim;
-                mPionMinus[jE][0] += flux_pim;
+                mPionMinus[eHadronic][jE][0] += flux_pim;
                 const int id_nue = fSource->GetPDGID("nu_e");
                 const double Nsec_nu_e = fSource->GetNByPDGID(E, Eprim, id_nue, Aprim);
                 const double flux_nu_e = hFrac * fInt * Nsec_nu_e * jacobi * Qprim;
-                mNeutrinoE[jE][0] += flux_nu_e;
+                mNeutrinoE[eHadronic][jE][0] += flux_nu_e;
                 const int id_anue = fSource->GetPDGID("-nu_e");
                 const double Nsec_anu_e = fSource->GetNByPDGID(E, Eprim, id_anue, Aprim);
                 const double flux_anu_e = hFrac * fInt * Nsec_anu_e * jacobi * Qprim;
-                mANeutrinoE[jE][0] += flux_anu_e;
+                mANeutrinoE[eHadronic][jE][0] += flux_anu_e;
                 const int id_num = fSource->GetPDGID("nu_mu");
                 const double Nsec_nu_m = fSource->GetNByPDGID(E, Eprim, id_num, Aprim);
                 const double flux_nu_m = hFrac * fInt * Nsec_nu_m * jacobi * Qprim;
-                mNeutrinoM[jE][0] += flux_nu_m;
+                mNeutrinoM[eHadronic][jE][0] += flux_nu_m;
                 const int id_anum = fSource->GetPDGID("-nu_mu");
                 const double Nsec_anu_m = fSource->GetNByPDGID(E, Eprim, id_anum, Aprim);
                 const double flux_anu_m = hFrac * fInt * Nsec_anu_m * jacobi * Qprim;
-                mANeutrinoM[jE][0] += flux_anu_m;
+                mANeutrinoM[eHadronic][jE][0] += flux_anu_m;
                 const int id_nut = fSource->GetPDGID("nu_tau");
                 const double Nsec_nu_t = fSource->GetNByPDGID(E, Eprim, id_nut, Aprim);
                 const double flux_nu_t = hFrac * fInt * Nsec_nu_t * jacobi * Qprim;
-                mNeutrinoT[jE][0] += flux_nu_t;
+                mNeutrinoT[eHadronic][jE][0] += flux_nu_t;
                 const int id_anut = fSource->GetPDGID("-nu_tau");
                 const double Nsec_anu_t = fSource->GetNByPDGID(E, Eprim, id_anut, Aprim);
                 const double flux_anu_t = hFrac * fInt * Nsec_anu_t * jacobi * Qprim;
-                mANeutrinoT[jE][0] += flux_anu_t;
+                mANeutrinoT[eHadronic][jE][0] += flux_anu_t;
                 const int id_photon = fSource->GetPDGID("photon");
                 const double Nsec_photon = fSource->GetNByPDGID(E, Eprim, id_photon, Aprim);
                 const double flux_photon = hFrac * fInt * Nsec_photon * jacobi * Qprim;
-                mPhoton[jE][0] += flux_photon;
+                mPhoton[eHadronic][jE][0] += flux_photon;
               }
 
               lgE += dlgEOrig;
@@ -924,6 +985,7 @@ namespace prop {
           mPP[iE][0] += fPP;
           mProtonProd[iE][0] += fPP * neutralPionFraction;
           mNeutronProd[iE][0] += fPP * chargedPionFraction;
+          mNeutronSec[ePhotohadronic][iE][0] += fPP * chargedPionFraction;
         }
         else{
           const double fPPp = LogEval(ppp, lgE);
@@ -931,6 +993,7 @@ namespace prop {
           mPP[iE][0] += fPPp + fPPn;
           mProtonProd[iE][0] += fPPp;
           mNeutronProd[iE][0] += fPPn;
+          mNeutronSec[ePhotohadronic][iE][0] += fPPn;
         }
 
         // nucleons from photo-dissociation of nuclei
@@ -938,20 +1001,21 @@ namespace prop {
         mPD[iE][0] += fPD;
         mProtonProd[iE][0] += fPD / 2;
         mNeutronProd[iE][0] += fPD / 2;
+        mNeutronSec[ePhotohadronic][iE][0] += fPD / 2;
 
         // pions from photopion production
         if(isFixedPPElasticity) {
           const double fPion = LogEval(pion, lgE);
-          mPionPlus[iE][0] += fPion * chargedPionFraction/2;
-          mPionMinus[iE][0] += fPion * chargedPionFraction/2;
-          mPionZero[iE][0] += fPion * neutralPionFraction;
+          mPionPlus[ePhotohadronic][iE][0] += fPion * chargedPionFraction/2;
+          mPionMinus[ePhotohadronic][iE][0] += fPion * chargedPionFraction/2;
+          mPionZero[ePhotohadronic][iE][0] += fPion * neutralPionFraction;
         }
         else {
           const double fChPion = LogEval(chpion, lgE);
           const double fNeutPion = LogEval(neutpion, lgE);
-          mPionPlus[iE][0] += fChPion/2;
-          mPionMinus[iE][0] += fChPion/2;
-          mPionZero[iE][0] += fNeutPion;
+          mPionPlus[ePhotohadronic][iE][0] += fChPion/2;
+          mPionMinus[ePhotohadronic][iE][0] += fChPion/2;
+          mPionZero[ePhotohadronic][iE][0] += fNeutPion;
         }
 
         // nucleons from hadronic interactions of nuclei
@@ -959,6 +1023,7 @@ namespace prop {
         mProtonProd[iE][0] += fHad_p;
         const double fHad_n = LogEval(had_n, lgE);
         mNeutronProd[iE][0] += fHad_n;
+        mNeutronSec[eHadronic][iE][0] += fHad_n;
         lgE += dlgEOrig;
 
       }
@@ -1021,6 +1086,7 @@ namespace prop {
                     fSource->GetMPPBranchingRatio(Enext, 1);
             pSum += bPP * bSPP * phFrac * fInt * qNext / kappa;
             nSum += (1-bPP) * bSPP * phFrac * fInt * qNext / kappa;
+            mNeutronSec[ePhotohadronic][iE][0] += (1-bPP) * bSPP * phFrac * fInt * qNext / kappa;
           }
         }
         else {
@@ -1037,6 +1103,7 @@ namespace prop {
             const double nweight = fSource->GetTrickleDownWeight(lgEnext, lgE, VSource::eNeutron);
             pSum += pweight * fInt * qNext;
             nSum += nweight * fInt * qNext;
+            mNeutronSec[ePhotohadronic][iE][0] += nweight * fInt * qNext;
           }
         }
 
@@ -1065,6 +1132,7 @@ namespace prop {
                               + fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("antineutron"), 1);
                 const double flux_n = hFrac * fInt * Nsec_n * jacobi * qNext;
                 nSum += flux_n;
+                mNeutronSec[eHadronic][iE][0] += flux_n;
               }
 
               lgEprim += dlgEOrig;
@@ -1102,8 +1170,8 @@ namespace prop {
             fSource->GetChannelFraction(Enext, 1, VSource::ePH);
           const double bSPP =  1. -
             fSource->GetMPPBranchingRatio(Enext, 1);
-          mPionPlus[iE][0] += (1 - bPP) * bSPP * phFrac * fInt * qNext / (1-kappa);
-          mPionZero[iE][0] += bPP * bSPP * phFrac * fInt * qNext / (1-kappa);
+          mPionPlus[ePhotohadronic][iE][0] += (1 - bPP) * bSPP * phFrac * fInt * qNext / (1-kappa);
+          mPionZero[ePhotohadronic][iE][0] += bPP * bSPP * phFrac * fInt * qNext / (1-kappa);
           lgE += dlgEOrig;
         }
       }
@@ -1122,9 +1190,9 @@ namespace prop {
             const double pipweight = fSource->GetTrickleDownWeight(lgEnext, lgE, VSource::ePionPlus);
             const double pimweight = fSource->GetTrickleDownWeight(lgEnext, lgE, VSource::ePionMinus);
             const double pi0weight = fSource->GetTrickleDownWeight(lgEnext, lgE, VSource::ePionZero);
-            mPionPlus[iE][0] += pipweight * fInt * qNext;
-            mPionMinus[iE][0] += pimweight * fInt * qNext;
-            mPionZero[iE][0] += pi0weight * fInt * qNext;
+            mPionPlus[ePhotohadronic][iE][0] += pipweight * fInt * qNext;
+            mPionMinus[ePhotohadronic][iE][0] += pimweight * fInt * qNext;
+            mPionZero[ePhotohadronic][iE][0] += pi0weight * fInt * qNext;
           }
           lgE += dlgEOrig;
         }
@@ -1150,34 +1218,34 @@ namespace prop {
             if(true) {  //hFrac > 1e-10 ) {
               const double Nsec_pi0 = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi0"), 1);
               const double flux_pi0 = hFrac * fInt * Nsec_pi0 * jacobi * qNext;
-              mPionZero[iE][0] += flux_pi0;
+              mPionZero[eHadronic][iE][0] += flux_pi0;
               const double Nsec_pip = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi+"), 1);
               const double flux_pip = hFrac * fInt * Nsec_pip * jacobi * qNext;
-              mPionPlus[iE][0] += flux_pip;
+              mPionPlus[eHadronic][iE][0] += flux_pip;
               const double Nsec_pim = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("pi-"), 1);
               const double flux_pim = hFrac * fInt * Nsec_pim * jacobi * qNext;
-              mPionMinus[iE][0] += flux_pim;
+              mPionMinus[eHadronic][iE][0] += flux_pim;
               const double Nsec_nu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_e"), 1);
               const double flux_nu_e = hFrac * fInt * Nsec_nu_e * jacobi * qNext;
-              mNeutrinoE[iE][0] += flux_nu_e;
+              mNeutrinoE[eHadronic][iE][0] += flux_nu_e;
               const double Nsec_anu_e = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_e"), 1);
               const double flux_anu_e = hFrac * fInt * Nsec_anu_e * jacobi * qNext;
-              mANeutrinoE[iE][0] += flux_anu_e;
+              mANeutrinoE[eHadronic][iE][0] += flux_anu_e;
               const double Nsec_nu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_mu"), 1);
               const double flux_nu_m = hFrac * fInt * Nsec_nu_m * jacobi * qNext;
-              mNeutrinoM[iE][0] += flux_nu_m;
+              mNeutrinoM[eHadronic][iE][0] += flux_nu_m;
               const double Nsec_anu_m = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_mu"), 1);
               const double flux_anu_m = hFrac * fInt * Nsec_anu_m * jacobi * qNext;
-              mANeutrinoM[iE][0] += flux_anu_m;
+              mANeutrinoM[eHadronic][iE][0] += flux_anu_m;
               const double Nsec_nu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("nu_tau"), 1);
               const double flux_nu_t = hFrac * fInt * Nsec_nu_t * jacobi * qNext;
-              mANeutrinoT[iE][0] += flux_nu_t;
+              mANeutrinoT[eHadronic][iE][0] += flux_nu_t;
               const double Nsec_anu_t = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("-nu_tau"), 1);
               const double flux_anu_t = hFrac * fInt * Nsec_anu_t * jacobi * qNext;
-              mANeutrinoT[iE][0] += flux_anu_t;
+              mANeutrinoT[eHadronic][iE][0] += flux_anu_t;
               const double Nsec_photon = fSource->GetNByPDGID(E, Eprim, fSource->GetPDGID("photon"), 1);
               const double flux_photon = hFrac * fInt * Nsec_photon * jacobi * qNext;
-              mPhoton[iE][0] += flux_photon;
+              mPhoton[eHadronic][iE][0] += flux_photon;
             }
             lgEprim += dlgEOrig;
           }
@@ -1205,6 +1273,17 @@ namespace prop {
         lgE += dlgEOrig;
       }
     }
+
+    for (auto& iter : fSecondaries.begin()->second) {
+      const int channel = iter.first;
+      for (unsigned int iE = 0; iE < fN; ++iE) {
+        mTotalPionPlus[iE][0] += mPionPlus[channel][iE][0];
+        mTotalPionMinus[iE][0] += mPionMinus[channel][iE][0];
+        mTotalPionZero[iE][0] += mPionZero[channel][iE][0];
+        mTotalPhoton[iE][0] += mPhoton[channel][iE][0];
+      }
+    }
+
     save->cd();
   }
 
