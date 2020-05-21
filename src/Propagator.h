@@ -20,6 +20,9 @@ namespace prop {
     std::string Evolution; 
     void Propagate(const std::map<int, TMatrixD>& spectrum,
                    const bool onlyNuc = true, double* const par = nullptr );
+    void Propagate(const std::map<int, TMatrixD>& spectrum,
+                   const std::map<int, std::map<int, TMatrixD> >& secondaries,
+                   double* const par = nullptr );
 
     double GetFluxSum(const int i) const;
     double GetFluxSum(const double lgE) const;
@@ -38,8 +41,14 @@ namespace prop {
 
     double GetPrimaryNucleonFluxAtEarth(const double lgE) const;
 
+    const std::map<int, TMatrixD>& GetPropagationSecondaries()  const
+    { return fPropSec; }
+    const std::map<int, std::map<int, TMatrixD> >& GetSourceSecondaries() const
+    { return fSourceSec; }
+
     void Rescale(const double f);
     void AddComponent(const unsigned int A, const TMatrixD& flux);
+    void AddNuComponent(const unsigned int id, const TMatrixD& flux);
     double GetMaximumDistance() const
     { return fPropMatrices.GetMaximumDistance(); }
 
@@ -51,6 +60,8 @@ namespace prop {
 
     PropMatrices& fPropMatrices; 
     std::map<int, TMatrixD> fResult;
+    std::map<int, TMatrixD> fPropSec;
+    std::map<int, std::map<int, TMatrixD> > fSourceSec;
     TMatrixD fNucleonResult;
     TMatrixD fSum;
     ClassDefNV(Propagator, 1)
