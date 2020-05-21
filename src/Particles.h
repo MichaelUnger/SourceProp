@@ -15,6 +15,11 @@ enum EPseudoMass {
   eLastNeutrino = eAntiTauNeutrino,
 };
 
+enum EInteractionType {
+  ePhotohadronic,
+  eHadronic
+};
+
 // nucleus = protons and nuclei
 inline
 bool
