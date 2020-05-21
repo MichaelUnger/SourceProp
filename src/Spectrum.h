@@ -18,6 +18,7 @@ namespace prop {
       eNeutronProd,
       eProtonEsc,
       eNeutronEsc,
+      eNeutronSec,
       ePionPlus,
       ePionMinus,
       ePionZero,
@@ -28,6 +29,11 @@ namespace prop {
       eTauNeutrino,
       eAntiTauNeutrino,
       ePhoton
+    };
+
+    enum EInteractionType {
+      ePhotohadronic,
+      eHadronic
     };
 
     enum ESpectrumType {
@@ -43,6 +49,7 @@ namespace prop {
     };
 
     typedef std::map<int, TMatrixD> SpecMap;
+    typedef std::map<int, SpecMap> SecMap;
   public:
     Spectrum() : fSpectrumType(eExponential) {}
     Spectrum(const VSource* s, const double gamma,
@@ -78,6 +85,8 @@ namespace prop {
     SpecMap& GetEscFlux();
     const SpecMap& GetNucleonFlux() const;
     SpecMap& GetNucleonFlux();
+    const SecMap& GetSecondaryFlux() const;
+    SecMap& GetSecondaryFlux();
     const SpecMap& GetextraProtonFlux() const;
     SpecMap& GetextraProtonFlux();
 
@@ -138,6 +147,7 @@ namespace prop {
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
     mutable SpecMap fNucleons;
+    mutable SecMap  fSecondaries;
     mutable SpecMap fExtraProtons;
   };
 }
