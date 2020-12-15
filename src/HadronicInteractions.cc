@@ -224,8 +224,10 @@ namespace prop {
   double 
   HadronicInteractions::GetsigmaInel(const int Aprim, const double lgE)
   {
-    if(lgE < lgEmax_lowE)
-      return (fsigmaInel_lowE.count(Aprim))? fsigmaInel[Aprim]->Interpolate(lgE) : 1e-100;
+    if(lgE >= lgEmax)
+      return 1e-100;
+    if(lgE < lgEmax_lowE) 
+      return (fsigmaInel_lowE.count(Aprim))? fsigmaInel_lowE[Aprim]->Interpolate(lgE) : 1e-100;
     else
       return (fsigmaInel.count(Aprim))? fsigmaInel[Aprim]->Interpolate(lgE) : 1e-100;
   }
@@ -241,16 +243,11 @@ namespace prop {
     // temporary fix for sibyll until crmc bugs are sorted out
     if(fModelName == "sibyll23c") {
       const double lgEnuc = log10(E/Aprim);
-      if(lgEnuc < lgEmin || lgEnuc > lgEmax) 
-        return 1e100;
       const double sigma = pow(Aprim, 2./3.)*GetsigmaInel(1, lgEnuc);
       
       return fHadIntRatio/sigma;
     }
     else {
-      if(lgE < lgEmin || lgE > lgEmax) 
-        return 1e100;
-        //throw runtime_error("Primary energy out of range: lgEprim = " + std::to_string(lgEprim));
       const double sigma = GetsigmaInel(Aprim, lgE);
     
       return fHadIntRatio/sigma;
