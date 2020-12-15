@@ -89,10 +89,24 @@ namespace prop {
         string parName;
         if (!(line >> parName))
           throw runtime_error("error decoding " + keyword);
-        const EPar par = GetPar(parName, fBoostedModel);
-        StartValue& s = fStartValues[par];
-        if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
-          throw runtime_error("error decoding " + keyword + " " + parName);
+        // added for easy backwards compatibility
+        if(parName == "extraProtonFraction") {
+          parName = "extraProtonLgFraction";
+          const EPar par = GetPar(parName, fBoostedModel);
+          StartValue& s = fStartValues[par];
+          if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
+            throw runtime_error("error decoding " + keyword + " " + parName);
+          s.fStart = std::log10(s.fStart);
+          s.fStep = 0.1;
+          s.fMinVal = std::max(-20., std::log10(s.fMinVal));
+          s.fMaxVal = std::log10(s.fMaxVal);
+        }
+        else{
+          const EPar par = GetPar(parName, fBoostedModel);
+          StartValue& s = fStartValues[par];
+          if (!(line >> s.fStart >> s.fStep >> s.fMinVal >> s.fMaxVal >> s.fIsFixed))
+            throw runtime_error("error decoding " + keyword + " " + parName);
+        }
       }
       else if (keyword == "mass" || keyword == "massA") {
         fMassValues.push_back(MassValue());
