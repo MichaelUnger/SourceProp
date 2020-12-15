@@ -383,7 +383,7 @@ namespace prop {
       data.fQ0Err = norm.second / norm.first * data.fQ0;
       data.fSpectrum.Rescale(norm.first);
       data.fPropagator->Rescale(norm.first);
-      
+
       if(fGCRGSFIron) {
         const double A = 56;
         const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
@@ -977,6 +977,9 @@ namespace prop {
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
           const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
           flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
 
 
@@ -1017,6 +1020,9 @@ namespace prop {
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
           const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
           flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1056,6 +1062,9 @@ namespace prop {
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
           const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
           flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1093,6 +1102,9 @@ namespace prop {
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
           const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
           flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1141,6 +1153,9 @@ namespace prop {
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(fluxData.fLgE);
           const double jacobian = fOptions.GetEnergyShiftJacobian(fluxData.fLgE);
           fluxData.fFlux *= jacobian;
+          fluxData.fFluxErr *= jacobian;
+          fluxData.fFluxErrUp *= jacobian;
+          fluxData.fFluxErrLow *= jacobian;
           fluxData.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(fluxData);
@@ -1189,6 +1204,9 @@ namespace prop {
         const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
         const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
         flux.fFlux *= jacobian;
+        flux.fFluxErr *= jacobian;
+        flux.fFluxErrUp *= jacobian;
+        flux.fFluxErrLow *= jacobian;
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
@@ -1239,6 +1257,9 @@ namespace prop {
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
           const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
           flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
 
           fFitData.fAllFluxData.push_back(flux);
@@ -1278,6 +1299,9 @@ namespace prop {
         const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
         const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
         flux.fFlux *= jacobian;
+        flux.fFluxErr *= jacobian;
+        flux.fFluxErrUp *= jacobian;
+        flux.fFluxErrLow *= jacobian;
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
