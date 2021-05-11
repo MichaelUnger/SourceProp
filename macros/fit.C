@@ -399,7 +399,7 @@ DrawValues(const FitData& fitData,
   fitPanel->SetTopMargin(0.001);
   gPad->Update();
   TLatex l;
-  const double textSize = 0.033;
+  const double textSize = 0.025; //0.033;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
   const double yStart = 1;
@@ -673,6 +673,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     for (unsigned int i = 1; i <= GetMaxA(); ++i) {
       massGroups.push_back(MassGroup(i, i, i, kRed+i));
       massGroups.push_back(MassGroup(i+kGalacticOffset, i+kGalacticOffset, i+kGalacticOffset, kRed+i));
+      massGroups.push_back(MassGroup(i+kGalacticAOffset, i+kGalacticAOffset, i+kGalacticAOffset, kRed+i));
     }
   }
   else {
@@ -689,6 +690,14 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
       mg.fLast += kGalacticOffset;
       mg.fRepA += kGalacticOffset;
       mg.fLineStyle = 3;
+      massGroups.push_back(mg);
+    }
+    for (unsigned int i = 0; i < n; ++i) {
+      MassGroup mg = massGroups[i];
+      mg.fFirst += kGalacticAOffset;
+      mg.fLast += kGalacticAOffset;
+      mg.fRepA += kGalacticAOffset;
+      mg.fLineStyle = 6;
       massGroups.push_back(mg);
     }
   }
@@ -720,7 +729,6 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
 
   can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
   
-  // added from PropNew by mmuzio 11/30/18
   opt.WriteFitConfig((opt.GetOutDirname() + "/" +
                        opt.GetOutFilename() + ".config").c_str(),
                       fitData);
@@ -759,11 +767,11 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
                            ".pdf").c_str());
 
     const double NNeutrinos = neutrinoPlot.GetNNeutrinos();
-    const double NNeutrinos157 = neutrinoPlot.GetNNeutrinos157();
+    const double NNeutrinos159 = neutrinoPlot.GetNNeutrinos159();
     fitSummary.SetNNeutrinos(NNeutrinos);
-    fitSummary.SetNNeutrinos157(NNeutrinos157);
+    fitSummary.SetNNeutrinos159(NNeutrinos159);
     fitter.GetFitData().SetNNeutrinos(NNeutrinos);
-    fitter.GetFitData().SetNNeutrinos157(NNeutrinos157);
+    fitter.GetFitData().SetNNeutrinos159(NNeutrinos159);
     neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
                                  + opt.GetOutFilename() + "HistNu" +
                                  (withSourceNu?"":"NoSource"));
