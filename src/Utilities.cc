@@ -76,7 +76,7 @@ namespace prop {
     double sumFluxLnA2 = 0;
     double sumFlux = 0;
     for (const auto& iter : specMap) {
-      const double A = iter.first % kGalacticOffset;
+      const double A = iter.first % ((unsigned int)iter.first < kGalacticAOffset? kGalacticOffset : kGalacticAOffset);
       if (A < 1 || A > GetMaxA())
         continue;
       const double lnA = log(A);
