@@ -108,8 +108,9 @@ namespace prop {
 
         // initiate interpolation tables
         InterpInit(fCurrentPeak);
-
-        ReadElasticityDistributions();
+        
+        if(!fisFixedPPElasticity)
+          ReadElasticityDistributions();
 
         return;
       }
@@ -120,7 +121,8 @@ namespace prop {
     ReadPD();
     ReadPPP();
     ReadEPP();
-    ReadElasticityDistributions();
+    if(!fisFixedPPElasticity)
+      ReadElasticityDistributions();
   }
 
 
