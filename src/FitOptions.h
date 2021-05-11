@@ -67,6 +67,7 @@ namespace prop {
       eAuger2017,
       eTANineYear,
       eAuger2019,
+      eAuger2019fudge,
       eAuger2019SD
     };
 
@@ -95,6 +96,7 @@ namespace prop {
     FitOptions(const std::string& filename);
     unsigned int GetNmass() const { return fMassValues.size(); }
     unsigned int GetNGalMass() const { return fGalMasses.size(); }
+    unsigned int GetNGalAMass() const { return fGalAMasses.size(); }
     double GetStartValue(const EPar par) const;
     double GetStep(const EPar par) const;
     double GetMin(const EPar par) const;
@@ -141,6 +143,9 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
+    bool GCRWithComponentA() const
+    { return fGCRWithComponentA; }
+
     bool GCRWithGSFIron() const
     { return fGCRWithGSFIron; }
 
@@ -155,6 +160,9 @@ namespace prop {
 
     double GetMinFluxLgE() const
     { return fMinFluxLgE; }
+
+    double GetMaxFluxLgE() const
+    { return fMaxFluxLgE; }
 
     double GetMinCompLgE() const
     { return fMinCompLgE; }
@@ -172,6 +180,9 @@ namespace prop {
 
     const std::vector<MassValue>& GetGalacticMasses() const
     { return fGalMasses; }
+
+    const std::vector<MassValue>& GetGalacticAMasses() const
+    { return fGalAMasses; }
 
     const std::string GetInteractionModel() const
     { return fInteractionModel; }
@@ -211,10 +222,12 @@ namespace prop {
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
+    bool fGCRWithComponentA;
     bool fGCRWithGSFIron;
     bool fRejectOutliers;
     bool fisFixedPPElasticity;
     double fMinFluxLgE;
+    double fMaxFluxLgE;
     double fMinCompLgE;
     double fMaxCompLgE;
     double fEnergyBinShift;
@@ -222,6 +235,7 @@ namespace prop {
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
     std::vector<MassValue> fGalMasses;
+    std::vector<MassValue> fGalAMasses;
     ESpectrumDataType fSpectrumDataType;
     ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
