@@ -226,8 +226,12 @@ namespace prop {
   {
     if(lgE >= lgEmax)
       return 1e-100;
-    if(lgE < lgEmax_lowE) 
-      return (fsigmaInel_lowE.count(Aprim))? fsigmaInel_lowE[Aprim]->Interpolate(lgE) : 1e-100;
+    if(lgE < lgEmax_lowE) {
+      const double lgloSigma = log10(fsigmaInel[Aprim]->Interpolate(lgEmax_lowE));
+      const double lghiSigma = log10(fsigmaInel[Aprim]->Interpolate(lgEmax_lowE+10));
+      const double lgextrapSigma = (lgE-lgEmax_lowE)/10*(lghiSigma-lgloSigma) + lgloSigma;
+      return (fsigmaInel_lowE.count(Aprim))? fsigmaInel_lowE[Aprim]->Interpolate(lgE) : pow(10, lgextrapSigma);
+    }
     else
       return (fsigmaInel.count(Aprim))? fsigmaInel[Aprim]->Interpolate(lgE) : 1e-100;
   }
