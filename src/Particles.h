@@ -30,5 +30,7 @@ IsNucleus(const unsigned int A)
 
 // offset for galactic component
 const unsigned int kGalacticOffset = 100000;
+// offset for galactic component A
+const unsigned int kGalacticAOffset = 10*kGalacticOffset;
 
 #endif
