@@ -17,8 +17,8 @@ public:
   void Fill(const prop::FitData& fitData, const prop::FitOptions& fitOptions);
   void SetNNeutrinos(const double n)
   { fNNeutrinos = n; }
-  void SetNNeutrinos157(const double n)
-  { fNNeutrinos157 = n; }
+  void SetNNeutrinos159(const double n)
+  { fNNeutrinos159 = n; }
   void SetMCMCInfo(const unsigned int walkerId, const unsigned int step)
   { fWalkerId = walkerId; fStep = step; }
 
@@ -35,13 +35,18 @@ public:
   double fLgEscFac;
   double fEscGamma;
   double fLgRdiff;
+  double fLgSizeFac;
+  double fTanhLgSizeFac;
   double fFGal;
   double fGammaGal;
   double fLgEmaxGal;
+  double fLgFGalA;
+  double fGammaGalA;
+  double fLgEmaxGalA;
   double fNoPhoton;
   double fLgPhotonField;
   double fNNeutrinos;
-  double fNNeutrinos157;
+  double fNNeutrinos159;
   double fProtonRatio185;
   double fProtonFraction60;
   double fExtraProtonLgFraction;
@@ -61,13 +66,18 @@ public:
   double fLgEscFacErr[3];
   double fEscGammaErr[3];
   double fLgRdiffErr[3];
+  double fLgSizeFacErr[3];
+  double fTanhLgSizeFacErr[3];
   double fFGalErr[3];
   double fGammaGalErr[3];
   double fLgEmaxGalErr[3];
+  double fLgFGalAErr[3];
+  double fGammaGalAErr[3];
+  double fLgEmaxGalAErr[3];
   double fNoPhotonErr[3];
   double fLgPhotonFieldErr[3];
   double fNNeutrinosErr[3];
-  double fNNeutrinos157Err[3];
+  double fNNeutrinos159Err[3];
   double fProtonRatio185Err[3];
   double fProtonFraction60Err[3];
   double fExtraProtonLgFractionErr[3];
