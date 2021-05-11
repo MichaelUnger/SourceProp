@@ -24,10 +24,12 @@ namespace prop {
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
+    fGCRWithComponentA = false;
     fGCRWithGSFIron = false;
     fisFixedPPElasticity = false;
     fRejectOutliers = 0;
     fMinFluxLgE = 17.5; 
+    fMaxFluxLgE = 22.0; 
     fMinCompLgE = 17.8; 
     fMaxCompLgE = 22.0; 
     fEnergyBinShift = 0;
@@ -39,11 +41,16 @@ namespace prop {
     fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,-10, 10, 0);
     fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eLgRdiff] = StartValue(-100, 0.1 ,0, 0, 1);
+    fStartValues[eLgSizeFac] = StartValue(100, 0.1 ,0, 0, 1);
+    fStartValues[eTanhLgSizeFac] = StartValue(1, 0.1 ,0, 0, 1);
     fStartValues[eFGal] = StartValue(0.6, 0.1, 0, 1, 0);
     fStartValues[eGammaGal] = StartValue(-4.17e+00, 0.1, -2, -10, 0);
     fStartValues[eGammaGalLowE] = StartValue(-2.7e+00, 0.1, -2, -10, 1);
     fStartValues[eDeltaGammaGal] = StartValue(0.2, 0.1, 0, 10, 1);
     fStartValues[eLgEmaxGal] = StartValue(19.1, 0.1, 0, 0, 1);
+    fStartValues[eLgFGalA] = StartValue(-100, 0.1, -100, 0, 1);
+    fStartValues[eGammaGalA] = StartValue(-4.17e+00, 0.1, -2, -10, 1);
+    fStartValues[eLgEmaxGalA] = StartValue(17.55, 0.1, 0, 0, 1);
     fStartValues[eNoPhoton] = StartValue(0, 0.1, 0, 0, 1);
     fStartValues[eLgPhotonFieldFac] = StartValue(0, 0.1, -6, 0, 1);
     fStartValues[eExtraProtonLgFraction] = StartValue(-200, 0.1, 0, 0, 1);
@@ -126,6 +133,13 @@ namespace prop {
         if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
               m.fMassMaxVal >> m.fMassIsFixed >> m.fFractionIsFixed))
           throw runtime_error("error reading galactic mass");
+      }
+      else if (keyword == "galacticAMass") {
+        fGalAMasses.push_back(MassValue());
+        MassValue& m = fGalAMasses.back();
+        if (!(line >> m.fStartMass >> m.fStartFraction >> m.fMassMinVal >>
+              m.fMassMaxVal >> m.fMassIsFixed >> m.fFractionIsFixed))
+          throw runtime_error("error reading galactic component A mass");
       }
       else if (keyword == "IRB") {
         if (!(line >> fIRB))
@@ -219,9 +233,13 @@ namespace prop {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
       }
+      else if (keyword == "gcrWithComponentA") {
+        if (!(line >> fGCRWithComponentA))
+          throw runtime_error("error decoding gcrWithComponentA");
+      }
       else if (keyword == "gcrWithGSFIron") {
         if (!(line >> fGCRWithGSFIron))
-          throw runtime_error("error decoding gcrWithKnees");
+          throw runtime_error("error decoding gcrWithGSFIron");
       }
       else if (keyword == "isFixedPPElasticity") {
         if (!(line >> fisFixedPPElasticity))
@@ -256,6 +274,10 @@ namespace prop {
         if (!(line >> fMinFluxLgE))
           throw runtime_error("error decoding minLgEFlux");
       }
+      else if (keyword == "maxLgEFlux") {
+        if (!(line >> fMaxFluxLgE))
+          throw runtime_error("error decoding maxLgEFlux");
+      }
       else if (keyword == "minLgECompo") {
         if (!(line >> fMinCompLgE))
           throw runtime_error("error decoding minLgECompo");
@@ -274,6 +296,8 @@ namespace prop {
           fSpectrumDataType = eAuger2017;
         else if (type == "Auger2019")
           fSpectrumDataType = eAuger2019;
+        else if (type == "Auger2019fudge")
+          fSpectrumDataType = eAuger2019fudge;
         else if (type == "Auger2019SD")
           fSpectrumDataType = eAuger2019SD;
         else if (type == "TA2013")
@@ -394,6 +418,14 @@ namespace prop {
            << " Setting Agal = " << defaultGalMass << endl;
       fGalMasses.push_back(MassValue(defaultGalMass, 1, 1,
                                      defaultGalMass, 1, 1));
+    }
+    
+    if (fGalAMasses.empty() && fGCRWithComponentA) {
+      const unsigned int defaultGalAMass = 56;
+      cerr << " FitOptions::FitOptions() - warning, no galactic component A mass given."
+           << " Setting AgalA = " << defaultGalAMass << endl;
+      fGalMasses.push_back(MassValue(defaultGalAMass, 1, 1,
+                                     defaultGalAMass, 1, 1));
     }
 
     if (fBoostedModel && fSpectrumType != Spectrum::eExternal) {
@@ -594,6 +626,8 @@ namespace prop {
       return "Auger 2017";
     case eAuger2019:
       return "Auger 2019";
+    case eAuger2019fudge:
+      return "Auger 2019^{*}";
     case eAuger2019SD:
       return "Auger 2019 SD";
     default:
@@ -679,12 +713,14 @@ namespace prop {
     }
     if(fitData.fNNeutrinos > 0) {
       out << "fNNeutrinos " << fitData.fNNeutrinos << "\n"
-          << "fNNeutrinos157 " << fitData.fNNeutrinos157 << "\n";
+          << "fNNeutrinos159 " << fitData.fNNeutrinos159 << "\n";
     }
 
     out << "interactionModel " << fInteractionModel << "\n"
         << "fitComposition " << fFitCompo << "\n"
         << "gcrWithKnees " << fGCRWithKnees << "\n"
+        << "gcrWithComponentA " << fGCRWithComponentA << "\n"
+        << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
         << "rejectOutliers " << fRejectOutliers << "\n";
 
     for (unsigned int i = 0; i < eNpars; ++i) {
@@ -725,7 +761,22 @@ namespace prop {
       const double m = fitData.fFitParameters[offset + nMassB - 1 + i].fValue;
       out << massNameB << " " << m << " " << fracB[i] << " 1 56 1 1\n";
     }
-    
+   
+    if(fGCRWithComponentA) {
+      const string massNameGCRA = "galacticAMass";
+      map<unsigned int, double> fractionsGCRA;
+      const unsigned int nMassGCRA = fitData.GetNGalAMass();
+      double fracGCRA[nMassGCRA];
+      double zetaGCRA[nMassGCRA-1];
+      const unsigned int offset = eNpars + nMassA - 1 + nMassA + nMassB - 1 + nMassB;
+      for (unsigned int i = 0; i < nMassGCRA - 1; ++i) 
+        zetaB[i] = pow(10, fitData.fFitParameters[offset + i].fValue);
+      zetaToFraction(nMassGCRA, zetaGCRA, fracGCRA);
+      for (unsigned int i = 0; i < nMassGCRA; ++i) {
+        const double m = fitData.fFitParameters[offset + nMassGCRA - 1 + i].fValue;
+        out << massNameGCRA << " " << m << " " << fracGCRA[i] << " 1 56 1 1\n";
+      }
+    } 
     
     out.close();
   }
