@@ -52,8 +52,8 @@ namespace prop {
                           const unsigned int n, const double x1, const double x2);
     double GetNNeutrinos() const
     { return fNNeutrino; }
-    double GetNNeutrinos157() const
-    { return fNNeutrino157; }
+    double GetNNeutrinos159() const
+    { return fNNeutrino159; }
 
     // .root and .txt will be added
     void SaveHistsToFile(const std::string& filenameBase) const;
@@ -86,7 +86,7 @@ namespace prop {
     std::vector<TH1D*> fHists;
     std::vector<TH1D*> fHistsNoDraw;
     double fNNeutrino;
-    double fNNeutrino157; // total neutrinos above 10^15.7 eV
+    double fNNeutrino159; // total neutrinos above 10^15.9 eV
   };
 }
 
