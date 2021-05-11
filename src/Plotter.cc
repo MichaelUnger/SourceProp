@@ -33,7 +33,7 @@ namespace prop {
     fGammaSource(gammaSource),
     fGammaEarth(gammaEarth),
     fNNeutrino(0),
-    fNNeutrino157(0)
+    fNNeutrino159(0)
   {
     gStyle->SetLineScalePS(1);
     gStyle->SetPadTopMargin(0.1);
@@ -496,7 +496,7 @@ namespace prop {
     double xMass = 0.24;
     for (const auto& m : mGroups) {
       stringstream title;
-      if (m.fFirst >= kGalacticOffset)
+      if (m.fFirst >= kGalacticOffset && m.fFirst < kGalacticAOffset)
         title << "galactic (A=" << m.fFirst % kGalacticOffset << ")";
       else
         title << m.fFirst << " #leq A #leq " << m.fLast;
@@ -539,8 +539,10 @@ namespace prop {
         style = mGroups[i].fLineStyle;
 	if(nameBase == "hextraProtonEsc")
 	  style = 2;
-        if (mGroups[i].fFirst > 56)
+        if (mGroups[i].fFirst > 56 && mGroups[i].fFirst < kGalacticAOffset)
           title << "galactic (A=" << mGroups[i].fFirst % kGalacticOffset << ")";
+        else if (mGroups[i].fFirst >= kGalacticAOffset)
+          title << "galactic component A (A=" << mGroups[i].fFirst % kGalacticAOffset << ")";
         else if (nameBase == "elMagSource") {
           if (mGroups[i].fFirst == mGroups[i].fLast) {
             if (mGroups[i].fFirst == Spectrum::eNeutronEsc)
@@ -964,13 +966,13 @@ namespace prop {
     l.DrawLatex(0.35, 0.88, events.str().c_str());
     fNNeutrino = nEvents;
      
-    double nEvents157 = 0;
+    double nEvents159 = 0;
     for (unsigned int iBin = 0; iBin < nX; ++iBin) {
       double lgE = eventsE->GetXaxis()->GetBinLowEdge(iBin+1);
-      if(lgE < 15.7) continue; 
-      nEvents157 += eventsTot->GetBinContent(iBin+1);
+      if(lgE < 15.9) continue; 
+      nEvents159 += eventsTot->GetBinContent(iBin+1);
     }
-    fNNeutrino157 = nEvents157;
+    fNNeutrino159 = nEvents159;
 
 
     // save histograms not to be drawn
