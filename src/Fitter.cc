@@ -31,6 +31,7 @@ namespace prop {
 
   FitData Fitter::fFitData;
   bool Fitter::fGCRKnees = false;
+  bool Fitter::fGCRComponentA = false;
   bool Fitter::fBoostedModel = false;
   bool Fitter::fisFixedPPElasticity = false;
   bool Fitter::fGCRGSFIron = false;
@@ -82,7 +83,8 @@ namespace prop {
   {
     return eNpars
       + 2 * fOptions.GetNmass() - 1
-      + 2 * fOptions.GetNGalMass() - 1;
+      + 2 * fOptions.GetNGalMass() - 1
+      + (fOptions.GCRWithComponentA() ? 2 * fOptions.GetNGalAMass() - 1 : 0);
   }
 
   void
@@ -101,6 +103,10 @@ namespace prop {
     VSource* source = data.fSource;
     source->Update(par[ePhotonPeak]);
     source->SetEscFac(1);
+    if(par[eLgSizeFac] < 100)
+      source->SetSizeFac(pow(10, par[eLgSizeFac]));
+    else
+      source->SetSizeFac(pow(10, atanh(par[eTanhLgSizeFac])));
     source->SetHadIntFac(1);
     source->SetEscGamma(par[eEscGamma]);
     source->SetRdiff(pow(10, par[eLgRdiff]));
@@ -243,6 +249,11 @@ namespace prop {
 
       // galactic
       const double fGal = par[eFGal];
+      const double lgfGalA = par[eLgFGalA];
+      const double fGalA = pow(10, lgfGalA);
+      
+      if(lgfGalA > 0.) throw runtime_error("Galactic component A fraction > 1! Please set lgfGalA <= 0.");
+      
       if (fGal > 0) {
 
         map<unsigned int, double> galFractions;
@@ -286,7 +297,7 @@ namespace prop {
             const double phiGal = iter.second * exp(-E0/emaxGal);
             galSum += phiGal;
           }
-          const double phi0Gal = fGal * extraGalactic / (galSum * (1 - fGal));
+          const double phi0Gal = fGal * (1 - fGalA) * extraGalactic / (galSum * (1 - fGal));
 
           const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
           for (const auto iter : galFractions) {
@@ -376,6 +387,63 @@ namespace prop {
                                            galactic);
           }
         }
+
+        // galactic CR component A
+        if(fGCRComponentA) {
+          map<unsigned int, double> galAFractions;
+          const unsigned int nGalAMass = data.GetNGalAMass();
+          double fracGalA[nGalAMass];
+          double zetaGalA[nGalAMass-1];
+          const unsigned int offset = eNpars + nMass - 1 + nMass + nGalMass - 1 + nGalMass;
+          for (unsigned int i = 0; i < nGalAMass - 1; ++i)
+            zetaGalA[i] = pow(10, *(par + offset + i));
+          zetaToFraction(nGalAMass, zetaGalA, fracGalA);
+          for (unsigned int i = 0; i < nGalAMass; ++i) {
+            const double m = *(par + offset + nGalAMass - 1 + i);
+            const DoubleMass dm(m);
+            if (dm.GetFrac1() > 0)
+              galAFractions[dm.GetMass1()] += dm.GetFrac1()*fracGalA[i];
+            if (dm.GetFrac2() > 0)
+              galAFractions[dm.GetMass2()] += dm.GetFrac2()*fracGalA[i];
+          }
+
+          if (!(data.fIteration%10)) {
+            for (unsigned int i = 0; i < nGalAMass; ++i)
+              cout << "mGalA" << i << " " << setw(11) << scientific
+                   << setprecision(5)
+                   << *(par + offset + nGalAMass - 1 + i)
+                   << ", f=" << fracGalA[i] << endl;
+          }
+	  //if(pow(10, par[eLgEmaxGalA]) < E0) throw runtime_error("GCR Component A cut-off too low! Set lower bound of 17.55 on lgEmaxGalA in steering file.");
+          const double gammaGalA = par[eGammaGalA];
+          double galASum = 0;
+          for (const auto iter : galAFractions) {
+            const double Z = aToZ(iter.first);
+            const double emaxGalA = pow(10, par[eLgEmaxGalA])*Z/26.;
+            const double phiGalA = iter.second * exp(-E0/emaxGalA);
+            galASum += phiGalA;
+          }
+          const double lgGalASum = log10(galASum);
+          const double lgPhi0GalA = log10(fGal) + lgfGalA + log10(extraGalactic) - lgGalASum - log10(1 - fGal);
+          const double phi0GalA = pow(10, lgPhi0GalA);
+
+          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+          for (const auto iter : galAFractions) {
+            double lgE = data.fLgEmin + dlgE/2;
+            const double Z = aToZ(iter.first);
+            const double emaxGalA = pow(10, par[eLgEmaxGalA])*Z/26.;
+            TMatrixD galacticA(data.fNLgE, 1);
+            for (unsigned int i = 0; i < data.fNLgE; ++i) {
+              const double E = pow(10, lgE);
+              galacticA[i][0] =
+                iter.second * phi0GalA * pow(E/E0, gammaGalA) * exp(-E/emaxGalA);
+              lgE += dlgE;
+            }
+            data.fPropagator->AddComponent(iter.first + kGalacticAOffset,
+                                           galacticA);
+          }
+
+        }
       }
 
       const pair<double, double> norm = calcNorm(data, fGCRGSFIron);
@@ -393,7 +461,7 @@ namespace prop {
           galactic[i][0] = GetGSFIronFlux(lgE);
           lgE += dlgE;
         }
-        data.fPropagator->AddComponent(A + kGalacticOffset,
+        data.fPropagator->AddComponent(A + kGalacticAOffset,
                                        galactic);
       }
     }
@@ -671,6 +739,7 @@ namespace prop {
     fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
 
     fGCRKnees = fOptions.GCRWithKnees();
+    fGCRComponentA = fOptions.GCRWithComponentA();
     fGCRGSFIron = fOptions.GCRWithGSFIron();
     fBoostedModel = fOptions.BoostedModel();
     fisFixedPPElasticity = fOptions.DoFixPPElasticity();
@@ -763,9 +832,10 @@ namespace prop {
     }
 
     unsigned int iPar = eNpars;
-    for (unsigned int iMassClass = 0; iMassClass < 2; ++iMassClass) {
+    for (unsigned int iMassClass = 0; iMassClass < (!fGCRComponentA ? 2 : 3); ++iMassClass) {
       const vector<MassValue>& masses =
-        iMassClass == 0 ? fOptions.GetMasses() : fOptions.GetGalacticMasses();
+        iMassClass == 0 ? fOptions.GetMasses() : 
+        (iMassClass == 1? fOptions.GetGalacticMasses() : fOptions.GetGalacticAMasses() );
       vector<double> fraction;
       vector<double> massIndex;
       vector<bool> fixedFraction;
@@ -794,13 +864,15 @@ namespace prop {
       const unsigned int nMass = masses.size();
       if (iMassClass == 0)
         fFitData.fNMass = nMass;
-      else
+      else if(iMassClass == 1)
         fFitData.fNGalMass = nMass;
+      else
+        fFitData.fNGalAMass = nMass;
       vector<double> zeta(nMass - 1);
       fractionToZeta(nMass - 1, &fraction.front(), &zeta.front());
       for (unsigned int i = 0; i < zeta.size(); ++i) {
         stringstream parName;
-        parName << "zeta" << (iMassClass ? "Gal" : "") << i;
+        parName << "zeta" << (iMassClass ? "Gal" : "") << (iMassClass > 1 ? "A" : "") << i;
         const double step = 0.1;
         const double minZeta = -7;
         const double maxZeta = 1e-14;
@@ -825,7 +897,7 @@ namespace prop {
       // ... and then the masses
       for (unsigned int i = 0; i < masses.size(); ++i) {
         stringstream parName;
-        parName << "mass" << (iMassClass ? "Gal" : "") << i;
+        parName << "mass" << (iMassClass ? "Gal" : "") << (iMassClass > 1 ? "A" : "") << i;
         const MassValue& m = masses[i];
         const double step = 1;
         const double minMass = masses[i].fMassMinVal;
@@ -1075,6 +1147,50 @@ namespace prop {
         }
         break;
       }
+    case FitOptions::eAuger2019fudge:
+      {
+        ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019fudge.dat");
+        /*
+        # J in  [m^-2 s^-1 sr^-1] units
+        # log10E = center of the energy bin 
+        # log10E    E*J       Err_up       Err_down  
+        */
+        double exposure;
+        in >> exposure;
+        fFitData.fUHEExposure = exposure;
+        while (true) {
+          FluxData flux;
+          double eyDown, eyUp, eySysDown, eySysUp, fluxE;
+          in >> flux.fLgE >> fluxE >> eyUp >> eyDown >> eySysUp >> eySysDown;
+          if (!in.good())
+            break;
+          // to  [ eV^-1 km^-1 sr^-1 yr^-1 ]
+          const double conv = 1e6 * 365*24*3600 / pow(10, flux.fLgE);
+          flux.fFlux = fluxE * conv;
+          const double eyTotUp = sqrt(pow(eyUp,2) + pow(eySysUp*fluxE,2));
+          const double eyTotDown = sqrt(pow(eyDown,2) + pow(eySysDown*fluxE,2));
+          flux.fFluxErr = (eyTotUp+eyTotDown)/2 * conv;
+          flux.fFluxErrUp = eyTotUp * conv;
+          flux.fFluxErrLow = eyTotDown * conv;
+          flux.fN = 0;
+
+          // syst shift?
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
+          flux.fLgE += deltaLgESys;
+
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
+        }
+        break;
+      }
     case FitOptions::eAuger2019SD:
       {
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019_SD.dat");
@@ -1210,7 +1326,7 @@ namespace prop {
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
-        if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+        if (flux.fLgE > fOptions.GetMinFluxLgE() ) {
           fFitData.fFluxData.push_back(flux);
           fFitData.fLowEFluxData.push_back(flux);
           if (flux.fFluxErr/flux.fFlux < 0.1)
@@ -1305,7 +1421,7 @@ namespace prop {
         flux.fLgE += deltaLgESys;
 
         fFitData.fAllFluxData.push_back(flux);
-        if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+        if (flux.fLgE > fOptions.GetMinFluxLgE() ) {
           fFitData.fFluxData.push_back(flux);
           fFitData.fLowEFluxData.push_back(flux);
           if (flux.fFluxErr/flux.fFlux < 0.1)
