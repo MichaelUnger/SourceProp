@@ -31,6 +31,7 @@ namespace prop {
     PropMatrices fPropMatrices;
     FitOptions fOptions;
     static bool fGCRKnees;
+    static bool fGCRComponentA;
     static bool fGCRGSFIron;
     static bool fBoostedModel;
     static bool fisFixedPPElasticity;
