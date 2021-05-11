@@ -37,9 +37,14 @@ steering file parameters:
      lgRhadint
      deltaEsc
      lgRdiff
-     fGal
+     lgRsize
+     tanhlgRsize 
+     fGal (always the fraction of flux from ALL galactic sources)
      gammaGal
      lgEmaxGal
+     fGalA (fraction of galactic flux in component A)
+     gammaGalA
+     lgEmaxGalA
      fNoPhoton
      lgfPhoton
      extraProtonFraction
