@@ -26,7 +26,7 @@ namespace prop {
     fGCRWithKnees = false;
     fGCRWithComponentA = false;
     fGCRWithGSFIron = false;
-    fisFixedPPElasticity = false;
+    fisFixedPPElasticity = true;
     fRejectOutliers = 0;
     fMinFluxLgE = 17.5; 
     fMaxFluxLgE = 22.0; 
