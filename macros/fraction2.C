@@ -32,7 +32,7 @@ drawFraction(const string& filename, const int color, const int iMass,
 TGraphAsymmErrors*
 AugerFractions17(int offset, int color, double shift, double sys, const int marker)
 {
-  ifstream in("/home/munger/Mag/Prop/Data/AugerFractions2017.txt");
+  ifstream in("/home/munger/Mag/Prop/data/AugerFractions2017.txt");
   TGraphAsymmErrors* pFrac = new TGraphAsymmErrors();
   int i = 0;
   while (true) {
@@ -42,7 +42,7 @@ AugerFractions17(int offset, int color, double shift, double sys, const int mark
     getline(in, line);
     if (!in.good())
       break;
-    if (line[0] == '#') 
+    if (line[0] == '#')
       continue;
     istringstream iline(line);
     for (unsigned int i = 0; i < nCol; ++i) {
@@ -81,9 +81,10 @@ fraction2()
   back2->GetYaxis()->SetTitleOffset(0.5);
 
   const double lWid = 3;
-  
+
   const int nModels = 2;
   const int models[nModels] = {0, 2};
+  const vector<string> modelNames = {"epos", "qgsjet", "sibyll"};
   for (unsigned int i = 0; i < nModels; ++i) {
     const unsigned int model = models[i]; // 0: EPOS, 1: QGSJet, 2: sibyll
     TGraphAsymmErrors* pG = AugerFractions17(0 + 20*model, kRed,-0.02, 0, 20 + i*4);
@@ -113,6 +114,31 @@ fraction2()
     hS->SetLineStyle(i+1);
     hN->SetLineStyle(i+1);
     hF->SetLineStyle(i+1);
+    ofstream out(modelNames[model] + ".txt");
+    out << "# smoothed Auger ICRC17 fractions " << modelNames[model] << "\n"
+        << "# (Batista et al. Front.Astron.Space Sci. 6 (2019) 23 1903.06714)"
+        << "\n# lg(E/eV) f_p  f_He f_N f_Fe\n";
+    const double lgEmin = 17.2;
+    const double lgEmax = 19.7;
+    const double dlgE = 0.1;
+    double lgE = lgEmin + dlgE/2;
+    while (lgE < lgEmax) {
+      const double fP = pS->Eval(lgE);
+      const double fHe = hS->Eval(lgE);
+      const double fN = hN->Eval(lgE);
+      const double fFe = hF->Eval(lgE);
+      const double sum = fP + fHe + fN + fFe;
+      cout << sum  << endl;
+      out << scientific
+          << lgE << " "
+          << fP/sum << " "
+          << fHe/sum << " "
+          << fN/sum << " "
+          << fFe/sum << " "
+          << endl;
+      lgE += dlgE;
+    }
+    out.close();
   }
 
   TLatex l;
@@ -146,5 +172,5 @@ fraction2()
   le2->SetLineStyle(2);
   le2->SetMarkerStyle(24);
   leg->Draw();
-  
+
 }
