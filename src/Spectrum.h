@@ -107,6 +107,8 @@ namespace prop {
     void SetSpectrumType(const ESpectrumType type)
     { fSpectrumType = type; }
 
+    void ReadBaseline(const std::string baselineFile);
+
     void Rescale(const double f);
 
     const VSource* GetSource(const int indx = 0) const { return fSource + indx; }
