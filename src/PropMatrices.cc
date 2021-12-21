@@ -97,7 +97,7 @@ namespace prop {
     std::string strZ0 = std::to_string(intZ0);
 
     TFile* fFile;
-    std::string InterpFile = "./crp4/CRPropaG12_eEvoM";
+    std::string InterpFile = fDataDirName + "/crp4/CRPropaG12_eEvoM";
 
     if( M < 0. ) 
       InterpFile += "m" + strM + "z" + strZ0 + "_nu.root";
@@ -261,8 +261,10 @@ namespace prop {
   }
 
   void 
-  PropMatrices::InterpInitMZ0(double M, double Z0)
+  PropMatrices::InterpInitMZ0(double M, double Z0, std::string dataDirName)
   {
+    fDataDirName = dataDirName;
+
     if( M > Mmax || M < Mmin )  
 	    throw runtime_error("Initial M outside range: M = " + std::to_string(M));
     if( Z0 > Z0max || Z0 < Z0min )
@@ -372,7 +374,7 @@ namespace prop {
     std::string strDmin = std::to_string(int(Dmin));
 
     TFile* fFile;
-    std::string InterpFile = "./Data/crp5/CRPropaG12_SFR2_";
+    std::string InterpFile = fDataDirName + "/crp5/CRPropaG12_SFR2_";
     InterpFile += strDmin + "_nu.root";
   
     PropMatrices::PrimaryMap InterpM;
@@ -476,8 +478,10 @@ namespace prop {
   }
 
   void 
-  PropMatrices::InterpInitDmin(double Dmin) 
+  PropMatrices::InterpInitDmin(double Dmin, std::string dataDirName) 
   {
+    fDataDirName = dataDirName;
+
     if( Dmin > DminMax || Dmin < DminMin )  
 	    throw runtime_error("Initial Dmin outside range: Dmin = " + std::to_string(Dmin) + " Mpc");
 
