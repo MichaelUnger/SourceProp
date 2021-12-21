@@ -14,17 +14,21 @@ namespace prop {
 
   Neutrinos::Neutrinos(const prop::Spectrum& spectrum,
                        const std::string& propMatrixFilename,
-		       double evoM, double evoZ0, double evoDmin,
+		                   double evoM, double evoZ0, double evoDmin,
                        const bool withSourceNu)
   {
 
     PropMatrices pm;
 
     if( propMatrixFilename.find("mz0Interpolator") != std::string::npos ) {
-      pm.InterpInitMZ0(evoM, evoZ0); 
+      std::size_t pos = propMatrixFilename.find_last_of('/');
+      std::string fDataDirName = propMatrixFilename.substr(0, pos);
+      pm.InterpInitMZ0(evoM, evoZ0, fDataDirName); 
     }
     else if( propMatrixFilename.find("DminInterpolator") != std::string::npos ) {
-      pm.InterpInitDmin(evoDmin); 
+      std::size_t pos = propMatrixFilename.find_last_of('/');
+      std::string fDataDirName = propMatrixFilename.substr(0, pos);
+      pm.InterpInitDmin(evoDmin, fDataDirName); 
     }
     else {
       PropMatrixFile pmf(propMatrixFilename);
