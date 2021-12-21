@@ -54,8 +54,6 @@ steering file parameters:
      evolutionM (must use with evolution "mz0Interpolator" to enable interpolation)
      evolutionZ0 (must use with evolution "mz0Interpolator" to enable interpolation)
      evolutionDmin (must use with evolution "DminInterpolator" to enable interpolation)
-     evolutionZ0 (must use with evolution "mz0Interpolator" to enable interpolation)
-     evolutionZ0 (must use with evolution "mz0Interpolator" to enable interpolation)
      photonPeak (must use with Photon*Interpolator where * = BPL or MBB, units are eV or K depending on field type)
 * mass [startA] [startFraction] [Amin] [Amax] [massFix] [fracFix]
   (multiple masses possible)
@@ -94,7 +92,10 @@ steering file parameters:
   - Auger2013, TA2013, Auger2017
 * xmaxData [type]
   - Auger2014, Auger2017, Auger2017fudge, Auger2017corrected
-
+* baselineFrac
+  - fraction of escaping spectrum due to baseline model
+* baselineFile 
+  - path to baseline model's *Hist.root file
 
 
 environment on butinah:
