@@ -24,6 +24,7 @@ namespace prop {
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
+    fCSFSpectrum = false;
     fGCRWithComponentA = false;
     fGCRWithGSFIron = false;
     fisFixedPPElasticity = true;
@@ -35,6 +36,7 @@ namespace prop {
     fEnergyBinShift = 0;
     fEnergyShiftType = eConstant;
     fXmaxSigmaShift = 0;
+    fLgBaselineFraction = -100;
     fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,18, 22, 0);
@@ -74,7 +76,9 @@ namespace prop {
     fSpectrumDataTypeName = "Auger2013";
     fLowESpectrumDataTypeName = "";
     fXmaxDataTypeName = "Auger2014";
-    
+ 
+    fBaselineFilename = "";   
+ 
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
       throw runtime_error("error reading " + filename);
@@ -233,6 +237,10 @@ namespace prop {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
       }
+      else if (keyword == "gcrCSFSpectrum") {
+        if (!(line >> fCSFSpectrum))
+          throw runtime_error("error decoding gcrCSFSpectrum");
+      }
       else if (keyword == "gcrWithComponentA") {
         if (!(line >> fGCRWithComponentA))
           throw runtime_error("error decoding gcrWithComponentA");
@@ -255,10 +263,10 @@ namespace prop {
           throw runtime_error("error decoding energyShiftType");
         if(type == "Constant")
           fEnergyShiftType = eConstant;
-        else if(type == "AugerTA2019")
-          fEnergyShiftType = eAugerTA2019;
-        else if(type == "ShiftedAugerTA2019")
-          fEnergyShiftType = eShiftedAugerTA2019;
+        else if(type == "AugerShiftedAugerTA2019")
+          fEnergyShiftType = eAugerShiftedAugerTA2019;
+        else if(type == "TAShiftedAugerTA2019")
+          fEnergyShiftType = eTAShiftedAugerTA2019;
         else
           throw runtime_error("unknown energy shift type "+type); 
       }
@@ -286,6 +294,14 @@ namespace prop {
         if (!(line >> fMaxCompLgE))
           throw runtime_error("error decoding maxLgECompo");
       }
+      else if (keyword == "lgBaselineFrac") {
+        if (!(line >> fLgBaselineFraction))
+          throw runtime_error("error decoding lgBaselineFrac");
+      }
+      else if (keyword == "baselineFile") {
+        if (!(line >> fBaselineFilename))
+          throw runtime_error("error decoding baselineFile"); 
+      }
       else if (keyword == "spectrumData") {
         string type;
         if (!(line >> type))
@@ -306,6 +322,8 @@ namespace prop {
           fSpectrumDataType = eTASixYear;
         else if (type == "TANineYear")
           fSpectrumDataType = eTANineYear;
+        else if (type == "TA2019")
+          fSpectrumDataType = eTA2019;
         else
           throw runtime_error("unknown spectrum data type: " + type);
         fSpectrumDataTypeName = type;
@@ -338,6 +356,10 @@ namespace prop {
           fXmaxDataType = eAugerXmax2017corrected;
 	else if (type == "Auger2019")
           fXmaxDataType = eAugerXmax2019;
+	else if (type == "Auger2019withFixedTALE2019")
+          fXmaxDataType = eAugerXmax2019withFixedTALEXmax2019;
+	else if (type == "TA2019")
+          fXmaxDataType = eTAXmax2019;
         else
           throw runtime_error("unknown Xmax data type: " + type);
         fXmaxDataTypeName = type;
@@ -630,6 +652,8 @@ namespace prop {
       return "Auger 2019^{*}";
     case eAuger2019SD:
       return "Auger 2019 SD";
+    case eTA2019:
+      return "TA 2019";
     default:
       return "unknown";
     }
@@ -665,6 +689,10 @@ namespace prop {
       return "Auger 2017+19";
     case eAugerXmax2019:
       return "Auger 2019";
+    case eAugerXmax2019withFixedTALEXmax2019:
+      return "Auger19 & TALE19";
+    case eTAXmax2019:
+      return "TA 2019";
     default:
       return "unknown";
     }
@@ -721,7 +749,10 @@ namespace prop {
         << "gcrWithKnees " << fGCRWithKnees << "\n"
         << "gcrWithComponentA " << fGCRWithComponentA << "\n"
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
-        << "rejectOutliers " << fRejectOutliers << "\n";
+        << "rejectOutliers " << fRejectOutliers << "\n"
+        << "LgBaselineFraction " << fLgBaselineFraction << "\n";
+    if(!fBaselineFilename.empty())
+      out << "baselineFilename " << fBaselineFilename << "\n";
 
     for (unsigned int i = 0; i < eNpars; ++i) {
       const EPar par = EPar(i);
@@ -786,20 +817,20 @@ namespace prop {
   {
     if(fEnergyShiftType == eConstant)
       return fEnergyBinShift;
-    else if(fEnergyShiftType == eAugerTA2019) {
+    else if(fEnergyShiftType == eAugerShiftedAugerTA2019) {
       const double lgEth = 19.0;
-      double energyFactor = 1.052;
+      double energyFactor = 1.0 + 0.052;
       if(lgE > lgEth)
         energyFactor += 0.1*(lgE-lgEth);
       const double energyShift = log10(energyFactor);
-      const double energyBinShift = 10*energyShift;
+      const double energyBinShift = 10*energyShift + fEnergyBinShift;
       return energyBinShift;
     }
-    else if(fEnergyShiftType == eShiftedAugerTA2019) {
+    else if(fEnergyShiftType == eTAShiftedAugerTA2019) {
       const double lgEth = 19.0;
-      double energyFactor = 1.052;
+      double energyFactor = 1.0 - 0.052;
       if(lgE > lgEth)
-        energyFactor += 0.1*(lgE-lgEth);
+        energyFactor -= 0.1*(lgE-lgEth);
       const double energyShift = log10(energyFactor);
       const double energyBinShift = 10*energyShift + fEnergyBinShift;
       return energyBinShift;
@@ -814,18 +845,18 @@ namespace prop {
     double jacobian;
     if(fEnergyShiftType == eConstant)
       jacobian = 1./pow(10., 0.1*fEnergyBinShift);
-    else if(fEnergyShiftType == eAugerTA2019) {
+    else if(fEnergyShiftType == eAugerShiftedAugerTA2019) {
       const double lgEth = 19.0;
-      jacobian = 1.052;
+      jacobian = (1.0 + 0.052)*pow(10, 0.1*fEnergyBinShift);
       if(lgE > lgEth)
         jacobian += 0.1/log(10.) + 0.1*(lgE-lgEth);
       jacobian = 1./jacobian;
     }
-    else if(fEnergyShiftType == eShiftedAugerTA2019) {
+    else if(fEnergyShiftType == eTAShiftedAugerTA2019) {
       const double lgEth = 19.0;
-      jacobian = 1.052*pow(10, 0.1*fEnergyBinShift);
+      jacobian = (1.0 - 0.052)*pow(10, 0.1*fEnergyBinShift);
       if(lgE > lgEth)
-        jacobian += 0.1/log(10.) + 0.1*(lgE-lgEth);
+        jacobian -= 0.1/log(10.) + 0.1*(lgE-lgEth);
       jacobian = 1./jacobian;
     }
     else
