@@ -31,10 +31,12 @@ namespace prop {
 
   FitData Fitter::fFitData;
   bool Fitter::fGCRKnees = false;
+  bool Fitter::fCSFSpectrum = false;
   bool Fitter::fGCRComponentA = false;
   bool Fitter::fBoostedModel = false;
   bool Fitter::fisFixedPPElasticity = false;
   bool Fitter::fGCRGSFIron = false;
+  double Fitter::fLgBaselineFraction = -100;
   
   double
   GetGSFIronFlux(const double lgE)
@@ -210,12 +212,12 @@ namespace prop {
           const double dlgE = (lgEmax - lgEmin) / n;
           const int mass = int(par[eExtraProtonMass]);
           const int charge = aToZ(mass);
-	  double sum = 0.;
-	  for (double lgE = refLgE; lgE <= lgEmax; lgE += dlgE) {
-	    const double E = pow(10, lgE);
-	    const double dE = utl::kLn10 * E * dlgE;
-	    sum += E * spectrum.GetFluxSum(lgE) * dE;
-	  }
+          double sum = 0.;
+          for (double lgE = refLgE; lgE <= lgEmax; lgE += dlgE) {
+            const double E = pow(10, lgE);
+            const double dE = utl::kLn10 * E * dlgE;
+            sum += E * spectrum.GetFluxSum(lgE) * dE;
+          }
           TMatrixD& m = spectrum.GetEscFlux()[mass];
           if (!m.GetNoElements())
             m.ResizeTo(n, 1);
@@ -224,9 +226,9 @@ namespace prop {
             if (!mm.GetNoElements())
               mm.ResizeTo(n, 1);
           }
-	  TMatrixD& mmm = spectrum.GetextraProtonFlux()[mass];
-	  if (!mmm.GetNoElements())
-	    mmm.ResizeTo(n, 1);
+          TMatrixD& mmm = spectrum.GetextraProtonFlux()[mass];
+          if (!mmm.GetNoElements())
+            mmm.ResizeTo(n, 1);
 
           const double f = pow(10, par[eExtraProtonLgFraction]);
           const double gamma = par[eExtraProtonGamma];
@@ -240,10 +242,86 @@ namespace prop {
             m[iE][0] += flux;
             if (mass == 1 && charge == 1)
               mm[iE][0] += flux;
-	    mmm[iE][0] += flux;
+            mmm[iE][0] += flux;
             lgE += dlgE;
           }
         }
+
+        // add in baseline escaping spectrum
+        { 
+          const double lgf = fLgBaselineFraction;
+          if(lgf > -100) {
+            const double f = pow(10, lgf);
+            Spectrum& baseline = data.fBaseline;
+            const double lgEmin = spectrum.GetLgEmin();
+            const double lgEmax = spectrum.GetLgEmax();
+            const double n = spectrum.GetN();
+            const double dlgE = (lgEmax - lgEmin) / n;
+            const double refLgE = 17.0;           
+ 
+            double sum = 0.;
+            double sumB = 0.;
+            for (double lgE = refLgE; lgE <= lgEmax; lgE += dlgE) {
+              const double E = pow(10, lgE);
+              const double dE = utl::kLn10 * E * dlgE;
+              sum += E * spectrum.GetFluxSum(lgE) * dE;
+              sumB += E * baseline.GetFluxSum(lgE) * dE;
+            }
+    
+            Spectrum::SpecMap& baselineEsc = baseline.GetEscFlux();
+            for(auto const& iter : baselineEsc) {
+              const int A = iter.first;
+              const TMatrixD& mB = iter.second;
+              if(mB.GetNrows() != n)
+                throw runtime_error("baseline bins mismatch: " + A);
+              TMatrixD& m = spectrum.GetEscFlux()[A];
+              if(!m.GetNoElements())
+                m.ResizeTo(n,1);
+              for (unsigned int iE = 0; iE < n; ++iE) {
+                const double baselineFlux = f * sum / sumB * mB[iE][0];
+                m[iE][0] *= (1.-f);
+                m[iE][0] += baselineFlux;
+              }
+            }
+            
+            Spectrum::SpecMap& baselineNucleon = baseline.GetNucleonFlux();
+            for(auto const& iter : baselineNucleon) {
+              const int type = iter.first;
+              const TMatrixD& mB = iter.second;
+              if(mB.GetNrows() != n)
+                throw runtime_error("baseline bins mismatch: " + type);
+              TMatrixD& m = spectrum.GetNucleonFlux()[type];
+              if(!m.GetNoElements())
+                m.ResizeTo(n,1);
+              for (unsigned int iE = 0; iE < n; ++iE) {
+                const double baselineFlux = f * sum / sumB * mB[iE][0];
+                m[iE][0] *= (1.-f);
+                m[iE][0] += baselineFlux;
+              }
+            }
+            
+            Spectrum::SecMap& baselineSecondary = baseline.GetSecondaryFlux();
+            for(auto const& iter1 : baselineSecondary) {
+              const int particle = iter1.first;
+              const Spectrum::SpecMap& mB = iter1.second;
+              for(auto const& iter2 : mB) {
+                const int interaction = iter2.first;
+                const TMatrixD& mmB = iter2.second;
+                if(mmB.GetNrows() != n)
+                  throw runtime_error("baseline bins mismatch: " + particle);
+                TMatrixD& mm = spectrum.GetSecondaryFlux()[particle][interaction];
+                if(!mm.GetNoElements())
+                  mm.ResizeTo(n,1);
+                for (unsigned int iE = 0; iE < n; ++iE) {
+                  const double baselineFlux = f * sum / sumB * mmB[iE][0];
+                  mm[iE][0] *= (1.-f);
+                  mm[iE][0] += baselineFlux;
+                }
+              }
+            }
+          }
+        }
+
         data.fPropagator->Propagate(data.fSpectrum.GetEscFlux(), true,  par);
       }
 
@@ -288,17 +366,22 @@ namespace prop {
 
         // ------ single power law
         if (!fGCRKnees) {
-	  if(pow(10, par[eLgEmaxGal]) < E0) throw runtime_error("Galactic cut-off too low! Set lower bound of 17.55 on lgEmaxGal in steering file.");
+	        //if(pow(10, par[eLgEmaxGal]) < E0) throw runtime_error("Galactic cut-off too low! Set lower bound of 17.55 on lgEmaxGal in steering file.");
           const double gammaGal = par[eGammaGal];
           double galSum = 0;
           for (const auto iter : galFractions) {
             const double Z = aToZ(iter.first);
             const double emaxGal = pow(10, par[eLgEmaxGal])*Z/26.;
-            const double phiGal = iter.second * exp(-E0/emaxGal);
+              const double phiGal = (fCSFSpectrum)? iter.second * exp(-pow(E0/emaxGal, 0.48)) :
+                                                    iter.second * exp(-E0/emaxGal);
             galSum += phiGal;
           }
-          const double phi0Gal = fGal * (1 - fGalA) * extraGalactic / (galSum * (1 - fGal));
+          // log space seems to avoid some NaNs
+          const double lgGalSum = log10(galSum);
+          const double lgPhi0Gal = log10(fGal) + log10(1-fGalA) + log10(extraGalactic) - lgGalSum - log10(1- fGal);
+          const double phi0Gal = pow(10, lgPhi0Gal);
 
+          
           const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
           for (const auto iter : galFractions) {
             double lgE = data.fLgEmin + dlgE/2;
@@ -307,7 +390,8 @@ namespace prop {
             TMatrixD galactic(data.fNLgE, 1);
             for (unsigned int i = 0; i < data.fNLgE; ++i) {
               const double E = pow(10, lgE);
-              galactic[i][0] =
+              galactic[i][0] = (fCSFSpectrum)?
+                iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)) : // spectrum of a colliding shock flow fitting data from arXiv:1706.01135 
                 iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
               lgE += dlgE;
             }
@@ -737,9 +821,13 @@ namespace prop {
     fFitData.Clear();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
+    fLgBaselineFraction = fOptions.GetLgBaselineFraction();
+    if(fLgBaselineFraction > -100)
+      fFitData.fBaseline.ReadBaseline(fOptions.GetBaselineFile());
 
     fGCRKnees = fOptions.GCRWithKnees();
     fGCRComponentA = fOptions.GCRWithComponentA();
+    fCSFSpectrum = fOptions.GCRCSFSpectrum();
     fGCRGSFIron = fOptions.GCRWithGSFIron();
     fBoostedModel = fOptions.BoostedModel();
     fisFixedPPElasticity = fOptions.DoFixPPElasticity();
@@ -751,11 +839,11 @@ namespace prop {
     const double evoDmin = fOptions.GetStartValue(GetPar("evolutionDmin"));
     if( fOptions.GetEvolution() == "mz0Interpolator" ) {
       cout << "Initiating mz0 interpolation matrices..." << endl;
-      fPropMatrices.InterpInitMZ0(evoM, evoZ0);
+      fPropMatrices.InterpInitMZ0(evoM, evoZ0, fOptions.GetDataDirname());
     }
     else if( fOptions.GetEvolution() == "DminInterpolator" ) {
       cout << "Initiating Dmin interpolation matrices..." << endl;
-      fPropMatrices.InterpInitDmin(evoDmin);
+      fPropMatrices.InterpInitDmin(evoDmin, fOptions.GetDataDirname());
     }
     else {
       cout << " reading prop matrix from "
@@ -1109,7 +1197,7 @@ namespace prop {
       {
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019.dat");
         /*
-        # J in  [m^-2 s^-1 sr^-1] units
+        # E*J in  [m^-2 s^-1 sr^-1] units
         # log10E = center of the energy bin 
         # log10E    E*J       Err_up       Err_down  
         */
@@ -1283,6 +1371,54 @@ namespace prop {
         }
         break;
       }
+    case FitOptions::eTA2019:
+      { // taken from Fig. 2 of Ivanov PoS(ICRC2019)298
+        ifstream in(fOptions.GetDataDirname() + "/ta_icrc2019.dat");
+        /*
+        # E^3*J in  [m^-2 s^-1 sr^-1 eV^2] units
+        # E/eV = center of the energy bin 
+        # log10E    E^3*J       E^3*J+Err_up       E^3*J-Err_lo  
+        */
+        //double exposure;
+        //in >> exposure; 
+        //fFitData.fUHEExposure = exposure;
+        fFitData.fUHEExposure = 0.; // exposure not given just set to 0 for now
+        while (true) {
+          FluxData flux;
+          double E, eyDown, eyUp, fluxE;
+          in >> E >> fluxE >> eyUp >> eyDown;
+          if (!in.good())
+            break;
+          // to  [ eV^-1 km^-2 sr^-1 yr^-1 ]
+          const double conv = 1e6 * 365*24*3600 / pow(E, 3);
+          flux.fLgE = log10(E);
+          eyUp -= fluxE;
+          eyDown = fluxE - eyDown;
+          flux.fFlux = fluxE * conv;
+          eyUp *= conv;
+          eyDown *= conv;
+          flux.fFluxErr = (eyUp+eyDown)/2;
+          flux.fFluxErrUp = eyUp;
+          flux.fFluxErrLow = eyDown;
+          flux.fN = 0;
+
+          // syst shift?
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
+          flux.fLgE += deltaLgESys;
+
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
+        }
+        break;
+      }
     default:
       {
         stringstream errMsg;
@@ -1439,6 +1575,7 @@ namespace prop {
     TGraphErrors* sigmaGraph = nullptr;
     TGraphAsymmErrors* xmaxSysGraph = nullptr;
     TGraphAsymmErrors* sigmaXmaxSysGraph = nullptr;
+    int TAOffset = 0;
     switch (fOptions.GetXmaxDataType()) {
     case FitOptions::eAugerXmax2014:
       {
@@ -1589,6 +1726,117 @@ namespace prop {
         }
         break;
       }
+    case FitOptions::eAugerXmax2019withFixedTALEXmax2019:
+      { // Auger ICRC19 Xmax data shifted & unshifted TALE ICRC19 Xmax 
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        xmaxGraph = new TGraphErrors();
+        sigmaGraph = new TGraphErrors();
+        xmaxSysGraph = new TGraphAsymmErrors();
+        sigmaXmaxSysGraph = new TGraphAsymmErrors();
+        int i = 0;
+        const string filename = "/elongationRate19.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+        TAOffset = i;
+        const string filenameTA = "/TALE_Xmax_ICRC2019.dat";
+        ifstream inTA(fOptions.GetDataDirname() + filenameTA);
+        while (true) {
+          double meanLgE, mean, yup, ylo;
+          inTA >> meanLgE >> mean >> yup >> ylo;
+          double meanErr = (yup - ylo)/2.;
+          double meanSysUp = 0., meanSysLow = 0.; // assign full error to stats to prevent sys. shift
+          if (!inTA.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          ++i;
+        }
+        break;
+      }
+    case FitOptions::eTAXmax2019:
+      { // TA 10 year hybrid data from Hanlon ICRC19 PoS(ICRC2019)1177
+        /*
+          #  meanXmax file:
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) mean:         <Xmax> [g/cm^2]
+          #  (3) meanErrUp:    upper position of statistical error bar of <Xmax> [g/cm^2]
+          #  (4) meanErrLo:    lower position of statistical error bar of <Xmax> [g/cm^2]
+          # sigmaXmax file
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) sigma:        sigma(Xmax) [g/cm^2]
+          #  (3) sigmaErrUp:   upper position of statistical error bar of sigma(Xmax) [g/cm^2]
+          #  (4) sigmaErrLo:   lower position of statistical error bar of sigma(Xmax) [g/cm^2]
+        */
+        xmaxGraph = new TGraphErrors();
+        sigmaGraph = new TGraphErrors();
+        xmaxSysGraph = new TGraphAsymmErrors();
+        sigmaXmaxSysGraph = new TGraphAsymmErrors();
+        int i = 0;
+        const string filename = "/ta_meanXmax_icrc2019.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        const string filename2 = "/ta_sigmaXmax_icrc2019.txt";
+        ifstream in2(fOptions.GetDataDirname() + filename2);
+        while (true) {
+          double meanLgE, mean, meanErrUp, meanErrLo;
+          const double meanSys = 17.0;
+          in >> meanLgE >> mean >> meanErrUp >> meanErrLo; 
+          double buffLgE, sigma, sigmaErrUp, sigmaErrLo;
+          const double sigmaSyst = 4.0;
+          in2 >> buffLgE >> sigma >> sigmaErrUp >> sigmaErrLo;
+          if (!in.good() || !in2.good())
+            break;
+          const double E = pow(10, meanLgE);
+          const double meanErr = (meanErrUp - meanErrLo)/2.;
+          const double sigmaErr = (sigmaErrUp - sigmaErrLo)/2.;
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSys);
+          xmaxSysGraph->SetPointEYlow(i, meanSys);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSyst);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSyst);
+          ++i;
+        }
+        break;
+      }
     default:
       {
         cerr << " unknown Xmax data " << endl;
@@ -1671,7 +1919,11 @@ namespace prop {
         fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
         0.1 : // approx one bin
         0;
-      const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(log10(xmaxGraph->GetX()[i]));
+      const double deltaLgESys = 
+        (TAOffset >= i && 
+          fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2019withFixedTALEXmax2019)?
+        0.0 : // no shift for TA data
+        0.1 * fOptions.GetEnergyBinShift(log10(xmaxGraph->GetX()[i]));
       const double lgE =
         log10(xmaxGraph->GetX()[i]) + deltaLgESys + relativeAugerTAShift;
       const double E = pow(10, lgE);
