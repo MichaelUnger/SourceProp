@@ -487,17 +487,20 @@ DrawValues(const FitData& fitData,
       sys << "+";
     sys << fitOptions.GetEnergyBinShift() * 0.1;
   }
-  else if(fitOptions.GetEnergyShiftType() == FitOptions::eAugerTA2019) {
-    sys << "#DeltalgE_{sys} = Auger-TA 2019";
-  }
-  else if(fitOptions.GetEnergyShiftType() == FitOptions::eShiftedAugerTA2019) {
+  else if(fitOptions.GetEnergyShiftType() == FitOptions::eAugerShiftedAugerTA2019) {
     sys << "#DeltalgE_{sys} = ";
     if (fitOptions.GetEnergyBinShift() > 0)
       sys << "+";
-    sys << fitOptions.GetEnergyBinShift() * 0.1 << " + Auger-TA 2019";
+    sys << fitOptions.GetEnergyBinShift() * 0.1 << " + Auger-TA 2019 Auger-direction";
+  }
+  else if(fitOptions.GetEnergyShiftType() == FitOptions::eTAShiftedAugerTA2019) {
+    sys << "#DeltalgE_{sys} = ";
+    if (fitOptions.GetEnergyBinShift() > 0)
+      sys << "+";
+    sys << fitOptions.GetEnergyBinShift() * 0.1 << " + Auger-TA 2019 TA-direction";
   }
   else
-    throw runtime_error("Unkown energy shift name");
+    throw runtime_error("Unknown energy shift name");
   sys << ", n_{sys}(X_{max}) = ";
   if (fitOptions.GetXmaxSigmaShift() > 0)
     sys << "+";
