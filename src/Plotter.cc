@@ -175,87 +175,39 @@ namespace prop {
     const map<int, map<int, TMatrixD> >& secMap = spectrum.GetSecondaryFlux();
     double lgE; 
     double fac; 
- 
-    const map<int, TMatrixD>& mEscPionPlus = secMap.at(Spectrum::ePionPlus);
-    TH1D* hEscPionPlus_ph = new TH1D("escape_PionPlus_photohadronic", "", spectrum.GetN(), x1, x2);
-    TH1D* hEscPionPlus_h = new TH1D("escape_PionPlus_hadronic", "", spectrum.GetN(), x1, x2);
-    for (unsigned int i = 0; i < spectrum.GetN(); ++i) {
-      lgE = hEscPionPlus_ph->GetXaxis()->GetBinCenter(i+1); 
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumPh = hEscPionPlus_ph->GetBinContent(i+1) + fac*mEscPionPlus.at(Spectrum::ePhotohadronic)[i][0];
-      hEscPionPlus_ph->SetBinContent(i + 1, sumPh);
-      lgE = hEscPionPlus_h->GetXaxis()->GetBinCenter(i+1);
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumH = hEscPionPlus_h->GetBinContent(i+1) + fac*mEscPionPlus.at(Spectrum::eHadronic)[i][0];
-      hEscPionPlus_h->SetBinContent(i + 1, sumH);
-    }
-    fHistsNoDraw.push_back(hEscPionPlus_ph);
-    fHistsNoDraw.push_back(hEscPionPlus_h);
-    
-    const map<int, TMatrixD>& mEscPionMinus = secMap.at(Spectrum::ePionMinus);
-    TH1D* hEscPionMinus_ph = new TH1D("escape_PionMinus_photohadronic", "", spectrum.GetN(), x1, x2);
-    TH1D* hEscPionMinus_h = new TH1D("escape_PionMinus_hadronic", "", spectrum.GetN(), x1, x2);
-    for (unsigned int i = 0; i < spectrum.GetN(); ++i) {
-      lgE = hEscPionMinus_h->GetXaxis()->GetBinCenter(i+1);
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumPh = hEscPionMinus_ph->GetBinContent(i+1) + fac*mEscPionMinus.at(Spectrum::ePhotohadronic)[i][0];
-      hEscPionMinus_ph->SetBinContent(i + 1, sumPh);
-      lgE = hEscPionMinus_h->GetXaxis()->GetBinCenter(i+1); 
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumH = hEscPionMinus_h->GetBinContent(i+1) + fac*mEscPionMinus.at(Spectrum::eHadronic)[i][0];
-      hEscPionMinus_h->SetBinContent(i + 1, sumH);
-    }
-    fHistsNoDraw.push_back(hEscPionMinus_ph);
-    fHistsNoDraw.push_back(hEscPionMinus_h);
-    
-    const map<int, TMatrixD>& mEscPionZero = secMap.at(Spectrum::ePionZero);
-    TH1D* hEscPionZero_ph = new TH1D("escape_PionZero_photohadronic", "", spectrum.GetN(), x1, x2);
-    TH1D* hEscPionZero_h = new TH1D("escape_PionZero_hadronic", "", spectrum.GetN(), x1, x2);
-    for (unsigned int i = 0; i < spectrum.GetN(); ++i) {
-      lgE = hEscPionZero_h->GetXaxis()->GetBinCenter(i+1);
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumPh = hEscPionZero_ph->GetBinContent(i+1) + fac*mEscPionZero.at(Spectrum::ePhotohadronic)[i][0];
-      hEscPionZero_ph->SetBinContent(i + 1, sumPh);
-      lgE = hEscPionZero_h->GetXaxis()->GetBinCenter(i+1);
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumH = hEscPionZero_h->GetBinContent(i+1) + fac*mEscPionZero.at(Spectrum::eHadronic)[i][0];
-      hEscPionZero_h->SetBinContent(i + 1, sumH);
-    }
-    fHistsNoDraw.push_back(hEscPionZero_ph);
-    fHistsNoDraw.push_back(hEscPionZero_h);
-    
-    const map<int, TMatrixD>& mEscNeutronSec = secMap.at(Spectrum::eNeutronSec);
-    TH1D* hEscNeutronSec_ph = new TH1D("escape_Neutron_photohadronic", "", spectrum.GetN(), x1, x2);
-    TH1D* hEscNeutronSec_h = new TH1D("escape_Neutron_hadronic", "", spectrum.GetN(), x1, x2);
-    for (unsigned int i = 0; i < spectrum.GetN(); ++i) {
-      lgE = hEscNeutronSec_h->GetXaxis()->GetBinCenter(i+1);
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumPh = hEscNeutronSec_ph->GetBinContent(i+1) + fac*mEscNeutronSec.at(Spectrum::ePhotohadronic)[i][0];
-      hEscNeutronSec_ph->SetBinContent(i + 1, sumPh);
-      lgE = hEscNeutronSec_h->GetXaxis()->GetBinCenter(i+1); 
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumH = hEscNeutronSec_h->GetBinContent(i+1) + fac*mEscNeutronSec.at(Spectrum::eHadronic)[i][0];
-      hEscNeutronSec_h->SetBinContent(i + 1, sumH);
-    }
-    fHistsNoDraw.push_back(hEscNeutronSec_ph);
-    fHistsNoDraw.push_back(hEscNeutronSec_h);
-    
-    const map<int, TMatrixD>& mEscPhoton = secMap.at(Spectrum::ePhoton);
-    TH1D* hEscPhoton_ph = new TH1D("escape_Photon_photohadronic", "", spectrum.GetN(), x1, x2);
-    TH1D* hEscPhoton_h = new TH1D("escape_Photon_hadronic", "", spectrum.GetN(), x1, x2);
-    for (unsigned int i = 0; i < spectrum.GetN(); ++i) {
-      lgE = hEscPhoton_h->GetXaxis()->GetBinCenter(i+1); 
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumPh = hEscPhoton_ph->GetBinContent(i+1) + fac*mEscPhoton.at(Spectrum::ePhotohadronic)[i][0];
-      hEscPhoton_ph->SetBinContent(i + 1, sumPh);
-      lgE = hEscPhoton_h->GetXaxis()->GetBinCenter(i+1); 
-      fac = pow(pow(10., lgE), fGammaSource); 
-      const double sumH = hEscPhoton_h->GetBinContent(i+1) + fac*mEscPhoton.at(Spectrum::eHadronic)[i][0];
-      hEscPhoton_h->SetBinContent(i + 1, sumH);
-    }
-    fHistsNoDraw.push_back(hEscPhoton_ph);
-    fHistsNoDraw.push_back(hEscPhoton_h);
+    const Spectrum::ENucleonType secParticle[11] = {Spectrum::ePionPlus, Spectrum::ePionMinus, Spectrum::ePionZero,
+                                                    Spectrum::eNeutronSec, Spectrum::ePhoton,
+                                                    Spectrum::eElectronNeutrino, Spectrum::eAntiElectronNeutrino,
+                                                    Spectrum::eMuonNeutrino, Spectrum::eAntiMuonNeutrino,
+                                                    Spectrum::eTauNeutrino, Spectrum::eAntiTauNeutrino};
+    const Spectrum::EInteractionType secInteraction[2] = {Spectrum::ePhotohadronic, Spectrum::eHadronic};
+    const string particleLabel[11] = {"PionPlus", "PionMinus", "PionZero", "Neutron", "Photon",
+                                      "ElectronNeutrino", "AntiElectronNeutrino",
+                                      "MuonNeutrino", "AntiMuonNeutrino",
+                                      "TauNeutrino", "AntiTauNeutrino"};
+    const string interactionLabel[2] = {"photohadronic", "hadronic"};
+    const int Nparticle = sizeof(secParticle)/sizeof(secParticle[0]);
+    const int Ninteraction = sizeof(secInteraction)/sizeof(secInteraction[0]);
 
+    for(int i = 0; i < Nparticle; ++i) {
+      Spectrum::ENucleonType particle = secParticle[i];
+      string particlelbl = particleLabel[i];
+
+      const map<int, TMatrixD>& mEsc = secMap.at(particle);
+      for(int j = 0; j < Ninteraction; ++j) {
+        Spectrum::EInteractionType interaction = secInteraction[j];
+        string interactionlbl = interactionLabel[j];
+        string histlbl = "escape_" + particlelbl + "_" + interactionlbl;
+        TH1D* hEsc = new TH1D(histlbl.c_str(), "", spectrum.GetN(), x1, x2);
+        for(int k = 0; k < spectrum.GetN(); ++k) {
+          lgE = hEsc->GetXaxis()->GetBinCenter(k+1);
+          fac = pow(pow(10., lgE), fGammaSource);
+          const double sum = hEsc->GetBinContent(k+1) + fac*mEsc.at(interaction)[k][0];
+          hEsc->SetBinContent(k + 1, sum);
+        }
+        fHistsNoDraw.push_back(hEsc);
+      }
+    }
   }
 
 
@@ -537,8 +489,8 @@ namespace prop {
       if (i < mGroups.size()) {
         color = mGroups[i].fColor;
         style = mGroups[i].fLineStyle;
-	if(nameBase == "hextraProtonEsc")
-	  style = 2;
+	    if(nameBase == "hextraProtonEsc")
+	      style = 2;
         if (mGroups[i].fFirst > 56 && mGroups[i].fFirst < kGalacticAOffset)
           title << "galactic (A=" << mGroups[i].fFirst % kGalacticOffset << ")";
         else if (mGroups[i].fFirst >= kGalacticAOffset)
@@ -610,7 +562,7 @@ namespace prop {
       }
       TH1D* hist = fHists[histIndex];
       for (unsigned int i = 0; i < n; ++i) {
-	const double sumMass = hist->GetBinContent(i+1) + m[i][0];
+	      const double sumMass = hist->GetBinContent(i+1) + m[i][0];
         hist->SetBinContent(i + 1, sumMass);
         const double sumTot = histTot->GetBinContent(i+1) + m[i][0];
         histTot->SetBinContent(i + 1, sumTot);
