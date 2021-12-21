@@ -31,10 +31,12 @@ namespace prop {
     PropMatrices fPropMatrices;
     FitOptions fOptions;
     static bool fGCRKnees;
+    static bool fCSFSpectrum;
     static bool fGCRComponentA;
     static bool fGCRGSFIron;
     static bool fBoostedModel;
     static bool fisFixedPPElasticity;
+    static double fLgBaselineFraction;
     static FitData fFitData;
     TMinuit fMinuit;
     ClassDefNV(Fitter, 1);
