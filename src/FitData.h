@@ -68,6 +68,7 @@ namespace prop {
     VSource* fSource;
     Propagator* fPropagator;
     Spectrum fSpectrum;
+    Spectrum fBaseline;
     unsigned int fNLgE;
     double fLgEmin;
     double fLgEmax;
