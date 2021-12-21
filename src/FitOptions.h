@@ -68,7 +68,8 @@ namespace prop {
       eTANineYear,
       eAuger2019,
       eAuger2019fudge,
-      eAuger2019SD
+      eAuger2019SD,
+      eTA2019
     };
 
     enum ELowESpectrumDataType {
@@ -83,13 +84,15 @@ namespace prop {
       eAugerXmax2017fudge,
       eAugerXmax2017fudgeAndSD,
       eAugerXmax2017corrected,
-      eAugerXmax2019
+      eAugerXmax2019,
+      eAugerXmax2019withFixedTALEXmax2019,
+      eTAXmax2019
     };
 
     enum EEnergyShiftType {
       eConstant,
-      eAugerTA2019,
-      eShiftedAugerTA2019
+      eAugerShiftedAugerTA2019,
+      eTAShiftedAugerTA2019
     };
 
   public:
@@ -120,13 +123,15 @@ namespace prop {
 
     const std::string& GetIRB() const
     { return fIRB; }
-
+    
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
     std::vector<std::string> GetPhotIntFilenames();// const;
     std::string GetDataDirname() const;
     std::string GetOutDirname() const;
     std::string GetOutFilename() const;
+    const std::string GetBaselineFile() const
+    { return fBaselineFilename; }
 
     unsigned int GetNPhotonFields() const;
     double GetEps0(const unsigned i) const; // eV
@@ -142,6 +147,9 @@ namespace prop {
 
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
+
+    bool GCRCSFSpectrum() const
+    { return fCSFSpectrum; }
 
     bool GCRWithComponentA() const
     { return fGCRWithComponentA; }
@@ -178,6 +186,9 @@ namespace prop {
     double GetXmaxSigmaShift() const
     { return fXmaxSigmaShift; }
 
+    double GetLgBaselineFraction() const
+    { return fLgBaselineFraction; }
+
     const std::vector<MassValue>& GetGalacticMasses() const
     { return fGalMasses; }
 
@@ -212,6 +223,7 @@ namespace prop {
     std::string fDataDirname;
     std::string fOutDirname;
     std::string fOutFilename;
+    std::string fBaselineFilename;
     std::vector<EPhotonFieldType> fPhotonFieldType;
     std::vector<std::string> fEps0;
     std::vector<std::string> fBeta;
@@ -222,6 +234,7 @@ namespace prop {
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
+    bool fCSFSpectrum;
     bool fGCRWithComponentA;
     bool fGCRWithGSFIron;
     bool fRejectOutliers;
@@ -232,6 +245,7 @@ namespace prop {
     double fMaxCompLgE;
     double fEnergyBinShift;
     double fXmaxSigmaShift;
+    double fLgBaselineFraction; 
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
     std::vector<MassValue> fGalMasses;
