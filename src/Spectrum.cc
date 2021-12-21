@@ -8,8 +8,11 @@
 #include <TVectorD.h>
 #include <TDirectory.h>
 #include <TROOT.h>
+#include <TFile.h>
+#include <TKey.h>
 
 #include <cmath>
+#include <string>
 #include <sstream>
 #include <limits>
 #include <iostream>
@@ -157,6 +160,168 @@ namespace prop {
       }
     }
     return fInj;
+  }
+
+  void 
+  Spectrum::ReadBaseline(const std::string baselineFile)
+  {
+   
+    int nBins = 0;
+    fN = 0;
+    fLgEmin = 0;
+    fLgEmax = 0;
+ 
+    TFile*fFile = TFile::Open(baselineFile.c_str());    
+
+    if(!fFile ||fFile->IsZombie())
+      throw runtime_error("cannot open file" + baselineFile);
+   
+    TIter nextkey = fFile->GetListOfKeys();
+    TKey* key = 0;
+    while (( key = dynamic_cast<TKey*>(nextkey()))) {
+      TObject* const obj = key->ReadObj();
+      if(obj->IsA()->InheritsFrom("TH1D")) {
+        TH1D* h = static_cast<TH1D*>(obj);
+        string name = h->GetName();
+        if(name.find("hEsc") != std::string::npos) {
+          vector<string> splittitle;
+          string title(h->GetTitle());
+          string line;
+          size_t pos = 0, newpos;
+          while((newpos = title.find("#leq", pos)) != std::string::npos) {
+            line = title.substr(pos, newpos); 
+            splittitle.push_back(line);
+            pos = newpos + 1;
+          }
+          line = title.substr(pos+3);
+          splittitle.push_back(line);
+          if(splittitle.size() != 3)
+            continue;
+          const unsigned int Amin = stoi(splittitle[0]);
+          const unsigned int Amax = stoi(splittitle[2]);
+          const unsigned int Aesc = (Amin+Amax)/2;
+ 
+          nBins = h->GetNbinsX();
+          if(fN == 0) 
+            fN = nBins;
+  
+          TMatrixD& m = fEscape[Aesc];
+          if (!m.GetNoElements())
+            m.ResizeTo(nBins, 1);
+
+          const unsigned int n = nBins;
+          for (unsigned int iE = 0; iE < n; ++iE) {
+            const double lgE = h->GetBinCenter(iE+1);
+            const double E = pow(10, lgE);
+            const double flux = h->GetBinContent(iE+1)/pow(E,2);
+            m[iE][0] += flux;
+
+            if(fLgEmin == 0 && iE == 0)
+              fLgEmin = lgE;
+            if(fLgEmax == 0 && iE == n - 1)
+              fLgEmax = lgE;
+          }
+
+        }
+        else if(name.find("elMagSource") != std::string::npos) { 
+          string title = h->GetTitle();
+          ENucleonType type;
+          if(title == " pionPlus")
+            type = ePionPlus;
+          else if(title == " pionMinus")
+            type = ePionMinus;
+          else if(title == " pionZero")
+            type = ePionZero;
+          else if(title == " neutron")
+            type = eNeutronEsc;
+          else if(title == " photon")
+            type = ePhoton;
+          else 
+            continue;
+          
+          TMatrixD& m = fNucleons[type];
+          if (!m.GetNoElements())
+            m.ResizeTo(nBins, 1);
+    
+          const unsigned int n = nBins;
+          for (unsigned int iE = 0; iE < n; ++iE) {
+            const double lgE = h->GetBinCenter(iE+1);
+            const double E = pow(10, lgE);
+            const double flux = h->GetBinContent(iE+1)/pow(E,2);
+            m[iE][0] += flux;
+          }
+        }
+        else if(name.find("escape_") != std::string::npos) {
+          vector<string> splitname;
+          stringstream ssname(name);
+          string line;
+          while(getline(ssname, line, '_'))
+            splitname.push_back(line);
+          if(splitname.size() != 3)
+            continue;
+          string particle = splitname[1];
+          string channel = splitname[2];
+          ENucleonType type;
+          if(particle == "PionPlus")
+            type = ePionPlus;
+          else if(particle == "PionMinus")
+            type = ePionMinus;
+          else if(particle == "PionZero")
+            type = ePionZero;
+          else if(particle == "Neutron")
+            type = eNeutronSec;
+          else if(particle == "Photon")
+            type = ePhoton;
+          else if(particle == "ElectronNeutrino")
+            type = eElectronNeutrino;
+          else if(particle == "AntiElectronNeutrino")
+            type = eAntiElectronNeutrino;
+          else if(particle == "MuonNeutrino")
+            type = eMuonNeutrino;
+          else if(particle == "AntiMuonNeutrino")
+            type = eAntiMuonNeutrino;
+          else if(particle == "TauNeutrino")
+            type = eTauNeutrino;
+          else if(particle == "AntiTauNeutrino")
+            type = eAntiTauNeutrino;
+          else  
+            continue;
+          EInteractionType ch;
+          if(channel == "hadronic")
+            ch = eHadronic;
+          else if(channel == "photohadronic")
+            ch = ePhotohadronic;
+          else
+            continue;          
+
+          const unsigned int n = nBins;
+          TMatrixD& m = fSecondaries[type][ch];
+          if (!m.GetNoElements())
+            m.ResizeTo(n, 1);
+          
+          for (unsigned int iE = 0; iE < n; ++iE) {
+            const double lgE = h->GetBinCenter(iE+1);
+            const double E = pow(10, lgE);
+            const double flux = h->GetBinContent(iE+1)/pow(E,2);
+            m[iE][0] += flux;
+          }
+        }
+      }
+    }
+
+    TMatrixD& m = fNucleons[eProtonEsc];
+    if (!m.GetNoElements())
+      m.ResizeTo(nBins, 1);
+    const unsigned int n = nBins;
+    for (unsigned int iE = 0; iE < n; ++iE) {
+      const double fluxNucleon = fEscape[1][iE][0];
+      const double fluxNeutron = fNucleons[eNeutronEsc][iE][0];
+      m[iE][0] += fluxNucleon - fluxNeutron;
+    }
+
+    fN = nBins;
+
+    return;
   }
 
   unsigned int
