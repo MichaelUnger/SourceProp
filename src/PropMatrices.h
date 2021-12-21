@@ -44,12 +44,12 @@ namespace prop {
 
     void UpdateMZ0(double oldM, double newM, double oldZ0, double newZ0);
     PrimaryMap LoadInterpMatrixMZ0(double M, double Z0);
-    void InterpInitMZ0(double M, double Z0);
+    void InterpInitMZ0(double M, double Z0, std::string dataDirName);
     void InterpMZ0(double x, double xL, double xR, double y, double yD, double yU);
 
     void UpdateDmin(double oldDmin, double newDmin);
     PrimaryMap LoadInterpMatrixDmin(double Dmin);
-    void InterpInitDmin(double Dmin);
+    void InterpInitDmin(double Dmin, std::string dataDirName);
     void InterpDmin(double x, double xL, double xR);
 
   private:
@@ -62,9 +62,10 @@ namespace prop {
     PrimaryMap InterpMatrixUR;
     PrimaryMap InterpMatrixDL;
     PrimaryMap InterpMatrixDR; 
-    PrimaryMap InterpMatrixL, InterpMatrixR;
-    
+    PrimaryMap InterpMatrixL;
+    PrimaryMap InterpMatrixR;
     int posR;
+    std::string fDataDirName;
    };
 }
 #endif
