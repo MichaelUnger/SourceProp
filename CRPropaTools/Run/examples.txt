@@ -1,0 +1,4 @@
+# iron, beta = 2.4, m = 0, Emax < 300 EeV, E^3*flux [a.u.]
+event->Draw("log10(fE)","pow(fE0,-1.4)*(fId0==1000260560&&fE>1&&fE0<300)*pow(fE,2)")
+# <lnA>, beta = 2.4, m = 0, Emax < 300 EeV, E^3*flux [a.u.]
+event->Draw("log(fId/10%100):log10(fE)","pow(fE0,-1.4)*(fId0==1000260560&&fE>1&&fE0<300)*pow(fE,2)", "prof")

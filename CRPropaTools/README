@@ -1,0 +1,42 @@
+cd src
+svn co https://svn.ikp.kit.edu/svn/users/munger/GMF/CRPropaTools
+
+* python/2_headers.i:
+
+ - after last #include "crpropa/module":
+
+#include "../src/CRPropaTools/ROOTEvent/OutputROOTEvent.h"
+#include "../src/CRPropaTools/SimpleComposition/SimpleComposition.h"
+#include "../src/CRPropaTools/PionDecay/PionDecay.h"
+
+  - after %include "crpropa/Source.h"
+
+%include "../src/CRPropaTools/ROOTEvent/OutputROOTEvent.h"
+%include "../src/CRPropaTools/SimpleComposition/SimpleComposition.h"
+%include "../src/CRPropaTools/PionDecay/PionDecay.h"
+
+
+* CMakeLists.txt:
+
+ADD_SUBDIRECTORY (CRPropaTools)
+add_library(crpropa SHARED
+           ...
+        ${ROOTEvent_SOURCES}
+)
+SET_SOURCE_FILES_PROPERTIES(${CMAKE_CURRENT_BINARY_DIR}/CRPropaTools/ROOTEventDictionary.cc PROPERTIES GENERATED 1)
+ADD_DEPENDENCIES (crpropa ROOTEVENTDICT)
+
+* comment out
+  ${CMAKE_CURRENT_BINARY_DIR}/ROOTEventDictionary.cc
+at first run
+* cmake -DCMAKE_INSTALL_PREFIX=../install ../trunk
+* make
+* remove comment
+* make install
+
+
+module  load cmake/gnu/2.8.12
+module load python/gnu/2.7.5
+export PATH=$PATH:/home/mu495/Software/swig/swig-3.0.2_install/bin
+. /home/mu495/Software/ROOT/root_v5.34.24_install/bin/thisroot.sh
+. /home/mu495/Software/CRPropaNew/src/CRPropaTools/Run/setpaths_butinah.sh
