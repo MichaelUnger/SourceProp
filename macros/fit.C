@@ -134,7 +134,7 @@ DrawData(const FitData& fitData,
     if (lastLgE == 0 || fluxData[i].fLgE > lastLgE)
       lastLgE = fluxData[i].fLgE;
   }
-  
+
   {
     const double dlgE = 0.1;
     double lgE = lastLgE + dlgE;
@@ -160,7 +160,7 @@ DrawData(const FitData& fitData,
   fitSpectrum2->SetMarkerStyle(24);
   fitSpectrum2->SetMarkerColor(kBlack);
 
-  
+
   fitSpectrum->SetName("fitSpectrum");
   TFile out("tmp.root","RECREATE");
   fitSpectrum->Write();
@@ -255,7 +255,7 @@ DrawData(const FitData& fitData,
   legSpec->SetFillStyle(0);
   legSpec->SetBorderSize(0);
   legSpec->SetTextSize(0.05);
-  if (lowESpectrum->GetN()) 
+  if (lowESpectrum->GetN())
     legSpec->AddEntry(lowESpectrum,
                       fitOptions.GetLowESpectrumDataLabel().c_str(), "PE");
 
@@ -275,7 +275,7 @@ DrawData(const FitData& fitData,
      legSpec->Draw();
   }
   fluxTotAtEarth->Draw("CSAME");
-  
+
   TGraphErrors* fitLnA = new TGraphErrors();
   TGraph* fitLnA2 = new TGraph();
   TGraphErrors* fitVlnA = new TGraphErrors();
@@ -361,7 +361,7 @@ DrawData(const FitData& fitData,
   const LnACalculator::EModel model = LnACalculator::GetModel(iamName);
   const string niceName = LnACalculator::GetNiceModelName(model);
   const string xmaxLabel = fitOptions.GetXmaxDataLabel() + " " + niceName;
-  
+
   leg->AddEntry(fitVlnA, xmaxLabel.c_str(), "PE");
   can->cd(Plotter::eCompEarth)->cd(1);
   leg->Draw();
@@ -438,11 +438,11 @@ DrawValues(const FitData& fitData,
     if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBrokenPowerlaw) {
       l.SetTextColor(fixColor);
       photonString << "#varepsilon_{0} = " << fitOptions.GetEps0(i) << " eV";
-      
+
       //  l.DrawLatex(x, y, photonString.str().c_str());
       //  y -= dy;
       //  photonString.str("");
-      
+
       photonString << ", #alpha="
                    << fitOptions.GetAlpha(i) << ", #beta="
                    << fitOptions.GetBeta(i);
@@ -459,11 +459,11 @@ DrawValues(const FitData& fitData,
     else if (fitOptions.GetPhotonFieldType(i) == FitOptions::eBPLInterp) {
       l.SetTextColor(fixColor);
       photonString << "#varepsilon_{0} = " << fitParameters[GetPar("photonPeak")].fValue << " eV";
-      
+
       //  l.DrawLatex(x, y, photonString.str().c_str());
       //  y -= dy;
       //  photonString.str("");
-      
+
       photonString << ", #alpha="
                    << fitOptions.GetAlpha(i) << ", #beta="
                    << fitOptions.GetBeta(i);
@@ -533,7 +533,7 @@ DrawValues(const FitData& fitData,
                      ", IRB: " + fitOptions.GetIRB()).c_str());
 
   y = yStart;
-  
+
   const unsigned int nMass = fitData.GetNMass();
   vector<double> fractions(nMass);
   vector<double> zeta;
@@ -571,7 +571,7 @@ DrawValues(const FitData& fitData,
   const unsigned int offset = 2*nMass - 1;
   vector<double> galFractions(nGalMass);
   vector<double> galZeta;
-  for (unsigned int i = 0; i < galFractions.size() - 1; ++i) 
+  for (unsigned int i = 0; i < galFractions.size() - 1; ++i)
     galZeta.push_back(pow(10, fitParameters[eNpars + offset + i].fValue));
   zetaToFraction(galFractions.size(), &galZeta.front(), &galFractions.front());
 
@@ -600,7 +600,7 @@ DrawValues(const FitData& fitData,
     l.DrawLatex(0.63, y, parString.str().c_str());
     y -= dy;
   }
-  
+
   using namespace utl;
 
   cout <<  " Q0 " << fitData.fQ0 / ( 1 / (pow(Mpc, 3) * year * erg) )
@@ -673,10 +673,20 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
 
   vector<MassGroup> massGroups;
   if (allMasses) {
+    const int nCont = GetMaxA() + 1;
+    gStyle->SetNumberContours(nCont);
+    const int nRGB = 5;
+    double stops[nRGB] = { 0.00, 0.34, 0.61, 0.84, 1.00 };
+    double red[nRGB]   = { 0.00, 0.00, 0.87, 1.00, 0.51 };
+    double green[nRGB] = { 0.00, 0.81, 1.00, 0.20, 0.00 };
+    double blue[nRGB]  = { 0.51, 1.00, 0.12, 0.00, 0.00 };
+    int firstIndex =
+    TColor::CreateGradientColorTable(nRGB, stops, red, green, blue, nCont);
+
     for (unsigned int i = 1; i <= GetMaxA(); ++i) {
-      massGroups.push_back(MassGroup(i, i, i, kRed+i));
-      massGroups.push_back(MassGroup(i+kGalacticOffset, i+kGalacticOffset, i+kGalacticOffset, kRed+i));
-      massGroups.push_back(MassGroup(i+kGalacticAOffset, i+kGalacticAOffset, i+kGalacticAOffset, kRed+i));
+      massGroups.push_back(MassGroup(i, i, i, firstIndex+i));
+      massGroups.push_back(MassGroup(i+kGalacticOffset, i+kGalacticOffset, i+kGalacticOffset, firstIndex+i));
+      massGroups.push_back(MassGroup(i+kGalacticAOffset, i+kGalacticAOffset, i+kGalacticAOffset, firstIndex+i));
     }
   }
   else {
@@ -731,7 +741,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
   DrawValues(fitData, opt, can);
 
   can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
-  
+
   opt.WriteFitConfig((opt.GetOutDirname() + "/" +
                        opt.GetOutFilename() + ".config").c_str(),
                       fitData);
@@ -742,7 +752,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
 
   if (neutrino) {
     const bool withSourceNu = true;
-    if (!withSourceNu) 
+    if (!withSourceNu)
       cout << "fit(): warning -- withSourceNu = false" << endl;
     const double evoM = fitData.fFitParameters[GetPar("evolutionM")].fValue;
     const double evoZ0 = fitData.fFitParameters[GetPar("evolutionZ0")].fValue;
@@ -775,7 +785,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     fitSummary.SetNNeutrinos159(NNeutrinos159);
     fitter.GetFitData().SetNNeutrinos(NNeutrinos);
     fitter.GetFitData().SetNNeutrinos159(NNeutrinos159);
-    neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
+    neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/"
                                  + opt.GetOutFilename() + "HistNu" +
                                  (withSourceNu?"":"NoSource"));
   }
@@ -797,7 +807,3 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
                       fitData);
 
 }
-
-
-
-
