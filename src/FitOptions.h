@@ -10,7 +10,7 @@
 namespace prop {
 
   class FitData;
-  
+
   struct StartValue {
     StartValue() :
       fStart(0), fStep(0), fMinVal(0), fMaxVal(0), fIsFixed(0) {}
@@ -69,7 +69,8 @@ namespace prop {
       eAuger2019,
       eAuger2019fudge,
       eAuger2019SD,
-      eTA2019
+      eTA2019,
+      eAuger2021
     };
 
     enum ELowESpectrumDataType {
@@ -77,7 +78,7 @@ namespace prop {
       eGalacticDataA,
       eNoLowESpectrum
     };
-    
+
     enum EXmaxDataType {
       eAugerXmax2014,
       eAugerXmax2017,
@@ -123,7 +124,7 @@ namespace prop {
 
     const std::string& GetIRB() const
     { return fIRB; }
-    
+
     std::string GetPropmatrixFilename() const;
     std::string GetPropmatrixNuFilename() const;
     std::vector<std::string> GetPhotIntFilenames();// const;
@@ -181,7 +182,7 @@ namespace prop {
     EEnergyShiftType GetEnergyShiftType() const
     { return fEnergyShiftType; }
     double GetEnergyBinShift(const double lgE = 0.) const;
-    double GetEnergyShiftJacobian(const double lgE) const; 
+    double GetEnergyShiftJacobian(const double lgE) const;
 
     double GetXmaxSigmaShift() const
     { return fXmaxSigmaShift; }
@@ -208,13 +209,13 @@ namespace prop {
     ELowESpectrumDataType GetLowESpectrumDataType() const
     { return fLowESpectrumDataType; }
     std::string GetLowESpectrumDataLabel() const;
-    
+
     EXmaxDataType GetXmaxDataType() const
     { return fXmaxDataType; }
     std::string GetXmaxDataLabel() const;
 
     void WriteFitConfig(const std::string& filename, const FitData& fitData);
-    
+
   private:
     std::map<EPar, prop::StartValue> fStartValues;
     std::vector<prop::MassValue> fMassValues;
@@ -245,7 +246,7 @@ namespace prop {
     double fMaxCompLgE;
     double fEnergyBinShift;
     double fXmaxSigmaShift;
-    double fLgBaselineFraction; 
+    double fLgBaselineFraction;
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
     std::vector<MassValue> fGalMasses;

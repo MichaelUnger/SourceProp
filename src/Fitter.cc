@@ -37,7 +37,7 @@ namespace prop {
   bool Fitter::fisFixedPPElasticity = false;
   bool Fitter::fGCRGSFIron = false;
   double Fitter::fLgBaselineFraction = -100;
-  
+
   double
   GetGSFIronFlux(const double lgE)
   {
@@ -47,7 +47,7 @@ namespace prop {
     // GCR Component A iron inferred from global spline fit of Dembinski+17 arXiv:1711.11432
     // Normalization given in units of eV2/km2/sr/yr
     const double phi = 5.5e36*pow(E/E0, -2.6+3)*exp(-(E-E0)/26/Ecut)/pow(E, 3);
-    
+
     return phi;
   }
 
@@ -131,8 +131,8 @@ namespace prop {
     }
     source->SetPhotonScaleFactors(photonScale);
     if(!fisFixedPPElasticity)
-      source->BuildPhotopionWeights(data.fLgEmin, data.fLgEmax, (data.fLgEmax-data.fLgEmin)/data.fNLgE, nSubBins);     
-    
+      source->BuildPhotopionWeights(data.fLgEmin, data.fLgEmax, (data.fLgEmax-data.fLgEmin)/data.fNLgE, nSubBins);
+
     const double lambdaI_PH = source->LambdaPhotoHadInt(1e19, 56); // photohadronic interaction length
     const double lambdaI_H = source->LambdaHadInt(1e19, 56); // hadronic interaction length
     const double HadIntFac = pow(10, par[eLgHadIntFac]) * lambdaI_PH / lambdaI_H;
@@ -248,7 +248,7 @@ namespace prop {
         }
 
         // add in baseline escaping spectrum
-        { 
+        {
           const double lgf = fLgBaselineFraction;
           if(lgf > -100) {
             const double f = pow(10, lgf);
@@ -257,8 +257,8 @@ namespace prop {
             const double lgEmax = spectrum.GetLgEmax();
             const double n = spectrum.GetN();
             const double dlgE = (lgEmax - lgEmin) / n;
-            const double refLgE = 17.0;           
- 
+            const double refLgE = 17.0;
+
             double sum = 0.;
             double sumB = 0.;
             for (double lgE = refLgE; lgE <= lgEmax; lgE += dlgE) {
@@ -267,7 +267,7 @@ namespace prop {
               sum += E * spectrum.GetFluxSum(lgE) * dE;
               sumB += E * baseline.GetFluxSum(lgE) * dE;
             }
-    
+
             Spectrum::SpecMap& baselineEsc = baseline.GetEscFlux();
             for(auto const& iter : baselineEsc) {
               const int A = iter.first;
@@ -283,7 +283,7 @@ namespace prop {
                 m[iE][0] += baselineFlux;
               }
             }
-            
+
             Spectrum::SpecMap& baselineNucleon = baseline.GetNucleonFlux();
             for(auto const& iter : baselineNucleon) {
               const int type = iter.first;
@@ -299,7 +299,7 @@ namespace prop {
                 m[iE][0] += baselineFlux;
               }
             }
-            
+
             Spectrum::SecMap& baselineSecondary = baseline.GetSecondaryFlux();
             for(auto const& iter1 : baselineSecondary) {
               const int particle = iter1.first;
@@ -329,9 +329,9 @@ namespace prop {
       const double fGal = par[eFGal];
       const double lgfGalA = par[eLgFGalA];
       const double fGalA = pow(10, lgfGalA);
-      
+
       if(lgfGalA > 0.) throw runtime_error("Galactic component A fraction > 1! Please set lgfGalA <= 0.");
-      
+
       if (fGal > 0) {
 
         map<unsigned int, double> galFractions;
@@ -381,7 +381,7 @@ namespace prop {
           const double lgPhi0Gal = log10(fGal) + log10(1-fGalA) + log10(extraGalactic) - lgGalSum - log10(1- fGal);
           const double phi0Gal = pow(10, lgPhi0Gal);
 
-          
+
           const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
           for (const auto iter : galFractions) {
             double lgE = data.fLgEmin + dlgE/2;
@@ -391,7 +391,7 @@ namespace prop {
             for (unsigned int i = 0; i < data.fNLgE; ++i) {
               const double E = pow(10, lgE);
               galactic[i][0] = (fCSFSpectrum)?
-                iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)) : // spectrum of a colliding shock flow fitting data from arXiv:1706.01135 
+                iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)) : // spectrum of a colliding shock flow fitting data from arXiv:1706.01135
                 iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
               lgE += dlgE;
             }
@@ -833,7 +833,7 @@ namespace prop {
     fisFixedPPElasticity = fOptions.DoFixPPElasticity();
 
     ReadData();
-    
+
     const double evoM = fOptions.GetStartValue(GetPar("evolutionM"));
     const double evoZ0 = fOptions.GetStartValue(GetPar("evolutionZ0"));
     const double evoDmin = fOptions.GetStartValue(GetPar("evolutionDmin"));
@@ -879,7 +879,7 @@ namespace prop {
     if(lgRdiff <= -100)
       cout << " using single-power law diffusion constant \n";
     else
-      cout << " using rigidity-dependent diffusion constant \n"; 
+      cout << " using rigidity-dependent diffusion constant \n";
 
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
@@ -922,7 +922,7 @@ namespace prop {
     unsigned int iPar = eNpars;
     for (unsigned int iMassClass = 0; iMassClass < (!fGCRComponentA ? 2 : 3); ++iMassClass) {
       const vector<MassValue>& masses =
-        iMassClass == 0 ? fOptions.GetMasses() : 
+        iMassClass == 0 ? fOptions.GetMasses() :
         (iMassClass == 1? fOptions.GetGalacticMasses() : fOptions.GetGalacticAMasses() );
       vector<double> fraction;
       vector<double> massIndex;
@@ -1198,8 +1198,8 @@ namespace prop {
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019.dat");
         /*
         # E*J in  [m^-2 s^-1 sr^-1] units
-        # log10E = center of the energy bin 
-        # log10E    E*J       Err_up       Err_down  
+        # log10E = center of the energy bin
+        # log10E    E*J       Err_up       Err_down
         */
         double exposure;
         in >> exposure;
@@ -1240,8 +1240,8 @@ namespace prop {
         ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019fudge.dat");
         /*
         # J in  [m^-2 s^-1 sr^-1] units
-        # log10E = center of the energy bin 
-        # log10E    E*J       Err_up       Err_down  
+        # log10E = center of the energy bin
+        # log10E    E*J       Err_up       Err_down
         */
         double exposure;
         in >> exposure;
@@ -1281,11 +1281,16 @@ namespace prop {
       }
     case FitOptions::eAuger2019SD:
       {
-        ifstream in(fOptions.GetDataDirname() + "/auger_icrc2019_SD.dat");
+        const string filename =
+          fOptions.GetDataDirname() + "/auger_icrc2019_SD.dat";
+        ifstream in(filename);
+        if (!in.good())
+          throw runtime_error("could not open " + filename);
+
         /*
         # J in  [km^-2 yr^-1 sr^-1 eV^-1] units
-        # log10E = center of the energy bin 
-        # log10E    J       Err_low       Err_up  
+        # log10E = center of the energy bin
+        # log10E    J       Err_low       Err_up
         */
         double exposure;
         in >> exposure;
@@ -1294,6 +1299,48 @@ namespace prop {
           FluxData flux;
           double eyDown, eyUp, fluxE;
           in >> flux.fLgE >> fluxE >> eyDown >> eyUp;
+          if (!in.good())
+            break;
+          flux.fFlux = fluxE;
+          flux.fFluxErr = (eyUp+eyDown)/2;
+          flux.fFluxErrUp = eyUp;
+          flux.fFluxErrLow = eyDown;
+          flux.fN = 0;
+
+          // syst shift?
+          const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
+          const double jacobian = fOptions.GetEnergyShiftJacobian(flux.fLgE);
+          flux.fFlux *= jacobian;
+          flux.fFluxErr *= jacobian;
+          flux.fFluxErrUp *= jacobian;
+          flux.fFluxErrLow *= jacobian;
+          flux.fLgE += deltaLgESys;
+
+          fFitData.fAllFluxData.push_back(flux);
+          if (flux.fLgE > fOptions.GetMinFluxLgE()) {
+            fFitData.fFluxData.push_back(flux);
+            fFitData.fFluxDataLowStat.push_back(flux);
+          }
+        }
+        break;
+      }
+    case FitOptions::eAuger2021:
+      {
+        const string filename =
+          fOptions.GetDataDirname() + "/auger_EurPhysJ_2021.txt";
+        ifstream in(filename);
+        if (!in.good())
+          throw runtime_error("could not open " + filename);
+
+        // read away header
+        string line;
+        getline(in, line);
+
+        fFitData.fUHEExposure = 60400; // as in PRL2020
+        while (true) {
+          FluxData flux;
+          double eyDown, eyUp, fluxE, dummy;
+          in >> flux.fLgE >> dummy >> fluxE >> eyDown >> eyUp >> dummy >> dummy;
           if (!in.good())
             break;
           flux.fFlux = fluxE;
@@ -1376,11 +1423,11 @@ namespace prop {
         ifstream in(fOptions.GetDataDirname() + "/ta_icrc2019.dat");
         /*
         # E^3*J in  [m^-2 s^-1 sr^-1 eV^2] units
-        # E/eV = center of the energy bin 
-        # log10E    E^3*J       E^3*J+Err_up       E^3*J-Err_lo  
+        # E/eV = center of the energy bin
+        # log10E    E^3*J       E^3*J+Err_up       E^3*J-Err_lo
         */
         //double exposure;
-        //in >> exposure; 
+        //in >> exposure;
         //fFitData.fUHEExposure = exposure;
         fFitData.fUHEExposure = 0.; // exposure not given just set to 0 for now
         while (true) {
@@ -1727,7 +1774,7 @@ namespace prop {
         break;
       }
     case FitOptions::eAugerXmax2019withFixedTALEXmax2019:
-      { // Auger ICRC19 Xmax data shifted & unshifted TALE ICRC19 Xmax 
+      { // Auger ICRC19 Xmax data shifted & unshifted TALE ICRC19 Xmax
         /*
           #  (1) meanLgE:      <lg(E/eV)>
           #  (2) nEvts:        number of events
@@ -1814,7 +1861,7 @@ namespace prop {
         while (true) {
           double meanLgE, mean, meanErrUp, meanErrLo;
           const double meanSys = 17.0;
-          in >> meanLgE >> mean >> meanErrUp >> meanErrLo; 
+          in >> meanLgE >> mean >> meanErrUp >> meanErrLo;
           double buffLgE, sigma, sigmaErrUp, sigmaErrLo;
           const double sigmaSyst = 4.0;
           in2 >> buffLgE >> sigma >> sigmaErrUp >> sigmaErrLo;
@@ -1919,8 +1966,8 @@ namespace prop {
         fOptions.GetSpectrumDataType() == FitOptions::eTA2013 ?
         0.1 : // approx one bin
         0;
-      const double deltaLgESys = 
-        (TAOffset >= i && 
+      const double deltaLgESys =
+        (TAOffset >= i &&
           fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2019withFixedTALEXmax2019)?
         0.0 : // no shift for TA data
         0.1 * fOptions.GetEnergyBinShift(log10(xmaxGraph->GetX()[i]));
@@ -1986,5 +2033,5 @@ namespace prop {
     FitFunc(nPar, &dummy, chi2, const_cast<double* const>(&par.front()), iFlag);
     return chi2;
   }
-  
+
 }

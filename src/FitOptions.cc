@@ -29,10 +29,10 @@ namespace prop {
     fGCRWithGSFIron = false;
     fisFixedPPElasticity = true;
     fRejectOutliers = 0;
-    fMinFluxLgE = 17.5; 
-    fMaxFluxLgE = 22.0; 
-    fMinCompLgE = 17.8; 
-    fMaxCompLgE = 22.0; 
+    fMinFluxLgE = 17.5;
+    fMaxFluxLgE = 22.0;
+    fMinCompLgE = 17.8;
+    fMaxCompLgE = 22.0;
     fEnergyBinShift = 0;
     fEnergyShiftType = eConstant;
     fXmaxSigmaShift = 0;
@@ -61,10 +61,10 @@ namespace prop {
     fStartValues[eExtraProtonMass] = StartValue(1, 0.1, 1, 56, 1);
     fStartValues[eExtraProtonLgRefE] = StartValue(19.0, 0.1, 0, 0, 1);
     fStartValues[eUnused1] = StartValue(0, 0.1, 0, 0, 1);
-    fStartValues[eEvolutionM] = StartValue(0, 0.1, -5., 5., 1); 
-    fStartValues[eEvolutionZ0] = StartValue(2., 0.1, 0., 5., 1); 
-    fStartValues[eEvolutionDmin] = StartValue(0., 0.1, 0., 100., 1); 
-    fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.); 
+    fStartValues[eEvolutionM] = StartValue(0, 0.1, -5., 5., 1);
+    fStartValues[eEvolutionZ0] = StartValue(2., 0.1, 0., 5., 1);
+    fStartValues[eEvolutionDmin] = StartValue(0., 0.1, 0., 100., 1);
+    fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.);
     fStartValues[eLgHadIntFac] = StartValue(10, 0.1 ,-10, 10, 1);
 
     fSpectrumType = Spectrum::eExponential;
@@ -76,9 +76,9 @@ namespace prop {
     fSpectrumDataTypeName = "Auger2013";
     fLowESpectrumDataTypeName = "";
     fXmaxDataTypeName = "Auger2014";
- 
-    fBaselineFilename = "";   
- 
+
+    fBaselineFilename = "";
+
     ifstream optionsFile(filename.c_str());
     if (!optionsFile)
       throw runtime_error("error reading " + filename);
@@ -268,7 +268,7 @@ namespace prop {
         else if(type == "TAShiftedAugerTA2019")
           fEnergyShiftType = eTAShiftedAugerTA2019;
         else
-          throw runtime_error("unknown energy shift type "+type); 
+          throw runtime_error("unknown energy shift type "+type);
       }
       else if (keyword == "xmaxSigmaShift") {
         if (!(line >> fXmaxSigmaShift))
@@ -300,7 +300,7 @@ namespace prop {
       }
       else if (keyword == "baselineFile") {
         if (!(line >> fBaselineFilename))
-          throw runtime_error("error decoding baselineFile"); 
+          throw runtime_error("error decoding baselineFile");
       }
       else if (keyword == "spectrumData") {
         string type;
@@ -316,6 +316,8 @@ namespace prop {
           fSpectrumDataType = eAuger2019fudge;
         else if (type == "Auger2019SD")
           fSpectrumDataType = eAuger2019SD;
+        else if (type == "Auger2021")
+          fSpectrumDataType = eAuger2021;
         else if (type == "TA2013")
           fSpectrumDataType = eTA2013;
         else if (type == "TASixYear")
@@ -441,7 +443,7 @@ namespace prop {
       fGalMasses.push_back(MassValue(defaultGalMass, 1, 1,
                                      defaultGalMass, 1, 1));
     }
-    
+
     if (fGalAMasses.empty() && fGCRWithComponentA) {
       const unsigned int defaultGalAMass = 56;
       cerr << " FitOptions::FitOptions() - warning, no galactic component A mass given."
@@ -454,7 +456,7 @@ namespace prop {
       cerr << " warning: override spectrum type " << fSpectrumType << endl;
       fSpectrumType = Spectrum::eExternal;
     }
-    
+
   }
 
   double
@@ -654,6 +656,8 @@ namespace prop {
       return "Auger 2019 SD";
     case eTA2019:
       return "TA 2019";
+    case eAuger2021:
+      return "Auger 2021";
     default:
       return "unknown";
     }
@@ -673,7 +677,7 @@ namespace prop {
     }
   }
 
-  
+
   string
   FitOptions::GetXmaxDataLabel()
     const
@@ -785,14 +789,14 @@ namespace prop {
     double fracB[nMassB];
     double zetaB[nMassB-1];
     const unsigned int offset = eNpars + nMassA - 1 + nMassA;
-    for (unsigned int i = 0; i < nMassB - 1; ++i) 
+    for (unsigned int i = 0; i < nMassB - 1; ++i)
       zetaB[i] = pow(10, fitData.fFitParameters[offset + i].fValue);
     zetaToFraction(nMassB, zetaB, fracB);
     for (unsigned int i = 0; i < nMassB; ++i) {
       const double m = fitData.fFitParameters[offset + nMassB - 1 + i].fValue;
       out << massNameB << " " << m << " " << fracB[i] << " 1 56 1 1\n";
     }
-   
+
     if(fGCRWithComponentA) {
       const string massNameGCRA = "galacticAMass";
       map<unsigned int, double> fractionsGCRA;
@@ -800,20 +804,20 @@ namespace prop {
       double fracGCRA[nMassGCRA];
       double zetaGCRA[nMassGCRA-1];
       const unsigned int offset = eNpars + nMassA - 1 + nMassA + nMassB - 1 + nMassB;
-      for (unsigned int i = 0; i < nMassGCRA - 1; ++i) 
+      for (unsigned int i = 0; i < nMassGCRA - 1; ++i)
         zetaB[i] = pow(10, fitData.fFitParameters[offset + i].fValue);
       zetaToFraction(nMassGCRA, zetaGCRA, fracGCRA);
       for (unsigned int i = 0; i < nMassGCRA; ++i) {
         const double m = fitData.fFitParameters[offset + nMassGCRA - 1 + i].fValue;
         out << massNameGCRA << " " << m << " " << fracGCRA[i] << " 1 56 1 1\n";
       }
-    } 
-    
+    }
+
     out.close();
   }
 
-  double FitOptions::GetEnergyBinShift(const double lgE) 
-    const 
+  double FitOptions::GetEnergyBinShift(const double lgE)
+    const
   {
     if(fEnergyShiftType == eConstant)
       return fEnergyBinShift;
@@ -835,7 +839,7 @@ namespace prop {
       const double energyBinShift = 10*energyShift + fEnergyBinShift;
       return energyBinShift;
     }
-    else     
+    else
       throw runtime_error("unknown energy shift type");
   }
 
@@ -861,7 +865,7 @@ namespace prop {
     }
     else
       throw runtime_error("unknown energy shift jacobian");
-    
+
     return jacobian;
   }
 
