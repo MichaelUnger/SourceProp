@@ -754,7 +754,7 @@ namespace prop {
         << "gcrWithComponentA " << fGCRWithComponentA << "\n"
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
         << "rejectOutliers " << fRejectOutliers << "\n"
-        << "LgBaselineFraction " << fLgBaselineFraction << "\n";
+        << "lgBaselineFrac " << fLgBaselineFraction << "\n";
     if(!fBaselineFilename.empty())
       out << "baselineFilename " << fBaselineFilename << "\n";
 
