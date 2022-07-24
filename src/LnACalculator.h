@@ -9,13 +9,17 @@
 class LnACalculator {
 
 public:
+
   enum EModel {
     eSibyll21,
     eEPOSLHC,
     eQGSJetII04,
     eSibyll23c,
+    eSibyll23d,
     eNModels
   };
+
+  LnACalculator();
 
   static
   std::string GetModelName(EModel m)
@@ -29,6 +33,8 @@ public:
       return "qgsjetII04";
     case eSibyll23c:
       return "sibyll23c";
+    case eSibyll23d:
+      return "sibyll23d";
     default:
       return "unknown";
     }
@@ -46,6 +52,8 @@ public:
       return "QGSJetII-04";
     case eSibyll23c:
       return "Sibyll-2.3c";
+    case eSibyll23d:
+      return "Sibyll-2.3d";
     default:
       return "unknown";
     }
@@ -62,6 +70,8 @@ public:
       return eQGSJetII04;
     else if (modelName == "sibyll23c")
       return eSibyll23c;
+    else if (modelName == "sibyll23d")
+      return eSibyll23d;
     else
       throw std::runtime_error("unknown model " + modelName);
   }

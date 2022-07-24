@@ -1,23 +1,34 @@
-#include "LnACalculator.h"
+#include <LnACalculator.h>
 #include <cmath>
 #include <vector>
 #include <iostream>
 using namespace std;
 
-// parameters from lnA paper and update in ICRC13 proceedings
-const double gX0[LnACalculator::eNModels] = {795.1, 806.1, 790.4, 819.3};
-const double gD[LnACalculator::eNModels] = {57.7, 55.6, 54.4, 57.4};
-const double gZeta[LnACalculator::eNModels] = {-0.04, 0.15, -0.31, -0.56};
-const double gDelta[LnACalculator::eNModels] = {-0.04, 0.83, 0.24, 0.68};
-const double gP[LnACalculator::eNModels][3] = { {2785, -364, 152},
-                                                {3284, -260, 132},
-                                                {3738, -375, -21},
-                                                {3792, -524, 124}};
-const double gA[LnACalculator::eNModels][2] = { {-0.368, -0.0049},
-                                                {-0.462, -0.0008},
-                                                {-0.397, 0.0008},
-                                                {-0.404, 0.00004}};
-const double gB[LnACalculator::eNModels] = {0.039, 0.059, 0.046, 0.047};
+// parameters from lnA paper and update in ICRC13 proceedings and GAP2020_058 (223d);
+const double gX0[LnACalculator::eNModels] =
+  {795.1, 806.1, 790.4, 819.3, 815.87};
+const double gD[LnACalculator::eNModels] =
+  {57.7, 55.6, 54.4, 57.4, 57.873};
+const double gZeta[LnACalculator::eNModels] =
+  {-0.04, 0.15, -0.31, -0.56, -0.3035};
+const double gDelta[LnACalculator::eNModels] =
+  {-0.04, 0.83, 0.24, 0.68, 0.7963};
+const double gP[LnACalculator::eNModels][3] =
+  { {2785, -364, 152},
+    {3284, -260, 132},
+    {3738, -375, -21},
+    {3792, -524, 124},
+    {3727, -483.8, 132.5}
+  };
+const double gA[LnACalculator::eNModels][2] =
+  { {-0.368, -0.0049},
+    {-0.462, -0.0008},
+    {-0.397, 0.0008},
+    {-0.404, 0.00004},
+    {-0.4055, -2.536e-4}
+  };
+const double gB[LnACalculator::eNModels] =
+  {0.039, 0.059, 0.046, 0.047, 0.04749};
 const double gE0 = 1e19;
 
 inline
@@ -32,6 +43,10 @@ double
 GetFE(const double lgE, const LnACalculator::EModel m)
 {
   return gZeta[m] - gD[m] / log(10) +  gDelta[m] * lgE;
+}
+
+LnACalculator::LnACalculator()
+{
 }
 
 
@@ -238,5 +253,3 @@ LnACalculator::GetXmaxVariance(const double E, const EModel m, const double A)
   const double sigmaP2 = GetSigmaP2(lgE, m);
   return sigmaP2 * (1 + a*lnA + gB[m]*lnA*lnA);
 }
-
-
