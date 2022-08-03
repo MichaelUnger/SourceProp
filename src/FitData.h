@@ -62,6 +62,10 @@ namespace prop {
     { fNNeutrinos = n; }
     void SetNNeutrinos159(const double n)
     { fNNeutrinos159 = n; }
+    void SetNuFlux18(const double n)
+    { fNuFlux18 = n; }
+    void SetNuFlux19(const double n)
+    { fNuFlux19 = n; }
 
     unsigned int fIteration;
     unsigned int fNNan;
@@ -87,9 +91,12 @@ namespace prop {
     double fQ0;
     double fQ0Err;
     double fProtonRatio185;
+    double fProtonFraction30;
     double fProtonFraction60;
     double fNNeutrinos = -1;
     double fNNeutrinos159;
+    double fNuFlux18; // E^2*dN/dE neutrinos at 1 EeV
+    double fNuFlux19;
     std::vector<FitParameter> fFitParameters;
     int fFitStatus;
     bool fFitFailed;
