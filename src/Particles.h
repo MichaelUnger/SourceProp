@@ -20,17 +20,17 @@ enum EInteractionType {
   eHadronic
 };
 
+// offset for galactic component
+const unsigned int kGalacticOffset = 100000;
+// offset for galactic component A
+const unsigned int kGalacticAOffset = 10*kGalacticOffset;
+
 // nucleus = protons and nuclei
 inline
 bool
 IsNucleus(const unsigned int A)
 {
-  return A < eNeutron;
+  return A < eNeutron || A > kGalacticOffset;
 }
-
-// offset for galactic component
-const unsigned int kGalacticOffset = 100000;
-// offset for galactic component A
-const unsigned int kGalacticAOffset = 10*kGalacticOffset;
 
 #endif
