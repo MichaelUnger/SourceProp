@@ -131,4 +131,7 @@ FitSummary::Fill(const prop::FitData& fitData,
   fProtonRatio185 = fitData.fProtonRatio185;
   fProtonFraction60 = fitData.fProtonFraction60;
 
+  flgBaselineFrac = fitOptions.GetLgBaselineFraction();
+  fBaselineFilename = fitOptions.GetBaselineFile();
+
 }
