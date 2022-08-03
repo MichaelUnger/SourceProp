@@ -732,20 +732,23 @@ namespace prop {
       else if (fPhotonFieldType[i] == eBlackBody)
         out << "PhotonMBB " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
       else if (fPhotonFieldType[i] == eBPLInterp) {
-	fEps0[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
+	      fEps0[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
         out << "PhotonBPLInterpolator " << fEps0[i] << " " << fAlpha[i] << " " << fBeta[i]
             << "\n";
       }
       else if (fPhotonFieldType[i] == eMBBInterp) {
         fBBTemperature[i] = std::to_string(fitData.fFitParameters[GetPar("photonPeak")].fValue);
-	out << "PhotonMBBInterpolator " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
+	      out << "PhotonMBBInterpolator " << fBBTemperature[i] << " " << fBBSigma[i] << "\n";
       }
       else
         cerr << " unsupported photon field! " << endl;
     }
+    out << "fProtonFraction30 " << fitData.fProtonFraction30 << "\n";
     if(fitData.fNNeutrinos > 0) {
       out << "fNNeutrinos " << fitData.fNNeutrinos << "\n"
-          << "fNNeutrinos159 " << fitData.fNNeutrinos159 << "\n";
+          << "fNNeutrinos159 " << fitData.fNNeutrinos159 << "\n"
+          << "fNuFlux18 " << fitData.fNuFlux18 << "\n"
+          << "fNuFlux19 " << fitData.fNuFlux19 << "\n";
     }
 
     out << "interactionModel " << fInteractionModel << "\n"
