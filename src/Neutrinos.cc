@@ -311,6 +311,33 @@ namespace prop {
 
     return iter->second(bin, 0);
   }
+  
+  double
+  Neutrinos::GetTotalOscillatedFlux(const double lgE)
+    const
+  {
+    const double dlgE = (fLgEmax - fLgEmin) / fN;
+    const int bin = (lgE - fLgEmin) / dlgE;
+    if (bin < 0 || bin >= fN) {
+      cerr << "Neutrinos::GetTotalOscillatedFlux() out of bound" << endl;
+      return 0;
+    }
+
+    double total = 0.0;
+    const unsigned int nuIds[6] = {eElectronNeutrino, eAntiElectronNeutrino,
+                                   eMuonNeutrino, eAntiMuonNeutrino,
+                                   eTauNeutrino, eAntiTauNeutrino};
+    for(int i = 0; i < 6; ++i) {
+      const unsigned int id = nuIds[i];
+      const auto& iter = fOscillatedFlux.find(id);
+      if (iter == fOscillatedFlux.end())
+        throw runtime_error("unknown particle id");
+
+      total += iter->second(bin, 0);
+    }
+
+    return total;
+  }
 
   const std::map<int, TMatrixD>&
   Neutrinos::GetOscillatedPropFlux()
