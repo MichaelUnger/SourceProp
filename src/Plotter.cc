@@ -33,7 +33,9 @@ namespace prop {
     fGammaSource(gammaSource),
     fGammaEarth(gammaEarth),
     fNNeutrino(0),
-    fNNeutrino159(0)
+    fNNeutrino159(0),
+    fNuFlux18(0),
+    fNuFlux19(0)
   {
     gStyle->SetLineScalePS(1);
     gStyle->SetPadTopMargin(0.1);
@@ -971,6 +973,22 @@ namespace prop {
       for (auto& iter : fHistsNoDraw)  
         iter->SetBinContent(i+1, iter->GetBinContent(i+1) * w * units);
     }
+
+    // get total neutrino flux at 1 EeV
+    {
+      const double lgEcenter = 18.0;
+      const double w = pow(pow(10, lgEcenter), 2);
+      double units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, 2);    
+      fNuFlux18 = neutrinos.GetTotalOscillatedFlux(lgEcenter) * w * units;
+    }
+    // get total neutrino flux at 10 EeV
+    {
+      const double lgEcenter = 19.0;
+      const double w = pow(pow(10, lgEcenter), 2);
+      double units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, 2);    
+      fNuFlux19 = neutrinos.GetTotalOscillatedFlux(lgEcenter) * w * units;
+    }
+
   }
 
 
