@@ -736,6 +736,30 @@ namespace prop {
         throw std::runtime_error("simple model not implemented");
       }
     }
+    
+    {
+      const double lgEref = log10(30e18);
+      const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+      const map<int, TMatrixD>& flux = data.fPropagator->GetFluxAtEarth();
+      double allSum = 0;
+      double nucleonSum = 0;
+      for (const auto& m : flux) {
+        if (IsNucleus(m.first)) {
+          double lgE = fFitData.fLgEmin;
+          for (unsigned int i = 0; i < fFitData.fNLgE; ++i) {
+            if (lgE >= lgEref) {
+              const double dE = pow(10, lgE + dlgE) - pow(10, lgE);
+              const int A = ((m.first)%kGalacticOffset)%kGalacticAOffset;
+              if (A == 1)
+                nucleonSum += m.second(i, 0)*dE;
+              allSum += m.second(i, 0)*dE;
+            }
+            lgE += dlgE;
+          }
+        }
+      }
+      data.fProtonFraction30 = nucleonSum / allSum;
+    }
 
     const bool debug = false;
 
@@ -1070,28 +1094,30 @@ namespace prop {
       fFitData.fPropagator->GetPrimaryNucleonFluxAtEarth(18.3) /
       fFitData.fPropagator->GetFluxAtEarth(1, 18.3);
 
-    cout << " proton fraction at Earth > 50 EeV: " << flush;
-    const double lgEref = log10(60e18);
-    const double dlgE = (fFitData.fLgEmax - fFitData.fLgEmin) / fFitData.fNLgE;
-    const map<int, TMatrixD>& flux = fFitData.fPropagator->GetFluxAtEarth();
-    double allSum = 0;
-    double nucleonSum = 0;
-    for (const auto& m : flux) {
-      if (IsNucleus(m.first)) {
-        double lgE = fFitData.fLgEmin;
-        for (unsigned int i = 0; i < fFitData.fNLgE; ++i) {
-          if (lgE >= lgEref) {
-            const double dE = pow(10, lgE + dlgE) - pow(10, lgE);
-            if (m.first == 1)
-              nucleonSum += m.second(i, 0)*dE;
-            allSum += m.second(i, 0)*dE;
+    {
+      cout << " proton fraction at Earth > 50 EeV: " << flush;
+      const double lgEref = log10(60e18);
+      const double dlgE = (fFitData.fLgEmax - fFitData.fLgEmin) / fFitData.fNLgE;
+      const map<int, TMatrixD>& flux = fFitData.fPropagator->GetFluxAtEarth();
+      double allSum = 0;
+      double nucleonSum = 0;
+      for (const auto& m : flux) {
+        if (IsNucleus(m.first)) {
+          double lgE = fFitData.fLgEmin;
+          for (unsigned int i = 0; i < fFitData.fNLgE; ++i) {
+            if (lgE >= lgEref) {
+              const double dE = pow(10, lgE + dlgE) - pow(10, lgE);
+              if (m.first == 1)
+                nucleonSum += m.second(i, 0)*dE;
+              allSum += m.second(i, 0)*dE;
+            }
+            lgE += dlgE;
           }
-          lgE += dlgE;
         }
       }
+      cout << nucleonSum / allSum * 100 << "%" << endl;
+      fFitData.fProtonFraction60 = nucleonSum / allSum;
     }
-    cout << nucleonSum / allSum * 100 << "%" << endl;
-    fFitData.fProtonFraction60 = nucleonSum / allSum;
 
     return true;
   }
