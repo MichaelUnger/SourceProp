@@ -781,11 +781,15 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
 
     const double NNeutrinos = neutrinoPlot.GetNNeutrinos();
     const double NNeutrinos159 = neutrinoPlot.GetNNeutrinos159();
+    const double nuFlux18 = neutrinoPlot.GetNuFlux18();
+    const double nuFlux19 = neutrinoPlot.GetNuFlux19();
     fitSummary.SetNNeutrinos(NNeutrinos);
     fitSummary.SetNNeutrinos159(NNeutrinos159);
     fitter.GetFitData().SetNNeutrinos(NNeutrinos);
     fitter.GetFitData().SetNNeutrinos159(NNeutrinos159);
-    neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/"
+    fitter.GetFitData().SetNuFlux18(nuFlux18);
+    fitter.GetFitData().SetNuFlux19(nuFlux19);
+    neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
                                  + opt.GetOutFilename() + "HistNu" +
                                  (withSourceNu?"":"NoSource"));
   }
