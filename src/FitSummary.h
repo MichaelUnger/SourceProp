@@ -59,6 +59,9 @@ public:
   double fPhotonPeak;
   double fLgHadIntFac;
 
+  double flgBaselineFrac;
+  std::string fBaselineFilename;
+
   // 0: symmetric, 1: upErr, 2: lowErr
   double fEdot175Err[3];
   double fGammaErr[3];
