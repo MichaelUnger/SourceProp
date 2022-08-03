@@ -21,8 +21,8 @@ namespace prop {
   const double DminMax = DminGrid.back();
   const double dM = 0.2;
   const double dZ0 = 0.25;
-  const double Mmin = -5.0;
-  const double Mmax = 5.0;
+  const double Mmin = -7.2;
+  const double Mmax = 7.2;
   const double Z0min = 0.;
   const double Z0max = 5.0;
   
