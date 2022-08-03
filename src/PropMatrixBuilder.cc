@@ -246,6 +246,25 @@ namespace prop {
       else
         return 0;
     }
+    case eGRB: {
+      /*
+        Matthew D. Kistler et al.
+        arXiv:0709.0381 
+        H. Yüksel, M. D. Kistler, J. F. Beacom and A. M. Hopkins,
+        Astrophys. J. 683, L5 (2008).
+        Eq. (5) times (1+z)^1.5 to convert SFR to GRB
+      */
+      const double a = 3.4;
+      const double b = -0.3;
+      const double c = -3.5;
+      const double eta = -10;
+      const double z1 = 1;
+      const double z2 = 4;
+      const double B = pow(1+z1, 1-a/b);
+      const double C = pow(1+z1, (b-a)/c)*pow(1+z2, 1-b/c);
+      const double norm = pow(pow(1, a*eta) + pow(1/B, b*eta) + pow(1/C, c*eta), 1/eta) * pow(1, 1.5);
+      return pow(pow(1+z, a*eta) + pow((1+z)/B, b*eta) + pow((1+z)/C, c*eta), 1/eta) * pow(1+z, 1.5) / norm; 
+    }
     case eMm40:
       return SimpleEvolution(z, -4.0);
     case eMm35:
@@ -334,6 +353,28 @@ namespace prop {
       return SimpleEvolution(z, 4, 4);
     case eMp40z50:
       return SimpleEvolution(z, 4, 5);
+    case eEvoMm720z0:
+      return SimpleEvolution(z, -7.2, 0);
+    case eEvoMm700z0:
+      return SimpleEvolution(z, -7, 0);
+    case eEvoMm680z0:
+      return SimpleEvolution(z, -6.8, 0);
+    case eEvoMm660z0:
+      return SimpleEvolution(z, -6.6, 0);
+    case eEvoMm640z0:
+      return SimpleEvolution(z, -6.4, 0);
+    case eEvoMm620z0:
+      return SimpleEvolution(z, -6.2, 0);
+    case eEvoMm600z0:
+      return SimpleEvolution(z, -6, 0);
+    case eEvoMm580z0:
+      return SimpleEvolution(z, -5.8, 0);
+    case eEvoMm560z0:
+      return SimpleEvolution(z, -5.6, 0);
+    case eEvoMm540z0:
+      return SimpleEvolution(z, -5.4, 0);
+    case eEvoMm520z0:
+      return SimpleEvolution(z, -5.2, 0);
     case eEvoMm500z0:
       return SimpleEvolution(z, -5, 0);
     case eEvoMm480z0:
@@ -436,6 +477,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 0);
     case eEvoMp500z0:
       return SimpleEvolution(z, 5, 0);
+    case eEvoMp520z0:
+      return SimpleEvolution(z, 5.2, 0);
+    case eEvoMp540z0:
+      return SimpleEvolution(z, 5.4, 0);
+    case eEvoMp560z0:
+      return SimpleEvolution(z, 5.6, 0);
+    case eEvoMp580z0:
+      return SimpleEvolution(z, 5.8, 0);
+    case eEvoMp600z0:
+      return SimpleEvolution(z, 6, 0);
+    case eEvoMp620z0:
+      return SimpleEvolution(z, 6.2, 0);
+    case eEvoMp640z0:
+      return SimpleEvolution(z, 6.4, 0);
+    case eEvoMp660z0:
+      return SimpleEvolution(z, 6.6, 0);
+    case eEvoMp680z0:
+      return SimpleEvolution(z, 6.8, 0);
+    case eEvoMp700z0:
+      return SimpleEvolution(z, 7, 0);
+    case eEvoMp720z0:
+      return SimpleEvolution(z, 7.2, 0);
+    case eEvoMm720z25:
+      return SimpleEvolution(z, -7.2, 0.25);
+    case eEvoMm700z25:
+      return SimpleEvolution(z, -7, 0.25);
+    case eEvoMm680z25:
+      return SimpleEvolution(z, -6.8, 0.25);
+    case eEvoMm660z25:
+      return SimpleEvolution(z, -6.6, 0.25);
+    case eEvoMm640z25:
+      return SimpleEvolution(z, -6.4, 0.25);
+    case eEvoMm620z25:
+      return SimpleEvolution(z, -6.2, 0.25);
+    case eEvoMm600z25:
+      return SimpleEvolution(z, -6, 0.25);
+    case eEvoMm580z25:
+      return SimpleEvolution(z, -5.8, 0.25);
+    case eEvoMm560z25:
+      return SimpleEvolution(z, -5.6, 0.25);
+    case eEvoMm540z25:
+      return SimpleEvolution(z, -5.4, 0.25);
+    case eEvoMm520z25:
+      return SimpleEvolution(z, -5.2, 0.25);
     case eEvoMm500z25:
       return SimpleEvolution(z, -5, 0.25);
     case eEvoMm480z25:
@@ -538,6 +623,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 0.25);
     case eEvoMp500z25:
       return SimpleEvolution(z, 5, 0.25);
+    case eEvoMp520z25:
+      return SimpleEvolution(z, 5.2, 0.25);
+    case eEvoMp540z25:
+      return SimpleEvolution(z, 5.4, 0.25);
+    case eEvoMp560z25:
+      return SimpleEvolution(z, 5.6, 0.25);
+    case eEvoMp580z25:
+      return SimpleEvolution(z, 5.8, 0.25);
+    case eEvoMp600z25:
+      return SimpleEvolution(z, 6, 0.25);
+    case eEvoMp620z25:
+      return SimpleEvolution(z, 6.2, 0.25);
+    case eEvoMp640z25:
+      return SimpleEvolution(z, 6.4, 0.25);
+    case eEvoMp660z25:
+      return SimpleEvolution(z, 6.6, 0.25);
+    case eEvoMp680z25:
+      return SimpleEvolution(z, 6.8, 0.25);
+    case eEvoMp700z25:
+      return SimpleEvolution(z, 7, 0.25);
+    case eEvoMp720z25:
+      return SimpleEvolution(z, 7.2, 0.25);
+    case eEvoMm720z50:
+      return SimpleEvolution(z, -7.2, 0.5);
+    case eEvoMm700z50:
+      return SimpleEvolution(z, -7, 0.5);
+    case eEvoMm680z50:
+      return SimpleEvolution(z, -6.8, 0.5);
+    case eEvoMm660z50:
+      return SimpleEvolution(z, -6.6, 0.5);
+    case eEvoMm640z50:
+      return SimpleEvolution(z, -6.4, 0.5);
+    case eEvoMm620z50:
+      return SimpleEvolution(z, -6.2, 0.5);
+    case eEvoMm600z50:
+      return SimpleEvolution(z, -6, 0.5);
+    case eEvoMm580z50:
+      return SimpleEvolution(z, -5.8, 0.5);
+    case eEvoMm560z50:
+      return SimpleEvolution(z, -5.6, 0.5);
+    case eEvoMm540z50:
+      return SimpleEvolution(z, -5.4, 0.5);
+    case eEvoMm520z50:
+      return SimpleEvolution(z, -5.2, 0.5);
     case eEvoMm500z50:
       return SimpleEvolution(z, -5, 0.5);
     case eEvoMm480z50:
@@ -640,6 +769,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 0.5);
     case eEvoMp500z50:
       return SimpleEvolution(z, 5, 0.5);
+    case eEvoMp520z50:
+      return SimpleEvolution(z, 5.2, 0.5);
+    case eEvoMp540z50:
+      return SimpleEvolution(z, 5.4, 0.5);
+    case eEvoMp560z50:
+      return SimpleEvolution(z, 5.6, 0.5);
+    case eEvoMp580z50:
+      return SimpleEvolution(z, 5.8, 0.5);
+    case eEvoMp600z50:
+      return SimpleEvolution(z, 6, 0.5);
+    case eEvoMp620z50:
+      return SimpleEvolution(z, 6.2, 0.5);
+    case eEvoMp640z50:
+      return SimpleEvolution(z, 6.4, 0.5);
+    case eEvoMp660z50:
+      return SimpleEvolution(z, 6.6, 0.5);
+    case eEvoMp680z50:
+      return SimpleEvolution(z, 6.8, 0.5);
+    case eEvoMp700z50:
+      return SimpleEvolution(z, 7, 0.5);
+    case eEvoMp720z50:
+      return SimpleEvolution(z, 7.2, 0.5);
+    case eEvoMm720z75:
+      return SimpleEvolution(z, -7.2, 0.75);
+    case eEvoMm700z75:
+      return SimpleEvolution(z, -7, 0.75);
+    case eEvoMm680z75:
+      return SimpleEvolution(z, -6.8, 0.75);
+    case eEvoMm660z75:
+      return SimpleEvolution(z, -6.6, 0.75);
+    case eEvoMm640z75:
+      return SimpleEvolution(z, -6.4, 0.75);
+    case eEvoMm620z75:
+      return SimpleEvolution(z, -6.2, 0.75);
+    case eEvoMm600z75:
+      return SimpleEvolution(z, -6, 0.75);
+    case eEvoMm580z75:
+      return SimpleEvolution(z, -5.8, 0.75);
+    case eEvoMm560z75:
+      return SimpleEvolution(z, -5.6, 0.75);
+    case eEvoMm540z75:
+      return SimpleEvolution(z, -5.4, 0.75);
+    case eEvoMm520z75:
+      return SimpleEvolution(z, -5.2, 0.75);
     case eEvoMm500z75:
       return SimpleEvolution(z, -5, 0.75);
     case eEvoMm480z75:
@@ -742,6 +915,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 0.75);
     case eEvoMp500z75:
       return SimpleEvolution(z, 5, 0.75);
+    case eEvoMp520z75:
+      return SimpleEvolution(z, 5.2, 0.75);
+    case eEvoMp540z75:
+      return SimpleEvolution(z, 5.4, 0.75);
+    case eEvoMp560z75:
+      return SimpleEvolution(z, 5.6, 0.75);
+    case eEvoMp580z75:
+      return SimpleEvolution(z, 5.8, 0.75);
+    case eEvoMp600z75:
+      return SimpleEvolution(z, 6, 0.75);
+    case eEvoMp620z75:
+      return SimpleEvolution(z, 6.2, 0.75);
+    case eEvoMp640z75:
+      return SimpleEvolution(z, 6.4, 0.75);
+    case eEvoMp660z75:
+      return SimpleEvolution(z, 6.6, 0.75);
+    case eEvoMp680z75:
+      return SimpleEvolution(z, 6.8, 0.75);
+    case eEvoMp700z75:
+      return SimpleEvolution(z, 7, 0.75);
+    case eEvoMp720z75:
+      return SimpleEvolution(z, 7.2, 0.75);
+    case eEvoMm720z100:
+      return SimpleEvolution(z, -7.2, 1);
+    case eEvoMm700z100:
+      return SimpleEvolution(z, -7, 1);
+    case eEvoMm680z100:
+      return SimpleEvolution(z, -6.8, 1);
+    case eEvoMm660z100:
+      return SimpleEvolution(z, -6.6, 1);
+    case eEvoMm640z100:
+      return SimpleEvolution(z, -6.4, 1);
+    case eEvoMm620z100:
+      return SimpleEvolution(z, -6.2, 1);
+    case eEvoMm600z100:
+      return SimpleEvolution(z, -6, 1);
+    case eEvoMm580z100:
+      return SimpleEvolution(z, -5.8, 1);
+    case eEvoMm560z100:
+      return SimpleEvolution(z, -5.6, 1);
+    case eEvoMm540z100:
+      return SimpleEvolution(z, -5.4, 1);
+    case eEvoMm520z100:
+      return SimpleEvolution(z, -5.2, 1);
     case eEvoMm500z100:
       return SimpleEvolution(z, -5, 1);
     case eEvoMm480z100:
@@ -844,6 +1061,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 1);
     case eEvoMp500z100:
       return SimpleEvolution(z, 5, 1);
+    case eEvoMp520z100:
+      return SimpleEvolution(z, 5.2, 1);
+    case eEvoMp540z100:
+      return SimpleEvolution(z, 5.4, 1);
+    case eEvoMp560z100:
+      return SimpleEvolution(z, 5.6, 1);
+    case eEvoMp580z100:
+      return SimpleEvolution(z, 5.8, 1);
+    case eEvoMp600z100:
+      return SimpleEvolution(z, 6, 1);
+    case eEvoMp620z100:
+      return SimpleEvolution(z, 6.2, 1);
+    case eEvoMp640z100:
+      return SimpleEvolution(z, 6.4, 1);
+    case eEvoMp660z100:
+      return SimpleEvolution(z, 6.6, 1);
+    case eEvoMp680z100:
+      return SimpleEvolution(z, 6.8, 1);
+    case eEvoMp700z100:
+      return SimpleEvolution(z, 7, 1);
+    case eEvoMp720z100:
+      return SimpleEvolution(z, 7.2, 1);
+    case eEvoMm720z125:
+      return SimpleEvolution(z, -7.2, 1.25);
+    case eEvoMm700z125:
+      return SimpleEvolution(z, -7, 1.25);
+    case eEvoMm680z125:
+      return SimpleEvolution(z, -6.8, 1.25);
+    case eEvoMm660z125:
+      return SimpleEvolution(z, -6.6, 1.25);
+    case eEvoMm640z125:
+      return SimpleEvolution(z, -6.4, 1.25);
+    case eEvoMm620z125:
+      return SimpleEvolution(z, -6.2, 1.25);
+    case eEvoMm600z125:
+      return SimpleEvolution(z, -6, 1.25);
+    case eEvoMm580z125:
+      return SimpleEvolution(z, -5.8, 1.25);
+    case eEvoMm560z125:
+      return SimpleEvolution(z, -5.6, 1.25);
+    case eEvoMm540z125:
+      return SimpleEvolution(z, -5.4, 1.25);
+    case eEvoMm520z125:
+      return SimpleEvolution(z, -5.2, 1.25);
     case eEvoMm500z125:
       return SimpleEvolution(z, -5, 1.25);
     case eEvoMm480z125:
@@ -946,6 +1207,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 1.25);
     case eEvoMp500z125:
       return SimpleEvolution(z, 5, 1.25);
+    case eEvoMp520z125:
+      return SimpleEvolution(z, 5.2, 1.25);
+    case eEvoMp540z125:
+      return SimpleEvolution(z, 5.4, 1.25);
+    case eEvoMp560z125:
+      return SimpleEvolution(z, 5.6, 1.25);
+    case eEvoMp580z125:
+      return SimpleEvolution(z, 5.8, 1.25);
+    case eEvoMp600z125:
+      return SimpleEvolution(z, 6, 1.25);
+    case eEvoMp620z125:
+      return SimpleEvolution(z, 6.2, 1.25);
+    case eEvoMp640z125:
+      return SimpleEvolution(z, 6.4, 1.25);
+    case eEvoMp660z125:
+      return SimpleEvolution(z, 6.6, 1.25);
+    case eEvoMp680z125:
+      return SimpleEvolution(z, 6.8, 1.25);
+    case eEvoMp700z125:
+      return SimpleEvolution(z, 7, 1.25);
+    case eEvoMp720z125:
+      return SimpleEvolution(z, 7.2, 1.25);
+    case eEvoMm720z150:
+      return SimpleEvolution(z, -7.2, 1.5);
+    case eEvoMm700z150:
+      return SimpleEvolution(z, -7, 1.5);
+    case eEvoMm680z150:
+      return SimpleEvolution(z, -6.8, 1.5);
+    case eEvoMm660z150:
+      return SimpleEvolution(z, -6.6, 1.5);
+    case eEvoMm640z150:
+      return SimpleEvolution(z, -6.4, 1.5);
+    case eEvoMm620z150:
+      return SimpleEvolution(z, -6.2, 1.5);
+    case eEvoMm600z150:
+      return SimpleEvolution(z, -6, 1.5);
+    case eEvoMm580z150:
+      return SimpleEvolution(z, -5.8, 1.5);
+    case eEvoMm560z150:
+      return SimpleEvolution(z, -5.6, 1.5);
+    case eEvoMm540z150:
+      return SimpleEvolution(z, -5.4, 1.5);
+    case eEvoMm520z150:
+      return SimpleEvolution(z, -5.2, 1.5);
     case eEvoMm500z150:
       return SimpleEvolution(z, -5, 1.5);
     case eEvoMm480z150:
@@ -1048,6 +1353,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 1.5);
     case eEvoMp500z150:
       return SimpleEvolution(z, 5, 1.5);
+    case eEvoMp520z150:
+      return SimpleEvolution(z, 5.2, 1.5);
+    case eEvoMp540z150:
+      return SimpleEvolution(z, 5.4, 1.5);
+    case eEvoMp560z150:
+      return SimpleEvolution(z, 5.6, 1.5);
+    case eEvoMp580z150:
+      return SimpleEvolution(z, 5.8, 1.5);
+    case eEvoMp600z150:
+      return SimpleEvolution(z, 6, 1.5);
+    case eEvoMp620z150:
+      return SimpleEvolution(z, 6.2, 1.5);
+    case eEvoMp640z150:
+      return SimpleEvolution(z, 6.4, 1.5);
+    case eEvoMp660z150:
+      return SimpleEvolution(z, 6.6, 1.5);
+    case eEvoMp680z150:
+      return SimpleEvolution(z, 6.8, 1.5);
+    case eEvoMp700z150:
+      return SimpleEvolution(z, 7, 1.5);
+    case eEvoMp720z150:
+      return SimpleEvolution(z, 7.2, 1.5);
+    case eEvoMm720z175:
+      return SimpleEvolution(z, -7.2, 1.75);
+    case eEvoMm700z175:
+      return SimpleEvolution(z, -7, 1.75);
+    case eEvoMm680z175:
+      return SimpleEvolution(z, -6.8, 1.75);
+    case eEvoMm660z175:
+      return SimpleEvolution(z, -6.6, 1.75);
+    case eEvoMm640z175:
+      return SimpleEvolution(z, -6.4, 1.75);
+    case eEvoMm620z175:
+      return SimpleEvolution(z, -6.2, 1.75);
+    case eEvoMm600z175:
+      return SimpleEvolution(z, -6, 1.75);
+    case eEvoMm580z175:
+      return SimpleEvolution(z, -5.8, 1.75);
+    case eEvoMm560z175:
+      return SimpleEvolution(z, -5.6, 1.75);
+    case eEvoMm540z175:
+      return SimpleEvolution(z, -5.4, 1.75);
+    case eEvoMm520z175:
+      return SimpleEvolution(z, -5.2, 1.75);
     case eEvoMm500z175:
       return SimpleEvolution(z, -5, 1.75);
     case eEvoMm480z175:
@@ -1150,6 +1499,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 1.75);
     case eEvoMp500z175:
       return SimpleEvolution(z, 5, 1.75);
+    case eEvoMp520z175:
+      return SimpleEvolution(z, 5.2, 1.75);
+    case eEvoMp540z175:
+      return SimpleEvolution(z, 5.4, 1.75);
+    case eEvoMp560z175:
+      return SimpleEvolution(z, 5.6, 1.75);
+    case eEvoMp580z175:
+      return SimpleEvolution(z, 5.8, 1.75);
+    case eEvoMp600z175:
+      return SimpleEvolution(z, 6, 1.75);
+    case eEvoMp620z175:
+      return SimpleEvolution(z, 6.2, 1.75);
+    case eEvoMp640z175:
+      return SimpleEvolution(z, 6.4, 1.75);
+    case eEvoMp660z175:
+      return SimpleEvolution(z, 6.6, 1.75);
+    case eEvoMp680z175:
+      return SimpleEvolution(z, 6.8, 1.75);
+    case eEvoMp700z175:
+      return SimpleEvolution(z, 7, 1.75);
+    case eEvoMp720z175:
+      return SimpleEvolution(z, 7.2, 1.75);
+    case eEvoMm720z200:
+      return SimpleEvolution(z, -7.2, 2);
+    case eEvoMm700z200:
+      return SimpleEvolution(z, -7, 2);
+    case eEvoMm680z200:
+      return SimpleEvolution(z, -6.8, 2);
+    case eEvoMm660z200:
+      return SimpleEvolution(z, -6.6, 2);
+    case eEvoMm640z200:
+      return SimpleEvolution(z, -6.4, 2);
+    case eEvoMm620z200:
+      return SimpleEvolution(z, -6.2, 2);
+    case eEvoMm600z200:
+      return SimpleEvolution(z, -6, 2);
+    case eEvoMm580z200:
+      return SimpleEvolution(z, -5.8, 2);
+    case eEvoMm560z200:
+      return SimpleEvolution(z, -5.6, 2);
+    case eEvoMm540z200:
+      return SimpleEvolution(z, -5.4, 2);
+    case eEvoMm520z200:
+      return SimpleEvolution(z, -5.2, 2);
     case eEvoMm500z200:
       return SimpleEvolution(z, -5, 2);
     case eEvoMm480z200:
@@ -1252,6 +1645,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 2);
     case eEvoMp500z200:
       return SimpleEvolution(z, 5, 2);
+    case eEvoMp520z200:
+      return SimpleEvolution(z, 5.2, 2);
+    case eEvoMp540z200:
+      return SimpleEvolution(z, 5.4, 2);
+    case eEvoMp560z200:
+      return SimpleEvolution(z, 5.6, 2);
+    case eEvoMp580z200:
+      return SimpleEvolution(z, 5.8, 2);
+    case eEvoMp600z200:
+      return SimpleEvolution(z, 6, 2);
+    case eEvoMp620z200:
+      return SimpleEvolution(z, 6.2, 2);
+    case eEvoMp640z200:
+      return SimpleEvolution(z, 6.4, 2);
+    case eEvoMp660z200:
+      return SimpleEvolution(z, 6.6, 2);
+    case eEvoMp680z200:
+      return SimpleEvolution(z, 6.8, 2);
+    case eEvoMp700z200:
+      return SimpleEvolution(z, 7, 2);
+    case eEvoMp720z200:
+      return SimpleEvolution(z, 7.2, 2);
+    case eEvoMm720z225:
+      return SimpleEvolution(z, -7.2, 2.25);
+    case eEvoMm700z225:
+      return SimpleEvolution(z, -7, 2.25);
+    case eEvoMm680z225:
+      return SimpleEvolution(z, -6.8, 2.25);
+    case eEvoMm660z225:
+      return SimpleEvolution(z, -6.6, 2.25);
+    case eEvoMm640z225:
+      return SimpleEvolution(z, -6.4, 2.25);
+    case eEvoMm620z225:
+      return SimpleEvolution(z, -6.2, 2.25);
+    case eEvoMm600z225:
+      return SimpleEvolution(z, -6, 2.25);
+    case eEvoMm580z225:
+      return SimpleEvolution(z, -5.8, 2.25);
+    case eEvoMm560z225:
+      return SimpleEvolution(z, -5.6, 2.25);
+    case eEvoMm540z225:
+      return SimpleEvolution(z, -5.4, 2.25);
+    case eEvoMm520z225:
+      return SimpleEvolution(z, -5.2, 2.25);
     case eEvoMm500z225:
       return SimpleEvolution(z, -5, 2.25);
     case eEvoMm480z225:
@@ -1354,6 +1791,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 2.25);
     case eEvoMp500z225:
       return SimpleEvolution(z, 5, 2.25);
+    case eEvoMp520z225:
+      return SimpleEvolution(z, 5.2, 2.25);
+    case eEvoMp540z225:
+      return SimpleEvolution(z, 5.4, 2.25);
+    case eEvoMp560z225:
+      return SimpleEvolution(z, 5.6, 2.25);
+    case eEvoMp580z225:
+      return SimpleEvolution(z, 5.8, 2.25);
+    case eEvoMp600z225:
+      return SimpleEvolution(z, 6, 2.25);
+    case eEvoMp620z225:
+      return SimpleEvolution(z, 6.2, 2.25);
+    case eEvoMp640z225:
+      return SimpleEvolution(z, 6.4, 2.25);
+    case eEvoMp660z225:
+      return SimpleEvolution(z, 6.6, 2.25);
+    case eEvoMp680z225:
+      return SimpleEvolution(z, 6.8, 2.25);
+    case eEvoMp700z225:
+      return SimpleEvolution(z, 7, 2.25);
+    case eEvoMp720z225:
+      return SimpleEvolution(z, 7.2, 2.25);
+    case eEvoMm720z250:
+      return SimpleEvolution(z, -7.2, 2.5);
+    case eEvoMm700z250:
+      return SimpleEvolution(z, -7, 2.5);
+    case eEvoMm680z250:
+      return SimpleEvolution(z, -6.8, 2.5);
+    case eEvoMm660z250:
+      return SimpleEvolution(z, -6.6, 2.5);
+    case eEvoMm640z250:
+      return SimpleEvolution(z, -6.4, 2.5);
+    case eEvoMm620z250:
+      return SimpleEvolution(z, -6.2, 2.5);
+    case eEvoMm600z250:
+      return SimpleEvolution(z, -6, 2.5);
+    case eEvoMm580z250:
+      return SimpleEvolution(z, -5.8, 2.5);
+    case eEvoMm560z250:
+      return SimpleEvolution(z, -5.6, 2.5);
+    case eEvoMm540z250:
+      return SimpleEvolution(z, -5.4, 2.5);
+    case eEvoMm520z250:
+      return SimpleEvolution(z, -5.2, 2.5);
     case eEvoMm500z250:
       return SimpleEvolution(z, -5, 2.5);
     case eEvoMm480z250:
@@ -1456,6 +1937,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 2.5);
     case eEvoMp500z250:
       return SimpleEvolution(z, 5, 2.5);
+    case eEvoMp520z250:
+      return SimpleEvolution(z, 5.2, 2.5);
+    case eEvoMp540z250:
+      return SimpleEvolution(z, 5.4, 2.5);
+    case eEvoMp560z250:
+      return SimpleEvolution(z, 5.6, 2.5);
+    case eEvoMp580z250:
+      return SimpleEvolution(z, 5.8, 2.5);
+    case eEvoMp600z250:
+      return SimpleEvolution(z, 6, 2.5);
+    case eEvoMp620z250:
+      return SimpleEvolution(z, 6.2, 2.5);
+    case eEvoMp640z250:
+      return SimpleEvolution(z, 6.4, 2.5);
+    case eEvoMp660z250:
+      return SimpleEvolution(z, 6.6, 2.5);
+    case eEvoMp680z250:
+      return SimpleEvolution(z, 6.8, 2.5);
+    case eEvoMp700z250:
+      return SimpleEvolution(z, 7, 2.5);
+    case eEvoMp720z250:
+      return SimpleEvolution(z, 7.2, 2.5);
+    case eEvoMm720z275:
+      return SimpleEvolution(z, -7.2, 2.75);
+    case eEvoMm700z275:
+      return SimpleEvolution(z, -7, 2.75);
+    case eEvoMm680z275:
+      return SimpleEvolution(z, -6.8, 2.75);
+    case eEvoMm660z275:
+      return SimpleEvolution(z, -6.6, 2.75);
+    case eEvoMm640z275:
+      return SimpleEvolution(z, -6.4, 2.75);
+    case eEvoMm620z275:
+      return SimpleEvolution(z, -6.2, 2.75);
+    case eEvoMm600z275:
+      return SimpleEvolution(z, -6, 2.75);
+    case eEvoMm580z275:
+      return SimpleEvolution(z, -5.8, 2.75);
+    case eEvoMm560z275:
+      return SimpleEvolution(z, -5.6, 2.75);
+    case eEvoMm540z275:
+      return SimpleEvolution(z, -5.4, 2.75);
+    case eEvoMm520z275:
+      return SimpleEvolution(z, -5.2, 2.75);
     case eEvoMm500z275:
       return SimpleEvolution(z, -5, 2.75);
     case eEvoMm480z275:
@@ -1558,6 +2083,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 2.75);
     case eEvoMp500z275:
       return SimpleEvolution(z, 5, 2.75);
+    case eEvoMp520z275:
+      return SimpleEvolution(z, 5.2, 2.75);
+    case eEvoMp540z275:
+      return SimpleEvolution(z, 5.4, 2.75);
+    case eEvoMp560z275:
+      return SimpleEvolution(z, 5.6, 2.75);
+    case eEvoMp580z275:
+      return SimpleEvolution(z, 5.8, 2.75);
+    case eEvoMp600z275:
+      return SimpleEvolution(z, 6, 2.75);
+    case eEvoMp620z275:
+      return SimpleEvolution(z, 6.2, 2.75);
+    case eEvoMp640z275:
+      return SimpleEvolution(z, 6.4, 2.75);
+    case eEvoMp660z275:
+      return SimpleEvolution(z, 6.6, 2.75);
+    case eEvoMp680z275:
+      return SimpleEvolution(z, 6.8, 2.75);
+    case eEvoMp700z275:
+      return SimpleEvolution(z, 7, 2.75);
+    case eEvoMp720z275:
+      return SimpleEvolution(z, 7.2, 2.75);
+    case eEvoMm720z300:
+      return SimpleEvolution(z, -7.2, 3);
+    case eEvoMm700z300:
+      return SimpleEvolution(z, -7, 3);
+    case eEvoMm680z300:
+      return SimpleEvolution(z, -6.8, 3);
+    case eEvoMm660z300:
+      return SimpleEvolution(z, -6.6, 3);
+    case eEvoMm640z300:
+      return SimpleEvolution(z, -6.4, 3);
+    case eEvoMm620z300:
+      return SimpleEvolution(z, -6.2, 3);
+    case eEvoMm600z300:
+      return SimpleEvolution(z, -6, 3);
+    case eEvoMm580z300:
+      return SimpleEvolution(z, -5.8, 3);
+    case eEvoMm560z300:
+      return SimpleEvolution(z, -5.6, 3);
+    case eEvoMm540z300:
+      return SimpleEvolution(z, -5.4, 3);
+    case eEvoMm520z300:
+      return SimpleEvolution(z, -5.2, 3);
     case eEvoMm500z300:
       return SimpleEvolution(z, -5, 3);
     case eEvoMm480z300:
@@ -1660,6 +2229,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 3);
     case eEvoMp500z300:
       return SimpleEvolution(z, 5, 3);
+    case eEvoMp520z300:
+      return SimpleEvolution(z, 5.2, 3);
+    case eEvoMp540z300:
+      return SimpleEvolution(z, 5.4, 3);
+    case eEvoMp560z300:
+      return SimpleEvolution(z, 5.6, 3);
+    case eEvoMp580z300:
+      return SimpleEvolution(z, 5.8, 3);
+    case eEvoMp600z300:
+      return SimpleEvolution(z, 6, 3);
+    case eEvoMp620z300:
+      return SimpleEvolution(z, 6.2, 3);
+    case eEvoMp640z300:
+      return SimpleEvolution(z, 6.4, 3);
+    case eEvoMp660z300:
+      return SimpleEvolution(z, 6.6, 3);
+    case eEvoMp680z300:
+      return SimpleEvolution(z, 6.8, 3);
+    case eEvoMp700z300:
+      return SimpleEvolution(z, 7, 3);
+    case eEvoMp720z300:
+      return SimpleEvolution(z, 7.2, 3);
+    case eEvoMm720z325:
+      return SimpleEvolution(z, -7.2, 3.25);
+    case eEvoMm700z325:
+      return SimpleEvolution(z, -7, 3.25);
+    case eEvoMm680z325:
+      return SimpleEvolution(z, -6.8, 3.25);
+    case eEvoMm660z325:
+      return SimpleEvolution(z, -6.6, 3.25);
+    case eEvoMm640z325:
+      return SimpleEvolution(z, -6.4, 3.25);
+    case eEvoMm620z325:
+      return SimpleEvolution(z, -6.2, 3.25);
+    case eEvoMm600z325:
+      return SimpleEvolution(z, -6, 3.25);
+    case eEvoMm580z325:
+      return SimpleEvolution(z, -5.8, 3.25);
+    case eEvoMm560z325:
+      return SimpleEvolution(z, -5.6, 3.25);
+    case eEvoMm540z325:
+      return SimpleEvolution(z, -5.4, 3.25);
+    case eEvoMm520z325:
+      return SimpleEvolution(z, -5.2, 3.25);
     case eEvoMm500z325:
       return SimpleEvolution(z, -5, 3.25);
     case eEvoMm480z325:
@@ -1762,6 +2375,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 3.25);
     case eEvoMp500z325:
       return SimpleEvolution(z, 5, 3.25);
+    case eEvoMp520z325:
+      return SimpleEvolution(z, 5.2, 3.25);
+    case eEvoMp540z325:
+      return SimpleEvolution(z, 5.4, 3.25);
+    case eEvoMp560z325:
+      return SimpleEvolution(z, 5.6, 3.25);
+    case eEvoMp580z325:
+      return SimpleEvolution(z, 5.8, 3.25);
+    case eEvoMp600z325:
+      return SimpleEvolution(z, 6, 3.25);
+    case eEvoMp620z325:
+      return SimpleEvolution(z, 6.2, 3.25);
+    case eEvoMp640z325:
+      return SimpleEvolution(z, 6.4, 3.25);
+    case eEvoMp660z325:
+      return SimpleEvolution(z, 6.6, 3.25);
+    case eEvoMp680z325:
+      return SimpleEvolution(z, 6.8, 3.25);
+    case eEvoMp700z325:
+      return SimpleEvolution(z, 7, 3.25);
+    case eEvoMp720z325:
+      return SimpleEvolution(z, 7.2, 3.25);
+    case eEvoMm720z350:
+      return SimpleEvolution(z, -7.2, 3.5);
+    case eEvoMm700z350:
+      return SimpleEvolution(z, -7, 3.5);
+    case eEvoMm680z350:
+      return SimpleEvolution(z, -6.8, 3.5);
+    case eEvoMm660z350:
+      return SimpleEvolution(z, -6.6, 3.5);
+    case eEvoMm640z350:
+      return SimpleEvolution(z, -6.4, 3.5);
+    case eEvoMm620z350:
+      return SimpleEvolution(z, -6.2, 3.5);
+    case eEvoMm600z350:
+      return SimpleEvolution(z, -6, 3.5);
+    case eEvoMm580z350:
+      return SimpleEvolution(z, -5.8, 3.5);
+    case eEvoMm560z350:
+      return SimpleEvolution(z, -5.6, 3.5);
+    case eEvoMm540z350:
+      return SimpleEvolution(z, -5.4, 3.5);
+    case eEvoMm520z350:
+      return SimpleEvolution(z, -5.2, 3.5);
     case eEvoMm500z350:
       return SimpleEvolution(z, -5, 3.5);
     case eEvoMm480z350:
@@ -1864,6 +2521,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 3.5);
     case eEvoMp500z350:
       return SimpleEvolution(z, 5, 3.5);
+    case eEvoMp520z350:
+      return SimpleEvolution(z, 5.2, 3.5);
+    case eEvoMp540z350:
+      return SimpleEvolution(z, 5.4, 3.5);
+    case eEvoMp560z350:
+      return SimpleEvolution(z, 5.6, 3.5);
+    case eEvoMp580z350:
+      return SimpleEvolution(z, 5.8, 3.5);
+    case eEvoMp600z350:
+      return SimpleEvolution(z, 6, 3.5);
+    case eEvoMp620z350:
+      return SimpleEvolution(z, 6.2, 3.5);
+    case eEvoMp640z350:
+      return SimpleEvolution(z, 6.4, 3.5);
+    case eEvoMp660z350:
+      return SimpleEvolution(z, 6.6, 3.5);
+    case eEvoMp680z350:
+      return SimpleEvolution(z, 6.8, 3.5);
+    case eEvoMp700z350:
+      return SimpleEvolution(z, 7, 3.5);
+    case eEvoMp720z350:
+      return SimpleEvolution(z, 7.2, 3.5);
+    case eEvoMm720z375:
+      return SimpleEvolution(z, -7.2, 3.75);
+    case eEvoMm700z375:
+      return SimpleEvolution(z, -7, 3.75);
+    case eEvoMm680z375:
+      return SimpleEvolution(z, -6.8, 3.75);
+    case eEvoMm660z375:
+      return SimpleEvolution(z, -6.6, 3.75);
+    case eEvoMm640z375:
+      return SimpleEvolution(z, -6.4, 3.75);
+    case eEvoMm620z375:
+      return SimpleEvolution(z, -6.2, 3.75);
+    case eEvoMm600z375:
+      return SimpleEvolution(z, -6, 3.75);
+    case eEvoMm580z375:
+      return SimpleEvolution(z, -5.8, 3.75);
+    case eEvoMm560z375:
+      return SimpleEvolution(z, -5.6, 3.75);
+    case eEvoMm540z375:
+      return SimpleEvolution(z, -5.4, 3.75);
+    case eEvoMm520z375:
+      return SimpleEvolution(z, -5.2, 3.75);
     case eEvoMm500z375:
       return SimpleEvolution(z, -5, 3.75);
     case eEvoMm480z375:
@@ -1966,6 +2667,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 3.75);
     case eEvoMp500z375:
       return SimpleEvolution(z, 5, 3.75);
+    case eEvoMp520z375:
+      return SimpleEvolution(z, 5.2, 3.75);
+    case eEvoMp540z375:
+      return SimpleEvolution(z, 5.4, 3.75);
+    case eEvoMp560z375:
+      return SimpleEvolution(z, 5.6, 3.75);
+    case eEvoMp580z375:
+      return SimpleEvolution(z, 5.8, 3.75);
+    case eEvoMp600z375:
+      return SimpleEvolution(z, 6, 3.75);
+    case eEvoMp620z375:
+      return SimpleEvolution(z, 6.2, 3.75);
+    case eEvoMp640z375:
+      return SimpleEvolution(z, 6.4, 3.75);
+    case eEvoMp660z375:
+      return SimpleEvolution(z, 6.6, 3.75);
+    case eEvoMp680z375:
+      return SimpleEvolution(z, 6.8, 3.75);
+    case eEvoMp700z375:
+      return SimpleEvolution(z, 7, 3.75);
+    case eEvoMp720z375:
+      return SimpleEvolution(z, 7.2, 3.75);
+    case eEvoMm720z400:
+      return SimpleEvolution(z, -7.2, 4);
+    case eEvoMm700z400:
+      return SimpleEvolution(z, -7, 4);
+    case eEvoMm680z400:
+      return SimpleEvolution(z, -6.8, 4);
+    case eEvoMm660z400:
+      return SimpleEvolution(z, -6.6, 4);
+    case eEvoMm640z400:
+      return SimpleEvolution(z, -6.4, 4);
+    case eEvoMm620z400:
+      return SimpleEvolution(z, -6.2, 4);
+    case eEvoMm600z400:
+      return SimpleEvolution(z, -6, 4);
+    case eEvoMm580z400:
+      return SimpleEvolution(z, -5.8, 4);
+    case eEvoMm560z400:
+      return SimpleEvolution(z, -5.6, 4);
+    case eEvoMm540z400:
+      return SimpleEvolution(z, -5.4, 4);
+    case eEvoMm520z400:
+      return SimpleEvolution(z, -5.2, 4);
     case eEvoMm500z400:
       return SimpleEvolution(z, -5, 4);
     case eEvoMm480z400:
@@ -2068,6 +2813,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 4);
     case eEvoMp500z400:
       return SimpleEvolution(z, 5, 4);
+    case eEvoMp520z400:
+      return SimpleEvolution(z, 5.2, 4);
+    case eEvoMp540z400:
+      return SimpleEvolution(z, 5.4, 4);
+    case eEvoMp560z400:
+      return SimpleEvolution(z, 5.6, 4);
+    case eEvoMp580z400:
+      return SimpleEvolution(z, 5.8, 4);
+    case eEvoMp600z400:
+      return SimpleEvolution(z, 6, 4);
+    case eEvoMp620z400:
+      return SimpleEvolution(z, 6.2, 4);
+    case eEvoMp640z400:
+      return SimpleEvolution(z, 6.4, 4);
+    case eEvoMp660z400:
+      return SimpleEvolution(z, 6.6, 4);
+    case eEvoMp680z400:
+      return SimpleEvolution(z, 6.8, 4);
+    case eEvoMp700z400:
+      return SimpleEvolution(z, 7, 4);
+    case eEvoMp720z400:
+      return SimpleEvolution(z, 7.2, 4);
+    case eEvoMm720z425:
+      return SimpleEvolution(z, -7.2, 4.25);
+    case eEvoMm700z425:
+      return SimpleEvolution(z, -7, 4.25);
+    case eEvoMm680z425:
+      return SimpleEvolution(z, -6.8, 4.25);
+    case eEvoMm660z425:
+      return SimpleEvolution(z, -6.6, 4.25);
+    case eEvoMm640z425:
+      return SimpleEvolution(z, -6.4, 4.25);
+    case eEvoMm620z425:
+      return SimpleEvolution(z, -6.2, 4.25);
+    case eEvoMm600z425:
+      return SimpleEvolution(z, -6, 4.25);
+    case eEvoMm580z425:
+      return SimpleEvolution(z, -5.8, 4.25);
+    case eEvoMm560z425:
+      return SimpleEvolution(z, -5.6, 4.25);
+    case eEvoMm540z425:
+      return SimpleEvolution(z, -5.4, 4.25);
+    case eEvoMm520z425:
+      return SimpleEvolution(z, -5.2, 4.25);
     case eEvoMm500z425:
       return SimpleEvolution(z, -5, 4.25);
     case eEvoMm480z425:
@@ -2170,6 +2959,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 4.25);
     case eEvoMp500z425:
       return SimpleEvolution(z, 5, 4.25);
+    case eEvoMp520z425:
+      return SimpleEvolution(z, 5.2, 4.25);
+    case eEvoMp540z425:
+      return SimpleEvolution(z, 5.4, 4.25);
+    case eEvoMp560z425:
+      return SimpleEvolution(z, 5.6, 4.25);
+    case eEvoMp580z425:
+      return SimpleEvolution(z, 5.8, 4.25);
+    case eEvoMp600z425:
+      return SimpleEvolution(z, 6, 4.25);
+    case eEvoMp620z425:
+      return SimpleEvolution(z, 6.2, 4.25);
+    case eEvoMp640z425:
+      return SimpleEvolution(z, 6.4, 4.25);
+    case eEvoMp660z425:
+      return SimpleEvolution(z, 6.6, 4.25);
+    case eEvoMp680z425:
+      return SimpleEvolution(z, 6.8, 4.25);
+    case eEvoMp700z425:
+      return SimpleEvolution(z, 7, 4.25);
+    case eEvoMp720z425:
+      return SimpleEvolution(z, 7.2, 4.25);
+    case eEvoMm720z450:
+      return SimpleEvolution(z, -7.2, 4.5);
+    case eEvoMm700z450:
+      return SimpleEvolution(z, -7, 4.5);
+    case eEvoMm680z450:
+      return SimpleEvolution(z, -6.8, 4.5);
+    case eEvoMm660z450:
+      return SimpleEvolution(z, -6.6, 4.5);
+    case eEvoMm640z450:
+      return SimpleEvolution(z, -6.4, 4.5);
+    case eEvoMm620z450:
+      return SimpleEvolution(z, -6.2, 4.5);
+    case eEvoMm600z450:
+      return SimpleEvolution(z, -6, 4.5);
+    case eEvoMm580z450:
+      return SimpleEvolution(z, -5.8, 4.5);
+    case eEvoMm560z450:
+      return SimpleEvolution(z, -5.6, 4.5);
+    case eEvoMm540z450:
+      return SimpleEvolution(z, -5.4, 4.5);
+    case eEvoMm520z450:
+      return SimpleEvolution(z, -5.2, 4.5);
     case eEvoMm500z450:
       return SimpleEvolution(z, -5, 4.5);
     case eEvoMm480z450:
@@ -2272,6 +3105,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 4.5);
     case eEvoMp500z450:
       return SimpleEvolution(z, 5, 4.5);
+    case eEvoMp520z450:
+      return SimpleEvolution(z, 5.2, 4.5);
+    case eEvoMp540z450:
+      return SimpleEvolution(z, 5.4, 4.5);
+    case eEvoMp560z450:
+      return SimpleEvolution(z, 5.6, 4.5);
+    case eEvoMp580z450:
+      return SimpleEvolution(z, 5.8, 4.5);
+    case eEvoMp600z450:
+      return SimpleEvolution(z, 6, 4.5);
+    case eEvoMp620z450:
+      return SimpleEvolution(z, 6.2, 4.5);
+    case eEvoMp640z450:
+      return SimpleEvolution(z, 6.4, 4.5);
+    case eEvoMp660z450:
+      return SimpleEvolution(z, 6.6, 4.5);
+    case eEvoMp680z450:
+      return SimpleEvolution(z, 6.8, 4.5);
+    case eEvoMp700z450:
+      return SimpleEvolution(z, 7, 4.5);
+    case eEvoMp720z450:
+      return SimpleEvolution(z, 7.2, 4.5);
+    case eEvoMm720z475:
+      return SimpleEvolution(z, -7.2, 4.75);
+    case eEvoMm700z475:
+      return SimpleEvolution(z, -7, 4.75);
+    case eEvoMm680z475:
+      return SimpleEvolution(z, -6.8, 4.75);
+    case eEvoMm660z475:
+      return SimpleEvolution(z, -6.6, 4.75);
+    case eEvoMm640z475:
+      return SimpleEvolution(z, -6.4, 4.75);
+    case eEvoMm620z475:
+      return SimpleEvolution(z, -6.2, 4.75);
+    case eEvoMm600z475:
+      return SimpleEvolution(z, -6, 4.75);
+    case eEvoMm580z475:
+      return SimpleEvolution(z, -5.8, 4.75);
+    case eEvoMm560z475:
+      return SimpleEvolution(z, -5.6, 4.75);
+    case eEvoMm540z475:
+      return SimpleEvolution(z, -5.4, 4.75);
+    case eEvoMm520z475:
+      return SimpleEvolution(z, -5.2, 4.75);
     case eEvoMm500z475:
       return SimpleEvolution(z, -5, 4.75);
     case eEvoMm480z475:
@@ -2374,6 +3251,50 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 4.75);
     case eEvoMp500z475:
       return SimpleEvolution(z, 5, 4.75);
+    case eEvoMp520z475:
+      return SimpleEvolution(z, 5.2, 4.75);
+    case eEvoMp540z475:
+      return SimpleEvolution(z, 5.4, 4.75);
+    case eEvoMp560z475:
+      return SimpleEvolution(z, 5.6, 4.75);
+    case eEvoMp580z475:
+      return SimpleEvolution(z, 5.8, 4.75);
+    case eEvoMp600z475:
+      return SimpleEvolution(z, 6, 4.75);
+    case eEvoMp620z475:
+      return SimpleEvolution(z, 6.2, 4.75);
+    case eEvoMp640z475:
+      return SimpleEvolution(z, 6.4, 4.75);
+    case eEvoMp660z475:
+      return SimpleEvolution(z, 6.6, 4.75);
+    case eEvoMp680z475:
+      return SimpleEvolution(z, 6.8, 4.75);
+    case eEvoMp700z475:
+      return SimpleEvolution(z, 7, 4.75);
+    case eEvoMp720z475:
+      return SimpleEvolution(z, 7.2, 4.75);
+    case eEvoMm720z500:
+      return SimpleEvolution(z, -7.2, 5);
+    case eEvoMm700z500:
+      return SimpleEvolution(z, -7, 5);
+    case eEvoMm680z500:
+      return SimpleEvolution(z, -6.8, 5);
+    case eEvoMm660z500:
+      return SimpleEvolution(z, -6.6, 5);
+    case eEvoMm640z500:
+      return SimpleEvolution(z, -6.4, 5);
+    case eEvoMm620z500:
+      return SimpleEvolution(z, -6.2, 5);
+    case eEvoMm600z500:
+      return SimpleEvolution(z, -6, 5);
+    case eEvoMm580z500:
+      return SimpleEvolution(z, -5.8, 5);
+    case eEvoMm560z500:
+      return SimpleEvolution(z, -5.6, 5);
+    case eEvoMm540z500:
+      return SimpleEvolution(z, -5.4, 5);
+    case eEvoMm520z500:
+      return SimpleEvolution(z, -5.2, 5);
     case eEvoMm500z500:
       return SimpleEvolution(z, -5, 5);
     case eEvoMm480z500:
@@ -2476,6 +3397,28 @@ namespace prop {
       return SimpleEvolution(z, 4.8, 5);
     case eEvoMp500z500:
       return SimpleEvolution(z, 5, 5);
+    case eEvoMp520z500:
+      return SimpleEvolution(z, 5.2, 5);
+    case eEvoMp540z500:
+      return SimpleEvolution(z, 5.4, 5);
+    case eEvoMp560z500:
+      return SimpleEvolution(z, 5.6, 5);
+    case eEvoMp580z500:
+      return SimpleEvolution(z, 5.8, 5);
+    case eEvoMp600z500:
+      return SimpleEvolution(z, 6, 5);
+    case eEvoMp620z500:
+      return SimpleEvolution(z, 6.2, 5);
+    case eEvoMp640z500:
+      return SimpleEvolution(z, 6.4, 5);
+    case eEvoMp660z500:
+      return SimpleEvolution(z, 6.6, 5);
+    case eEvoMp680z500:
+      return SimpleEvolution(z, 6.8, 5);
+    case eEvoMp700z500:
+      return SimpleEvolution(z, 7, 5);
+    case eEvoMp720z500:
+      return SimpleEvolution(z, 7.2, 5);
     }
     return 0;
   }
