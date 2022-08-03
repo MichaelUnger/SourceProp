@@ -24,6 +24,7 @@ namespace prop {
     const std::map<int, TMatrixD>& GetFlux() const;
     const std::map<int, TMatrixD>& GetOscillatedFlux() const;
     double GetOscillatedFlux(const unsigned int id, const double lgE) const;
+    double GetTotalOscillatedFlux(const double lgE) const;
     const std::map<int, TMatrixD>& GetOscillatedPropFlux() const;
     const std::map<int, std::map<int, TMatrixD> >& GetOscillatedSourceFlux() const;
 
