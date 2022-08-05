@@ -74,7 +74,7 @@ namespace prop {
       if (fieldType.back() == "MBB") {
         fT.push_back(atof(fieldInfo[1].c_str()));
         fsigma.push_back(atof(fieldInfo[2].c_str()));
-        feps0.push_back((gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) + 
+        feps0.push_back((gsl_sf_lambert_W0(-(fsigma.back()+2.)*exp(-(fsigma.back()+2.))) +
                         fsigma.back()+2.) * gkBoltzmann * fT.back() );
       }
       else if (fieldType.back() == "BPL") {
@@ -108,7 +108,7 @@ namespace prop {
 
         // initiate interpolation tables
         InterpInit(fCurrentPeak);
-        
+
         if(!fisFixedPPElasticity)
           ReadElasticityDistributions();
 
@@ -464,7 +464,7 @@ namespace prop {
   {
 
     cout << "reading photopion elasticity distributions " << endl;
-      
+
     const double lgE0Min = 15.0;
     const double lgE0Max = 22.0;
     const double dlgE0 = 1.e-1;
@@ -487,7 +487,7 @@ namespace prop {
 
       histname = "Pion distributions";
       elasticityDistribution_pion = new TH3D(histname.c_str(), "", NE0, lgE0Min, lgE0Max,
-                                                    Neps, lgepsMin, lgepsMax, 
+                                                    Neps, lgepsMin, lgepsMax,
                                                     Nk, lgkMin, lgkMax);
 
       histname = "Charged pion fractions";
@@ -503,10 +503,10 @@ namespace prop {
 
       string line;
       string word;
-     
+
       //remove header line
       getline(infile, line);
- 
+
       while(getline(infile, line)) {
         std::istringstream iss2(line);
         iss2 >> word;
@@ -532,10 +532,10 @@ namespace prop {
     // nucleons
     {
       std::string histname;
-      
+
       histname = "Nucleon distributions";
       elasticityDistribution_nucleon = new TH3D(histname.c_str(), "", NE0, lgE0Min, lgE0Max,
-                                                    Neps, lgepsMin, lgepsMax, 
+                                                    Neps, lgepsMin, lgepsMax,
                                                     Nk, lgkMin, lgkMax);
 
       histname = "Proton fractions";
@@ -551,10 +551,10 @@ namespace prop {
 
       string line;
       string word;
-     
+
       //remove header line
       getline(infile, line);
- 
+
       while(getline(infile, line)) {
         std::istringstream iss2(line);
         iss2 >> word;
@@ -564,7 +564,7 @@ namespace prop {
         //lgssAxis.push_back(stod(word));
         iss2 >> word;
         protonFraction->Fill(lgE0, lgeps, stod(word));
-        
+
         double lgk = lgkMin + dlgk/2.;
         while(iss2 >> word) {
           elasticityDistribution_nucleon->Fill(lgE0, lgeps, lgk, stod(word)/dlgk);
@@ -588,7 +588,7 @@ namespace prop {
 
       histname = "pp crossection integral";
       crossSectionIntegral = new TH1D(histname.c_str(), "", Neps, lgepsmin, lgepsmax);
- 
+
       string filename = fDirectory + "/int_crossection_data.txt";
       ifstream infile(filename.c_str());
       if (!infile.good()) {
@@ -596,14 +596,14 @@ namespace prop {
         errMsg << " error opening " << filename;
         throw runtime_error(errMsg.str());
       }
-     
+
       string line;
       string word;
-      
+
       //buffer lines
       getline(infile, line);
       getline(infile, line);
-      
+
       while(getline(infile, line)) {
         std::istringstream iss(line);
         iss >> word;
@@ -612,7 +612,7 @@ namespace prop {
         crossSectionIntegral->Fill(lgeps, stod(word));
       }
     }
-   
+
     return;
   }
 
@@ -635,10 +635,10 @@ namespace prop {
       return;
 
     cout << "building photon field weights " << endl;
-  
+
     const double lgGammaMin = 1.;
     const double lgGammaMax = 13.1;
-    const double dlgGamma = 0.1; 
+    const double dlgGamma = 0.1;
 
     lgEphMin = -5.;
     lgEphMax = 2.;
@@ -648,7 +648,7 @@ namespace prop {
     const double NEph = int((lgEphMax-lgEphMin)/dlgEph);
 
     for(unsigned int A = 1; A <= GetMaxA(); ++A) {
-  
+
       const std::string histname = "photon interaction weights "+std::to_string(A);
       TH2D* intweights = new TH2D(histname.c_str(), "", NGamma, lgGammaMin, lgGammaMax,
                                                             NEph, lgEphMin, lgEphMax);
@@ -660,44 +660,44 @@ namespace prop {
         const double Gamma = pow(10., lgGamma);
         const double E = Gamma*(Z*gProtonMass + N*gNeutronMass);
         const double lambdaFull = LambdaPhotoHadInt(E, A) / GetProcessFraction(E, A, VSource::ePP);
-        
+
         double lgEph = lgEphMin + dlgEph/2.;
         for(int j = 0; j < NEph; ++j) {
           const double Eph = pow(10., lgEph);
-         
+
           double weight;
           double lambdaPartial = 0.;
 
           for(unsigned int iField = 0; iField < fFields.size(); ++iField) {
-      
+
             std::vector<std::string> fieldInfo;
             stringstream ss(fFields[iField]);
             string info;
             while(getline(ss, info, '_'))
             fieldInfo.push_back(info);
-      
+
             const double f = fFieldScaleFactors[iField];
             if (f <= 0)
             continue;
-  
+
             const double n = f*GetPhotonDensity(Eph, iField);
             const double lambdaInvPartial = gmicroBarn_to_cm2*A*crossSectionIntegral->Interpolate(log10(2.*Gamma*Eph))*
                                             n*Eph*dlgEph*log(10.)/pow(Gamma*Eph, 2)/2./gcm_to_Mpc;
-            if(lambdaPartial == 0.) 
+            if(lambdaPartial == 0.)
               lambdaPartial = (lambdaInvPartial > 0.)? 1./lambdaInvPartial : 1e100;
             else
               lambdaPartial = (lambdaInvPartial > 0.)? lambdaPartial/lambdaInvPartial / (lambdaPartial + 1./lambdaInvPartial) :
                                                        lambdaPartial;
 
-          } 
-      
-          weight = (lambdaPartial > 0.)? lambdaFull/lambdaPartial : 1.; 
+          }
+
+          weight = (lambdaPartial > 0.)? lambdaFull/lambdaPartial : 1.;
 
           if(weight > 1.)
             weight = 1.;
 
           intweights->Fill(lgGamma, lgEph, weight);
-        
+
           lgEph += dlgEph;
         }
         lgGamma += dlgGamma;
@@ -708,7 +708,7 @@ namespace prop {
 
     return;
   }
-  
+
   void
   PhotoNuclearSource::BuildInteractionWeights()
   {
@@ -720,52 +720,52 @@ namespace prop {
     const double lgEmin = flgEmin;
     const double lgEmax = flgEmax;
     const double dlgE = fdlgEOrig;
-  
+
     lgkMin = -7.5;
     lgkMax = log10(0.8);
     dlgk = 1e-2;
-    
+
     const int Nk = int((lgkMax-lgkMin)/dlgk);
     const int NE = int((lgEmax-lgEmin)/dlgE);
     const int NEph = int((lgEphMax-lgEphMin)/dlgEph);
-    
-    const double piPlusFrac = 0.5; // fraction of charged pions which are taken to be positive 
+
+    const double piPlusFrac = 0.5; // fraction of charged pions which are taken to be positive
 
     for(unsigned int A = 1; A <= GetMaxA(); ++A) {
-   
-      std::string histname;   
-   
+
+      std::string histname;
+
       histname = "proton secondary interaction weights "+std::to_string(A);
       TH2D* pintweights = new TH2D(histname.c_str(), "", Nk, lgkMin, lgkMax, NE, lgEmin, lgEmax);
-      
+
       histname = "neutron secondary interaction weights "+std::to_string(A);
       TH2D* nintweights = new TH2D(histname.c_str(), "", Nk, lgkMin, lgkMax, NE, lgEmin, lgEmax);
-      
+
       histname = "pi plus secondary interaction weights "+std::to_string(A);
       TH2D* pipintweights = new TH2D(histname.c_str(), "", Nk, lgkMin, lgkMax, NE, lgEmin, lgEmax);
-      
+
       histname = "pi minus secondary interaction weights "+std::to_string(A);
       TH2D* pimintweights = new TH2D(histname.c_str(), "", Nk, lgkMin, lgkMax, NE, lgEmin, lgEmax);
-      
+
       histname = "pi zero secondary interaction weights "+std::to_string(A);
       TH2D* pi0intweights = new TH2D(histname.c_str(), "", Nk, lgkMin, lgkMax, NE, lgEmin, lgEmax);
- 
+
       TMatrixD* MN = new TMatrixD(Nk, NEph);
       TMatrixD* MP = new TMatrixD(Nk, NEph);
 
-      TVectorD Vp(NEph);     
-      TVectorD Vn(NEph);     
-      TVectorD Vpip(NEph);     
-      TVectorD Vpim(NEph);     
-      TVectorD Vpi0(NEph);     
- 
-      double lgE = lgEmin + dlgE/2.; 
+      TVectorD Vp(NEph);
+      TVectorD Vn(NEph);
+      TVectorD Vpip(NEph);
+      TVectorD Vpim(NEph);
+      TVectorD Vpi0(NEph);
+
+      double lgE = lgEmin + dlgE/2.;
       for(int i = 0; i < NE; ++i) {
         const double E = pow(10., lgE);
-        
+
         double lgEph = lgEphMin + dlgEph/2.;
         for(int j = 0; j < NEph; ++j) {
-       
+
           const double pFrac = GetProtonFraction(log10(E/A), lgEph);
           const double chPiFrac = GetChargedPionFraction(log10(E/A), lgEph);
           const double Ephfrac = GetPhotonWeight(lgEph, E, A);
@@ -776,11 +776,11 @@ namespace prop {
           Vpim[j] = (1.-piPlusFrac) * chPiFrac * Ephfrac;
           Vpi0[j] = (1.-chPiFrac) * Ephfrac;
 
-          for(double lgk = lgkMin; lgk < lgkMax; lgk += dlgk) { 
+          for(double lgk = lgkMin; lgk < lgkMax; lgk += dlgk) {
             const int ik = int((lgk - lgkMin)/dlgk);
 
-            (*MN)(ik,j) = GetNucleonMultiplicity(log10(E/A), lgEph, lgk+dlgk/2., dlgk); 
-            (*MP)(ik,j) = GetPionMultiplicity(log10(E/A), lgEph, lgk+dlgk/2., dlgk); 
+            (*MN)(ik,j) = GetNucleonMultiplicity(log10(E/A), lgEph, lgk+dlgk/2., dlgk);
+            (*MP)(ik,j) = GetPionMultiplicity(log10(E/A), lgEph, lgk+dlgk/2., dlgk);
           }
           lgEph += dlgEph;
         }
@@ -790,8 +790,8 @@ namespace prop {
         const TVectorD pipweight = (*MP)*Vpip;
         const TVectorD pimweight = (*MP)*Vpim;
         const TVectorD pi0weight = (*MP)*Vpi0;
-  
-        for(double lgk = lgkMin; lgk < lgkMax; lgk += dlgk) { 
+
+        for(double lgk = lgkMin; lgk < lgkMax; lgk += dlgk) {
           const int ik = int((lgk - lgkMin)/dlgk);
           pintweights->Fill(lgk+dlgk/2., lgE, pweight[ik]);
           nintweights->Fill(lgk+dlgk/2., lgE, nweight[ik]);
@@ -800,7 +800,7 @@ namespace prop {
           pi0intweights->Fill(lgk+dlgk/2., lgE, pi0weight[ik]);
         }
 
-        lgE += dlgE; 
+        lgE += dlgE;
       }
 
       fInteractionWeights[A][VSource::eProton] = pintweights;
@@ -824,21 +824,21 @@ namespace prop {
     const double lgEmin = flgEmin;
     const double lgEmax = flgEmax;
     const double dlgE = fdlgEOrig/fnSubBins;
- 
+
     const int NE = int((lgEmax-lgEmin)/dlgE);
-    
+
     for(unsigned int A = 1; A <= GetMaxA(); ++A) {
 
-      TMatrixD* pm = new TMatrixD(NE, NE); 
-      TMatrixD* nm = new TMatrixD(NE, NE); 
-      TMatrixD* pipm = new TMatrixD(NE, NE); 
-      TMatrixD* pimm = new TMatrixD(NE, NE); 
-      TMatrixD* pi0m = new TMatrixD(NE, NE); 
+      TMatrixD* pm = new TMatrixD(NE, NE);
+      TMatrixD* nm = new TMatrixD(NE, NE);
+      TMatrixD* pipm = new TMatrixD(NE, NE);
+      TMatrixD* pimm = new TMatrixD(NE, NE);
+      TMatrixD* pi0m = new TMatrixD(NE, NE);
 
       double lgEsec = lgEmin + dlgE/2.;
       for(int iE = 0; iE < NE; ++iE) {
         const double Esec = pow(10., lgEsec);
- 
+
         for(double lgk = lgkMin + dlgk/2.; lgk < lgkMax; lgk += dlgk) {
           const double kappa = pow(10., lgk);
           const double jacobi = double(A) / kappa;
@@ -867,8 +867,8 @@ namespace prop {
           (*pi0m)(iE,jEprim) += pi0weight * jacobi;
 
 
-        } 
-        lgEsec += dlgE; 
+        }
+        lgEsec += dlgE;
       }
 
       fWeightMatrix[A][eProton] = pm;
@@ -877,12 +877,12 @@ namespace prop {
       fWeightMatrix[A][ePionMinus] = pimm;
       fWeightMatrix[A][ePionZero] = pi0m;
     }
- 
+
     return;
   }
 
   void
-  PhotoNuclearSource::BuildTrickleDownWeights() 
+  PhotoNuclearSource::BuildTrickleDownWeights()
   {
     if(!ftrickleDownWeights.empty())
       return;
@@ -891,8 +891,8 @@ namespace prop {
 
     const double lgEmin = flgEmin;
     const double lgEmax = flgEmax;
-    const double dlgE = fdlgEOrig;   
- 
+    const double dlgE = fdlgEOrig;
+
     const int NE = int((lgEmax-lgEmin)/dlgE);
     const double lgkMin = -7.5;
     const double lgkMax = log10(0.8);
@@ -900,20 +900,20 @@ namespace prop {
     const double lgEphMin = GetLgEphMin();
     const double lgEphMax = GetLgEphMax();
     const double dlgEph = GetdLgEph();
-    
-    const double piPlusFrac = 0.5; // fraction of charged pions which are taken to be positive 
+
+    const double piPlusFrac = 0.5; // fraction of charged pions which are taken to be positive
 
     std::string histname;
 
     histname = "proton weights";
     TH2D* protonWeights = new TH2D(histname.c_str(), "", NE, lgEmin, lgEmax,
                                                          NE, lgEmin, lgEmax);
-    
+
     histname = "neutron weights";
     TH2D* neutronWeights = new TH2D(histname.c_str(), "", NE, lgEmin, lgEmax,
                                                            NE, lgEmin, lgEmax);
-   
-    histname = "piPlus weights"; 
+
+    histname = "piPlus weights";
     TH2D* pipWeights = new TH2D(histname.c_str(), "", NE, lgEmin, lgEmax,
                                                        NE, lgEmin, lgEmax);
 
@@ -925,7 +925,7 @@ namespace prop {
     TH2D* pi0Weights = new TH2D(histname.c_str(), "", NE, lgEmin, lgEmax,
                                                             NE, lgEmin, lgEmax);
 
-    double lgEprim = lgEmin + dlgE/2.; 
+    double lgEprim = lgEmin + dlgE/2.;
     for(int i = 0; i < NE; ++i) {
       const double Eprim = pow(10., lgEprim);
       for(double lgk = lgkMin; lgk < lgkMax; lgk += dlgk) {
@@ -958,10 +958,10 @@ namespace prop {
         pipWeights->Fill(lgEprim, lgEsec, pipweight);
         pimWeights->Fill(lgEprim, lgEsec, pimweight);
         pi0Weights->Fill(lgEprim, lgEsec, pi0weight);
-      } 
-      lgEprim += dlgE; 
+      }
+      lgEprim += dlgE;
     }
-   
+
     ftrickleDownWeights[eProton] = protonWeights;
     ftrickleDownWeights[eNeutron] = neutronWeights;
     ftrickleDownWeights[ePionPlus] = pipWeights;
@@ -970,7 +970,7 @@ namespace prop {
 
     return;
   }
- 
+
   void
   PhotoNuclearSource::ClearBuilds()
   {
@@ -984,7 +984,7 @@ namespace prop {
         delete iter2.second;
     for (auto& iter : ftrickleDownWeights)
       delete iter.second;
-    
+
     fPhotonWeights.clear();
     fInteractionWeights.clear();
     fWeightMatrix.clear();
@@ -1138,16 +1138,16 @@ namespace prop {
     const int Z = aToZ(Aprim);
     const int N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    
+
     // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
     const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2;
     const double sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2;
     const double sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2;
     const double sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2;
     // thresholds from Dermer section 9.2.2 equation (9.9)
-    const double EthSPP = 390.*gElectronMass;   
+    const double EthSPP = 390.*gElectronMass;
     const double EthMPP1 = 980.*gElectronMass;
-    const double EthMPP2 = 2940.*gElectronMass; 
+    const double EthMPP2 = 2940.*gElectronMass;
 
     double lambdaSPP = 0.;
     double lambdaMPP = 0.;
@@ -1161,7 +1161,7 @@ namespace prop {
       double lambdaInv;
 
       // single-pion production interaction length
-      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) + 
+      lambdaInv = sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) +
                   pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)); // low-energy peak
       lambdaInv += sigmaInelSPP2 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) +
                    pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // high-energy peak
@@ -1173,7 +1173,7 @@ namespace prop {
 	      lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
 
       // multi-pion production interaction length
-      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) + 
+      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) +
                   pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
       lambdaInv += sigmaInelMPP2 * (I1(EthMPP2/2./gamma, i) - pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i)); // high-energy plateau
       lambdaInv *= f / gcm_to_Mpc;
@@ -1200,10 +1200,10 @@ namespace prop {
     const double sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2;
     const double sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2;
     const double sigmaInelMPP2 = Aprim*120.*gmicroBarn_to_cm2;
-    // thresholds from Dermer section 9.2.2 equation (9.9) 
+    // thresholds from Dermer section 9.2.2 equation (9.9)
     const double EthSPP = 390.*gElectronMass;
     const double EthMPP1 = 980.*gElectronMass;
-    const double EthMPP2 = 2940.*gElectronMass; 
+    const double EthMPP2 = 2940.*gElectronMass;
 
     double lambdaSPP = 0;
     double lambdaMPP = 0;
@@ -1229,7 +1229,7 @@ namespace prop {
 	      lambdaSPP = (lambdaInv == 0.)? lambdaSPP : lambdaSPP / lambdaInv / (lambdaSPP + 1./lambdaInv);
 
       // multi-pion production interaction length
-      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) + 
+      lambdaInv = sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) +
                   pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
       lambdaInv += sigmaInelMPP2 * (I1(EthMPP2/2./gamma, i) - pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i)); // high-energy plateau
       lambdaInv *= f / gcm_to_Mpc;
@@ -1252,14 +1252,14 @@ namespace prop {
     const int Z = aToZ(Aprim);
     const int N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    
+
     // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
     const double sigmaInelSPP1 = Aprim*340.*gmicroBarn_to_cm2;
     const double sigmaInelSPP2 = Aprim*135.*gmicroBarn_to_cm2;
-    // thresholds from Dermer section 9.2.2 equation (9.9) 
+    // thresholds from Dermer section 9.2.2 equation (9.9)
     const double EthSPP = 390.*gElectronMass;
     const double EthMPP1 = 980.*gElectronMass;
-    const double EthMPP2 = 2940.*gElectronMass; 
+    const double EthMPP2 = 2940.*gElectronMass;
 
     double lambdaSPP = 0.;
 
@@ -1272,10 +1272,10 @@ namespace prop {
       double lambdaInv = 0;
 
       // single-pion production interaction length
-      if (epsMax <= EthSPP/2./gamma) 
+      if (epsMax <= EthSPP/2./gamma)
         lambdaInv = 0.;
       else {
-        lambdaInv += (epsMax <= EthMPP1/2./gamma)? 
+        lambdaInv += (epsMax <= EthMPP1/2./gamma)?
                       sigmaInelSPP1 * (I2(EthSPP/2./gamma, epsMax, i) +
                       pow(EthMPP1/2./gamma, 2)*I3(epsMax, i) - pow(EthSPP/2./gamma, 2)*I3(EthSPP/2./gamma, i)) :
                       sigmaInelSPP1 * (I2(EthSPP/2./gamma, EthMPP1/2./gamma, i) +
@@ -1310,13 +1310,13 @@ namespace prop {
     const int Z = aToZ(Aprim);
     const int N = Aprim - Z;
     const double gamma = E / (Z*gProtonMass + N*gNeutronMass);
-    
+
     // inelastic cross-section [ub] from Dermer section 9.2.2 equation (9.8)
     const double sigmaInelMPP1 = Aprim*65.*gmicroBarn_to_cm2;
     const double sigmaInelMPP2 = Aprim*2940.*gmicroBarn_to_cm2;
-    // thresholds from Dermer section 9.2.2 equation (9.9) 
+    // thresholds from Dermer section 9.2.2 equation (9.9)
     const double EthMPP1 = 980.*gElectronMass;
-    const double EthMPP2 = 2940.*gElectronMass; 
+    const double EthMPP2 = 2940.*gElectronMass;
 
     double lambdaMPP = 0.;
 
@@ -1329,16 +1329,16 @@ namespace prop {
       double lambdaInv;
 
       // multi-pion production interaction length
-      if (epsMax <= EthMPP1/2./gamma) 
+      if (epsMax <= EthMPP1/2./gamma)
         lambdaInv = 0.;
       else {
         lambdaInv = (epsMax <= EthMPP2/2./gamma)?
-                    sigmaInelMPP1 * (I2(EthMPP1/2./gamma, epsMax, i) + 
+                    sigmaInelMPP1 * (I2(EthMPP1/2./gamma, epsMax, i) +
                     pow(EthMPP2/2./gamma, 2)*I3(epsMax, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)) :
                     sigmaInelMPP1 * (I2(EthMPP1/2./gamma, EthMPP2/2./gamma, i) +
                     pow(EthMPP2/2./gamma, 2)*I3(EthMPP2/2./gamma, i) - pow(EthMPP1/2./gamma, 2)*I3(EthMPP1/2./gamma, i)); // low-energy peak
         lambdaInv += (epsMax <= EthMPP2/2./gamma)? 0. :
-                     sigmaInelMPP2 * (I2(EthMPP2/2./gamma, epsMax, i) - 
+                     sigmaInelMPP2 * (I2(EthMPP2/2./gamma, epsMax, i) -
                      pow(EthMPP2/2./gamma, 2)*(I3(EthMPP2/2./gamma, i)-I3(epsMax, i))); // high-energy plateau
       }
       lambdaInv *= f / gcm_to_Mpc;
@@ -1372,7 +1372,7 @@ namespace prop {
         throw runtime_error("Field only integrable for integer values of sigma!");
 
       double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
-      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * 
+      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) *
             pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) *
             gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
 
@@ -1386,7 +1386,7 @@ namespace prop {
         I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
       else
         I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
-      
+
       I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.) / (fsigma[iField] + 2.);
       I += gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
 
@@ -1398,13 +1398,13 @@ namespace prop {
            pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
     }
     else {
-      if (fbeta[iField] >= -1.) 
+      if (fbeta[iField] >= -1.)
         throw runtime_error("Field not integrable for beta >= -1!");
 
       double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
       n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
 
-      I += (feps0[iField] >= xmin)? 
+      I += (feps0[iField] >= xmin)?
             (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) - 1. / (fbeta[iField]+1.) : 0.;
       I -= (feps0[iField] < xmin)? pow(xmin/feps0[iField], fbeta[iField]+1.) / (fbeta[iField]+1.) : 0.;
       I *= n0 * feps0[iField];
@@ -1429,36 +1429,36 @@ namespace prop {
 
     if (fieldType[iField] == "MBB" || fieldType[iField] == "MBBInterp") {
       double buffdbl;
-      if (fsigma[iField] < 0.) 
+      if (fsigma[iField] < 0.)
         throw runtime_error("Field not integrable for sigma < 0!");
-      else if (fsigma[iField] > 4.) 
+      else if (fsigma[iField] > 4.)
         throw runtime_error("GSL functions not available to integrate field for sigma > 4!");
-      else if (modf(fsigma[iField], &buffdbl) != 0.) 
+      else if (modf(fsigma[iField], &buffdbl) != 0.)
         throw runtime_error("Field only integrable for integer values of sigma!");
 
       double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
-      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * 
+      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) *
              pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) *
              gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
 
       if (abs(fsigma[iField]) < 1e-5)
         I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmax/gkBoltzmann/fT[iField]) -
               pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
-      else if (abs(fsigma[iField]-1.) < 1e-5) 
+      else if (abs(fsigma[iField]-1.) < 1e-5)
         I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmax/gkBoltzmann/fT[iField]) -
               pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
-      else if (abs(fsigma[iField]-2.) < 1e-5) 
+      else if (abs(fsigma[iField]-2.) < 1e-5)
         I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmax/gkBoltzmann/fT[iField]) -
               pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
-      else if (abs(fsigma[iField]-3.) < 1e-5) 
+      else if (abs(fsigma[iField]-3.) < 1e-5)
         I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmax/gkBoltzmann/fT[iField]) -
               pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
-      else 
+      else
         I += pow(xmax/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmax/gkBoltzmann/fT[iField]) -
               pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]+2.)*gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
-     
+
        I /= (fsigma[iField] + 2.);
-    
+
       if (I < 1e-10)
         I = 0; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
 
@@ -1471,11 +1471,11 @@ namespace prop {
       if (feps0[iField] >= xmax)
         I += (pow(xmax/feps0[iField], falpha[iField]+1.) - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.);
       else if (feps0[iField] < xmax && feps0[iField] >= xmin)
-	      I += (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) + 
+	      I += (1. - pow(xmin/feps0[iField], falpha[iField]+1.)) / (falpha[iField]+1.) +
               (pow(xmax/feps0[iField], fbeta[iField]+1.) - 1.) / (fbeta[iField]+1.);
       else
 	      I += (pow(xmax/feps0[iField], fbeta[iField]+1.) - pow(xmin/feps0[iField], fbeta[iField]+1.)) / (fbeta[iField]+1.);
-      
+
       I *= n0 * feps0[iField];
     }
 
@@ -1494,39 +1494,39 @@ namespace prop {
     if (fieldType[iField] == "MBB"|| fieldType[iField] == "MBBInterp") {
 
       double buffdbl;
-      if (fsigma[iField] < 0.) 
+      if (fsigma[iField] < 0.)
         throw runtime_error("Field not integrable for sigma < 0!");
-      else if (fsigma[iField] > 6.) 
+      else if (fsigma[iField] > 6.)
         throw runtime_error("GSL functions not available to integrate field for sigma > 6!");
-      else if (modf(fsigma[iField], &buffdbl) != 0.) 
+      else if (modf(fsigma[iField], &buffdbl) != 0.)
         throw runtime_error("Field only integrable for integer values of sigma!");
 
       double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
-      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) 
+      n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.)
               * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
 
       if (abs(fsigma[iField]) < 1e-5)
-        I += (gsl_isinf(exp(xmin/gkBoltzmann/fT[iField])))? 0. : 
+        I += (gsl_isinf(exp(xmin/gkBoltzmann/fT[iField])))? 0. :
               xmin/gkBoltzmann/fT[iField] - log(exp(xmin/gkBoltzmann/fT[iField]) - 1.);
       else {
-        if (abs(fsigma[iField]-1.) < 1e-5) 
+        if (abs(fsigma[iField]-1.) < 1e-5)
           I -= gsl_sf_debye_1(xmin/gkBoltzmann/fT[iField]);
-        else if (abs(fsigma[iField]-2.) < 1e-5) 
+        else if (abs(fsigma[iField]-2.) < 1e-5)
           I -= gsl_sf_debye_2(xmin/gkBoltzmann/fT[iField]);
-        else if (abs(fsigma[iField]-3.) < 1e-5) 
+        else if (abs(fsigma[iField]-3.) < 1e-5)
           I -= gsl_sf_debye_3(xmin/gkBoltzmann/fT[iField]);
-        else if (abs(fsigma[iField]-4.) < 1e-5) 
+        else if (abs(fsigma[iField]-4.) < 1e-5)
           I -= gsl_sf_debye_4(xmin/gkBoltzmann/fT[iField]);
-        else if (abs(fsigma[iField]-5.) < 1e-5) 
+        else if (abs(fsigma[iField]-5.) < 1e-5)
           I -= gsl_sf_debye_5(xmin/gkBoltzmann/fT[iField]);
-        else 
+        else
           I -= gsl_sf_debye_6(xmin/gkBoltzmann/fT[iField]);
-      
+
       	I *= pow(xmin/gkBoltzmann/fT[iField], fsigma[iField]) / fsigma[iField];
         I += gsl_sf_zeta(fsigma[iField]+1.) * gsl_sf_gamma(fsigma[iField]+1.);
       }
 
-      if (I < 1e-10) 
+      if (I < 1e-10)
         I = 0.; // if precision too low to get correct difference just set to zero (terms approach same asymptote)
 
       I *= 8. * gPi * n0 / pow(feps0[iField], 2) * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]-2.) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.);
@@ -1536,13 +1536,13 @@ namespace prop {
       n0 /= feps0[iField] * (1./(falpha[iField]+1.) - 1./(fbeta[iField]+1.));
 
       if (feps0[iField] >= xmin) {
-	      I += (falpha[iField] == 1.)? log(feps0[iField]/xmin) : 
+	      I += (falpha[iField] == 1.)? log(feps0[iField]/xmin) :
               (1. - pow(xmin/feps0[iField], falpha[iField]-1.)) / (falpha[iField]-1.);
 	      I -= 1./(fbeta[iField]-1.);
       }
       else
 	      I -= pow(xmin/feps0[iField], fbeta[iField]-1.) / (fbeta[iField]-1.);
-      
+
       I *= n0 / feps0[iField];
     }
 
@@ -1699,7 +1699,7 @@ namespace prop {
       BuildPhotonWeights();
       BuildInteractionWeights();
       BuildTrickleDownWeights();
-      BuildPPWeightMatrix(); 
+      BuildPPWeightMatrix();
     }
 
     return;
@@ -1766,7 +1766,7 @@ namespace prop {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/pd_" + field + ".txt";
     }
-    else 
+    else
       throw runtime_error("Unrecognized interpolator field type!");
 
     ifstream infile(filename.c_str());
@@ -1843,7 +1843,7 @@ namespace prop {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/ppp_" + field + ".txt";
     }
-    else 
+    else
       throw runtime_error("Unrecognized interpolator field type!");
 
     ifstream infile(filename.c_str());
@@ -1891,7 +1891,7 @@ namespace prop {
     std::vector<BranchingRatio> newBR;
     std::string strPeak = std::to_string(photonPeak);
     strPeak.erase ( strPeak.find_last_not_of('0') + 1, std::string::npos );
-    if (strPeak.back() == '.') 
+    if (strPeak.back() == '.')
       strPeak += "0";
 
     const double lgmin = 6; // minimum log10(Lorentz-factor)
@@ -1911,7 +1911,7 @@ namespace prop {
       field = "BPL_" + strPeak + "_" + beta + "_" + alpha;
       filename = fDirectory + "/pd_branching_" + field + ".txt";
     }
-    else 
+    else
       throw runtime_error("Unrecognized interpolator field type!");
 
     ifstream infile(filename.c_str());
@@ -2029,7 +2029,7 @@ namespace prop {
       for (unsigned int i = 0; i < lambdaInvL.size(); i++) {
 	      // performs simple cubic interpolation with zero derivative at endpoints
         // (to ensure smooth derivatives at grid points)
-        valL = lambdaInvL[i]; 
+        valL = lambdaInvL[i];
         valR = lambdaInvR[i];
         const double C1 = -2.*(valR-valL)/pow(dx, 3);
         const double C2 = 3.*(valR-valL)/pow(dx, 2);
@@ -2147,7 +2147,7 @@ namespace prop {
 
           // performs simple cubic interpolation with zero derivative at endpoints
           // (to ensure smooth derivatives at grid points)
-          const double valL = histL->GetBinContent(i+1); 
+          const double valL = histL->GetBinContent(i+1);
           const double valR = histR->GetBinContent(i+1);
           const double C1 = -2.*(valR-valL)/pow(dx, 3);
           const double C2 = 3.*(valR-valL)/pow(dx, 2);
@@ -2177,7 +2177,7 @@ namespace prop {
         continue;
 
       if (fieldType[i] == "MBB" || fieldType[i] == "MBBInterp")
-        Eavg += f*gkBoltzmann*fT[i]*gsl_sf_zeta(4+fsigma[i])*gsl_sf_gamma(4+fsigma[i]) / 
+        Eavg += f*gkBoltzmann*fT[i]*gsl_sf_zeta(4+fsigma[i])*gsl_sf_gamma(4+fsigma[i]) /
                 (gsl_sf_zeta(3+fsigma[i])*gsl_sf_gamma(3+fsigma[i]));
       else
         Eavg += (fbeta[i] >= -2)? f*feps0[i] :
@@ -2188,7 +2188,7 @@ namespace prop {
     return Eavg;
   }
 
-  double 
+  double
   PhotoNuclearSource::GetMeanPhotonEnergyAboveE(const double Eth)
     const
   {
@@ -2243,14 +2243,14 @@ namespace prop {
     return Eavg;
 
   }
-  
+
   double PhotoNuclearSource::GetPhotonWeight(const double lgEph, const double Eprim, const int Aprim)
     const
   {
     if(!fPhotonWeights.count(Aprim))
       throw runtime_error("Unknown mass number: " + std::to_string(Aprim));
 
-    TH2D* weights = fPhotonWeights.at(Aprim);  
+    TH2D* weights = fPhotonWeights.at(Aprim);
 
     const double lgGammaMin = weights->GetXaxis()->GetXmin();
     const double lgGammaMax = weights->GetXaxis()->GetXmax();
@@ -2327,17 +2327,17 @@ namespace prop {
 
     return weights->Interpolate(lgEprim, lgEsec);
   }
-  
-  double PhotoNuclearSource::GetPhotonDensity(double Eph, int iField) 
+
+  double PhotoNuclearSource::GetPhotonDensity(double Eph, int iField)
     const
   {
     double n;
     const int b = fsigma[iField]+2;
     const double TBB = (gsl_sf_lambert_W0(-b*exp(-b))+ b) / (gsl_sf_lambert_W0(-2.*exp(-2.)) + 2.) * fT[iField];
     double n0 = 8. * gPi * pow(gkBoltzmann*TBB/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(3.) * gsl_sf_gamma(3.);
-    
+
     if(fieldType[iField] == "MBB"|| fieldType[iField] == "MBBInterp") {
-      
+
       n0 /= 8. * gPi * pow(gkBoltzmann*fT[iField]/feps0[iField], fsigma[iField]) * pow(gkBoltzmann*fT[iField]/gPlanck_SpeedOfLight, 3.) * gsl_sf_zeta(fsigma[iField]+3.) * gsl_sf_gamma(fsigma[iField]+3.);
       n = 8. * gPi * pow(Eph, 2) * pow(Eph/feps0[iField], fsigma[iField]) / pow(gPlanck_SpeedOfLight, 3.) / (exp(Eph/gkBoltzmann/fT[iField])-1.);
       n *= n0;
@@ -2349,24 +2349,24 @@ namespace prop {
       n = (Eph < feps0[iField])? pow(Eph/feps0[iField], falpha[iField]) : pow(Eph/feps0[iField], fbeta[iField]);
       n *= n0;
 
-    } 
+    }
 
     return n;
 
   }
 
-  double 
+  double
   PhotoNuclearSource::GetNucleonMultiplicity(const double lgE0, const double lgeps, const double lgk, const double dlgkSample = 1.e-2)
     const
   {
     const int NE0 = elasticityDistribution_nucleon->GetNbinsX();
     const double lgE0Min = elasticityDistribution_nucleon->GetXaxis()->GetBinCenter(1);
     const double lgE0Max = elasticityDistribution_nucleon->GetXaxis()->GetBinCenter(NE0);
-    
+
     const int Neps = elasticityDistribution_nucleon->GetNbinsY();
     const double lgepsMin = elasticityDistribution_nucleon->GetYaxis()->GetBinCenter(1);
     const double lgepsMax = elasticityDistribution_nucleon->GetYaxis()->GetBinCenter(Neps);
-    
+
     const int Nk = elasticityDistribution_nucleon->GetNbinsZ();
     const double lgkMin = elasticityDistribution_nucleon->GetZaxis()->GetBinCenter(1);
     const double lgkMax = elasticityDistribution_nucleon->GetZaxis()->GetBinCenter(Nk);
@@ -2377,13 +2377,13 @@ namespace prop {
       return 0.;
     if(lgE0 >= lgE0Max)
       return 0.;
-    
-    if(lgeps <= lgepsMin) 
+
+    if(lgeps <= lgepsMin)
       return 0.;
     if(lgeps >= lgepsMax)
       return 0.;
 
-    const double val = (lgk <= lgkMin || lgk >= lgkMax)? 0. : elasticityDistribution_nucleon->Interpolate(lgE0, lgeps, lgk); 
+    const double val = (lgk <= lgkMin || lgk >= lgkMax)? 0. : elasticityDistribution_nucleon->Interpolate(lgE0, lgeps, lgk);
 
     return val*dlgk * dlgkSample/dlgk;
   }
@@ -2394,79 +2394,79 @@ namespace prop {
   {
     const double lgE0Min = protonFraction->GetXaxis()->GetXmin();
     const double lgE0Max = protonFraction->GetXaxis()->GetXmax();
-    
+
     const double lgepsMin = protonFraction->GetYaxis()->GetXmin();
     const double lgepsMax = protonFraction->GetYaxis()->GetXmax();
-    
-    if(lgE0 <= lgE0Min) 
+
+    if(lgE0 <= lgE0Min)
       return 0.5;
     if(lgE0 >= lgE0Max)
       return 0.5;
-    
-    if(lgeps <= lgepsMin) 
+
+    if(lgeps <= lgepsMin)
       return 0.5;
     if(lgeps >= lgepsMax)
       return 0.5;
 
-    const double val = protonFraction->Interpolate(lgE0, lgeps); 
+    const double val = protonFraction->Interpolate(lgE0, lgeps);
 
     return val;
   }
 
-  double 
+  double
   PhotoNuclearSource::GetPionMultiplicity(const double lgE0, const double lgeps, const double lgk, const double dlgkSample = 1.e-2)
     const
   {
     const int NE0 = elasticityDistribution_pion->GetNbinsX();
     const double lgE0Min = elasticityDistribution_pion->GetXaxis()->GetBinCenter(1);
     const double lgE0Max = elasticityDistribution_pion->GetXaxis()->GetBinCenter(NE0);
-    
+
     const int Neps = elasticityDistribution_pion->GetNbinsY();
     const double lgepsMin = elasticityDistribution_pion->GetYaxis()->GetBinCenter(1);
     const double lgepsMax = elasticityDistribution_pion->GetYaxis()->GetBinCenter(Neps);
-    
+
     const int Nk = elasticityDistribution_pion->GetNbinsZ();
     const double lgkMin = elasticityDistribution_pion->GetZaxis()->GetBinCenter(1);
     const double lgkMax = elasticityDistribution_pion->GetZaxis()->GetBinCenter(Nk);
 
     const double dlgk = (lgkMax - lgkMin) / Nk;
 
-    if(lgE0 <= lgE0Min) 
+    if(lgE0 <= lgE0Min)
       return 0.;
     if(lgE0 >= lgE0Max)
       return 0.;
-    
-    if(lgeps <= lgepsMin) 
+
+    if(lgeps <= lgepsMin)
       return 0.;
     if(lgeps >= lgepsMax)
       return 0.;
 
-    const double val = (lgk <= lgkMin || lgk >= lgkMax)? 0. : elasticityDistribution_pion->Interpolate(lgE0, lgeps, lgk); 
+    const double val = (lgk <= lgkMin || lgk >= lgkMax)? 0. : elasticityDistribution_pion->Interpolate(lgE0, lgeps, lgk);
 
     return val*dlgk * dlgkSample/dlgk;
   }
 
-  double 
+  double
   PhotoNuclearSource::GetChargedPionFraction(const double lgE0, const double lgeps)
   const
   {
     const double lgE0Min = chargedPionFraction->GetXaxis()->GetXmin();
     const double lgE0Max = chargedPionFraction->GetXaxis()->GetXmax();
-    
+
     const double lgepsMin = chargedPionFraction->GetYaxis()->GetXmin();
     const double lgepsMax = chargedPionFraction->GetYaxis()->GetXmax();
-    
-    if(lgE0 <= lgE0Min) 
+
+    if(lgE0 <= lgE0Min)
       return 0.5;
     if(lgE0 >= lgE0Max)
       return 0.5;
-    
-    if(lgeps <= lgepsMin) 
+
+    if(lgeps <= lgepsMin)
       return 0.5;
     if(lgeps >= lgepsMax)
       return 0.5;
 
-    const double val = chargedPionFraction->Interpolate(lgE0, lgeps); 
+    const double val = chargedPionFraction->Interpolate(lgE0, lgeps);
 
     return val;
   }
