@@ -643,11 +643,11 @@ DrawValues(const FitData& fitData,
 void
 fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool allMasses = true, double xmin = 12., double xmax = 22.)
 {
-  #warning setting core dump file limit to zero
-  struct rlimit         core_limits;
+  // set core dump file limit to zero
+  struct rlimit core_limits;
   core_limits.rlim_cur = 0;
   core_limits.rlim_max = 0;
-  setrlimit( RLIMIT_CORE, &core_limits );
+  setrlimit(RLIMIT_CORE, &core_limits);
 
   gROOT->Clear();
   gStyle->SetOptStat(0);
