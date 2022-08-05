@@ -42,7 +42,7 @@ namespace prop {
     gStyle->SetPadLeftMargin(.16);
     if (!fCanvas) {
 #ifdef _PAPER_
-      const double scale = 1.5;
+      const double scale = 1.3;
       gStyle->SetTitleOffset(0.9, "Y");
       fCanvas = new TCanvas("plotter", "fit result", 10, 10, 1190*scale, 600*scale);
 #else
