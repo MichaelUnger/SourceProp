@@ -162,20 +162,20 @@ namespace prop {
     return fInj;
   }
 
-  void 
+  void
   Spectrum::ReadBaseline(const std::string baselineFile)
   {
-   
+
     int nBins = 0;
     fN = 0;
     fLgEmin = 0;
     fLgEmax = 0;
- 
-    TFile*fFile = TFile::Open(baselineFile.c_str());    
+
+    TFile*fFile = TFile::Open(baselineFile.c_str());
 
     if(!fFile ||fFile->IsZombie())
       throw runtime_error("cannot open file" + baselineFile);
-   
+
     TIter nextkey = fFile->GetListOfKeys();
     TKey* key = 0;
     while (( key = dynamic_cast<TKey*>(nextkey()))) {
@@ -189,7 +189,7 @@ namespace prop {
           string line;
           size_t pos = 0, newpos;
           while((newpos = title.find("#leq", pos)) != std::string::npos) {
-            line = title.substr(pos, newpos); 
+            line = title.substr(pos, newpos);
             splittitle.push_back(line);
             pos = newpos + 1;
           }
@@ -200,11 +200,11 @@ namespace prop {
           const unsigned int Amin = stoi(splittitle[0]);
           const unsigned int Amax = stoi(splittitle[2]);
           const unsigned int Aesc = (Amin+Amax)/2;
- 
+
           nBins = h->GetNbinsX();
-          if(fN == 0) 
+          if(fN == 0)
             fN = nBins;
-  
+
           TMatrixD& m = fEscape[Aesc];
           if (!m.GetNoElements())
             m.ResizeTo(nBins, 1);
@@ -223,7 +223,7 @@ namespace prop {
           }
 
         }
-        else if(name.find("elMagSource") != std::string::npos) { 
+        else if(name.find("elMagSource") != std::string::npos) {
           string title = h->GetTitle();
           ENucleonType type;
           if(title == " pionPlus")
@@ -236,13 +236,13 @@ namespace prop {
             type = eNeutronEsc;
           else if(title == " photon")
             type = ePhoton;
-          else 
+          else
             continue;
-          
+
           TMatrixD& m = fNucleons[type];
           if (!m.GetNoElements())
             m.ResizeTo(nBins, 1);
-    
+
           const unsigned int n = nBins;
           for (unsigned int iE = 0; iE < n; ++iE) {
             const double lgE = h->GetBinCenter(iE+1);
@@ -284,7 +284,7 @@ namespace prop {
             type = eTauNeutrino;
           else if(particle == "AntiTauNeutrino")
             type = eAntiTauNeutrino;
-          else  
+          else
             continue;
           EInteractionType ch;
           if(channel == "hadronic")
@@ -292,13 +292,13 @@ namespace prop {
           else if(channel == "photohadronic")
             ch = ePhotohadronic;
           else
-            continue;          
+            continue;
 
           const unsigned int n = nBins;
           TMatrixD& m = fSecondaries[type][ch];
           if (!m.GetNoElements())
             m.ResizeTo(n, 1);
-          
+
           for (unsigned int iE = 0; iE < n; ++iE) {
             const double lgE = h->GetBinCenter(iE+1);
             const double E = pow(10, lgE);
@@ -393,7 +393,7 @@ namespace prop {
     const
   {
     const double E0 = GetE0();
-    const double Emax = fRmax *  aToZ(A);
+    const double Emax = fRmax * pow(aToZ(A), fAlpha);
     if (fSpectrumType == eExponential)
       return pow(E / E0, fGamma) * exp(-E/Emax);
     else if (fSpectrumType == eBrokenExponential) {
@@ -452,7 +452,7 @@ namespace prop {
   Spectrum::InjectedPower(const double E1, const double E2, const double A)
     const
   {
-    const double Emax = fRmax * aToZ(A);
+    const double Emax = fRmax * pow(aToZ(A), fAlpha);
     const double fac = fNorm * fFractions.at(A);
     if (fSpectrumType == eExponential) {
       const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
@@ -485,7 +485,7 @@ namespace prop {
   Spectrum::InjectedPower(const double E1, const double A)
     const
   {
-    const double Emax = fRmax * aToZ(A);
+    const double Emax = fRmax * pow(aToZ(A), fAlpha);
     /*
     for (const auto tmp : fFractions)
       cout << " --> " << tmp.first << " " << tmp.second << endl;
@@ -531,9 +531,11 @@ namespace prop {
 
   void
   Spectrum::SetParameters(const VSource* s, const double gamma,
-                          const double Rmax, const double nE, unsigned int nSubBins,
+                          const double Rmax, const double nE,
+                          unsigned int nSubBins,
                           const double lgEmin, const double lgEmax,
-                          const std::map<unsigned int, double>& fractions)
+                          const std::map<unsigned int, double>& fractions,
+                          const double alpha)
   {
     fEscape.clear();
     fInj.clear();
@@ -549,6 +551,7 @@ namespace prop {
     fLgEmax = lgEmax;
     fFractions = fractions;
     fNorm = 1;
+    fAlpha = alpha;
   }
 
   void

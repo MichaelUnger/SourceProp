@@ -64,6 +64,7 @@ namespace prop {
     fStartValues[eEvolutionM] = StartValue(0, 0.1, -5., 5., 1);
     fStartValues[eEvolutionZ0] = StartValue(2., 0.1, 0., 5., 1);
     fStartValues[eEvolutionDmin] = StartValue(0., 0.1, 0., 100., 1);
+    fStartValues[eAlpha] = StartValue(0., 1, -100., 100., 1);
     fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.);
     fStartValues[eLgHadIntFac] = StartValue(10, 0.1 ,-10, 10, 1);
 

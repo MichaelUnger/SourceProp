@@ -69,9 +69,11 @@ namespace prop {
     }
 
     void SetParameters(const VSource* s, const double gamma,
-                       const double Emax, const double nE, unsigned int nSubBins,
+                       const double Emax, const double nE,
+                       unsigned int nSubBins,
                        const double lgEmin, const double lgEmax,
-                       const std::map<unsigned int, double>& fractions);
+                       const std::map<unsigned int, double>& fractions,
+                       const double alpha);
 
     void SetFixedPPElasticity(const bool f) { isFixedPPElasticity = f; };
 
@@ -145,6 +147,7 @@ namespace prop {
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
     double fNorm = 1;
+    double fAlpha = 1;
     bool isFixedPPElasticity;
     mutable SpecMap fInj;
     mutable SpecMap fEscape;

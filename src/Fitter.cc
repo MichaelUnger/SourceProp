@@ -189,7 +189,8 @@ namespace prop {
                                pow(10, par[eLgEmax]),
                                data.fNLgE, nSubBins,
                                data.fLgEmin, data.fLgEmax,
-                               fractions);
+                               fractions,
+                               par[eAlpha]);
         spectrum.SetFixedPPElasticity(fisFixedPPElasticity);
 
         if (par[eNoPhoton] > 0) {
@@ -644,7 +645,7 @@ namespace prop {
         Spectrum& spectrum = data.fSpectrum;
         map<unsigned int, double> fractions;
         spectrum.SetParameters(source, 0, 0, data.fNLgE, nSubBins, data.fLgEmin,
-                               data.fLgEmax, fractions);
+                               data.fLgEmax, fractions, par[eAlpha]);
         const unsigned int nBins = spectrum.GetNBinsInternal();
         const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
 
