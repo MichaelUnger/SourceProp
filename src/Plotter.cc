@@ -101,7 +101,7 @@ namespace prop {
     DrawSpectrum(spectrum.GetInjFlux(), mGroups, fGammaSource, "hInj",
                  spectrum.GetNBinsInternal(), x1, x2, eFluxInj);
     DrawSpectrum(spectrum.GetextraProtonFlux(), mGroups, fGammaSource, "hextraProtonEsc",
-		 spectrum.GetN(), x1, x2, eFluxEsc, false); 
+		 spectrum.GetN(), x1, x2, eFluxEsc, false);
 
     /*
     vector<MassGroup> nucleonGroups;
@@ -117,7 +117,7 @@ namespace prop {
                  n, x1, x2, eFluxEsc, false);
     */
 
-    
+
     vector<MassGroup> nucleonGroups;
     nucleonGroups.push_back(MassGroup(Spectrum::ePionPlus,
                                       Spectrum::ePionPlus,
@@ -142,7 +142,7 @@ namespace prop {
     DrawSpectrum(spectrum.GetNucleonFlux(), nucleonGroups, fGammaSource,
                  "elMagSource",
                  spectrum.GetN(), x1, x2, eFluxEsc, false);
-    
+
 
     /*
     map<int, TMatrixD> nucleons;
@@ -172,11 +172,11 @@ namespace prop {
       h->GetXaxis()->CenterTitle();
       h->GetYaxis()->CenterTitle();
     }
-    
+
     // save histograms not to be drawn
     const map<int, map<int, TMatrixD> >& secMap = spectrum.GetSecondaryFlux();
-    double lgE; 
-    double fac; 
+    double lgE;
+    double fac;
     const Spectrum::ENucleonType secParticle[11] = {Spectrum::ePionPlus, Spectrum::ePionMinus, Spectrum::ePionZero,
                                                     Spectrum::eNeutronSec, Spectrum::ePhoton,
                                                     Spectrum::eElectronNeutrino, Spectrum::eAntiElectronNeutrino,
@@ -318,7 +318,7 @@ namespace prop {
 
             if (hLossEP) {
               const double lossEP = source->LambdaLossEP(pow(10, lgE), m.fRepA);
-              
+
               if (lgE < xMax && (yMax < 0 || lossEP > yMax))
                 yMax = lossEP;
               if (lgE < xMax && (yMin < 0 || lossEP < yMin))
@@ -583,12 +583,12 @@ namespace prop {
     for (unsigned int i = 0; i < n; ++i) {
       const double lgE = fHists.back()->GetXaxis()->GetBinCenter(i+1);
       const double w = pow(pow(10, lgE), gamma);
-      for (unsigned int j = iFirst; j < fHists.size(); ++j) 
+      for (unsigned int j = iFirst; j < fHists.size(); ++j)
         fHists[j]->SetBinContent(i+1, fHists[j]->GetBinContent(i+1) * w);
     }
-    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i) 
+    for (unsigned int i = iFirst; i < fHists.size() - 1; ++i)
       fHists[i]->Draw("CSAME");
-    
+
     if (specPad == eFluxInj) {
       fCanvas->cd(eFluxEsc);
       fHists.push_back((TH1D*)histTot->Clone("escSuperimpose"));
@@ -650,7 +650,7 @@ namespace prop {
   {
 
     const map<int, TMatrixD>& specMap = neutrinos.GetOscillatedFlux();
- 
+
     const int electronColor = kRed;
     const int muonColor = kGreen+1;
     const int tauColor = kBlue;
@@ -919,11 +919,11 @@ namespace prop {
     events << "#Sigma events = " << int(nEvents*10)/10.;
     l.DrawLatex(0.35, 0.88, events.str().c_str());
     fNNeutrino = nEvents;
-     
+
     double nEvents159 = 0;
     for (unsigned int iBin = 0; iBin < nX; ++iBin) {
       double lgE = eventsE->GetXaxis()->GetBinLowEdge(iBin+1);
-      if(lgE < 15.9) continue; 
+      if(lgE < 15.9) continue;
       nEvents159 += eventsTot->GetBinContent(iBin+1);
     }
     fNNeutrino159 = nEvents159;
@@ -932,7 +932,7 @@ namespace prop {
     // save histograms not to be drawn
     const map<int, TMatrixD>& propMap = neutrinos.GetOscillatedPropFlux();
     const map<int, map<int, TMatrixD> >& sourceMap = neutrinos.GetOscillatedSourceFlux();
-  
+
     TH1D* totalPropNus = new TH1D("prop_nu", "", n, x1, x2);
     for(auto& iter : propMap) {
       const TMatrixD& m = iter.second;
@@ -942,7 +942,7 @@ namespace prop {
       }
     }
     fHistsNoDraw.push_back(totalPropNus);
-    
+
     TH1D* totalSourceNus_photohad = new TH1D("source_nu_photohadronic", "", n, x1, x2);
     for(auto& iter : sourceMap) {
       const TMatrixD& m = iter.second.at(ePhotohadronic);
@@ -952,7 +952,7 @@ namespace prop {
       }
     }
     fHistsNoDraw.push_back(totalSourceNus_photohad);
-    
+
     TH1D* totalSourceNus_had = new TH1D("source_nu_hadronic", "", n, x1, x2);
     for(auto& iter : sourceMap) {
       const TMatrixD& m = iter.second.at(eHadronic);
@@ -962,7 +962,7 @@ namespace prop {
       }
     }
     fHistsNoDraw.push_back(totalSourceNus_had);
-    
+
     for (unsigned int i = 0; i < n; ++i) {
       const double lgE = fHistsNoDraw.back()->GetXaxis()->GetBinCenter(i+1);
       const double w = pow(pow(10, lgE), gamma);
@@ -970,7 +970,7 @@ namespace prop {
       if (fUnits != eKmYrSrEv) {
         units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, gamma);
       }
-      for (auto& iter : fHistsNoDraw)  
+      for (auto& iter : fHistsNoDraw)
         iter->SetBinContent(i+1, iter->GetBinContent(i+1) * w * units);
     }
 
@@ -978,14 +978,14 @@ namespace prop {
     {
       const double lgEcenter = 18.0;
       const double w = pow(pow(10, lgEcenter), 2);
-      double units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, 2);    
+      double units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, 2);
       fNuFlux18 = neutrinos.GetTotalOscillatedFlux(lgEcenter) * w * units;
     }
     // get total neutrino flux at 10 EeV
     {
       const double lgEcenter = 19.0;
       const double w = pow(pow(10, lgEcenter), 2);
-      double units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, 2);    
+      double units = (cm2*s*GeV) / (km2*year*eV) * pow(eV/GeV, 2);
       fNuFlux19 = neutrinos.GetTotalOscillatedFlux(lgEcenter) * w * units;
     }
 
