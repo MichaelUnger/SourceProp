@@ -70,6 +70,7 @@ namespace prop {
   {
     if ( fModelName != "eposLHC" && fModelName != "sibyll23c") {
       cerr << "Unsupported hadronic interaction model! Hadronic interactions will be omitted." << endl;
+      fStatus = false;
       return;
     }
 
