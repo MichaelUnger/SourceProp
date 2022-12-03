@@ -792,6 +792,15 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     neutrinoPlot.SaveHistsToFile(opt.GetOutDirname() + "/" 
                                  + opt.GetOutFilename() + "HistNu" +
                                  (withSourceNu?"":"NoSource"));
+    // get baseline neutrinos
+    if(opt.GetLgBaselineFraction() > -100) {
+      Neutrinos baselineNeutrinos(fitData.fBaseline,
+                          opt.GetPropmatrixNuFilename(), evoM, evoZ0, evoDmin, withSourceNu);
+      const double baselineNuFlux18 = baselineNeutrinos.GetNuFlux18();
+      const double baselineNuFlux19 = baselineNeutrinos.GetNuFlux19();
+      fitter.GetFitData().SetBaselineNuFlux18(baselineNuFlux18);
+      fitter.GetFitData().SetBaselineNuFlux19(baselineNuFlux19);
+    }
   }
   rootFile << fitSummary;
 
