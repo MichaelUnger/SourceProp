@@ -5,6 +5,8 @@
 #include "PropMatrixFile.h"
 #include "NeutrinoOscillator.h"
 
+#include <utl/Units.h>
+
 #include <map>
 #include <stdexcept>
 using namespace std;
@@ -351,5 +353,30 @@ namespace prop {
     const
   {
     return fOscillatedSourceFlux;
+  }
+  
+  double
+  Neutrinos::GetNuFlux(const double lgE) // get total neutrino flux at energy in E^2*dN/dE
+    const
+  {
+    const double w = pow(pow(10, lgE), 2);
+    double units = (utl::cm2*utl::s*utl::GeV) / (utl::km2*utl::year*utl::eV) * pow(utl::eV/utl::GeV, 2);
+    return GetTotalOscillatedFlux(lgE) * w * units;
+  }
+ 
+  double
+  Neutrinos::GetNuFlux18()
+    const
+  {
+    const double lgEcenter = 18.0;
+    return GetNuFlux(lgEcenter);
+  }
+  
+  double
+  Neutrinos::GetNuFlux19()
+    const
+  {
+    const double lgEcenter = 19.0;
+    return GetNuFlux(lgEcenter);
   }
 }
