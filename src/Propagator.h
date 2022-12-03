@@ -35,6 +35,7 @@ namespace prop {
     const std::map<int, TMatrixD>& GetFluxAtEarth() const
     { return fResult; }
     double GetFluxAtEarth(const int A, const double lgE) const;
+    double GetFluxAtEarthInterpolated(const int A, const double lgE) const;
 
     const TMatrixD& GetPrimaryNucleonFluxAtEarth() const
     { return fNucleonResult; }
