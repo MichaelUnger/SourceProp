@@ -56,6 +56,8 @@ public:
   double fEvolutionM;
   double fEvolutionZ0;
   double fEvolutionDmin;
+  double fRAlpha;
+  double fRBeta;
   double fPhotonPeak;
   double fLgHadIntFac;
 
@@ -90,6 +92,8 @@ public:
   double fEvolutionMErr[3];
   double fEvolutionZ0Err[3];
   double fEvolutionDminErr[3];
+  double fRAlphaErr[3];
+  double fRBetaErr[3];
   double fPhotonPeakErr[3]; 
   double fLgHadIntFacErr[3]; 
   
