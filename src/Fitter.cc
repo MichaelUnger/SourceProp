@@ -143,6 +143,7 @@ namespace prop {
 
     const double tMax = data.fPropagator->GetMaximumDistance() / kSpeedOfLight;
     const double normInternalUnits = 1 / (km2 * year * eV * sr);
+    double baselineNorm = 0;
 
     if (!(data.fIteration%10)) {
       cout << "----------------------------------------" << endl;
@@ -190,7 +191,7 @@ namespace prop {
                                data.fNLgE, nSubBins,
                                data.fLgEmin, data.fLgEmax,
                                fractions,
-                               par[eAlpha]);
+                               par[eRAlpha], par[eRBeta]);
         spectrum.SetFixedPPElasticity(fisFixedPPElasticity);
 
         if (par[eNoPhoton] > 0) {
@@ -203,6 +204,11 @@ namespace prop {
             spectrum.AddEscComponent(A, mm);
           }
         }
+
+        if(par[eExtraProtonLgFraction] > -100 && fLgBaselineFraction > -100)
+          cerr << "WARNING: Baseline model AND an extra proton component are \
+                   being used. Using both of these results in an ambiguous normalization. \
+                   Consider only using one of these, or choose a clearer normalization." << endl;
 
         if (par[eExtraProtonLgFraction] > -100) {
           const double refLgE = par[eExtraProtonLgRefE];
@@ -268,7 +274,17 @@ namespace prop {
               sum += E * spectrum.GetFluxSum(lgE) * dE;
               sumB += E * baseline.GetFluxSum(lgE) * dE;
             }
+            baselineNorm = f * sum / sumB;
 
+            // adjust normalization of non-baseline component
+            for(auto& iter : spectrum.GetEscFlux()) {
+              TMatrixD& m = iter.second;
+              for (unsigned int iE = 0; iE < n; ++iE) {
+                m[iE][0] *= (1.-f);
+              }
+            }
+
+            // add in baseline component
             Spectrum::SpecMap& baselineEsc = baseline.GetEscFlux();
             for(auto const& iter : baselineEsc) {
               const int A = iter.first;
@@ -279,12 +295,20 @@ namespace prop {
               if(!m.GetNoElements())
                 m.ResizeTo(n,1);
               for (unsigned int iE = 0; iE < n; ++iE) {
-                const double baselineFlux = f * sum / sumB * mB[iE][0];
-                m[iE][0] *= (1.-f);
+                const double baselineFlux = baselineNorm * mB[iE][0];
                 m[iE][0] += baselineFlux;
               }
             }
 
+            // adjust normalization of non-baseline component
+            for(auto& iter : spectrum.GetNucleonFlux()) {
+              TMatrixD& m = iter.second;
+              for (unsigned int iE = 0; iE < n; ++iE) {
+                m[iE][0] *= (1.-f);
+              }
+            }
+
+            // add in baseline component
             Spectrum::SpecMap& baselineNucleon = baseline.GetNucleonFlux();
             for(auto const& iter : baselineNucleon) {
               const int type = iter.first;
@@ -295,12 +319,23 @@ namespace prop {
               if(!m.GetNoElements())
                 m.ResizeTo(n,1);
               for (unsigned int iE = 0; iE < n; ++iE) {
-                const double baselineFlux = f * sum / sumB * mB[iE][0];
-                m[iE][0] *= (1.-f);
+                const double baselineFlux = baselineNorm * mB[iE][0];
                 m[iE][0] += baselineFlux;
               }
             }
 
+            // adjust normalization of non-baseline component
+            for(auto& iter1 : spectrum.GetSecondaryFlux()) {
+              Spectrum::SpecMap& m = iter1.second;
+              for(auto& iter2 : m) {
+                TMatrixD& mm = iter2.second;
+                for (unsigned int iE = 0; iE < n; ++iE) {
+                  mm[iE][0] *= (1.-f);
+                }
+              }
+            }
+
+            // add in baseline component
             Spectrum::SecMap& baselineSecondary = baseline.GetSecondaryFlux();
             for(auto const& iter1 : baselineSecondary) {
               const int particle = iter1.first;
@@ -314,8 +349,7 @@ namespace prop {
                 if(!mm.GetNoElements())
                   mm.ResizeTo(n,1);
                 for (unsigned int iE = 0; iE < n; ++iE) {
-                  const double baselineFlux = f * sum / sumB * mmB[iE][0];
-                  mm[iE][0] *= (1.-f);
+                  const double baselineFlux = baselineNorm * mmB[iE][0];
                   mm[iE][0] += baselineFlux;
                 }
               }
@@ -324,6 +358,8 @@ namespace prop {
         }
 
         data.fPropagator->Propagate(data.fSpectrum.GetEscFlux(), true,  par);
+        if(fLgBaselineFraction > -100)  
+          data.fBaselinePropagator->Propagate(data.fBaseline.GetEscFlux(), true, par);
       }
 
       // galactic
@@ -499,7 +535,7 @@ namespace prop {
                    << *(par + offset + nGalAMass - 1 + i)
                    << ", f=" << fracGalA[i] << endl;
           }
-	  //if(pow(10, par[eLgEmaxGalA]) < E0) throw runtime_error("GCR Component A cut-off too low! Set lower bound of 17.55 on lgEmaxGalA in steering file.");
+          //if(pow(10, par[eLgEmaxGalA]) < E0) throw runtime_error("GCR Component A cut-off too low! Set lower bound of 17.55 on lgEmaxGalA in steering file.");
           const double gammaGalA = par[eGammaGalA];
           double galASum = 0;
           for (const auto iter : galAFractions) {
@@ -536,6 +572,13 @@ namespace prop {
       data.fQ0Err = norm.second / norm.first * data.fQ0;
       data.fSpectrum.Rescale(norm.first);
       data.fPropagator->Rescale(norm.first);
+      { // if there's a baseline model, give it the correct normalization too
+        const double lgf = fLgBaselineFraction;
+        if(lgf > -100) { 
+          data.fBaseline.Rescale(norm.first*baselineNorm);
+          data.fBaselinePropagator->Rescale(norm.first*baselineNorm);
+        }
+      }
 
       if(fGCRGSFIron) {
         const double A = 56;
@@ -645,7 +688,7 @@ namespace prop {
         Spectrum& spectrum = data.fSpectrum;
         map<unsigned int, double> fractions;
         spectrum.SetParameters(source, 0, 0, data.fNLgE, nSubBins, data.fLgEmin,
-                               data.fLgEmax, fractions, par[eAlpha]);
+                               data.fLgEmax, fractions, par[eRAlpha], par[eRBeta]);
         const unsigned int nBins = spectrum.GetNBinsInternal();
         const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
 
@@ -760,7 +803,31 @@ namespace prop {
         }
       }
       data.fProtonFraction30 = nucleonSum / allSum;
+    
+      // calculate proton fraction just from the baseline model -- ie phi_protonBL/phi_tot, phi_tot = phi_gal + phi_normal + phi_BL
+      if(fLgBaselineFraction > -100) {
+        const double baselineLgEref = log10(30e18);
+        const double baselinedlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+        const map<int, TMatrixD>& baselineFlux = data.fBaselinePropagator->GetFluxAtEarth();
+        double baselineNucleonSum = 0;
+        for (const auto& m : baselineFlux) {
+          if (IsNucleus(m.first)) {
+            double lgE = fFitData.fLgEmin;
+            for (unsigned int i = 0; i < fFitData.fNLgE; ++i) {
+              if (lgE >= baselineLgEref) {
+                const double dE = pow(10, lgE + baselinedlgE) - pow(10, lgE);
+                const int A = ((m.first)%kGalacticOffset)%kGalacticAOffset;
+                if (A == 1)
+                  baselineNucleonSum += m.second(i, 0)*dE;
+              }
+              lgE += baselinedlgE;
+            }
+          }
+        }
+        data.fBaselineProtonFraction30 = baselineNucleonSum / allSum;
+      }
     }
+    
 
     const bool debug = false;
 
@@ -847,8 +914,10 @@ namespace prop {
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
     fLgBaselineFraction = fOptions.GetLgBaselineFraction();
-    if(fLgBaselineFraction > -100)
+    if(fLgBaselineFraction > -100) {
       fFitData.fBaseline.ReadBaseline(fOptions.GetBaselineFile());
+      cout << "Using baseline file: " << fOptions.GetBaselineFile() << endl;
+    }
 
     fGCRKnees = fOptions.GCRWithKnees();
     fGCRComponentA = fOptions.GCRWithComponentA();
@@ -881,6 +950,8 @@ namespace prop {
                         fPropMatrices.GetLgEmax());
 
     fFitData.fPropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
+    if(fLgBaselineFraction > -100) 
+      fFitData.fBaselinePropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
 
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
     cout << " interaction lengths: \n";
@@ -1643,7 +1714,7 @@ namespace prop {
     cout << " spectrum: nAll = " <<  fFitData.fAllFluxData.size()
          << ", nFit = " <<  fFitData.fFluxData.size() << endl;
 
-     if(fFitData.fAllFluxData.size() == 0) throw runtime_error("No spectrum data loaded!");
+    if(fFitData.fAllFluxData.size() == 0) throw runtime_error("No spectrum data loaded!");
 
     TGraphErrors* xmaxGraph = nullptr;
     TGraphErrors* sigmaGraph = nullptr;
