@@ -16,7 +16,7 @@ namespace prop {
        "lg(E_{max}^{gal}/eV)",
        "lg(f_{GCRA})", "#gamma_{GCRA}", "lg(E_{max}^{GCRA}/eV)",
        "f_{noPhot}", "lg(fphot)", "lg(f(UHEp))", "lg(Emax, UHEp)",
-       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "#alpha", "photonPeak", "N/A"};
+       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "#alpha_{R}", "#beta_{R}", "photonPeak", "N/A"};
 
     if (boosted) {
       parNames[eGammaA] = "\\gamma_{A}";
@@ -48,7 +48,7 @@ namespace prop {
        "fNoPhoton", "lgfPhoton", "extraProtonLgFraction",
        "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass",
        "extraProtonLgRefE", "evolutionM", "evolutionZ0", "evolutionDmin",
-       "alpha", "photonPeak", "NA"};
+       "Ralpha", "Rbeta", "photonPeak", "NA"};
 
     if (boosted) {
       parNames[eGammaA] = "gammaA";
