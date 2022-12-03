@@ -216,11 +216,12 @@ namespace prop {
             const double flux = h->GetBinContent(iE+1)/pow(E,2);
             m[iE][0] += flux;
 
-            if(fLgEmin == 0 && iE == 0)
-              fLgEmin = lgE;
-            if(fLgEmax == 0 && iE == n - 1)
-              fLgEmax = lgE;
           }
+          
+          if(fLgEmin == 0)
+            fLgEmin = h->GetXaxis()->GetXmin();
+          if(fLgEmax == 0)
+            fLgEmax = h->GetXaxis()->GetXmax();
 
         }
         else if(name.find("elMagSource") != std::string::npos) {
@@ -321,6 +322,9 @@ namespace prop {
 
     fN = nBins;
 
+    if(fN == 0)
+      throw runtime_error("Baseline spectrum has no bins! Are you using the *Hist.root file?");
+
     return;
   }
 
@@ -393,7 +397,7 @@ namespace prop {
     const
   {
     const double E0 = GetE0();
-    const double Emax = fRmax * pow(aToZ(A), fAlpha);
+    const double Emax = fRmax * pow(aToZ(A), fRAlpha) * pow(A, fRBeta);
     if (fSpectrumType == eExponential)
       return pow(E / E0, fGamma) * exp(-E/Emax);
     else if (fSpectrumType == eBrokenExponential) {
@@ -452,7 +456,7 @@ namespace prop {
   Spectrum::InjectedPower(const double E1, const double E2, const double A)
     const
   {
-    const double Emax = fRmax * pow(aToZ(A), fAlpha);
+    const double Emax = fRmax * pow(aToZ(A), fRAlpha) * pow(A, fRBeta);
     const double fac = fNorm * fFractions.at(A);
     if (fSpectrumType == eExponential) {
       const double Gamma1 = gsl_sf_gamma_inc(fGamma+2, E1 / Emax);
@@ -485,7 +489,7 @@ namespace prop {
   Spectrum::InjectedPower(const double E1, const double A)
     const
   {
-    const double Emax = fRmax * pow(aToZ(A), fAlpha);
+    const double Emax = fRmax * pow(aToZ(A), fRAlpha) * pow(A, fRBeta);
     /*
     for (const auto tmp : fFractions)
       cout << " --> " << tmp.first << " " << tmp.second << endl;
@@ -535,7 +539,7 @@ namespace prop {
                           unsigned int nSubBins,
                           const double lgEmin, const double lgEmax,
                           const std::map<unsigned int, double>& fractions,
-                          const double alpha)
+                          const double alpha, const double beta)
   {
     fEscape.clear();
     fInj.clear();
@@ -551,7 +555,8 @@ namespace prop {
     fLgEmax = lgEmax;
     fFractions = fractions;
     fNorm = 1;
-    fAlpha = alpha;
+    fRAlpha = alpha;
+    fRBeta = beta;
   }
 
   void
