@@ -73,7 +73,7 @@ namespace prop {
                        unsigned int nSubBins,
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions,
-                       const double alpha);
+                       const double alpha, const double beta);
 
     void SetFixedPPElasticity(const bool f) { isFixedPPElasticity = f; };
 
@@ -147,7 +147,8 @@ namespace prop {
     double fLgEmax;
     std::map<unsigned int, double> fFractions;
     double fNorm = 1;
-    double fAlpha = 1;
+    double fRAlpha = 1;
+    double fRBeta = 0;
     bool isFixedPPElasticity;
     mutable SpecMap fInj;
     mutable SpecMap fEscape;
