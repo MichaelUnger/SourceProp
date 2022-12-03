@@ -64,7 +64,8 @@ namespace prop {
     fStartValues[eEvolutionM] = StartValue(0, 0.1, -5., 5., 1);
     fStartValues[eEvolutionZ0] = StartValue(2., 0.1, 0., 5., 1);
     fStartValues[eEvolutionDmin] = StartValue(0., 0.1, 0., 100., 1);
-    fStartValues[eAlpha] = StartValue(0., 1, -100., 100., 1);
+    fStartValues[eRAlpha] = StartValue(1.0, 1, -100., 100., 1);
+    fStartValues[eRBeta] = StartValue(0., 1, -100., 100., 1);
     fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.);
     fStartValues[eLgHadIntFac] = StartValue(10, 0.1 ,-10, 10, 1);
 
@@ -355,13 +356,13 @@ namespace prop {
           fXmaxDataType = eAugerXmax2017fudge;
         else if (type == "Auger2017fudgeAndSD")
           fXmaxDataType = eAugerXmax2017fudgeAndSD;
-	else if (type == "Auger2017corrected")
-          fXmaxDataType = eAugerXmax2017corrected;
-	else if (type == "Auger2019")
-          fXmaxDataType = eAugerXmax2019;
-	else if (type == "Auger2019withFixedTALE2019")
-          fXmaxDataType = eAugerXmax2019withFixedTALEXmax2019;
-	else if (type == "TA2019")
+        else if (type == "Auger2017corrected")
+                fXmaxDataType = eAugerXmax2017corrected;
+        else if (type == "Auger2019")
+                fXmaxDataType = eAugerXmax2019;
+        else if (type == "Auger2019withFixedTALE2019")
+                fXmaxDataType = eAugerXmax2019withFixedTALEXmax2019;
+        else if (type == "TA2019")
           fXmaxDataType = eTAXmax2019;
         else
           throw runtime_error("unknown Xmax data type: " + type);
@@ -518,12 +519,12 @@ namespace prop {
       else if (fPhotonFieldType[i] == eUserField)
         filenames.push_back(fUserPhotonfieldName[i]);
       else if (fPhotonFieldType[i] == eBPLInterp) {
-	fEps0[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
-	filenames.push_back("BPLInterp_" + fBeta[i] + "_" + fAlpha[i]);
+        fEps0[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
+        filenames.push_back("BPLInterp_" + fBeta[i] + "_" + fAlpha[i]);
       }
       else if (fPhotonFieldType[i] == eMBBInterp) {
-	fBBTemperature[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
-	filenames.push_back("MBBInterp_" + fBBSigma[i]);
+	      fBBTemperature[i] = std::to_string(GetStartValue(GetPar("photonPeak")));
+	      filenames.push_back("MBBInterp_" + fBBSigma[i]);
       }
       else
         throw runtime_error("unknown photon field type");
@@ -759,8 +760,14 @@ namespace prop {
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
         << "rejectOutliers " << fRejectOutliers << "\n"
         << "lgBaselineFrac " << fLgBaselineFraction << "\n";
-    if(!fBaselineFilename.empty())
+    if(!fBaselineFilename.empty() && fLgBaselineFraction > -100) {
       out << "baselineFilename " << fBaselineFilename << "\n";
+      out << "fBaselineProtonFraction30 " << fitData.fBaselineProtonFraction30 << "\n";
+      if(fitData.fNNeutrinos > 0) {
+        out << "fBaselineNuFlux18 " << fitData.fBaselineNuFlux18 << "\n"
+            << "fBaselineNuFlux19 " << fitData.fBaselineNuFlux19 << "\n";
+      }
+    }
 
     for (unsigned int i = 0; i < eNpars; ++i) {
       const EPar par = EPar(i);
