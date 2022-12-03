@@ -64,6 +64,8 @@ FitSummary::Fill(const prop::FitData& fitData,
   fEvolutionM = fitData.fFitParameters[eEvolutionM].fValue;
   fEvolutionZ0 = fitData.fFitParameters[eEvolutionZ0].fValue;
   fEvolutionDmin = fitData.fFitParameters[eEvolutionDmin].fValue;
+  fRAlpha = fitData.fFitParameters[eRAlpha].fValue;
+  fRBeta = fitData.fFitParameters[eRBeta].fValue;
   fPhotonPeak = fitData.fFitParameters[ePhotonPeak].fValue;
   fLgHadIntFac = fitData.fFitParameters[eLgHadIntFac].fValue;
 
@@ -90,6 +92,8 @@ FitSummary::Fill(const prop::FitData& fitData,
   fEvolutionMErr[0] = fitData.fFitParameters[eEvolutionM].fError;
   fEvolutionZ0Err[0] = fitData.fFitParameters[eEvolutionZ0].fError;
   fEvolutionDminErr[0] = fitData.fFitParameters[eEvolutionDmin].fError;
+  fRAlphaErr[0] = fitData.fFitParameters[eRAlpha].fError;
+  fRBetaErr[0] = fitData.fFitParameters[eRBeta].fError;
   fPhotonPeakErr[0] = fitData.fFitParameters[ePhotonPeak].fError;
   fLgHadIntFacErr[0] = fitData.fFitParameters[eLgHadIntFac].fError;
 
