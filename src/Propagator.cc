@@ -240,6 +240,29 @@ namespace prop {
     }
     return iter->second[i][0];
   }
+  
+  double
+  Propagator::GetFluxAtEarthInterpolated(const int A, const double lgE)
+    const
+  {
+    const unsigned int n = fPropMatrices.GetN();
+    const double lgEmin = fPropMatrices.GetLgEmin();
+    const double lgEmax = fPropMatrices.GetLgEmax();
+    const double dlgE = (lgEmax - lgEmin) / n;
+    
+    const double c1 = GetFluxAtEarth(A, lgE - dlgE/2);
+    const double c2 = GetFluxAtEarth(A, lgE + dlgE/2);
+    if (c1 <= 0 || c2 <= 0)
+      return 0;
+    const double y1 = log10(c1);
+    const double y2 = log10(c2);
+    // fluxes etc are evaluated at bin mid point
+    const double x1 = lgE - dlgE/2;
+    const double x2 = lgE + dlgE/2;
+    const double yn = lgE*(y1 - y2) + x1*y2 - x2*y1;
+    const double arg = yn / (x1 - x2);
+    return pow(10, arg);
+  }
 
   double
   Propagator::GetPrimaryNucleonFluxAtEarth(const double lgE)
