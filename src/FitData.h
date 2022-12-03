@@ -66,12 +66,17 @@ namespace prop {
     { fNuFlux18 = n; }
     void SetNuFlux19(const double n)
     { fNuFlux19 = n; }
+    void SetBaselineNuFlux18(const double n)
+    { fBaselineNuFlux18 = n; }
+    void SetBaselineNuFlux19(const double n)
+    { fBaselineNuFlux19 = n; }
 
     unsigned int fIteration;
     unsigned int fNNan;
     VSource* fSource;
     Propagator* fPropagator;
     Spectrum fSpectrum;
+    Propagator* fBaselinePropagator;
     Spectrum fBaseline;
     unsigned int fNLgE;
     double fLgEmin;
@@ -92,11 +97,14 @@ namespace prop {
     double fQ0Err;
     double fProtonRatio185;
     double fProtonFraction30;
+    double fBaselineProtonFraction30;
     double fProtonFraction60;
     double fNNeutrinos = -1;
     double fNNeutrinos159;
     double fNuFlux18; // E^2*dN/dE neutrinos at 1 EeV
     double fNuFlux19;
+    double fBaselineNuFlux18;
+    double fBaselineNuFlux19;
     std::vector<FitParameter> fFitParameters;
     int fFitStatus;
     bool fFitFailed;
