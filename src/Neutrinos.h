@@ -15,7 +15,7 @@ namespace prop {
   public:
     Neutrinos(const prop::Spectrum& spectrum,
               const std::string& propMatrixFilename,
-	      double evoM = 0., double evoZ0 = 0., double evoDmin = 0., 
+              double evoM = 0., double evoZ0 = 0., double evoDmin = 0., 
               const bool withSourceNu = true);
               //const bool withSourceNu = false);
 	      //# warning Source neutrinos omitted!!
@@ -27,6 +27,9 @@ namespace prop {
     double GetTotalOscillatedFlux(const double lgE) const;
     const std::map<int, TMatrixD>& GetOscillatedPropFlux() const;
     const std::map<int, std::map<int, TMatrixD> >& GetOscillatedSourceFlux() const;
+    double GetNuFlux(const double lgE) const;
+    double GetNuFlux18() const;
+    double GetNuFlux19() const;
 
   private:
     double fLgEmin;
