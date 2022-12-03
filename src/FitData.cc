@@ -14,6 +14,7 @@ namespace prop {
     fNNan(0),
     fSource(nullptr),
     fPropagator(nullptr),
+    fBaselinePropagator(nullptr),
     fFitStatus(-1),
     fFitFailed(false),
     fFitEDM(-1)
@@ -31,6 +32,7 @@ namespace prop {
   {
     fIteration = 0;
     delete fPropagator;
+    delete fBaselinePropagator;
     delete fSource;
     fFluxData.clear();
     fFluxDataLowStat.clear();
