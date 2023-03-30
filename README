@@ -80,6 +80,7 @@ steering file parameters:
 * rejectOutliers 0/1
 * minLgEFlux [lgEmin]
 * minLgECompo [lgEmin]
+* minLgENuFlx [lgEmin]
 * interactionModel [type]
   - eposLHC, qgsjetII04 or sibyll21
 * cutoffType [type]
@@ -94,6 +95,9 @@ steering file parameters:
   - Auger2013, TA2013, Auger2017
 * xmaxData [type]
   - Auger2014, Auger2017, Auger2017fudge, Auger2017corrected
+* nuSpectrumData [type]
+  - IceCubeCascades2020, IceCubeHESE2020
+* nuChi2Weight [fraction] (fraction of total chi2 given to nu portion: chi2 = f*chi2_nu + (1-f)*chi2_CR)
 * baselineFrac
   - fraction of escaping spectrum due to baseline model
 * baselineFile 
