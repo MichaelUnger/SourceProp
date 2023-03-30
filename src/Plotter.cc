@@ -794,7 +794,7 @@ namespace prop {
       iceFluxLo->SetLineColor(kMagenta+1);
       iceFluxLo->Draw("SAME");
 
-      histTot->GetXaxis()->SetRangeUser(13, 20);
+      histTot->GetXaxis()->SetRangeUser(12.5, 20);
       ifstream in(dataDir + "/iceCube2012Limits.txt");
       double x, y;
       TGraph* iceLimits = new TGraph();
