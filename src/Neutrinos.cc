@@ -4,6 +4,7 @@
 #include "Particles.h"
 #include "PropMatrixFile.h"
 #include "NeutrinoOscillator.h"
+#include "IceCubeAcceptance.h"
 
 #include <utl/Units.h>
 
@@ -17,7 +18,9 @@ namespace prop {
   Neutrinos::Neutrinos(const prop::Spectrum& spectrum,
                        const std::string& propMatrixFilename,
 		                   double evoM, double evoZ0, double evoDmin,
-                       const bool withSourceNu)
+                       const bool withSourceNu) :
+    fPropagator(nullptr),
+    fAcc(nullptr)
   {
 
     PropMatrices pm;
@@ -42,15 +45,30 @@ namespace prop {
     fN = pm.GetN();
 
     fPropagator = new Propagator(pm);
+    fisNuProp = true; // make sure to delete that propagator!
+
+    CalculateNeutrinos(fPropagator, spectrum, withSourceNu);
+  }
+
+
+  Neutrinos::~Neutrinos() {
+    if(fisNuProp)
+      delete fPropagator;
+    delete fAcc;
+  }
+
+  void Neutrinos::CalculateNeutrinos(Propagator* propagator, const prop::Spectrum& spectrum, bool withSourceNu) 
+  {
+    fPropagator = propagator;    
 
     const double lgEminEsc = spectrum.GetLgEmin();
     const double lgEmaxEsc = spectrum.GetLgEmax();
     const double nEsc = spectrum.GetN();
     const double dlgEEsc = (lgEmaxEsc - lgEminEsc) / nEsc;
 
-    const double lgEminProp = pm.GetLgEmin();
-    const double lgEmaxProp = pm.GetLgEmax();
-    const double nProp = pm.GetN();
+    const double lgEminProp = fLgEmin;
+    const double lgEmaxProp = fLgEmax;
+    const double nProp = fN;
     const double dlgEProp = (lgEmaxProp - lgEminProp) / nProp;
 
     if (fabs(dlgEEsc - dlgEProp) > 1e-6)
@@ -212,6 +230,7 @@ namespace prop {
     fPropagator->Propagate(escFluxResized, false); 
     fPropagator->Propagate(escFluxResized, secFluxResized);
 
+    
     NeutrinoOscillator osci;
 
     const map<int, TMatrixD>& fluxAtEarth =
@@ -278,10 +297,26 @@ namespace prop {
     }
   }
 
-  Neutrinos::~Neutrinos() {
-    delete fPropagator;
+  void Neutrinos::Rescale(const double f)
+  {
+    if(fOscillatedFlux.empty())
+      throw runtime_error("No neutrino flux to rescale!"); 
+    for(auto& iter : fOscillatedFlux)
+      iter.second *= f;
+    for(auto& iter : fOscillatedPropFlux)
+      iter.second *= f;
+    for(auto& iter1 : fOscillatedSourceFlux)
+      for(auto& iter2 : iter1.second)
+        iter2.second *= f; 
   }
 
+  void Neutrinos::SetIceCubeAcceptance(const string& dataDirname, const string dataset)
+  {
+    if(!dataset.empty())
+      fAcc = new IceCubeAcceptance(dataDirname, dataset);
+    else
+      fAcc = new IceCubeAcceptance(dataDirname);
+  }
 
   const std::map<int, TMatrixD>&
   Neutrinos::GetFlux()
@@ -378,5 +413,39 @@ namespace prop {
   {
     const double lgEcenter = 19.0;
     return GetNuFlux(lgEcenter);
+  }
+
+  double
+  Neutrinos::GetEventRate(const double lgE, const double dlgE) // calculate number of neutrinos observed per IC86 year
+    const
+  {
+    double nEvents;
+    const int nSub = 10;
+    const double lgEmin = lgE-dlgE/2.;
+    const double dlgESub = dlgE/nSub;
+
+    double sumE = 0;
+    double sumM = 0;
+    double sumT = 0;
+    for (unsigned int iSub = 0; iSub < nSub; ++iSub) {
+      const double lgECenter = lgEmin + (iSub+0.5)*dlgESub;
+      const double E1 = pow(10, lgECenter - dlgESub/2.);
+      const double E2 = pow(10, lgECenter + dlgESub/2.);
+      const double dE = E2 - E1;
+      const double m2Tokm2 = 1e-6;     
+      const double accE = fAcc->GetAcceptance(eElectronNeutrino, lgECenter) * m2Tokm2 * dE;
+      const double accEbar = fAcc->GetAcceptance(eAntiElectronNeutrino, lgECenter) * m2Tokm2 * dE;
+      const double accMu = fAcc->GetAcceptance(eMuonNeutrino, lgECenter) * m2Tokm2 * dE;
+      const double accTau =fAcc->GetAcceptance(eTauNeutrino, lgECenter) * m2Tokm2 * dE;
+      sumE += GetOscillatedFlux(eElectronNeutrino, lgECenter) * accE;
+      sumE += GetOscillatedFlux(eAntiElectronNeutrino, lgECenter) * accEbar;
+      sumM += (GetOscillatedFlux(eMuonNeutrino, lgECenter) +
+               GetOscillatedFlux(eAntiMuonNeutrino, lgECenter)) * accMu;
+      sumT += (GetOscillatedFlux(eTauNeutrino, lgECenter) +
+               GetOscillatedFlux(eAntiTauNeutrino, lgECenter)) * accTau;
+    }
+    nEvents = sumE + sumM + sumT;
+
+    return nEvents;   
   }
 }
