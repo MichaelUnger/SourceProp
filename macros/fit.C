@@ -387,6 +387,88 @@ DrawData(const FitData& fitData,
 }
 
 void
+DrawNeutrinoData(const FitData& fitData,
+                 const FitOptions& fitOptions,
+                 const double gammaScaleEarth,
+                 const Plotter::EFluxUnits fUnits,
+                 TCanvas* can)
+{
+  if(fitData.fAllNuFluxData.size() == 0) // if there's no neutrino data don't plot!
+    return;
+
+  double units = 1;
+  if (fUnits != Plotter::eKmYrSrEv) {
+    units = (utl::cm2*utl::s*utl::GeV) / (utl::km2*utl::year*utl::eV) * pow(utl::eV/utl::GeV, gammaScaleEarth);
+  }
+  TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
+  double lastLgE = 0;
+  const vector<NuFluxData>& fluxData = fitData.fNuFluxData;
+  for (unsigned int i = 0; i < fluxData.size(); ++i) {
+    const double w = pow(pow(10, fluxData[i].fLgE), gammaScaleEarth) * units;
+    fitSpectrum->SetPoint(i, fluxData[i].fLgE, w*fluxData[i].fFlux);
+    fitSpectrum->SetPointEYhigh(i, w*fluxData[i].fFluxErrUp);
+    fitSpectrum->SetPointEYlow(i, w*fluxData[i].fFluxErrLow);
+    if (lastLgE == 0 || fluxData[i].fLgE > lastLgE)
+      lastLgE = fluxData[i].fLgE;
+  }
+
+  fitSpectrum->SetMarkerStyle(20);
+  fitSpectrum->SetMarkerColor(kGray+2);
+  fitSpectrum->SetMarkerSize(0.5);
+  fitSpectrum->SetLineColor(kGray+2);
+  TGraphAsymmErrors* fitSpectrum2 = (TGraphAsymmErrors*) fitSpectrum->Clone("specCopy");
+  fitSpectrum2->SetMarkerStyle(24);
+  fitSpectrum2->SetMarkerColor(kBlack);
+  fitSpectrum2->SetMarkerSize(0.5);
+
+
+  fitSpectrum->SetName("fitSpectrum");
+  TFile out("tmp.root","RECREATE");
+  fitSpectrum->Write();
+  out.Write();
+  out.Close();
+
+  double maxY = 0;
+  TGraphAsymmErrors* allSpectrum = new TGraphAsymmErrors();
+  const vector<NuFluxData>& fluxDataAll = fitData.fAllNuFluxData;
+  for (unsigned int i = 0; i < fluxDataAll.size(); ++i) {
+    const double w = pow(pow(10, fluxDataAll[i].fLgE), gammaScaleEarth) * units;
+    allSpectrum->SetPoint(i, fluxDataAll[i].fLgE, w*fluxDataAll[i].fFlux);
+    allSpectrum->SetPointEYhigh(i, w*fluxDataAll[i].fFluxErrUp);
+    allSpectrum->SetPointEYlow(i, w*fluxDataAll[i].fFluxErrLow);
+    const double thisY = w*(fluxDataAll[i].fFlux + fluxDataAll[i].fFluxErrUp);
+    if (thisY > maxY)
+      maxY = thisY;
+  }
+  allSpectrum->SetMarkerColor(kGray+1);
+  allSpectrum->SetMarkerColor(kGray+1);
+  allSpectrum->SetLineColor(kGray+1);
+  allSpectrum->SetMarkerStyle(24);
+  allSpectrum->SetMarkerSize(0.5);
+
+  can->cd(1);
+  allSpectrum->Draw("P");
+  fitSpectrum->Draw("P");
+  fitSpectrum2->Draw("P");
+
+#ifdef _PAPER_
+  TLegend* legSpec;
+  legSpec = new TLegend(0.62, 0.77, 0.93, 0.87, NULL, "brNDCARC");
+#else
+  TLegend* legSpec = new TLegend(0.43, 0.7697, 0.896, 0.890, NULL, "brNDCARC");
+#endif
+  legSpec->SetFillColor(0);
+  legSpec->SetTextFont(42);
+  legSpec->SetFillStyle(0);
+  legSpec->SetBorderSize(0);
+  legSpec->SetTextSize(0.030);
+  legSpec->AddEntry(fitSpectrum,
+                    fitOptions.GetNuSpectrumDataLabel().c_str(),"PE");
+  legSpec->Draw();
+  
+}
+
+void
 DrawValues(const FitData& fitData,
            const FitOptions& fitOptions,
            TCanvas* can)
@@ -512,7 +594,8 @@ DrawValues(const FitData& fitData,
   stringstream chi2String;
   chi2String << "#chi^{2}/ndf = "
              << fitData.GetChi2Tot() << "/"
-             << fitData.GetNdfTot();
+             << fitData.GetNdfTot() << "," 
+             << "    f_{#nu} = " << fitData.fNuChi2Weight;
   l.DrawLatex(x, y, chi2String.str().c_str());
   y -= dy;
   chi2String.str("");
@@ -522,7 +605,9 @@ DrawValues(const FitData& fitData,
              << "lnA: " << fitData.fChi2LnA << "/"
              << fitData.fCompoData.size() << ", "
              << "VLnA: " << fitData.fChi2VlnA << "/"
-             << fitData.fCompoData.size();
+             << fitData.fCompoData.size() << ","
+             << "nu spec: " << fitData.fChi2Nu << "/"
+             << fitData.fNonZeroNuFluxData.size();
   l.SetTextColor(fixColor);
   l.DrawLatex(x, y, chi2String.str().c_str());
   l.SetTextSize(textSize);
@@ -775,6 +860,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     }
     Plotter neutrinoPlot(neutrinoCanvas, 2, 2, Plotter::eCmSecSrGeV);
     neutrinoPlot.DrawNeutrinoPlot(neutrinos, 2, opt.GetDataDirname(), 100, 12., 22.);
+    DrawNeutrinoData(fitData, opt, 2, Plotter::eCmSecSrGeV, neutrinoCanvas); 
     neutrinoCanvas->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() +
                            "_nu" + (withSourceNu?"":"NoSource") +
                            ".pdf").c_str());
