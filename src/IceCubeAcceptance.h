@@ -9,10 +9,12 @@ namespace prop {
 
   class IceCubeAcceptance {
   public:
-    IceCubeAcceptance(const std::string& dirname);
+    IceCubeAcceptance(const std::string& dirname, const std::string dataset = "iceCube");
 
     // acceptance in [m^2 sr] given lg(E/eV)
-    double operator()(unsigned int, const double lgE) const;
+    double GetAcceptance(unsigned int, const double lgE) const;
+    double operator()(unsigned int id, const double lgE) const
+      { return GetAcceptance(id, lgE); };
 
   private:
     TGraph fAreaNuE;

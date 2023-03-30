@@ -9,12 +9,14 @@ using namespace utl;
 
 namespace prop {
 
-  IceCubeAcceptance::IceCubeAcceptance(const string& dataDirname) :
-    // data IC86, Fig.6 middle panel, arXiv arXiv:1310.5477
-    fAreaNuE((dataDirname + "/iceCubeAreaNuE.txt").c_str()),
-    fAreaAntiNuE((dataDirname + "/iceCubeAreaNuAntiE.txt").c_str()),
-    fAreaNuMu((dataDirname + "/iceCubeAreaNuMu.txt").c_str()),
-    fAreaNuTau((dataDirname + "/iceCubeAreaNuTau.txt").c_str())
+  IceCubeAcceptance::IceCubeAcceptance(const string& dataDirname, const std::string dataset) :
+    // iceCubeArea (EHE effective area) data IC86, Fig.6 middle panel, arXiv:1310.5477
+    // IceCubeCascades2020Area data, Fig. 3.36 (top-left) of https://ui.adsabs.harvard.edu/abs/2018PhDT........17N/abstract
+    // IceCubeHESE2020Area data, Fig. F.1 , arXiv:2011.03545v1
+    fAreaNuE((dataDirname + "/" + dataset + "AreaNuE.txt").c_str()),
+    fAreaAntiNuE((dataDirname + "/" + dataset + "AreaNuAntiE.txt").c_str()),
+    fAreaNuMu((dataDirname + "/" + dataset + "AreaNuMu.txt").c_str()),
+    fAreaNuTau((dataDirname + "/" + dataset + "AreaNuTau.txt").c_str())
   {
     if (fAreaNuE.IsZombie() || fAreaAntiNuE.IsZombie() ||
         fAreaNuMu.IsZombie() || fAreaNuTau.IsZombie())
@@ -34,8 +36,8 @@ namespace prop {
   }
 
   double
-  IceCubeAcceptance::operator()(unsigned int id,
-                                const double lgE)
+  IceCubeAcceptance::GetAcceptance(unsigned int id,
+                                   const double lgE)
     const
   {
     const double lgEGeV = lgE - 9;
@@ -57,6 +59,7 @@ namespace prop {
     else
       throw runtime_error("unknown id in IceCube acceptance");
   }
+
 }
 
 
