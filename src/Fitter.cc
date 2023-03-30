@@ -8,6 +8,7 @@
 #include "LnACalculator.h"
 #include "Particles.h"
 #include "DoubleMass.h"
+#include "Neutrinos.h"
 
 #include <TMinuit.h>
 #include <TFile.h>
@@ -57,16 +58,28 @@ namespace prop {
     const Propagator& p = *data.fPropagator;
     double mywSum = 0;
     double mmwSum = 0;
-    for (const auto& flux : data.fFluxData) {
-      const double m = p.GetFluxSumInterpolated(flux.fLgE);
-      const double w = pow(1/flux.fFluxErr, 2);
-      double y = flux.fFlux;
-      if(GSFIron) {
-        const double phiGCRA = GetGSFIronFlux(flux.fLgE);
-        y -= phiGCRA;
+    if(data.fFitNuOnly) {
+      const Neutrinos& n = *data.fNeutrinos;
+      for (const auto& flux : data.fNonZeroNuFluxData) {
+        const double y = flux.fFlux;
+        const double m = n.GetTotalOscillatedFlux(flux.fLgE); // need to choose right function!! fix in a sec
+        const double w = pow(1/flux.fFluxErr, 2);
+        mywSum += (m*y*w);
+        mmwSum += (m*m*w);
       }
-      mywSum += (m*y*w);
-      mmwSum += (m*m*w);
+    }
+    else {
+      for (const auto& flux : data.fFluxData) {
+        const double m = p.GetFluxSumInterpolated(flux.fLgE);
+        const double w = pow(1/flux.fFluxErr, 2);
+        double y = flux.fFlux;
+        if(GSFIron) {
+          const double phiGCRA = GetGSFIronFlux(flux.fLgE);
+          y -= phiGCRA;
+        }
+        mywSum += (m*y*w);
+        mmwSum += (m*m*w);
+      }
     }
     return  pair<double, double>(mywSum / mmwSum, sqrt(1/mmwSum));
   }
@@ -362,6 +375,9 @@ namespace prop {
           data.fBaselinePropagator->Propagate(data.fBaseline.GetEscFlux(), true, par);
       }
 
+      // add part for neutrino spectrum here --- probably want this in an if statement eventually
+      data.fNeutrinos->CalculateNeutrinos(data.fPropagator, data.fSpectrum, true);
+
       // galactic
       const double fGal = par[eFGal];
       const double lgfGalA = par[eLgFGalA];
@@ -572,6 +588,7 @@ namespace prop {
       data.fQ0Err = norm.second / norm.first * data.fQ0;
       data.fSpectrum.Rescale(norm.first);
       data.fPropagator->Rescale(norm.first);
+      data.fNeutrinos->Rescale(norm.first);
       { // if there's a baseline model, give it the correct normalization too
         const double lgf = fLgBaselineFraction;
         if(lgf > -100) { 
@@ -831,6 +848,7 @@ namespace prop {
 
     const bool debug = false;
 
+    data.SetNdfTot();
     data.fChi2Spec = 0;
     data.fChi2SpecLowE = 0;
     double lastLgE = 0;
@@ -885,6 +903,25 @@ namespace prop {
       if (compo.fVlnAErr > 0)
         data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
     }
+    
+    data.fChi2Nu = 0;
+    for (const auto& nuFlux : data.fNuFluxData) {
+      const double y = nuFlux.fFlux;
+      if(y > 0) {
+        const double sigma = nuFlux.fFluxErr;
+        const double m = data.fNeutrinos->GetTotalOscillatedFlux(nuFlux.fLgE);
+        const double r = (y -  m) / sigma;
+        const double r2 = r*r;
+        data.fChi2Nu += r2;
+      }
+      else { // for upper limits follow same procedure as for CRs above
+        const double nExpected = data.fNeutrinos->GetEventRate(nuFlux.fLgE, nuFlux.fdLgE) * data.fNuLivetime;
+        data.fChi2Nu += 2*nExpected;
+        if(nExpected > 0.1) // if too many neutrinos are predicted we should include this data point in the dof's
+          data.IncrementNdfTot(); 
+      }
+      
+    }
 
     chi2 = data.GetChi2Tot();
 
@@ -896,7 +933,8 @@ namespace prop {
            << data.fChi2SpecLowE << ", "
            << data.fChi2Spec - data.fChi2SpecLowE << ")"
            << ", lnA = " << data.fChi2LnA
-           << ", VlnA = " << data.fChi2VlnA << endl;
+           << ", VlnA = " << data.fChi2VlnA 
+           << ", nuFlux = " << data.fChi2Nu << endl;
       cout << endl;
     }
     ++data.fIteration;
@@ -918,6 +956,11 @@ namespace prop {
       fFitData.fBaseline.ReadBaseline(fOptions.GetBaselineFile());
       cout << "Using baseline file: " << fOptions.GetBaselineFile() << endl;
     }
+    fFitData.fNuChi2Weight = fOptions.GetNuChi2Weight();
+    if(fFitData.fNuChi2Weight == 1)
+      fFitData.SetNuFitOnly(true);
+    else
+      fFitData.SetNuFitOnly(false);
 
     fGCRKnees = fOptions.GCRWithKnees();
     fGCRComponentA = fOptions.GCRWithComponentA();
@@ -952,6 +995,9 @@ namespace prop {
     fFitData.fPropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
     if(fLgBaselineFraction > -100) 
       fFitData.fBaselinePropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
+
+    fFitData.fNeutrinos = new Neutrinos(fPropMatrices.GetLgEmin(), fPropMatrices.GetLgEmax(), fPropMatrices.GetN());
+    fFitData.fNeutrinos->SetIceCubeAcceptance(fOptions.GetDataDirname(), fOptions.GetNuSpectrumDataTypeName());
 
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
     cout << " interaction lengths: \n";
@@ -2112,6 +2158,106 @@ namespace prop {
          << ", nFit = " <<  fFitData.fCompoData.size() << endl;
 
     if(fFitData.fAllCompoData.size() == 0) throw runtime_error("No composition data loaded!");
+
+    switch(fOptions.GetNuSpectrumDataType()) {
+
+      case FitOptions::eNone:
+        {
+          break;
+        }
+
+      case FitOptions::eIceCubeCascades2020:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/IceCubeCascades2020.dat");
+          /*
+          # Cascade differential single-flavor flux E^2 dN/dE From arxiv:2001.09520 Fig. 3
+          # Livetime in [years]
+          # E/GeV center of energy bin
+          # E^2*J in  [GeV cm^-2 s^-1 sr^-1] units
+          # E_errLo 
+          # E_errUp
+          # E^2*J_errLo
+          # E^2*J_errUp
+          # log10E    E^2*J   E_errLo   E_errUp   E^2*J_errLo   E^2*J_errUp 
+          */
+          double livetime;
+          in >> livetime;
+          fFitData.fNuLivetime = livetime;
+          while (true) {
+            NuFluxData flux;
+            double E, exUp, exDown, eyDown, eyUp, fluxE;
+            in >> E >> fluxE >> exDown >> exUp >> eyDown >> eyUp;
+            if (!in.good())
+              break;
+            // to eV
+            flux.fLgE = log10(E*1e9);
+            flux.fdLgE = log10(exUp/exDown);
+            // to all-flavor flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
+            const double conv = 3. / pow(E, 2) * 1e-9 * 1e10 * 365*24*3600;
+            flux.fFlux = fluxE * conv;
+            flux.fFluxErr = (eyUp+eyDown)/2 * conv;
+            flux.fFluxErrUp = eyUp * conv;
+            flux.fFluxErrLow = eyDown * conv;
+
+            fFitData.fAllNuFluxData.push_back(flux);
+            if (flux.fLgE > fOptions.GetMinNuFluxLgE() && flux.fLgE <= fOptions.GetMaxNuFluxLgE()) {
+              fFitData.fNuFluxData.push_back(flux);
+              if (flux.fFlux > 0)
+                fFitData.fNonZeroNuFluxData.push_back(flux);
+            }
+          }
+          break;
+        }
+      case FitOptions::eIceCubeHESE2020:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/IceCubeHESE2020.dat");
+          /*
+          # HESE differential all-flavor flux from from Frequentist Analysis column of Table G1 in arXiv:2011.03545v1
+          # Livetime in [years]
+          # Elo/GeV lower edge of energy bin
+          # Eup/GeV upper edge of energy bin
+          # J in  [GeV^-1 cm^-2 s^-1 sr^-1] units
+          # J_errUp
+          # J_errLo
+          # Elo    Eup   J  J_errUp   J_erroLo 
+          */
+          double livetime;
+          in >> livetime;
+          fFitData.fNuLivetime = livetime;
+          while (true) {
+            NuFluxData flux;
+            double Elo, Eup, eyDown, eyUp, fluxE;
+            in >> Elo >> Eup >> fluxE >> eyUp >> eyDown;
+            if (!in.good())
+              break;
+            // to eV
+            flux.fLgE = log10(sqrt(Elo*Eup)*1e9);
+            flux.fdLgE = log10(Eup/Elo);
+            // to flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
+            const double conv = 1e-9 * 1e10 * 365*24*3600;
+            flux.fFlux = fluxE * conv;
+            flux.fFluxErr = (eyUp+eyDown)/2 * conv;
+            flux.fFluxErrUp = eyUp * conv;
+            flux.fFluxErrLow = eyDown * conv;
+
+            fFitData.fAllNuFluxData.push_back(flux);
+            if (flux.fLgE > fOptions.GetMinNuFluxLgE() && flux.fLgE <= fOptions.GetMaxNuFluxLgE()) {
+              fFitData.fNuFluxData.push_back(flux);
+              if (flux.fFlux > 0)
+                fFitData.fNonZeroNuFluxData.push_back(flux);
+            }
+          }
+          break;
+        }
+      default:
+        {
+          cerr << " unknown neutrino data " << endl;
+        }
+    }
+    
+    cout << " nu spectrum: nAll = " <<  fFitData.fAllNuFluxData.size()
+         << ", nFit = " <<  fFitData.fNuFluxData.size() << endl;
+
 
   }
 
