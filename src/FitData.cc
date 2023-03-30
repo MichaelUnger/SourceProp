@@ -15,6 +15,7 @@ namespace prop {
     fSource(nullptr),
     fPropagator(nullptr),
     fBaselinePropagator(nullptr),
+    fNeutrinos(nullptr),
     fFitStatus(-1),
     fFitFailed(false),
     fFitEDM(-1)
@@ -34,12 +35,16 @@ namespace prop {
     delete fPropagator;
     delete fBaselinePropagator;
     delete fSource;
+    delete fNeutrinos;
     fFluxData.clear();
     fFluxDataLowStat.clear();
     fLowEFluxData.clear();
     fCompoData.clear();
     fAllFluxData.clear();
     fAllCompoData.clear();
+    fNuFluxData.clear();
+    fNonZeroNuFluxData.clear();
+    fAllNuFluxData.clear();
     fFitParameters.clear();
   }
 
@@ -49,13 +54,17 @@ namespace prop {
     double chi2 = fChi2Spec;
     if (fFitCompo)
       chi2 += fChi2LnA + fChi2VlnA;
- 	//cout << fChi2Spec << " "<< fChi2LnA << " " << fChi2VlnA << endl; 
+ 	//cout << fChi2Spec << " "<< fChi2LnA << " " << fChi2VlnA << endl;
+ 	  if (fNuChi2Weight > 0) {
+      chi2 *= (1-fNuChi2Weight);
+      chi2 += fNuChi2Weight*fChi2Nu;  
+    }
    return chi2;
   }
 
 
-  unsigned int
-  FitData::GetNdfTot() const
+  void
+  FitData::SetNdfTot()
   {
     unsigned int nFreePar = 0;
     for (const auto& par : fFitParameters)
@@ -71,8 +80,14 @@ namespace prop {
           ++ndf;
       }
     }
+    if(fFitNuOnly)
+      ndf = fNuFluxData.size();
+    else if(fNuChi2Weight > 0) 
+      ndf += fNonZeroNuFluxData.size();
+      # warning - not including neutrino upper bounds in ndf count
+    
     ndf -= nFreePar;
-    return ndf;
+    fNdf = ndf;
   }
 
   double
