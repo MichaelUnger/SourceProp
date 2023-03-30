@@ -96,6 +96,12 @@ namespace prop {
       eTAShiftedAugerTA2019
     };
 
+    enum ENuSpectrumDataType {
+      eNone,
+      eIceCubeCascades2020,
+      eIceCubeHESE2020
+    };
+
   public:
     FitOptions(const std::string& filename);
     unsigned int GetNmass() const { return fMassValues.size(); }
@@ -179,6 +185,12 @@ namespace prop {
     double GetMaxCompLgE() const
     { return fMaxCompLgE; }
 
+    double GetMinNuFluxLgE() const
+    { return fMinNuFluxLgE; }
+
+    double GetMaxNuFluxLgE() const
+    { return fMaxNuFluxLgE; }
+
     EEnergyShiftType GetEnergyShiftType() const
     { return fEnergyShiftType; }
     double GetEnergyBinShift(const double lgE = 0.) const;
@@ -189,6 +201,9 @@ namespace prop {
 
     double GetLgBaselineFraction() const
     { return fLgBaselineFraction; }
+
+    double GetNuChi2Weight() const
+    { return fNuChi2Weight; }
 
     const std::vector<MassValue>& GetGalacticMasses() const
     { return fGalMasses; }
@@ -213,6 +228,12 @@ namespace prop {
     EXmaxDataType GetXmaxDataType() const
     { return fXmaxDataType; }
     std::string GetXmaxDataLabel() const;
+
+    ENuSpectrumDataType GetNuSpectrumDataType() const
+    { return fNuSpectrumDataType; }
+    std::string GetNuSpectrumDataLabel() const;
+    std::string GetNuSpectrumDataTypeName() const
+    { return fNuSpectrumDataTypeName; } 
 
     void WriteFitConfig(const std::string& filename, const FitData& fitData);
 
@@ -244,9 +265,12 @@ namespace prop {
     double fMaxFluxLgE;
     double fMinCompLgE;
     double fMaxCompLgE;
+    double fMinNuFluxLgE;
+    double fMaxNuFluxLgE;
     double fEnergyBinShift;
     double fXmaxSigmaShift;
     double fLgBaselineFraction;
+    double fNuChi2Weight;
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
     std::vector<MassValue> fGalMasses;
@@ -255,10 +279,12 @@ namespace prop {
     ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
     EEnergyShiftType fEnergyShiftType;
+    ENuSpectrumDataType fNuSpectrumDataType;
     std::string fSpectrumTypeName;
     std::string fSpectrumDataTypeName;
     std::string fLowESpectrumDataTypeName;
     std::string fXmaxDataTypeName;
+    std::string fNuSpectrumDataTypeName;
     ClassDefNV(FitOptions, 1);
   };
 }

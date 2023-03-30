@@ -33,10 +33,13 @@ namespace prop {
     fMaxFluxLgE = 22.0;
     fMinCompLgE = 17.8;
     fMaxCompLgE = 22.0;
+    fMinNuFluxLgE = 12.0;
+    fMaxNuFluxLgE = 22.0;
     fEnergyBinShift = 0;
     fEnergyShiftType = eConstant;
     fXmaxSigmaShift = 0;
     fLgBaselineFraction = -100;
+    fNuChi2Weight = 0;
     fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
     fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,18, 22, 0);
@@ -73,11 +76,13 @@ namespace prop {
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
     fLowESpectrumDataType = eNoLowESpectrum;
+    fNuSpectrumDataType = eNone;
 
     fSpectrumTypeName = "exponential";
     fSpectrumDataTypeName = "Auger2013";
     fLowESpectrumDataTypeName = "";
     fXmaxDataTypeName = "Auger2014";
+    fNuSpectrumDataTypeName = "";
 
     fBaselineFilename = "";
 
@@ -296,6 +301,14 @@ namespace prop {
         if (!(line >> fMaxCompLgE))
           throw runtime_error("error decoding maxLgECompo");
       }
+      else if (keyword == "minLgENuFlux") {
+        if (!(line >> fMinNuFluxLgE))
+          throw runtime_error("error decoding minNuLgEFlux");
+      }
+      else if (keyword == "maxLgENuFlux") {
+        if (!(line >> fMaxNuFluxLgE))
+          throw runtime_error("error decoding maxNuLgEFlux");
+      }
       else if (keyword == "lgBaselineFrac") {
         if (!(line >> fLgBaselineFraction))
           throw runtime_error("error decoding lgBaselineFrac");
@@ -303,6 +316,15 @@ namespace prop {
       else if (keyword == "baselineFile") {
         if (!(line >> fBaselineFilename))
           throw runtime_error("error decoding baselineFile");
+      }
+      else if (keyword == "nuChi2Weight") {
+        if (!(line >> fNuChi2Weight))
+          throw runtime_error("error decoding nuChi2Weight");
+        if(fNuChi2Weight < 0 || fNuChi2Weight > 1)
+          throw runtime_error("nuChi2Weight must be between 0 and 1!");
+        if(fNuChi2Weight > 0.5 && fNuChi2Weight < 1)
+          cerr << "WARNING! -- Fit to neutrino spectrum may not work due to normalization to CR spectrum.\n" 
+               << "         -- To fit only neutrino data set nuChi2Weight to 1." << endl;
       }
       else if (keyword == "spectrumData") {
         string type;
@@ -367,6 +389,18 @@ namespace prop {
         else
           throw runtime_error("unknown Xmax data type: " + type);
         fXmaxDataTypeName = type;
+      }
+      else if (keyword == "nuSpectrumData") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding nuSpectrumData");
+        if (type == "IceCubeCascades2020")
+          fNuSpectrumDataType = eIceCubeCascades2020;
+        else if (type == "IceCubeHESE2020")
+          fNuSpectrumDataType = eIceCubeHESE2020;
+        else
+          throw runtime_error("unknown nu spectrum data type: " + type);
+        fNuSpectrumDataTypeName = type;
       }
       else if (keyword == "spectrumType") {
         string type;
@@ -704,6 +738,20 @@ namespace prop {
     }
   }
 
+  string
+  FitOptions::GetNuSpectrumDataLabel() 
+    const
+  {
+    switch (fNuSpectrumDataType) {
+    case eIceCubeCascades2020:
+      return "IceCube Cascades 2020";
+    case eIceCubeHESE2020:
+      return "IceCube HESE 2020";
+    default:
+      return "unknown";
+    }
+  }
+
   void
   FitOptions::WriteFitConfig(const string& filename, const FitData& fitData)
   {
@@ -712,7 +760,8 @@ namespace prop {
         << fitData.GetNdfTot() << endl;
     out << "# chi2 spec: (" << fitData.fChi2Spec - fitData.fChi2SpecLowE
         << ", " << fitData.fChi2SpecLowE << "), LnA: " << fitData.fChi2LnA
-        << ", V(lnA); " << fitData.fChi2VlnA << endl;
+        << ", V(lnA); " << fitData.fChi2VlnA 
+        << ", nuFlux = " << fitData.fChi2Nu << endl;
     out << "OutDir " << fOutDirname << "\n"
         << "DataDir " << fDataDirname << "\n"
         << "evolution " << fEvolution << "\n"
@@ -723,10 +772,18 @@ namespace prop {
         << "xmaxData " << fXmaxDataTypeName << "\n"
         << "spectrumType " << fSpectrumTypeName << "\n";
     out << "minLgEFlux " << fMinFluxLgE << "\n"
+        << "maxLgEFlux " << fMaxFluxLgE << "\n"
         << "minLgECompo " << fMinCompLgE << "\n"
+        << "maxLgECompo " << fMaxCompLgE << "\n"
+        << "minLgENuFlux " << fMinNuFluxLgE << "\n"
+        << "maxLgENuFlux " << fMaxNuFluxLgE << "\n"
         << "boostedModel " << fBoostedModel << endl;
     if (!fLowESpectrumDataTypeName.empty())
       out << "spectrumDataLowE " << fLowESpectrumDataTypeName << "\n";
+    if (!fNuSpectrumDataTypeName.empty()) {
+      out << "nuSpectrumData " << fNuSpectrumDataTypeName << "\n";
+      out << "nuChi2Weight " << fNuChi2Weight << "\n";
+    }
     for (unsigned int i = 0; i < fPhotonFieldType.size(); ++i) {
       if (fPhotonFieldType[i] == eBrokenPowerlaw)
         out << "PhotonBPL " << fEps0[i] << " " << fAlpha[i] << " " << fBeta[i]
