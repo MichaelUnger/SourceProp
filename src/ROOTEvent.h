@@ -52,6 +52,8 @@ namespace crpropa {
     /// vector of secondaries
     const std::vector<crpropa::ROOTSecondary>& GetSecondaries() const
     { return fSecondaries; }
+    std::vector<crpropa::ROOTSecondary>& GetSecondaries()
+    { return fSecondaries; }
 
     void ResetSecondaries();
 
