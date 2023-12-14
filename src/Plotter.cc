@@ -281,7 +281,7 @@ namespace prop {
           if (showRatio) {
             const double lgE = hRatio->GetXaxis()->GetBinCenter(i+1);
             const double lInt_PH = source->LambdaPhotoHadInt(pow(10, lgE), m.fRepA);
-	    const double lInt_H = source->LambdaHadInt(pow(10, lgE), m.fRepA);
+	          const double lInt_H = source->LambdaHadInt(pow(10, lgE), m.fRepA);
             const double lInt = ( lInt_H * lInt_PH ) / ( lInt_H + lInt_PH );
             const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
             const double ratio = fmax(1e-4,lEsc / lInt);
@@ -295,7 +295,7 @@ namespace prop {
           else {
             const double lgE = hInt_PH->GetXaxis()->GetBinCenter(i+1);
             const double lInt_PH = source->LambdaPhotoHadInt(pow(10, lgE), m.fRepA);
-	    const double lInt_H = source->LambdaHadInt(pow(10, lgE), m.fRepA);
+            const double lInt_H = source->LambdaHadInt(pow(10, lgE), m.fRepA);
             const double lEsc = source->LambdaEsc(pow(10, lgE), m.fRepA);
             if (lgE < xMax && (yMax < 0 || lInt_PH > yMax))
               yMax = lInt_PH;
