@@ -96,7 +96,8 @@ public:
   double fRBetaErr[3];
   double fPhotonPeakErr[3]; 
   double fLgHadIntFacErr[3]; 
-  
+ 
+  std::string fMassFractionType; 
   std::vector<double> fMasses;
   std::vector<double> fFractions;
   std::vector<double> fEps0;

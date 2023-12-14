@@ -97,6 +97,7 @@ FitSummary::Fill(const prop::FitData& fitData,
   fPhotonPeakErr[0] = fitData.fFitParameters[ePhotonPeak].fError;
   fLgHadIntFacErr[0] = fitData.fFitParameters[eLgHadIntFac].fError;
 
+  fMassFractionType = fitOptions.GetMassFractionTypeName();
   const unsigned int nMass = fitData.GetNMass();
   fMasses.clear();
   for (unsigned int i = 0; i < nMass; ++i) {
