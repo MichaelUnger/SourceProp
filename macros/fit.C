@@ -276,13 +276,51 @@ DrawData(const FitData& fitData,
   }
   fluxTotAtEarth->Draw("CSAME");
 
+  const double dlgE = 0.05;
+  TGraphErrors* allLnA = new TGraphErrors();
+  TGraph* allLnA2 = new TGraph();
+  TGraphErrors* allVlnA = new TGraphErrors();
+  TGraphAsymmErrors* allLnASys = new TGraphAsymmErrors();
+  TGraphAsymmErrors* allVlnASys = new TGraphAsymmErrors();
+  const vector<CompoData>& allCompData = fitData.fAllCompoData;
+  for (unsigned int i = 0; i < allCompData.size(); ++i) {
+    if (allCompData[i].fLnAErr > 0) {
+      allLnA->SetPoint(i, allCompData[i].fLgE, allCompData[i].fLnA);
+      allLnA2->SetPoint(i, allCompData[i].fLgE, allCompData[i].fLnA);
+      allLnA->SetPointError(i, 0, allCompData[i].fLnAErr);
+      allLnASys->SetPoint(i, allCompData[i].fLgE, allCompData[i].fLnA);
+      allLnASys->SetPointEYlow(i, allCompData[i].fLnASysLow);
+      allLnASys->SetPointEYhigh(i, allCompData[i].fLnASysUp);
+      allLnASys->SetPointEXlow(i, dlgE);
+      allLnASys->SetPointEXhigh(i, dlgE);
+    }
+
+    if (allCompData[i].fVlnAErr > 0) {
+      allVlnA->SetPoint(i, allCompData[i].fLgE, allCompData[i].fVlnA);
+      allVlnA->SetPointError(i, 0, allCompData[i].fVlnAErr);
+      allVlnASys->SetPoint(i, allCompData[i].fLgE, allCompData[i].fVlnA);
+      allVlnASys->SetPointEYlow(i, allCompData[i].fVlnASysLow);
+      allVlnASys->SetPointEYhigh(i, allCompData[i].fVlnASysUp);
+      allVlnASys->SetPointEXlow(i, dlgE);
+      allVlnASys->SetPointEXhigh(i, dlgE);
+    }
+  }
+  allLnA->SetLineColor(kGray+1);
+  allLnA->SetMarkerColor(kGray+1);
+  allLnASys->SetLineColor(kGray+1);
+  allVlnA->SetLineColor(kGray+1);
+  allVlnA->SetMarkerColor(kGray+1);
+  allVlnA->SetMarkerStyle(21);
+  allVlnASys->SetLineColor(kGray);
+  allLnA2->SetMarkerStyle(24);
+  allLnA2->SetLineColor(kBlack);
+
   TGraphErrors* fitLnA = new TGraphErrors();
   TGraph* fitLnA2 = new TGraph();
   TGraphErrors* fitVlnA = new TGraphErrors();
   TGraphAsymmErrors* fitLnASys = new TGraphAsymmErrors();
   TGraphAsymmErrors* fitVlnASys = new TGraphAsymmErrors();
   const vector<CompoData>& compData = fitData.fCompoData;
-  const double dlgE = 0.05;
   for (unsigned int i = 0; i < compData.size(); ++i) {
     if (compData[i].fLnAErr > 0) {
       fitLnA->SetPoint(i, compData[i].fLgE, compData[i].fLnA);
@@ -316,10 +354,12 @@ DrawData(const FitData& fitData,
   fitLnA2->SetLineColor(kBlack);
 
   can->cd(Plotter::eCompEarth)->cd(2);
+  allVlnASys->Draw("5");
   fitVlnASys->Draw("5");
   TGraphAsymmErrors* fitVlnASys2 =
     (TGraphAsymmErrors*) fitVlnASys->Clone("fitVlnASys2");
   can->cd(Plotter::eCompEarth)->cd(1);
+  allLnASys->Draw("5");
   fitLnASys->Draw("5");
   fitLnASys->SetFillColor(kRed-10);
   fitLnASys->SetFillStyle(1001);
@@ -336,6 +376,8 @@ DrawData(const FitData& fitData,
   lnA->SetLineColor(kBlack);
   can->cd(Plotter::eCompEarth)->cd(1);
   lnA->Draw("CSAME");
+  allLnA->Draw("P");
+  allLnA2->Draw("P");
   fitLnA->Draw("PZ");
   fitLnA2->Draw("P");
   gPad->RedrawAxis();
@@ -344,8 +386,13 @@ DrawData(const FitData& fitData,
   gROOT->GetObject("hvLnA", vlnA);
   vlnA->SetLineColor(kBlack);
   vlnA->Draw("CSAME");
-  vlnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), min(fitOptions.GetMaxCompLgE(), 20.2));
-  lnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), min(fitOptions.GetMaxCompLgE(), 20.2));
+  //vlnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), min(fitOptions.GetMaxCompLgE(), 20.2));
+  //lnA->GetXaxis()->SetRangeUser(fitOptions.GetMinCompLgE(), min(fitOptions.GetMaxCompLgE(), 20.2));
+  const double minlgE = min(17.6, fitOptions.GetMinCompLgE());
+  const double maxlgE = 20.2;
+  vlnA->GetXaxis()->SetRangeUser(minlgE, maxlgE);
+  lnA->GetXaxis()->SetRangeUser(minlgE, maxlgE);
+  allVlnA->Draw("P");
   fitVlnA->Draw("PZ");
   gPad->RedrawAxis();
 
@@ -619,6 +666,13 @@ DrawValues(const FitData& fitData,
 
   y = yStart;
 
+  {
+    string parString = "massFractionType: " + fitOptions.GetMassFractionTypeName();
+    l.SetTextColor(kBlack);
+    l.DrawLatex(0.63, y, parString.c_str());
+    y -= dy;
+  } 
+ 
   const unsigned int nMass = fitData.GetNMass();
   vector<double> fractions(nMass);
   vector<double> zeta;
