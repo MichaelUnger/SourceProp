@@ -38,6 +38,7 @@ namespace prop {
   bool Fitter::fisFixedPPElasticity = false;
   bool Fitter::fGCRGSFIron = false;
   double Fitter::fLgBaselineFraction = -100;
+  FitOptions::EMassFractionType Fitter::fMassFractionType = FitOptions::eFixedEnergy;
 
   double
   GetGSFIronFlux(const double lgE)
@@ -51,6 +52,45 @@ namespace prop {
 
     return phi;
   }
+  
+  void ConvertToFixedEnergyFraction(map<unsigned int, double>& frac, const double gamma,
+                                    const FitOptions::EMassFractionType type)
+  {
+    // convert from fractions a fixed energy to fixed energy 
+    if(type == FitOptions::eFixedEnergy) 
+      return;
+    // convert from fractions at fixed rigidity to fixed energy
+    else if(type == FitOptions::eFixedRigidity) { 
+
+      double norm = 0;
+      for(auto& iter : frac) {
+        const int Z = aToZ(iter.first);
+        norm += iter.second / pow(Z, gamma+1);
+      }
+      for(auto& iter : frac) {
+        const int Z = aToZ(iter.first);
+        iter.second /= pow(Z, gamma+1) * norm;
+      }
+      return;
+    }
+    // convert from fractions at fixed energy per nucleon to fixed energy
+    else if(type == FitOptions::eFixedEnergyPerNucleon) {
+
+      double norm = 0;
+      for(auto& iter : frac) {
+        const int A = iter.first;
+        norm += iter.second / pow(A, gamma+1);
+      }
+      for(auto& iter : frac) {
+        const int A = iter.first;
+        iter.second /= pow(A, gamma+1) * norm;
+      }
+      return;
+    }
+    else
+      throw runtime_error("Unknown mass fraction type for conversion!");
+  }
+
 
   pair<double, double>
   calcNorm(const FitData& data, const bool GSFIron = false)
@@ -62,7 +102,7 @@ namespace prop {
       const Neutrinos& n = *data.fNeutrinos;
       for (const auto& flux : data.fNonZeroNuFluxData) {
         const double y = flux.fFlux;
-        const double m = n.GetTotalOscillatedFlux(flux.fLgE); // need to choose right function!! fix in a sec
+        const double m = n.GetTotalOscillatedFlux(flux.fLgE); 
         const double w = pow(1/flux.fFluxErr, 2);
         mywSum += (m*y*w);
         mmwSum += (m*m*w);
@@ -187,6 +227,8 @@ namespace prop {
           if (dm.GetFrac2() > 0)
             fractions[dm.GetMass2()] += dm.GetFrac2()*frac[i];
         }
+        // convert to fractions at fixed energy
+        ConvertToFixedEnergyFraction(fractions, par[eGamma], fMassFractionType);
 
         if (!(data.fIteration%10)) {
           for (unsigned int i = 0; i < nMass; ++i)
@@ -403,6 +445,8 @@ namespace prop {
           if (dm.GetFrac2() > 0)
             galFractions[dm.GetMass2()] += dm.GetFrac2()*fracGal[i];
         }
+        // convert to fractions at fixed energy
+        ConvertToFixedEnergyFraction(galFractions, par[eGammaGal], fMassFractionType);
 
         if (!(data.fIteration%10)) {
           for (unsigned int i = 0; i < nGalMass; ++i)
@@ -543,6 +587,8 @@ namespace prop {
             if (dm.GetFrac2() > 0)
               galAFractions[dm.GetMass2()] += dm.GetFrac2()*fracGalA[i];
           }
+          // convert to fractions at fixed energy
+          ConvertToFixedEnergyFraction(galAFractions, par[eGammaGalA], fMassFractionType);
 
           if (!(data.fIteration%10)) {
             for (unsigned int i = 0; i < nGalAMass; ++i)
@@ -629,6 +675,8 @@ namespace prop {
           if (dm.GetFrac2() > 0)
             fractionsA[dm.GetMass2()] += dm.GetFrac2()*fracA[i];
         }
+        // convert to fractions at fixed energy
+        ConvertToFixedEnergyFraction(fractionsA, par[eGammaA], fMassFractionType);
         // component B
         map<unsigned int, double> fractionsB;
         const unsigned int nMassB = data.GetNGalMass();
@@ -646,6 +694,8 @@ namespace prop {
           if (dm.GetFrac2() > 0)
             fractionsB[dm.GetMass2()] += dm.GetFrac2()*fracB[i];
         }
+        // convert to fractions at fixed energy
+        ConvertToFixedEnergyFraction(fractionsB, par[eGammaBl], fMassFractionType);
 
         const double gammaA = par[eGammaA];
         const double gammaBl = par[eGammaBl];
@@ -968,6 +1018,7 @@ namespace prop {
     fGCRGSFIron = fOptions.GCRWithGSFIron();
     fBoostedModel = fOptions.BoostedModel();
     fisFixedPPElasticity = fOptions.DoFixPPElasticity();
+    fMassFractionType = fOptions.GetMassFractionType();
 
     ReadData();
 
@@ -1767,8 +1818,9 @@ namespace prop {
     TGraphAsymmErrors* xmaxSysGraph = nullptr;
     TGraphAsymmErrors* sigmaXmaxSysGraph = nullptr;
     int TAOffset = 0;
-    switch (fOptions.GetXmaxDataType()) {
-    case FitOptions::eAugerXmax2014:
+   
+    const FitOptions::EXmaxDataType xmaxType = fOptions.GetXmaxDataType();
+    if(xmaxType &  FitOptions::eAugerXmax2014)
       {
         TFile* erFile =
           TFile::Open((fOptions.GetDataDirname() + "/elongationRate.root").c_str());
@@ -1778,11 +1830,15 @@ namespace prop {
           xmaxSysGraph = (TGraphAsymmErrors*) erFile->Get("elongXmaxFinalSys");
           sigmaXmaxSysGraph = (TGraphAsymmErrors*) erFile->Get("elongSigmaFinalSys");
         }
-        break;
       }
-    case FitOptions::eAugerXmax2017:
-    case FitOptions::eAugerXmax2017fudge:
-    case FitOptions::eAugerXmax2017fudgeAndSD:
+    else {
+        xmaxGraph = new TGraphErrors();
+        sigmaGraph = new TGraphErrors();
+        xmaxSysGraph = new TGraphAsymmErrors();
+        sigmaXmaxSysGraph = new TGraphAsymmErrors();
+    }
+    if((xmaxType & FitOptions::eAugerXmax2017) || (xmaxType & FitOptions::eAugerXmax2017fudge)
+        || (xmaxType & FitOptions::eAugerXmax2017fudgeAndSD))
       {
         /*
           #  (1) meanLgE:      <lg(E/eV)>
@@ -1796,13 +1852,9 @@ namespace prop {
           #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
           #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
         */
-        xmaxGraph = new TGraphErrors();
-        sigmaGraph = new TGraphErrors();
-        xmaxSysGraph = new TGraphAsymmErrors();
-        sigmaXmaxSysGraph = new TGraphAsymmErrors();
-        int i = 0;
+        unsigned int i = xmaxGraph->GetN();
         const string filename =
-          fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2017 ?
+          xmaxType == FitOptions::eAugerXmax2017 ?
           "/elongationRate17.txt" :
           "/elongationRate17fudge.txt";
         ifstream in(fOptions.GetDataDirname() + filename);
@@ -1827,27 +1879,22 @@ namespace prop {
           sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
           ++i;
         }
-        break;
       }
-    case FitOptions::eAugerXmax2017corrected:
+    if(xmaxType & FitOptions::eAugerXmax2017corrected)
       {
         /*
- 	  #  (1) meanLgE:      <lg(E/eV)>
-	  #  (2) nEvts:        number of events
-	  #  (3) mean:         <Xmax> [g/cm^2]
-	  #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
-	  #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
-	  #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
-	  #  (7) mean:         <Xmax> [g/cm^2]
-	  #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
-	  #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
-	  #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
-	*/
-        xmaxGraph = new TGraphErrors();
-        sigmaGraph = new TGraphErrors();
-        xmaxSysGraph = new TGraphAsymmErrors();
-        sigmaXmaxSysGraph = new TGraphAsymmErrors();
-        int i = 0;
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        unsigned int i = xmaxGraph->GetN();
         const string filename = "/xmax2017.txt";
         ifstream in(fOptions.GetDataDirname() + filename);
         while (true) {
@@ -1871,10 +1918,9 @@ namespace prop {
           sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
           ++i;
         }
-        break;
       }
-    case FitOptions::eAugerXmax2019:
-      {
+    if(xmaxType & FitOptions::eAugerXmax2019)
+      { // Auger ICRC19 Xmax from Yushkov PoS(ICRC2019)482
         /*
           #  (1) meanLgE:      <lg(E/eV)>
           #  (2) nEvts:        number of events
@@ -1887,11 +1933,7 @@ namespace prop {
           #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
           #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
         */
-        xmaxGraph = new TGraphErrors();
-        sigmaGraph = new TGraphErrors();
-        xmaxSysGraph = new TGraphAsymmErrors();
-        sigmaXmaxSysGraph = new TGraphAsymmErrors();
-        int i = 0;
+        unsigned int i = xmaxGraph->GetN();
         const string filename = "/elongationRate19.txt";
         ifstream in(fOptions.GetDataDirname() + filename);
         while (true) {
@@ -1915,9 +1957,47 @@ namespace prop {
           sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
           ++i;
         }
-        break;
       }
-    case FitOptions::eAugerXmax2019withFixedTALEXmax2019:
+    if(xmaxType & FitOptions::eAugerXmax2019HEAT)
+      { // Auger ICRC19 Xmax from Yushkov PoS(ICRC2019)482 (but only HEAT data points)
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        unsigned int i = xmaxGraph->GetN();
+        const string filename = "/elongationRateHEAT19.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+      }
+    if(xmaxType & FitOptions::eAugerXmax2019withFixedTALEXmax2019)
       { // Auger ICRC19 Xmax data shifted & unshifted TALE ICRC19 Xmax
         /*
           #  (1) meanLgE:      <lg(E/eV)>
@@ -1931,11 +2011,7 @@ namespace prop {
           #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
           #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
         */
-        xmaxGraph = new TGraphErrors();
-        sigmaGraph = new TGraphErrors();
-        xmaxSysGraph = new TGraphAsymmErrors();
-        sigmaXmaxSysGraph = new TGraphAsymmErrors();
-        int i = 0;
+        unsigned int i = xmaxGraph->GetN();
         const string filename = "/elongationRate19.txt";
         ifstream in(fOptions.GetDataDirname() + filename);
         while (true) {
@@ -1977,9 +2053,8 @@ namespace prop {
           xmaxSysGraph->SetPointEYlow(i, meanSysLow);
           ++i;
         }
-        break;
       }
-    case FitOptions::eTAXmax2019:
+    if(xmaxType & FitOptions::eTAXmax2019)
       { // TA 10 year hybrid data from Hanlon ICRC19 PoS(ICRC2019)1177
         /*
           #  meanXmax file:
@@ -1993,11 +2068,7 @@ namespace prop {
           #  (3) sigmaErrUp:   upper position of statistical error bar of sigma(Xmax) [g/cm^2]
           #  (4) sigmaErrLo:   lower position of statistical error bar of sigma(Xmax) [g/cm^2]
         */
-        xmaxGraph = new TGraphErrors();
-        sigmaGraph = new TGraphErrors();
-        xmaxSysGraph = new TGraphAsymmErrors();
-        sigmaXmaxSysGraph = new TGraphAsymmErrors();
-        int i = 0;
+        unsigned int i = xmaxGraph->GetN();
         const string filename = "/ta_meanXmax_icrc2019.txt";
         ifstream in(fOptions.GetDataDirname() + filename);
         const string filename2 = "/ta_sigmaXmax_icrc2019.txt";
@@ -2026,14 +2097,91 @@ namespace prop {
           sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSyst);
           ++i;
         }
-        break;
       }
-    default:
+    if(xmaxType & FitOptions::eAugerXmax2023FD)
+      { // Auger ICRC23 FD Xmax from Fitoussi PoS(ICRC2023)319 
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        unsigned int i = xmaxGraph->GetN();
+        const string filename = "/elongationRateFD23.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+      }
+    if(xmaxType & FitOptions::eAugerXmax2023SD)
+      { // Auger ICRC23 SD Xmax from Glombitza PoS(ICRC2023)278 
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        unsigned int i = xmaxGraph->GetN();
+        const string filename = "/elongationRateSD23.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+      }
+    if(xmaxGraph->GetN() == 0)
       {
         cerr << " unknown Xmax data " << endl;
       }
-    }
-    if (fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2017fudgeAndSD) {
+    
+    if (xmaxType & FitOptions::eAugerXmax2017fudgeAndSD) {
       const bool calibAugerSD = false;
       const unsigned int nSD = 14;
       const double sdLgE[nSD] = {18.55, 18.65, 18.75, 18.85, 18.95, 19.05,
@@ -2063,7 +2211,7 @@ namespace prop {
       }
     }
 
-    if (fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2017fudgeAndSD) {
+    if (xmaxType & FitOptions::eAugerXmax2017fudgeAndSD) {
       const bool calibAugerSD = false;
       const unsigned int nSD = 14;
       const double sdLgE[nSD] = {18.55, 18.65, 18.75, 18.85, 18.95, 19.05,
@@ -2112,7 +2260,7 @@ namespace prop {
         0;
       const double deltaLgESys =
         (TAOffset >= i &&
-          fOptions.GetXmaxDataType() == FitOptions::eAugerXmax2019withFixedTALEXmax2019)?
+          xmaxType == FitOptions::eAugerXmax2019withFixedTALEXmax2019)?
         0.0 : // no shift for TA data
         0.1 * fOptions.GetEnergyBinShift(log10(xmaxGraph->GetX()[i]));
       const double lgE =

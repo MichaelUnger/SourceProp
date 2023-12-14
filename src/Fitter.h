@@ -37,6 +37,7 @@ namespace prop {
     static bool fBoostedModel;
     static bool fisFixedPPElasticity;
     static double fLgBaselineFraction;
+    static FitOptions::EMassFractionType fMassFractionType;
     static FitData fFitData;
     TMinuit fMinuit;
     ClassDefNV(Fitter, 1);
