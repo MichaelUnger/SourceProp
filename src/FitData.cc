@@ -94,6 +94,7 @@ namespace prop {
   FitData::GetTotalPower(const double Elow)
     const
   {
+    // NB: fractions calculated here are not used, only the masses (fractions are those inside Spectrum::fFractions set by Spectrum::SetParameters)
     map<unsigned int, double> fractions;
     const unsigned int nMass = GetNMass();
     double frac[nMass];
