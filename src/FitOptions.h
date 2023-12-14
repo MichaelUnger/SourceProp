@@ -46,7 +46,6 @@ namespace prop {
     double fFractionIsFixed;
   };
 
-
   class FitOptions {
 
   public:
@@ -79,15 +78,21 @@ namespace prop {
       eNoLowESpectrum
     };
 
-    enum EXmaxDataType {
-      eAugerXmax2014,
-      eAugerXmax2017,
-      eAugerXmax2017fudge,
-      eAugerXmax2017fudgeAndSD,
-      eAugerXmax2017corrected,
-      eAugerXmax2019,
-      eAugerXmax2019withFixedTALEXmax2019,
-      eTAXmax2019
+    enum EXmaxDataType { // define via bit shifting to easily combine datasets
+      eAugerXmax2014 = 1 << 0,
+      eAugerXmax2017 = 1 << 1,
+      eAugerXmax2017fudge = 1 << 2,
+      eAugerXmax2017fudgeAndSD = 1 << 3,
+      eAugerXmax2017corrected = 1 << 4,
+      eAugerXmax2019 = 1 << 5,
+      eAugerXmax2019HEAT = 1 << 6,
+      eAugerXmax2019withFixedTALEXmax2019 = 1 << 7,
+      eTAXmax2019 = 1 << 8,
+      eAugerXmax2023FD = 1 << 9,
+      eAugerXmax2023SD = 1 << 10
+    };
+    friend constexpr EXmaxDataType operator|(EXmaxDataType a, EXmaxDataType b) {
+      return static_cast<EXmaxDataType>(static_cast<int>(a) | static_cast<int>(b));
     };
 
     enum EEnergyShiftType {
@@ -100,6 +105,12 @@ namespace prop {
       eNone,
       eIceCubeCascades2020,
       eIceCubeHESE2020
+    };
+
+    enum EMassFractionType {
+      eFixedEnergy,
+      eFixedRigidity,
+      eFixedEnergyPerNucleon
     };
 
   public:
@@ -235,6 +246,11 @@ namespace prop {
     std::string GetNuSpectrumDataTypeName() const
     { return fNuSpectrumDataTypeName; } 
 
+    EMassFractionType GetMassFractionType()  const
+    { return fMassFractionType; }
+    std::string GetMassFractionTypeName() const
+    { return fMassFractionTypeName; }
+
     void WriteFitConfig(const std::string& filename, const FitData& fitData);
 
   private:
@@ -273,6 +289,7 @@ namespace prop {
     double fNuChi2Weight;
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
+    EMassFractionType fMassFractionType;
     std::vector<MassValue> fGalMasses;
     std::vector<MassValue> fGalAMasses;
     ESpectrumDataType fSpectrumDataType;
@@ -285,8 +302,16 @@ namespace prop {
     std::string fLowESpectrumDataTypeName;
     std::string fXmaxDataTypeName;
     std::string fNuSpectrumDataTypeName;
+    std::string fMassFractionTypeName;
     ClassDefNV(FitOptions, 1);
   };
+  
+  /*
+  constexpr FitOptions::EXmaxDataType operator|(FitOptions::EXmaxDataType a, FitOptions::EXmaxDataType b) {
+    return static_cast<FitOptions::EXmaxDataType>(static_cast<int>(a) | static_cast<int>(b));
+  };
+  */
+
 }
 
 #endif

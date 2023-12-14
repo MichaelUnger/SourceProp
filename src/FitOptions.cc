@@ -73,12 +73,14 @@ namespace prop {
     fStartValues[eLgHadIntFac] = StartValue(10, 0.1 ,-10, 10, 1);
 
     fSpectrumType = Spectrum::eExponential;
+    fMassFractionType = eFixedEnergy;
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
     fLowESpectrumDataType = eNoLowESpectrum;
     fNuSpectrumDataType = eNone;
 
     fSpectrumTypeName = "exponential";
+    fMassFractionTypeName = "fixedEnergy";
     fSpectrumDataTypeName = "Auger2013";
     fLowESpectrumDataTypeName = "";
     fXmaxDataTypeName = "Auger2014";
@@ -379,13 +381,21 @@ namespace prop {
         else if (type == "Auger2017fudgeAndSD")
           fXmaxDataType = eAugerXmax2017fudgeAndSD;
         else if (type == "Auger2017corrected")
-                fXmaxDataType = eAugerXmax2017corrected;
+          fXmaxDataType = eAugerXmax2017corrected;
         else if (type == "Auger2019")
-                fXmaxDataType = eAugerXmax2019;
+          fXmaxDataType = eAugerXmax2019;
+        else if (type == "Auger2019HEAT")
+          fXmaxDataType = eAugerXmax2019HEAT;
         else if (type == "Auger2019withFixedTALE2019")
-                fXmaxDataType = eAugerXmax2019withFixedTALEXmax2019;
+          fXmaxDataType = eAugerXmax2019withFixedTALEXmax2019;
         else if (type == "TA2019")
           fXmaxDataType = eTAXmax2019;
+        else if (type == "Auger2023FD")
+          fXmaxDataType = eAugerXmax2023FD;
+        else if (type == "Auger2023SD")
+          fXmaxDataType = eAugerXmax2023SD;
+        else if (type == "Auger2023")
+          fXmaxDataType = (eAugerXmax2023FD | eAugerXmax2023SD);
         else
           throw runtime_error("unknown Xmax data type: " + type);
         fXmaxDataTypeName = type;
@@ -427,6 +437,20 @@ namespace prop {
         else
           throw runtime_error("unknown spectrum type" + type);
         fSpectrumTypeName = type;
+      }
+      else if (keyword == "massFracType") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding massFracType");
+        if (type == "fixedEnergy")
+          fMassFractionType = eFixedEnergy;
+        else if (type == "fixedRigidity")
+          fMassFractionType = eFixedRigidity;
+        else if (type == "fixedEnergyPerNucleon")
+          fMassFractionType = eFixedEnergyPerNucleon;
+        else
+          throw runtime_error("unknown mass fraction type " + type);
+        fMassFractionTypeName = type;
       }
       else
         throw runtime_error("unknown keyword " + keyword);
@@ -729,10 +753,18 @@ namespace prop {
       return "Auger 2017+19";
     case eAugerXmax2019:
       return "Auger 2019";
+    case eAugerXmax2019HEAT:
+      return "Auger 2019 HEAT";
     case eAugerXmax2019withFixedTALEXmax2019:
       return "Auger19 & TALE19";
     case eTAXmax2019:
       return "TA 2019";
+    case eAugerXmax2023FD:
+      return "Auger23 FD";
+    case eAugerXmax2023SD:
+      return "Auger23 SD";
+    case (eAugerXmax2023FD | eAugerXmax2023SD):
+      return "Auger23 FD & SD";
     default:
       return "unknown";
     }
@@ -837,6 +869,7 @@ namespace prop {
           <<  s.fIsFixed << "\n";
     }
 
+    out << "massFracType " << fMassFractionTypeName << "\n";
     const string massNameA = fBoostedModel ? "massA" : "mass";
     map<unsigned int, double> fractionsA;
     const unsigned int nMassA = fitData.GetNMass();
