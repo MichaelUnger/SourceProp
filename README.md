@@ -1,5 +1,5 @@
 # SourceProp
-## Cosmic-Ray Propagation in Source and from Source to Earth
+Propagation of ultra-high-energy in the source environent and through intergalactic space.
 
 ## Usage
 
