@@ -1,5 +1,5 @@
 # SourceProp
-Propagation of ultra-high-energy cosmic rays in the source environent and through intergalactic space.
+Propagation of ultra-high-energy cosmic rays in the source environent and through intergalactic space a la UFA15.
 
 ## Usage
 
