@@ -43,7 +43,7 @@ namespace prop {
       fLgE(0), fdLgE(0), fFlux(0), fFluxErr(0),
       fFluxErrUp(0), fFluxErrLow(0),
       fFluxE(0), fFluxM(0), fFluxT(0),
-      fFluxAE(0), fFluxAM(0), fFluxAT(0) 
+      fFluxAE(0), fFluxAM(0), fFluxAT(0)
     {}
     double fLgE;
     double fdLgE;
@@ -51,7 +51,7 @@ namespace prop {
     double fFluxErr;
     double fFluxErrUp;
     double fFluxErrLow;
-    # warning - flavor breakdown not currently implemented
+    // # warning - flavor breakdown not currently implemented
     double fFluxE; // flavor-breakdown
     double fFluxM;
     double fFluxT;
@@ -78,7 +78,7 @@ namespace prop {
     { fNLgE = n; fLgEmin = lgEmin; fLgEmax = lgEmax; }
     double GetChi2Tot() const;
     void SetNdfTot();
-    void IncrementNdfTot() 
+    void IncrementNdfTot()
     { fNdf++; }
     unsigned int GetNdfTot() const { return fNdf; }
     double GetTotalPower(const double Elow) const;
