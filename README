@@ -15,7 +15,7 @@
 
     and then try to run
 
-    * fit("Marco/PRDFiducial.txt", true, true)
+    * fit("config/PRDFiducial.txt", true, true)
 
     The first argument is the configuration file (see below),
     if the second is "true" then the minimization will be
@@ -38,7 +38,7 @@ steering file parameters:
      deltaEsc
      lgRdiff
      lgRsize
-     tanhlgRsize 
+     tanhlgRsize
      fGal (always the fraction of flux from ALL galactic sources)
      gammaGal
      lgEmaxGal
@@ -100,7 +100,7 @@ steering file parameters:
 * nuChi2Weight [fraction] (fraction of total chi2 given to nu portion: chi2 = f*chi2_nu + (1-f)*chi2_CR)
 * baselineFrac
   - fraction of escaping spectrum due to baseline model
-* baselineFile 
+* baselineFile
   - path to baseline model's *Hist.root file
 
 
@@ -124,23 +124,23 @@ refValues PRDFiducial/PRDGalactic:
 v9006 (change chi2 for empty bins)
 ----------------------------------
 FCN=391.659 FROM MIGRAD    STATUS=CONVERGED     163 CALLS         164 TOTAL
-                     EDM=4.76862e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
-  EXT PARAMETER                                   STEP         FIRST   
-  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
-   1  gammaInj    -1.00000e+00     fixed    
+                     EDM=4.76862e-06    STRATEGY= 1      ERROR MATRIX ACCURATE
+  EXT PARAMETER                                   STEP         FIRST
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
+   1  gammaInj    -1.00000e+00     fixed
    2  lgRmax       1.85192e+01   6.96791e-03   2.75578e-05   3.91017e-01
    3  lgResc       2.63902e+00   3.79701e-02   6.03361e-06  -1.03241e-01
    4  deltaEsc    -7.67586e-01   4.24031e-02   1.88786e-04  -2.65259e-02
    5  fGal         5.72206e-01   9.58920e-03   7.12605e-05  -2.71900e-02
    6  gammaGal    -4.18537e+00   3.55460e-02   8.15056e-05   2.67853e-02
- 
+
 v9008 (reduce subBins to 5)
 ---------------------------
  FCN=392.517 FROM MIGRAD    STATUS=CONVERGED     161 CALLS         162 TOTAL
-                     EDM=5.89671e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
-  EXT PARAMETER                                   STEP         FIRST   
-  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
-   1  gammaInj    -1.00000e+00     fixed    
+                     EDM=5.89671e-06    STRATEGY= 1      ERROR MATRIX ACCURATE
+  EXT PARAMETER                                   STEP         FIRST
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
+   1  gammaInj    -1.00000e+00     fixed
    2  lgRmax       1.85192e+01   6.96564e-03   2.75702e-05   3.57705e-01
    3  lgResc       2.64156e+00   3.79116e-02   6.03934e-06  -1.59164e+00
    4  deltaEsc    -7.69914e-01   4.23390e-02   1.89458e-04  -7.26237e-02
@@ -152,10 +152,10 @@ v9008 (reduce subBins to 5)
 v9010 (reduce subBins to 2)
 ---------------------------
  FCN=390.871 FROM MIGRAD    STATUS=CONVERGED     160 CALLS         161 TOTAL
-                     EDM=3.24854e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
-  EXT PARAMETER                                   STEP         FIRST   
-  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
-   1  gammaInj    -1.00000e+00     fixed    
+                     EDM=3.24854e-06    STRATEGY= 1      ERROR MATRIX ACCURATE
+  EXT PARAMETER                                   STEP         FIRST
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
+   1  gammaInj    -1.00000e+00     fixed
    2  lgRmax       1.85224e+01   6.94499e-03   2.73115e-05  -2.74349e-01
    3  lgResc       2.64311e+00   3.79864e-02   5.99254e-06   3.23464e+00
    4  deltaEsc    -7.68137e-01   4.24277e-02   1.87242e-04   1.13239e-01
@@ -166,9 +166,9 @@ v9010 (reduce subBins to 2)
   Nnu = 4.7
 
   FCN=249.405 FROM MIGRAD    STATUS=CONVERGED     404 CALLS         405 TOTAL
-                     EDM=1.58249e-05    STRATEGY= 1      ERROR MATRIX ACCURATE 
-  EXT PARAMETER                                   STEP         FIRST   
-  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
+                     EDM=1.58249e-05    STRATEGY= 1      ERROR MATRIX ACCURATE
+  EXT PARAMETER                                   STEP         FIRST
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
    1  gammaInj    -1.23998e+00   2.16951e-02   1.12027e-04  -1.02731e-01
    2  lgRmax       1.85915e+01   1.12845e-02   2.85659e-05  -8.88441e-01
    3  lgResc       2.57284e+00   1.93783e-02   5.66502e-06   4.39016e+00
@@ -183,10 +183,10 @@ v9043 (interpolation of spectrum)
 ---------------------------------
 
  FCN=386.293 FROM MIGRAD    STATUS=CONVERGED     160 CALLS         161 TOTAL
-                     EDM=4.71992e-06    STRATEGY= 1      ERROR MATRIX ACCURATE 
-  EXT PARAMETER                                   STEP         FIRST   
-  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE 
-   1  gammaInj    -1.00000e+00     fixed    
+                     EDM=4.71992e-06    STRATEGY= 1      ERROR MATRIX ACCURATE
+  EXT PARAMETER                                   STEP         FIRST
+  NO.   NAME      VALUE            ERROR          SIZE      DERIVATIVE
+   1  gammaInj    -1.00000e+00     fixed
    2  lgRmax       1.85223e+01   6.98987e-03   2.72136e-05  -7.63290e-01
    3  lgResc       2.64063e+00   3.79146e-02   5.93484e-06   2.07950e+00
    4  deltaEsc    -7.64082e-01   4.22984e-02   1.84491e-04   6.22214e-02
@@ -194,6 +194,3 @@ v9043 (interpolation of spectrum)
    6  gammaGal    -4.17721e+00   3.56562e-02   8.08928e-05   5.90201e-02
  edot: 9.3803930456e+44
  Nnu: 4.7 (using  crp5/CRPropaG12_SFR2_0)
-
-
-
