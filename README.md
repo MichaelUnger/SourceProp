@@ -1,7 +1,18 @@
 # SourceProp
 ## Cosmic-Ray Propagation in Source and from Source to Earth
 
+## Usage
 
+```
+usage: bin/runFit <fit config> <doFit (default = 1)> <nThreads (default=1)>
+```
+
+## Installation
+
+Set ROOT environment, then type
+```
+make
+```
 
 ## License
 
