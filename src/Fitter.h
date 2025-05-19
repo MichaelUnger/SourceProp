@@ -6,6 +6,9 @@
 #include "PropMatrices.h"
 
 #include <TMinuit.h>
+#include "Math/Interpolator.h"
+
+#include <gsl/gsl_sum.h>
 
 namespace prop {
 
@@ -24,14 +27,19 @@ namespace prop {
   private:
     void Init();
     void ReadData();
+    FitOptions::ENuEffectiveAreaType ReadNuEffectiveAreaData(const std::string effAreaName, const double livetime);
     unsigned int GetNParameters() const;
     static void FitFunc(int& , double* const,
                         double& , double* const,
                         const int);
+ 
     PropMatrices fPropMatrices;
     FitOptions fOptions;
+    static bool fNoEgComponent;
+    static bool fUseLgLikelihood;
     static bool fGCRKnees;
     static bool fCSFSpectrum;
+    static bool fWMEBurst;
     static bool fGCRComponentA;
     static bool fGCRGSFIron;
     static bool fBoostedModel;

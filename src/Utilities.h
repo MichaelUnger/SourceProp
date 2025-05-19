@@ -1,6 +1,7 @@
 #ifndef _Utilities_h_
 #define _Utilities_h_
 
+#include <iostream>
 #include <sstream>
 #include <map>
 #include <utility>
@@ -26,8 +27,17 @@ namespace prop {
   inline
   void
   fractionToZeta(const unsigned int nZeta,
-                 const double* fractions, double* zeta)
+                 double* fractions, double* zeta)
   {
+    double sum = 0.;
+    for (unsigned int i = 0; i < nZeta+1; ++i) 
+      sum += fractions[i];
+    if(sum != 1.0) {
+      std::cerr << " Warning: Fractions do not sum to 1! Normalizing by their sum..." << std::endl;
+      for(unsigned int i = 0; i < nZeta+1; ++i)
+        fractions[i] /= sum; 
+    }
+
     for (unsigned int i = 0; i < nZeta; ++i) {
       zeta[i] = fractions[i];
       for (unsigned int j = 0;  j < i; ++j)

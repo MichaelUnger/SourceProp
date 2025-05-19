@@ -9,11 +9,14 @@
 #include "Particles.h"
 #include "DoubleMass.h"
 #include "Neutrinos.h"
+#include "XmaxCalculator.h"
 
+#include <TMath.h>
 #include <TMinuit.h>
 #include <TFile.h>
 #include <TGraphErrors.h>
 #include <TGraphAsymmErrors.h>
+#include <TGraph2D.h>
 #include <gsl/gsl_sf_gamma.h>
 #include <gsl/gsl_math.h>
 #include <iostream>
@@ -21,6 +24,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <limits>
 
 #include <utl/Units.h>
 #include <utl/PhysicalConstants.h>
@@ -31,14 +35,18 @@ using namespace utl;
 namespace prop {
 
   FitData Fitter::fFitData;
+  bool Fitter::fNoEgComponent = false;
+  bool Fitter::fUseLgLikelihood = false;
   bool Fitter::fGCRKnees = false;
   bool Fitter::fCSFSpectrum = false;
+  bool Fitter::fWMEBurst = false;
   bool Fitter::fGCRComponentA = false;
   bool Fitter::fBoostedModel = false;
   bool Fitter::fisFixedPPElasticity = false;
   bool Fitter::fGCRGSFIron = false;
   double Fitter::fLgBaselineFraction = -100;
   FitOptions::EMassFractionType Fitter::fMassFractionType = FitOptions::eFixedEnergy;
+  ROOT::Math::Interpolator* fWMESeriesInt = nullptr;
 
   double
   GetGSFIronFlux(const double lgE)
@@ -52,8 +60,59 @@ namespace prop {
 
     return phi;
   }
+
+  void
+  InitializeWMESeries() {
+
+    cout << "Initializing WME Burst series..." << endl;
+
+    const int N = 100; // number of terms calculate directly 
+    gsl_sum_levin_u_workspace * w = gsl_sum_levin_u_alloc(N);
+
+    const double lgxMin = -10;
+    const double lgxMax = 10;
+    const double dlgx = 0.1;
+    const int n = int((lgxMax-lgxMin)/dlgx + 1);
+
+    vector<double> series;
+    vector<double> lgx;
+    for(int i = 0; i < n; ++i) {
+
+      lgx.push_back(lgxMin+i*dlgx);
+      const double x = pow(10, lgx[i]);
+      double sum_accel, err;
+    
+      vector<double> terms(N);
+      for(int j = 1; j < N+1; ++j)
+        terms[j-1] = pow(-1, j+1)*j*j*exp(-2*pow(j*M_PI*x, 2));
+
+      gsl_sum_levin_u_accel(&terms[0], N, w, &sum_accel, &err);
+
+      if(std::isnan(sum_accel) || sum_accel < 0)
+        series.push_back(0);
+      else
+        series.push_back(sum_accel);
+    }
+    gsl_sum_levin_u_free(w);
+
+    fWMESeriesInt = new ROOT::Math::Interpolator(lgx, series, ROOT::Math::Interpolation::kLINEAR);
   
-  void ConvertToFixedEnergyFraction(map<unsigned int, double>& frac, const double gamma,
+    return;
+  }
+
+  double
+  WMEBurstSeries(const double E, const double E0) 
+  {
+    const double lgx = log10(E/E0);  
+    const double sum = fWMESeriesInt->Eval(lgx);
+    if(sum < 0) // just in case -- but this shouldn't happen with a linear interpolator
+      return 0;
+
+    return sum;
+  }
+  
+  void
+  ConvertToFixedEnergyFraction(map<unsigned int, double>& frac, const double gamma,
                                     const FitOptions::EMassFractionType type)
   {
     // convert from fractions a fixed energy to fixed energy 
@@ -107,6 +166,17 @@ namespace prop {
         mywSum += (m*y*w);
         mmwSum += (m*m*w);
       }
+      for (const auto& flux : data.fNuEffectiveAreaFlux) {
+        const double y = flux.fFlux;
+        if(y == 0)
+          continue;
+        const double m = n.GetTotalOscillatedFlux(flux.fLgE); 
+        const double w = pow(1/flux.fFluxErr, 2);
+        mywSum += (m*y*w);
+        mmwSum += (m*m*w);
+      }
+      if(mywSum == 0)
+        throw runtime_error("No nu flux data to normalize to!");
     }
     else {
       for (const auto& flux : data.fFluxData) {
@@ -211,15 +281,15 @@ namespace prop {
 
     if (!fBoostedModel) {
       // extragalactic part
-      const unsigned int nMass = data.GetNMass();
+      const int nMass = data.GetNMass();
       {
         map<unsigned int, double> fractions;
         double frac[nMass];
         double zeta[nMass-1];
-        for (unsigned int i = 0; i < nMass - 1; ++i)
+        for (int i = 0; i < nMass - 1; ++i)
           zeta[i] = pow(10, *(par + eNpars + i));
         zetaToFraction(nMass, zeta, frac);
-        for (unsigned int i = 0; i < nMass; ++i) {
+        for (int i = 0; i < nMass; ++i) {
           const double m = *(par + eNpars + nMass - 1 + i);
           const DoubleMass dm(m);
           if (dm.GetFrac1() > 0)
@@ -231,7 +301,7 @@ namespace prop {
         ConvertToFixedEnergyFraction(fractions, par[eGamma], fMassFractionType);
 
         if (!(data.fIteration%10)) {
-          for (unsigned int i = 0; i < nMass; ++i)
+          for (int i = 0; i < nMass; ++i)
             cout << "m" << i << " " << setw(11) << scientific << setprecision(5)
                  << *(par + eNpars + nMass - 1 + i) << ", f=" << frac[i]
                  << endl;
@@ -242,6 +312,7 @@ namespace prop {
         if(abs(par[eGamma]) > 10.) throw runtime_error("Injected index too large! Please set upper-bound in steering file.");
         spectrum.SetParameters(source,
                                par[eGamma],
+                               pow(10, par[eLgEmin]),
                                pow(10, par[eLgEmax]),
                                data.fNLgE, nSubBins,
                                data.fLgEmin, data.fLgEmax,
@@ -418,7 +489,7 @@ namespace prop {
       }
 
       // add part for neutrino spectrum here --- probably want this in an if statement eventually
-      data.fNeutrinos->CalculateNeutrinos(data.fPropagator, data.fSpectrum, true);
+      data.fNeutrinos->CalculateNeutrinos(data.fPropagator, &data.fSpectrum, true);
 
       // galactic
       const double fGal = par[eFGal];
@@ -430,26 +501,26 @@ namespace prop {
       if (fGal > 0) {
 
         map<unsigned int, double> galFractions;
-        const unsigned int nGalMass = data.GetNGalMass();
+        const int nGalMass = data.GetNGalMass();
         double fracGal[nGalMass];
         double zetaGal[nGalMass-1];
-        const unsigned int offset = eNpars + nMass - 1 + nMass;
-        for (unsigned int i = 0; i < nGalMass - 1; ++i)
+        const int offset = eNpars + nMass - 1 + nMass;
+        for (int i = 0; i < nGalMass - 1; ++i)
           zetaGal[i] = pow(10, *(par + offset + i));
         zetaToFraction(nGalMass, zetaGal, fracGal);
-        for (unsigned int i = 0; i < nGalMass; ++i) {
+        for (int i = 0; i < nGalMass; ++i) {
           const double m = *(par + offset + nGalMass - 1 + i);
           const DoubleMass dm(m);
           if (dm.GetFrac1() > 0)
             galFractions[dm.GetMass1()] += dm.GetFrac1()*fracGal[i];
           if (dm.GetFrac2() > 0)
             galFractions[dm.GetMass2()] += dm.GetFrac2()*fracGal[i];
-        }
+       }
         // convert to fractions at fixed energy
         ConvertToFixedEnergyFraction(galFractions, par[eGammaGal], fMassFractionType);
 
         if (!(data.fIteration%10)) {
-          for (unsigned int i = 0; i < nGalMass; ++i)
+          for (int i = 0; i < nGalMass; ++i)
             cout << "mGal" << i << " " << setw(11) << scientific
                  << setprecision(5)
                  << *(par + offset + nGalMass - 1 + i)
@@ -460,6 +531,7 @@ namespace prop {
         const double E0 = pow(10, lgE0);
         const double extraGalactic =
           data.fPropagator->GetFluxSumInterpolated(lgE0);
+        double extraGalacticSum = 0; // to be used if a WME burst spectrum is used for the Galactic component
 
         // ------ single power law
         if (!fGCRKnees) {
@@ -469,17 +541,100 @@ namespace prop {
           for (const auto iter : galFractions) {
             const double Z = aToZ(iter.first);
             const double emaxGal = pow(10, par[eLgEmaxGal])*Z/26.;
-              const double phiGal = (fCSFSpectrum)? iter.second * exp(-pow(E0/emaxGal, 0.48)) :
-                                                    iter.second * exp(-E0/emaxGal);
+            double phiGal;
+            if(fCSFSpectrum)
+              phiGal = iter.second * exp(-pow(E0/emaxGal, 0.48));
+            else if(fWMEBurst) {
+              phiGal = 0;
+              const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+              double lgE = data.fLgEmin + dlgE/2;
+              for(unsigned int i = 0; i < data.fNLgE; ++i) {
+                const double E = pow(10, lgE);
+                phiGal += iter.second * pow(E/E0, gammaGal+2) * WMEBurstSeries(E, emaxGal);
+                lgE += dlgE;
+              }
+            }
+            else
+              phiGal = iter.second * exp(-E0/emaxGal);
             galSum += phiGal;
           }
+
+          // galactic CR component A
+          double phi0GalA = 0;
+          map<unsigned int, double> galAFractions;
+          if(fGCRComponentA) {
+            const int nGalAMass = data.GetNGalAMass();
+            double fracGalA[nGalAMass];
+            double zetaGalA[nGalAMass-1];
+            const int offset = eNpars + nMass - 1 + nMass + nGalMass - 1 + nGalMass;
+            for (int i = 0; i < nGalAMass - 1; ++i)
+              zetaGalA[i] = pow(10, *(par + offset + i));
+            zetaToFraction(nGalAMass, zetaGalA, fracGalA);
+            for (int i = 0; i < nGalAMass; ++i) {
+              const double m = *(par + offset + nGalAMass - 1 + i);
+              const DoubleMass dm(m);
+              if (dm.GetFrac1() > 0)
+                galAFractions[dm.GetMass1()] += dm.GetFrac1()*fracGalA[i];
+              if (dm.GetFrac2() > 0)
+                galAFractions[dm.GetMass2()] += dm.GetFrac2()*fracGalA[i];
+            }
+            // convert to fractions at fixed energy
+            ConvertToFixedEnergyFraction(galAFractions, par[eGammaGalA], fMassFractionType);
+
+            if (!(data.fIteration%10)) {
+              for (int i = 0; i < nGalAMass; ++i)
+                cout << "mGalA" << i << " " << setw(11) << scientific
+                     << setprecision(5)
+                     << *(par + offset + nGalAMass - 1 + i)
+                     << ", f=" << fracGalA[i] << endl;
+            }
+            //if(pow(10, par[eLgEmaxGalA]) < E0) throw runtime_error("GCR Component A cut-off too low! Set lower bound of 17.55 on lgEmaxGalA in steering file.");
+            const double gammaGalA = par[eGammaGalA];
+            const double galBSum = galSum;
+            const double lgGalBSum = log10(galBSum);
+            double galASum = 0;
+            for (const auto iter : galAFractions) {
+              const double Z = aToZ(iter.first);
+              const double emaxGalA = pow(10, par[eLgEmaxGalA])*Z/26.;
+              double phiGalA;
+              if(fWMEBurst) {
+                phiGalA = 0;
+                const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+                double lgE = data.fLgEmin + dlgE/2;
+                for(unsigned int i = 0; i < data.fNLgE; ++i) {
+                  const double E = pow(10, lgE);
+                  phiGalA += iter.second * pow(E/E0, gammaGalA+2) * exp(-E0/emaxGalA);
+                  lgE += dlgE;
+                }
+              }
+              else
+                phiGalA = iter.second * exp(-E0/emaxGalA);
+              galASum += phiGalA;
+            }
+            const double lgGalASum = log10(galASum);
+            double lgPhi0GalA;
+            lgPhi0GalA = lgfGalA + lgGalBSum - log10(1 - fGalA) - lgGalASum;
+            phi0GalA = pow(10, lgPhi0GalA);
+            galSum += phi0GalA * galASum;
+
+          }
+
           // log space seems to avoid some NaNs
           const double lgGalSum = log10(galSum);
-          const double lgPhi0Gal = log10(fGal) + log10(1-fGalA) + log10(extraGalactic) - lgGalSum - log10(1- fGal);
+          double lgPhi0Gal;
+          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+          double lgE = data.fLgEmin + dlgE/2;
+          for(unsigned int i = 0; i < data.fNLgE; ++i) {
+            const double E = pow(10, lgE); 
+            extraGalacticSum += pow(E, 2) * data.fPropagator->GetFluxSumInterpolated(lgE);
+            lgE += dlgE;
+          }
+          if(fWMEBurst) 
+            lgPhi0Gal = log10(fGal) + log10(extraGalacticSum) - lgGalSum - log10(1-fGal);
+          else
+            lgPhi0Gal = log10(fGal) + log10(extraGalactic) - lgGalSum - log10(1-fGal);
           const double phi0Gal = pow(10, lgPhi0Gal);
 
-
-          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
           for (const auto iter : galFractions) {
             double lgE = data.fLgEmin + dlgE/2;
             const double Z = aToZ(iter.first);
@@ -487,14 +642,38 @@ namespace prop {
             TMatrixD galactic(data.fNLgE, 1);
             for (unsigned int i = 0; i < data.fNLgE; ++i) {
               const double E = pow(10, lgE);
-              galactic[i][0] = (fCSFSpectrum)?
-                iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)) : // spectrum of a colliding shock flow fitting data from arXiv:1706.01135
-                iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+              if(fCSFSpectrum)
+                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)); // spectrum of a colliding shock flow fitting data from arXiv:1706.01135
+              else if(fWMEBurst)
+                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * WMEBurstSeries(E, emaxGal); 
+              else
+                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
               lgE += dlgE;
             }
             data.fPropagator->AddComponent(iter.first + kGalacticOffset,
                                            galactic);
           }
+          
+          // finally add in galactic component A with proper scaling
+          if(fGCRComponentA) {
+            const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
+            for (const auto iter : galAFractions) {
+              double lgE = data.fLgEmin + dlgE/2;
+              const double Z = aToZ(iter.first);
+              const double emaxGalA = pow(10, par[eLgEmaxGalA])*Z/26.;
+              const double gammaGalA = par[eGammaGalA];
+              TMatrixD galacticA(data.fNLgE, 1);
+              for (unsigned int i = 0; i < data.fNLgE; ++i) {
+                const double E = pow(10, lgE);
+                galacticA[i][0] =
+                  iter.second * phi0Gal * phi0GalA * pow(E/E0, gammaGalA) * exp(-E/emaxGalA);
+                lgE += dlgE;
+              }
+              data.fPropagator->AddComponent(iter.first + kGalacticAOffset,
+                                             galacticA);
+            }
+          }
+
         }
         else {
           // ------ sum of KASCADE-Grande knees
@@ -568,78 +747,27 @@ namespace prop {
                                            galactic);
           }
         }
-
-        // galactic CR component A
-        if(fGCRComponentA) {
-          map<unsigned int, double> galAFractions;
-          const unsigned int nGalAMass = data.GetNGalAMass();
-          double fracGalA[nGalAMass];
-          double zetaGalA[nGalAMass-1];
-          const unsigned int offset = eNpars + nMass - 1 + nMass + nGalMass - 1 + nGalMass;
-          for (unsigned int i = 0; i < nGalAMass - 1; ++i)
-            zetaGalA[i] = pow(10, *(par + offset + i));
-          zetaToFraction(nGalAMass, zetaGalA, fracGalA);
-          for (unsigned int i = 0; i < nGalAMass; ++i) {
-            const double m = *(par + offset + nGalAMass - 1 + i);
-            const DoubleMass dm(m);
-            if (dm.GetFrac1() > 0)
-              galAFractions[dm.GetMass1()] += dm.GetFrac1()*fracGalA[i];
-            if (dm.GetFrac2() > 0)
-              galAFractions[dm.GetMass2()] += dm.GetFrac2()*fracGalA[i];
-          }
-          // convert to fractions at fixed energy
-          ConvertToFixedEnergyFraction(galAFractions, par[eGammaGalA], fMassFractionType);
-
-          if (!(data.fIteration%10)) {
-            for (unsigned int i = 0; i < nGalAMass; ++i)
-              cout << "mGalA" << i << " " << setw(11) << scientific
-                   << setprecision(5)
-                   << *(par + offset + nGalAMass - 1 + i)
-                   << ", f=" << fracGalA[i] << endl;
-          }
-          //if(pow(10, par[eLgEmaxGalA]) < E0) throw runtime_error("GCR Component A cut-off too low! Set lower bound of 17.55 on lgEmaxGalA in steering file.");
-          const double gammaGalA = par[eGammaGalA];
-          double galASum = 0;
-          for (const auto iter : galAFractions) {
-            const double Z = aToZ(iter.first);
-            const double emaxGalA = pow(10, par[eLgEmaxGalA])*Z/26.;
-            const double phiGalA = iter.second * exp(-E0/emaxGalA);
-            galASum += phiGalA;
-          }
-          const double lgGalASum = log10(galASum);
-          const double lgPhi0GalA = log10(fGal) + lgfGalA + log10(extraGalactic) - lgGalASum - log10(1 - fGal);
-          const double phi0GalA = pow(10, lgPhi0GalA);
-
-          const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
-          for (const auto iter : galAFractions) {
-            double lgE = data.fLgEmin + dlgE/2;
-            const double Z = aToZ(iter.first);
-            const double emaxGalA = pow(10, par[eLgEmaxGalA])*Z/26.;
-            TMatrixD galacticA(data.fNLgE, 1);
-            for (unsigned int i = 0; i < data.fNLgE; ++i) {
-              const double E = pow(10, lgE);
-              galacticA[i][0] =
-                iter.second * phi0GalA * pow(E/E0, gammaGalA) * exp(-E/emaxGalA);
-              lgE += dlgE;
-            }
-            data.fPropagator->AddComponent(iter.first + kGalacticAOffset,
-                                           galacticA);
-          }
-
-        }
+      
       }
 
       const pair<double, double> norm = calcNorm(data, fGCRGSFIron);
       data.fQ0 = normInternalUnits / kSpeedOfLight / tMax * kFourPi;
       data.fQ0Err = norm.second / norm.first * data.fQ0;
-      data.fSpectrum.Rescale(norm.first);
-      data.fPropagator->Rescale(norm.first);
-      data.fNeutrinos->Rescale(norm.first);
-      { // if there's a baseline model, give it the correct normalization too
-        const double lgf = fLgBaselineFraction;
-        if(lgf > -100) { 
-          data.fBaseline.Rescale(norm.first*baselineNorm);
-          data.fBaselinePropagator->Rescale(norm.first*baselineNorm);
+      if(fNoEgComponent) {
+        data.fSpectrum.Rescale(0);
+        data.fPropagator->Rescale(0);
+        data.fNeutrinos->Rescale(0);
+      }
+      else {
+        data.fSpectrum.Rescale(norm.first);
+        data.fPropagator->Rescale(norm.first);
+        data.fNeutrinos->Rescale(norm.first);
+        { // if there's a baseline model, give it the correct normalization too
+          const double lgf = fLgBaselineFraction;
+          if(lgf > -100) { 
+            data.fBaseline.Rescale(norm.first*baselineNorm);
+            data.fBaselinePropagator->Rescale(norm.first*baselineNorm);
+          }
         }
       }
 
@@ -679,14 +807,14 @@ namespace prop {
         ConvertToFixedEnergyFraction(fractionsA, par[eGammaA], fMassFractionType);
         // component B
         map<unsigned int, double> fractionsB;
-        const unsigned int nMassB = data.GetNGalMass();
+        const int nMassB = data.GetNGalMass();
         double fracB[nMassB];
         double zetaB[nMassB-1];
         const unsigned int offset = eNpars + nMassA - 1 + nMassA;
-        for (unsigned int i = 0; i < nMassB - 1; ++i)
+        for (int i = 0; i < nMassB - 1; ++i)
           zetaB[i] = pow(10, *(par + offset + i));
         zetaToFraction(nMassB, zetaB, fracB);
-        for (unsigned int i = 0; i < nMassB; ++i) {
+        for (int i = 0; i < nMassB; ++i) {
           const double m = *(par + offset + nMassB - 1 + i);
           const DoubleMass dm(m);
           if (dm.GetFrac1() > 0)
@@ -754,7 +882,7 @@ namespace prop {
 
         Spectrum& spectrum = data.fSpectrum;
         map<unsigned int, double> fractions;
-        spectrum.SetParameters(source, 0, 0, data.fNLgE, nSubBins, data.fLgEmin,
+        spectrum.SetParameters(source, 0, 0, 0, data.fNLgE, nSubBins, data.fLgEmin,
                                data.fLgEmax, fractions, par[eRAlpha], par[eRBeta]);
         const unsigned int nBins = spectrum.GetNBinsInternal();
         const double dlgE = (data.fLgEmax - data.fLgEmin) / nBins;
@@ -894,104 +1022,263 @@ namespace prop {
         data.fBaselineProtonFraction30 = baselineNucleonSum / allSum;
       }
     }
-    
+
+    // add in low energy neutrino component
+    if(par[eLgEmaxLoNu] < 12.0)
+      throw runtime_error("Low energy nu component index too small! Please set lower-bound >= 12 in steering file.");
+    data.fNeutrinos->SetLowEnergyFlux(par[eGammaLoNu], par[eLgEmaxLoNu], par[eLgPhiLoNu]);
+
 
     const bool debug = false;
 
     data.SetNdfTot();
-    data.fChi2Spec = 0;
-    data.fChi2SpecLowE = 0;
-    double lastLgE = 0;
-    for (const auto& flux : data.fFluxData) {
-      const double y = flux.fFlux;
-      const double sigma = flux.fFluxErr;
-      const double m = data.fPropagator->GetFluxSumInterpolated(flux.fLgE);
-      const double r = (y -  m) / sigma;
-      const double r2 = r*r;
-      data.fChi2Spec += r2;
-      if (debug) {
-        const double w = pow(pow(10, flux.fLgE), 3);
-        cout << "---> " << flux.fLgE << " " << w*y << " " << w*m << " "
-             << w*data.fPropagator->GetFluxSum(flux.fLgE) << " "
-             << y << " " << m << " " << data.fPropagator->GetFluxSum(flux.fLgE)
-             << " "
-             << (m-y)/m << " " << r2 << " " << data.fChi2Spec << endl;
-      }
-      if (flux.fLgE < 17.5)
-        data.fChi2SpecLowE += r2;
-      if (lastLgE == 0 || flux.fLgE > lastLgE)
-        lastLgE = flux.fLgE;
-      if (lastLgE == 0 || flux.fLgE > lastLgE)
-        lastLgE = flux.fLgE;
-    }
-
-    // chi2 from Poisson log-like for zero observations
-    // (see Baker&Cousins, NIM 221 (1984), 437)
-    const double dLgE = 0.1;
-    double lgE = lastLgE + dLgE;
-    double chi2Zero = 0;
-    while (lgE < data.fLgEmax) {
-      const double dE = pow(10, lgE) * kLn10 * dLgE;
-      const double nExpected =
-        data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
-      chi2Zero += 2*nExpected;
-      if (debug)
-        cout << " chi0 ==> " << lgE << " " << nExpected << " "
-             << data.fUHEExposure << " " << chi2Zero << endl;
-
-      lgE += dLgE;
-    }
-    data.fChi2Spec += chi2Zero;
-
-    data.fChi2LnA = 0;
-    data.fChi2VlnA = 0;
-    for (const auto& compo : data.fCompoData) {
-      const pair<double, double> m =
-        data.fPropagator->GetLnAMoments(compo.fLgE);
-      if (compo.fLnAErr > 0)
-        data.fChi2LnA += pow((compo.fLnA - m.first) / compo.fLnAErr, 2);
-      if (compo.fVlnAErr > 0)
-        data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
-    }
     
-    data.fChi2Nu = 0;
-    for (const auto& nuFlux : data.fNuFluxData) {
-      const double y = nuFlux.fFlux;
-      if(y > 0) {
-        const double sigma = nuFlux.fFluxErr;
-        const double m = data.fNeutrinos->GetTotalOscillatedFlux(nuFlux.fLgE);
+    // chi2 case
+    if(!fUseLgLikelihood) {
+      data.fChi2Spec = 0;
+      data.fChi2SpecLowE = 0;
+      double lastLgE = 0;
+      for (const auto& flux : data.fFluxData) {
+        const double y = flux.fFlux;
+        const double sigma = flux.fFluxErr;
+        const double m = data.fPropagator->GetFluxSumInterpolated(flux.fLgE);
         const double r = (y -  m) / sigma;
         const double r2 = r*r;
-        data.fChi2Nu += r2;
+        data.fChi2Spec += r2;
+        if (debug) {
+          const double w = pow(pow(10, flux.fLgE), 3);
+          cout << "---> " << flux.fLgE << " " << w*y << " " << w*m << " "
+               << w*data.fPropagator->GetFluxSum(flux.fLgE) << " "
+               << y << " " << m << " " << data.fPropagator->GetFluxSum(flux.fLgE)
+               << " "
+               << (m-y)/m << " " << r2 << " " << data.fChi2Spec << endl;
+        }
+        if (flux.fLgE < 17.5)
+          data.fChi2SpecLowE += r2;
+        if (lastLgE == 0 || flux.fLgE > lastLgE)
+          lastLgE = flux.fLgE;
+        if (lastLgE == 0 || flux.fLgE > lastLgE)
+          lastLgE = flux.fLgE;
       }
-      else { // for upper limits follow same procedure as for CRs above
-        const double nExpected = data.fNeutrinos->GetEventRate(nuFlux.fLgE, nuFlux.fdLgE) * data.fNuLivetime;
-        data.fChi2Nu += 2*nExpected;
-        if(nExpected > 0.1) // if too many neutrinos are predicted we should include this data point in the dof's
-          data.IncrementNdfTot(); 
+
+      // chi2 from Poisson log-like for zero observations
+      // (see Baker&Cousins, NIM 221 (1984), 437)
+      const double dLgE = 0.1;
+      double lgE = lastLgE + dLgE;
+      double chi2Zero = 0;
+      while (lgE < data.fLgEmax) {
+        const double dE = pow(10, lgE) * kLn10 * dLgE;
+        const double nExpected =
+          data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
+        chi2Zero += 2*nExpected;
+        if (debug)
+          cout << " chi0 ==> " << lgE << " " << nExpected << " "
+               << data.fUHEExposure << " " << chi2Zero << endl;
+
+        lgE += dLgE;
+      }
+      data.fChi2Spec += chi2Zero;
+
+      data.fChi2LnA = 0;
+      data.fChi2VlnA = 0;
+      for (const auto& compo : data.fCompoData) {
+        const pair<double, double> m =
+          data.fPropagator->GetLnAMoments(compo.fLgE);
+        if (compo.fLnAErr > 0)
+          data.fChi2LnA += pow((compo.fLnA - m.first) / compo.fLnAErr, 2);
+        if (compo.fVlnAErr > 0)
+          data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
       }
       
-    }
+      data.fChi2Nu = 0;
+      for (const auto& nuFlux : data.fNuFluxData) {
+        const double y = nuFlux.fFlux;
+        if(y > 0) {
+          const double sigma = nuFlux.fFluxErr;
+          const double m = data.fNeutrinos->GetTotalObservedFlux(nuFlux.fLgE);
+          const double r = (y -  m) / sigma;
+          const double r2 = r*r;
+          data.fChi2Nu += r2;
+        }
+        else { // for upper limits follow same procedure as for CRs above
+          const double nExpected = data.fNeutrinos->GetEventRate(nuFlux.fLgE, nuFlux.fdLgE) * data.fNuLivetime;
+          data.fChi2Nu += 2*nExpected;
+          if(nExpected > 0.1) // if too many neutrinos are predicted we should include this data point in the dof's
+            data.IncrementNdfTot(); 
+        }
+        
+      }
 
-    chi2 = data.GetChi2Tot();
+      chi2 = data.GetChi2Tot();
 
-    if (!(data.fIteration%10)) {
-      cout << scientific << setprecision(4)
-           << " iter " << setw(5) << data.fIteration
-           << ", chi2 = " << data.GetChi2Tot()
-           << setprecision(2) << ", spec = ("
-           << data.fChi2SpecLowE << ", "
-           << data.fChi2Spec - data.fChi2SpecLowE << ")"
-           << ", lnA = " << data.fChi2LnA
-           << ", VlnA = " << data.fChi2VlnA 
-           << ", nuFlux = " << data.fChi2Nu << endl;
-      cout << endl;
+      if (!(data.fIteration%10)) {
+        cout << scientific << setprecision(4)
+             << " iter " << setw(5) << data.fIteration
+             << ", chi2 = " << data.GetChi2Tot()
+             << setprecision(2) << ", spec = ("
+             << data.fChi2SpecLowE << ", "
+             << data.fChi2Spec - data.fChi2SpecLowE << ")"
+             << ", lnA = " << data.fChi2LnA
+             << ", VlnA = " << data.fChi2VlnA 
+             << ", nuFlux = " << data.fChi2Nu << endl;
+        cout << endl;
+      }
+      ++data.fIteration;
+      if (!isfinite(chi2))
+        ++data.fNNan;
+      if (data.fNNan > 10)
+        throw runtime_error("stuck NaN --> stop fitting");
     }
-    ++data.fIteration;
-    if (!isfinite(chi2))
-      ++data.fNNan;
-    if (data.fNNan > 10)
-      throw runtime_error("stuck NaN --> stop fitting");
+    // log likelihood case
+    else {
+   
+      // spectrum contribution 
+      data.fLgLSpec = 0;
+      double lastLgE = 0;
+      for (const auto& flux : data.fFluxData) {
+        const double nObs = flux.fN;
+        const double dLgE = 0.1;
+        const double dE = pow(10, flux.fLgE) * kLn10 * dLgE;
+        const double nExpected =
+          data.fPropagator->GetFluxSumInterpolated(flux.fLgE) * data.fUHEExposure * dE;
+        double lgL = nExpected - nObs;
+        if(nObs > 0)
+          lgL += nObs*(log(nObs) - log(nExpected));
+        data.fLgLSpec += lgL;
+        if (lastLgE == 0 || flux.fLgE > lastLgE)
+          lastLgE = flux.fLgE;
+        if (lastLgE == 0 || flux.fLgE > lastLgE)
+          lastLgE = flux.fLgE;
+      }
+      
+      const double dLgE = 0.1;
+      double lgE = lastLgE + dLgE;
+      while (lgE < data.fLgEmax) {
+        const double nObs = 0;
+        const double dE = pow(10, lgE) * kLn10 * dLgE;
+        const double nExpected =
+          data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
+        double lgL = nExpected - nObs;
+        data.fLgLSpec += lgL;
+            
+        data.IncrementNdfTot(); 
+
+        lgE += dLgE;
+      }
+
+      // xmax distribution contribution
+      data.fLgLXmax = 0;
+      map<double, TGraph> xmaxDists;
+      for (const auto& xmax : data.fXmaxDistData) {
+        const double nObs = xmax.totEvts; // total number of events Xmax distribution
+        const double nObsXmax = xmax.binEvts; // number of events in Xmax bin
+        if(xmaxDists.count(xmax.fLgE) == 0) // get predicted distribution if not yet calculated
+          xmaxDists[xmax.fLgE] = 
+            data.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE);
+        const double pXmax = xmaxDists[xmax.fLgE].Eval(xmax.fXmax) * xmax.fdXmax; // model probability for Xmax bin
+        double lgL = (nObsXmax == 0)? 0 : nObsXmax*(log(nObsXmax) - log(pXmax) - log(nObs));
+        data.fLgLXmax += lgL;
+      }
+      
+      // nu spec contribution
+      data.fLgLNuSpec = 0;
+      for (const auto& nuFlux : data.fNuFluxData) {
+        const double y = nuFlux.fFlux; 
+        const double m = data.fNeutrinos->GetTotalObservedFlux(nuFlux.fLgE); //log10(data.fNeutrinos->GetTotalObservedFlux(nuFlux.fLgE));
+        const double theta = nuFlux.fGammaTheta;
+        const double k = nuFlux.fGammaK; 
+        double lgL = (m-y)/theta;
+        if(y > 0)
+          lgL += (k-1)*(log(y) - log(m));
+        data.fLgLNuSpec += lgL;
+ 
+        if(y == 0 && !fFitData.fFitNuOnly && fFitData.fNuChi2Weight > 0) // upper-bounds not counted in ndfs yet 
+          data.IncrementNdfTot(); 
+      }
+
+      // nu event contribution
+      data.fLgLNuEvent = 0;
+      lastLgE = 0;
+      for (const auto& nuAeffSet : data.fNuEffectiveAreaData) { // loop over different Aeff sets
+        for (const auto& nuAeff : nuAeffSet.second) { // loop over Aeff bins
+          const double lgECenter = (nuAeff.fLgELo + nuAeff.fLgEHi)/2.;
+          const double dE = pow(10, nuAeff.fLgEHi) - pow(10, nuAeff.fLgELo);
+          const double dOmega = 2*M_PI*abs(nuAeff.fCosThetaHi - nuAeff.fCosThetaLo);
+          const double livetime = nuAeff.fLivetime;
+          // nu e
+          {
+            const double nObs = nuAeff.fNE;
+            double nExpected = 0;
+            nExpected += data.fNeutrinos->GetObservedFlux(eElectronNeutrino, lgECenter) * nuAeff.fAreaE;
+            nExpected += data.fNeutrinos->GetObservedFlux(eAntiElectronNeutrino, lgECenter) * nuAeff.fAreaE;
+            nExpected *= dOmega * livetime * dE;
+            double lgL = nExpected - nObs;
+            if(nObs > 0)
+              lgL += nObs*(log(nObs) - log(nExpected));
+            data.fLgLNuEvent += lgL;
+          }
+          // nu mu
+          {
+            const double nObs = nuAeff.fNMu;
+            double nExpected = 0;
+            nExpected += data.fNeutrinos->GetObservedFlux(eMuonNeutrino, lgECenter) * nuAeff.fAreaMu;
+            nExpected += data.fNeutrinos->GetObservedFlux(eAntiMuonNeutrino, lgECenter) * nuAeff.fAreaMu;
+            nExpected *= dOmega * livetime * dE;
+            double lgL = nExpected - nObs;
+            if(nObs > 0)
+              lgL += nObs*(log(nObs) - log(nExpected));
+            data.fLgLNuEvent += lgL;
+          }
+          // nu tau
+          {
+            const double nObs = nuAeff.fNTau;
+            double nExpected = 0;
+            nExpected += data.fNeutrinos->GetObservedFlux(eTauNeutrino, lgECenter) * nuAeff.fAreaTau;
+            nExpected += data.fNeutrinos->GetObservedFlux(eAntiTauNeutrino, lgECenter) * nuAeff.fAreaTau;
+            nExpected *= dOmega * livetime * dE;
+            double lgL = nExpected - nObs;
+            if(nObs > 0)
+              lgL += nObs*(log(nObs) - log(nExpected));
+            data.fLgLNuEvent += lgL;
+          }
+          lastLgE = max(lastLgE, lgECenter);
+        }
+      }
+      // upper-bound on high-energy neutrinos
+      lgE = max(lastLgE, 15.9) + dLgE;
+      while (lgE+dLgE/2. < data.fLgEmax) {
+        const double nObs = 0;
+        const double nExpected = data.fNeutrinos->GetEventRate(lgE, dLgE) * data.fNuLivetime;
+        if(nExpected > 0.1)
+          data.IncrementNdfTot(); 
+        double lgL = nExpected - nObs;
+        if(nObs > 0)
+          lgL += nObs*(log(nObs) - log(nExpected));
+        data.fLgLNuEvent += lgL;        
+
+        lgE += dLgE;
+      }
+
+      // save total to chi2 because thats the value which minuit will minimize 
+      chi2 = data.GetNegLogLikelihood();
+
+      if (!(data.fIteration%10)) {
+        cout << scientific << setprecision(4)
+             << " iter " << setw(5) << data.fIteration
+             << ", -lgL = " << chi2
+             << setprecision(2) << ", spec = "
+             << data.fLgLSpec
+             << ", Xmax = " << data.fLgLXmax
+             << ", nuSpec = " << data.fLgLNuSpec 
+             << ", nuEvents  = " << data.fLgLNuEvent << endl;
+        cout << endl;
+      }
+      ++data.fIteration;
+      if (!isfinite(chi2))
+        ++data.fNNan;
+      if (data.fNNan > 10)
+        throw runtime_error("stuck NaN --> stop fitting");
+    }
 
   }
 
@@ -999,8 +1286,11 @@ namespace prop {
   Fitter::Init()
   {
     fFitData.Clear();
+    fNoEgComponent = fOptions.NoEGComponent();
+    fUseLgLikelihood = fOptions.UseLgLikelihood();
     fFitData.fFitParameters.resize(GetNParameters());
     fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
+    fFitData.fSpectrum.SetNuSpectrumType(fOptions.GetNuSpectrumType());
     fLgBaselineFraction = fOptions.GetLgBaselineFraction();
     if(fLgBaselineFraction > -100) {
       fFitData.fBaseline.ReadBaseline(fOptions.GetBaselineFile());
@@ -1015,6 +1305,7 @@ namespace prop {
     fGCRKnees = fOptions.GCRWithKnees();
     fGCRComponentA = fOptions.GCRWithComponentA();
     fCSFSpectrum = fOptions.GCRCSFSpectrum();
+    fWMEBurst = fOptions.GCRWMEBurst();
     fGCRGSFIron = fOptions.GCRWithGSFIron();
     fBoostedModel = fOptions.BoostedModel();
     fisFixedPPElasticity = fOptions.DoFixPPElasticity();
@@ -1047,7 +1338,8 @@ namespace prop {
     if(fLgBaselineFraction > -100) 
       fFitData.fBaselinePropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
 
-    fFitData.fNeutrinos = new Neutrinos(fPropMatrices.GetLgEmin(), fPropMatrices.GetLgEmax(), fPropMatrices.GetN());
+    fFitData.fNeutrinos = new Neutrinos(fPropMatrices.GetLgEmin(), fPropMatrices.GetLgEmax(), fPropMatrices.GetN(),
+                                        fOptions.GetDataDirname());
     fFitData.fNeutrinos->SetIceCubeAcceptance(fOptions.GetDataDirname(), fOptions.GetNuSpectrumDataTypeName());
 
     const vector<string> filenames = fOptions.GetPhotIntFilenames();
@@ -1074,9 +1366,17 @@ namespace prop {
     else
       cout << " using rigidity-dependent diffusion constant \n";
 
+    // if using a WME Burst spectrum, initialize series interpolator
+    if(fWMEBurst)
+      InitializeWMESeries();
 
     fFitData.fFitCompo = fOptions.DoCompositionFit();
+    fFitData.fUseLgLikelihood = fUseLgLikelihood;
 
+    if(fUseLgLikelihood)
+      fFitData.fXmaxCalculator = new XmaxCalculator(fOptions.GetInteractionModel(), fOptions.GetDataDirname(), fFitData.fXmaxMin,
+                                                    fFitData.fXmaxMax, fFitData.fdXmax, fFitData.fAllXmaxDistData); 
+  
     fMinuit.SetPrintLevel(-1);
     fMinuit.SetFCN(Fitter::FitFunc);
 
@@ -1145,7 +1445,7 @@ namespace prop {
       const unsigned int nMass = masses.size();
       if (iMassClass == 0)
         fFitData.fNMass = nMass;
-      else if(iMassClass == 1)
+     else if(iMassClass == 1)
         fFitData.fNGalMass = nMass;
       else
         fFitData.fNGalAMass = nMass;
@@ -1233,7 +1533,7 @@ namespace prop {
     if (ierflag) {
       cerr << " MINIMIZE failed " << ierflag << endl;
       fFitData.fFitFailed = true;
-      return false;
+      //return false; // experimental -- save anyway at current minimum even if minuit says it failed to converge
     }
     else
       fFitData.fFitFailed = false;
@@ -1369,7 +1669,8 @@ namespace prop {
           flux.fFluxErr = (eyUp+eyDown)/2 * conv;
           flux.fFluxErrUp = eyUp * conv;
           flux.fFluxErrLow = eyDown * conv;
-          flux.fN = 0;
+          const double dE = pow(10., flux.fLgE+0.05) - pow(10., flux.fLgE-0.05);
+          flux.fN = int(flux.fFlux * fFitData.fUHEExposure * dE); // assume you can count, don't include energy systematic here
 
           // syst shift?
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
@@ -1411,7 +1712,8 @@ namespace prop {
           flux.fFluxErr = (eyUp+eyDown)/2 * conv;
           flux.fFluxErrUp = eyUp * conv;
           flux.fFluxErrLow = eyDown * conv;
-          flux.fN = 0;
+          const double dE = pow(10., flux.fLgE+0.05) - pow(10., flux.fLgE-0.05);
+          flux.fN = int(flux.fFlux * fFitData.fUHEExposure * dE); // assume you can count, don't include energy systematic here
 
           // syst shift?
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
@@ -1421,7 +1723,7 @@ namespace prop {
           flux.fFluxErrUp *= jacobian;
           flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
-
+          
           fFitData.fAllFluxData.push_back(flux);
           if (flux.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(flux);
@@ -1455,7 +1757,8 @@ namespace prop {
           flux.fFluxErr = (eyTotUp+eyTotDown)/2 * conv;
           flux.fFluxErrUp = eyTotUp * conv;
           flux.fFluxErrLow = eyTotDown * conv;
-          flux.fN = 0;
+          const double dE = pow(10., flux.fLgE+0.05) - pow(10., flux.fLgE-0.05);
+          flux.fN = int(flux.fFlux * fFitData.fUHEExposure * dE); // assume you can count, don't include energy systematic here
 
           // syst shift?
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
@@ -1500,7 +1803,8 @@ namespace prop {
           flux.fFluxErr = (eyUp+eyDown)/2;
           flux.fFluxErrUp = eyUp;
           flux.fFluxErrLow = eyDown;
-          flux.fN = 0;
+          const double dE = pow(10., flux.fLgE+0.05) - pow(10., flux.fLgE-0.05);
+          flux.fN = int(flux.fFlux * fFitData.fUHEExposure * dE); // assume you can count, don't include energy systematic here
 
           // syst shift?
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
@@ -1542,7 +1846,8 @@ namespace prop {
           flux.fFluxErr = (eyUp+eyDown)/2;
           flux.fFluxErrUp = eyUp;
           flux.fFluxErrLow = eyDown;
-          flux.fN = 0;
+          const double dE = pow(10., flux.fLgE+0.05) - pow(10., flux.fLgE-0.05);
+          flux.fN = int(flux.fFlux * fFitData.fUHEExposure * dE); // assume you can count, don't include energy systematic here
 
           // syst shift?
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
@@ -1642,7 +1947,8 @@ namespace prop {
           flux.fFluxErr = (eyUp+eyDown)/2;
           flux.fFluxErrUp = eyUp;
           flux.fFluxErrLow = eyDown;
-          flux.fN = 0;
+          const double dE = pow(10., flux.fLgE+0.05) - pow(10., flux.fLgE-0.05);
+          flux.fN = int(flux.fFlux * fFitData.fUHEExposure * dE); // assume you can count, don't include energy systematic here
 
           // syst shift?
           const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(flux.fLgE);
@@ -1652,7 +1958,7 @@ namespace prop {
           flux.fFluxErrUp *= jacobian;
           flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
-
+          
           fFitData.fAllFluxData.push_back(flux);
           if (flux.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(flux);
@@ -1837,6 +2143,45 @@ namespace prop {
         xmaxSysGraph = new TGraphAsymmErrors();
         sigmaXmaxSysGraph = new TGraphAsymmErrors();
     }
+    if(xmaxType & FitOptions::eAugerXmax2014txt)
+      { // Auger ICRC14 Xmax from arXiv:1409.4809 
+        /*
+          #  (1) meanLgE:      <lg(E/eV)>
+          #  (2) nEvts:        number of events
+          #  (3) mean:         <Xmax> [g/cm^2]
+          #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
+          #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
+          #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
+          #  (7) sigma:         <Xmax> [g/cm^2]
+          #  (8) sigmaErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) sigmaSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) sigmaSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+        */
+        unsigned int i = xmaxGraph->GetN();
+        const string filename = "/elongationRate14.txt";
+        ifstream in(fOptions.GetDataDirname() + filename);
+        while (true) {
+          double meanLgE, nEvts, mean, meanErr, meanSysUp, meanSysLow,
+            sigma, sigmaErr, sigmaSystUp, sigmaSystLow;
+          in >> meanLgE >> nEvts >> mean >> meanErr >> meanSysUp
+             >> meanSysLow >> sigma >> sigmaErr >> sigmaSystUp
+             >> sigmaSystLow;
+          if (!in.good())
+            break;
+          const double E = pow(10, meanLgE);
+          xmaxGraph->SetPoint(i, E, mean);
+          xmaxSysGraph->SetPoint(i, E, mean);
+          xmaxGraph->SetPointError(i, E, meanErr);
+          xmaxSysGraph->SetPointEYhigh(i, meanSysUp);
+          xmaxSysGraph->SetPointEYlow(i, meanSysLow);
+          sigmaGraph->SetPoint(i, E, sigma);
+          sigmaXmaxSysGraph->SetPoint(i, E, sigma);
+          sigmaGraph->SetPointError(i, E, sigmaErr);
+          sigmaXmaxSysGraph->SetPointEYhigh(i, sigmaSystUp);
+          sigmaXmaxSysGraph->SetPointEYlow(i, sigmaSystLow);
+          ++i;
+        }
+      }
     if((xmaxType & FitOptions::eAugerXmax2017) || (xmaxType & FitOptions::eAugerXmax2017fudge)
         || (xmaxType & FitOptions::eAugerXmax2017fudgeAndSD))
       {
@@ -2107,10 +2452,10 @@ namespace prop {
           #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
           #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
           #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
-          #  (7) mean:         <Xmax> [g/cm^2]
-          #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
-          #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
-          #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (7) sigma:         <Xmax> [g/cm^2]
+          #  (8) sigmaErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
+          #  (9) sigmaSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
+          #  (10) sigmaSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
         */
         unsigned int i = xmaxGraph->GetN();
         const string filename = "/elongationRateFD23.txt";
@@ -2146,7 +2491,7 @@ namespace prop {
           #  (4) meanErr:      statistical uncertainty of <Xmax> [g/cm^2]
           #  (5) meanSystUp:   upper systematic uncertainty of <Xmax> [g/cm^2]
           #  (6) meanSystLow:  lower systematic uncertainty of <Xmax> [g/cm^2]
-          #  (7) mean:         <Xmax> [g/cm^2]
+          #  (7) mean:         sigma(Xmax) [g/cm^2]
           #  (8) meanErr:      statistical uncertainty of sigma(Xmax) [g/cm^2]
           #  (9) meanSystUp:   upper systematic uncertainty of sigma(Xmax) [g/cm^2]
           #  (10) meanSystLow: lower systematic uncertainty of sigma(Xmax) [g/cm^2]
@@ -2272,6 +2617,7 @@ namespace prop {
         xMax += sigmaSys * xmaxSysGraph->GetEYhigh()[i];
       else if (sigmaSys < 0)
         xMax += sigmaSys * xmaxSysGraph->GetEYlow()[i];
+      xMax += fOptions.GetXmaxAbsoluteShift();
       const double xMaxErr = xmaxGraph->GetEY()[i];
 
       CompoData comp;
@@ -2307,9 +2653,164 @@ namespace prop {
 
     if(fFitData.fAllCompoData.size() == 0) throw runtime_error("No composition data loaded!");
 
+
+    // Xmax distributions
+
+    switch(fOptions.GetXmaxDistributionDataType()) {
+
+      case FitOptions::eXmaxDistributionNone:
+        {
+          break;
+        }
+
+      case FitOptions::eAugerXmaxDistribution2014:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/xmaxDistribution14.txt");
+          /* Xmax distributions from arXiv:1409.4809 (data from Auger site)
+          # [energy bins] [xmax bins]
+          # lgE/eV center of energy bin
+          # dlgE bin width
+          # Ntot total number of observed events in energy bin
+          # Xmax/(g/cm2) center of Xmax bin (all bins 20 g/cm2 wide)
+          # Nbin number of events in energy-Xmax bin
+          */
+          int n = 0;
+          string buff;
+          while(getline(in, buff)) {
+            if(buff[0] == '#') // skip header lines
+              continue;
+            else { // read file info line
+              int nEbins;
+              int nXbins;
+              istringstream ss(buff);
+              ss >> nEbins >> nXbins;
+              n = nEbins*nXbins;
+              break;
+            }
+          }
+
+          // read data from file
+          while(true) {
+
+            XmaxDistData dist;
+            double lgECenter, dlgE, xCenter;
+            double dX = 20; // all bins have 20 g/cm2 width
+            int nTot, nBin;
+            in >> lgECenter >> dlgE >> nTot >> xCenter >> nBin;
+            if (!in.good())
+              break;
+      
+            dist.fLgE = lgECenter;
+            dist.fdLgE = dlgE;
+            dist.fXmax = xCenter;
+            dist.fdXmax = dX;
+            dist.totEvts = nTot;
+            dist.binEvts = nBin;
+
+            const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(dist.fLgE);
+            dist.fLgE += deltaLgESys;
+            if(fOptions.GetXmaxSigmaShift() != 0)
+              cerr << "WARNING: xmaxSigmaShift != 0, but only xmaxAbsoluteShift is implemented "
+                   << "for Xmax distributions!"
+                   << endl;
+            const double deltaXSys = fOptions.GetXmaxAbsoluteShift();
+            dist.fXmax += deltaXSys;
+
+            if (lgECenter > fOptions.GetMinCompLgE() && lgECenter <= fOptions.GetMaxCompLgE())
+              fFitData.fXmaxDistData.push_back(dist);
+            fFitData.fAllXmaxDistData.push_back(dist);
+
+          }
+          break; 
+        }
+
+      case FitOptions::eAugerXmaxDistribution2023:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/xmaxDistributionFD23.txt");
+          /* Xmax distributions from PoS(ICRC2023)319
+          # [energy bins] [xmax bins]
+          # lgE/eV center of energy bin
+          # dlgE bin width
+          # Ntot total number of observed events in energy bin
+          # Xmax/(g/cm2) center of Xmax bin (all bins 20 g/cm2 wide)
+          # Nbin number of events in energy-Xmax bin
+          */
+          int n = 0;
+          string buff;
+          while(getline(in, buff)) {
+            if(buff[0] == '#') // skip header lines
+              continue;
+            else { // read file info line
+              int nEbins;
+              int nXbins;
+              istringstream ss(buff);
+              ss >> nEbins >> nXbins;
+              n = nEbins*nXbins;
+              break;
+            }
+          }
+
+          // read data from file
+          while(true) {
+
+            XmaxDistData dist;
+            double lgECenter, dlgE, xCenter;
+            double dX = 20; // all bins have 20 g/cm2 width
+            int nTot, nBin;
+            in >> lgECenter >> dlgE >> nTot >> xCenter >> nBin;
+            if (!in.good())
+              break;
+      
+            dist.fLgE = lgECenter;
+            dist.fdLgE = dlgE;
+            dist.fXmax = xCenter;
+            dist.fdXmax = dX;
+            dist.totEvts = nTot;
+            dist.binEvts = nBin;
+
+            const double deltaLgESys = 0.1 * fOptions.GetEnergyBinShift(dist.fLgE);
+            dist.fLgE += deltaLgESys;
+            if(fOptions.GetXmaxSigmaShift() != 0)
+              cerr << "WARNING: xmaxSigmaShift != 0, but only xmaxAbsoluteShift is implemented "
+                   << "for Xmax distributions!"
+                   << endl;
+            const double deltaXSys = fOptions.GetXmaxAbsoluteShift();
+            dist.fXmax += deltaXSys;
+
+            if (lgECenter > fOptions.GetMinCompLgE() && lgECenter <= fOptions.GetMaxCompLgE())
+              fFitData.fXmaxDistData.push_back(dist);
+            fFitData.fAllXmaxDistData.push_back(dist);
+
+          }
+          break; 
+        }
+
+      default:
+        {
+          cerr << " unknown Xmax distribution data " << endl;
+        }
+    }
+
+    for(unsigned int i = 0; i < fFitData.fXmaxDistData.size(); ++i) {
+      fFitData.fXmaxMin = (i == 0)? fFitData.fXmaxDistData[i].fXmax : 
+                                  min(fFitData.fXmaxMin, fFitData.fXmaxDistData[i].fXmax);
+      fFitData.fXmaxMax = (i == 0)? fFitData.fXmaxDistData[i].fXmax : 
+                                  max(fFitData.fXmaxMax, fFitData.fXmaxDistData[i].fXmax);
+      if(i == 0)
+        fFitData.fdXmax = fFitData.fXmaxDistData[0].fdXmax;
+    }
+    fFitData.fXmaxMin -= fFitData.fdXmax/2;
+    fFitData.fXmaxMax += fFitData.fdXmax/2;
+    
+    cout << " xmax distribution: nAll = " <<  fFitData.fAllXmaxDistData.size()
+         << ", nFit = " <<  fFitData.fXmaxDistData.size() << endl;
+
+
+    // neutrino data
+    fFitData.fNuLivetime = fFitData.fNuLivetimeEHE; // default to EHE 2024 limit livetime
     switch(fOptions.GetNuSpectrumDataType()) {
 
-      case FitOptions::eNone:
+      case FitOptions::eNuSpectrumNone:
         {
           break;
         }
@@ -2343,12 +2844,19 @@ namespace prop {
             // to all-flavor flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
             const double conv = 3. / pow(E, 2) * 1e-9 * 1e10 * 365*24*3600;
             flux.fFlux = fluxE * conv;
-            flux.fFluxErr = (eyUp+eyDown)/2 * conv;
+            if(flux.fFlux == 0)
+              flux.fFluxErr = eyUp * conv;
+            else
+              flux.fFluxErr = sqrt(eyUp*eyDown) * conv;
             flux.fFluxErrUp = eyUp * conv;
             flux.fFluxErrLow = eyDown * conv;
 
+            // solve for gamma-distribution parameters for this data point
+            flux.fGammaTheta = fFitData.GetGammaDistributionTheta(flux.fFlux, flux.fFluxErrUp, flux.fFluxErrLow);
+            flux.fGammaK = flux.fFlux/flux.fGammaTheta + 1;
+
             fFitData.fAllNuFluxData.push_back(flux);
-            if (flux.fLgE > fOptions.GetMinNuFluxLgE() && flux.fLgE <= fOptions.GetMaxNuFluxLgE()) {
+            if (flux.fLgE > fOptions.GetMinNuSpecLgE() && flux.fLgE <= fOptions.GetMaxNuSpecLgE()) {
               fFitData.fNuFluxData.push_back(flux);
               if (flux.fFlux > 0)
                 fFitData.fNonZeroNuFluxData.push_back(flux);
@@ -2389,11 +2897,51 @@ namespace prop {
             flux.fFluxErrLow = eyDown * conv;
 
             fFitData.fAllNuFluxData.push_back(flux);
-            if (flux.fLgE > fOptions.GetMinNuFluxLgE() && flux.fLgE <= fOptions.GetMaxNuFluxLgE()) {
+            if (flux.fLgE > fOptions.GetMinNuSpecLgE() && flux.fLgE <= fOptions.GetMaxNuSpecLgE()) {
               fFitData.fNuFluxData.push_back(flux);
               if (flux.fFlux > 0)
                 fFitData.fNonZeroNuFluxData.push_back(flux);
             }
+          }
+          break;
+        }
+      case FitOptions::eIceCubeSPL:
+        {
+          /*
+          # Livetime in [years]
+          # J in  [GeV^-1 cm^-2 s^-1 sr^-1] units
+          */
+          fFitData.fNuLivetime = 10;
+          const double Enorm = 100e12;
+          const double norm = fOptions.GetIceCubeSplNorm(); // all-flavor norm at 100 TeV [GeV^-1 cm^-2 s^-1 sr^-1]
+          const double gamma = fOptions.GetIceCubeSplGamma();
+          const double lgEmin = fOptions.GetMinNuSpecLgE();
+          const double lgEmax = fOptions.GetMaxNuSpecLgE();
+          const double dlgE = 0.1;
+          double lgE = lgEmin + dlgE/2.;
+          while (lgE <= lgEmax) {
+            NuFluxData flux;
+            // to eV
+            flux.fLgE = lgE; 
+            flux.fdLgE = dlgE; 
+            // to flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
+            const double conv = 1e-9 * 1e10 * 365*24*3600;
+            const double E = pow(10., lgE);
+            const double fluxE = norm*pow(E/Enorm, gamma);
+            flux.fFlux = fluxE * conv;
+            # warning - errors are artificial -- TO DO: use Poisson errors
+            flux.fFluxErr = 0.01 * fluxE * conv; // assume 1% error on flux at each point
+            flux.fFluxErrUp = flux.fFluxErr;
+            flux.fFluxErrLow = flux.fFluxErr;
+
+            fFitData.fAllNuFluxData.push_back(flux);
+            if (flux.fLgE > fOptions.GetMinNuSpecLgE() && flux.fLgE <= fOptions.GetMaxNuSpecLgE()) {
+              fFitData.fNuFluxData.push_back(flux);
+              if (flux.fFlux > 0)
+                fFitData.fNonZeroNuFluxData.push_back(flux);
+            }
+          
+            lgE += dlgE;
           }
           break;
         }
@@ -2406,6 +2954,792 @@ namespace prop {
     cout << " nu spectrum: nAll = " <<  fFitData.fAllNuFluxData.size()
          << ", nFit = " <<  fFitData.fNuFluxData.size() << endl;
 
+    // neutrino data
+    if(!(fOptions.GetNuEventDataTypeName() == "")) {
+      // load in nu data and fill effective area bins
+      switch(fOptions.GetNuEventDataType()) {
+
+        case FitOptions::eNuEventNone:
+          {
+            cerr << "WARNING - no neutrino event data loaded!" << endl;
+            break;
+          }
+
+        case FitOptions::eIceCubeTemp:
+          {
+            ifstream in(fOptions.GetDataDirname() + "/IceCubeTemp.dat");
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+             
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+              }
+            }
+            break;
+          }
+        case FitOptions::eIceCubeHighEnergyEvents:
+          {
+            ifstream in(fOptions.GetDataDirname() + "/IceCubeHighEnergyEvents.dat");
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff 
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+             
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+              }
+            }
+            break;
+          }
+        case FitOptions::eIceCubeHighEnergyEventsKM3NeTLo:
+          {
+            ifstream in(fOptions.GetDataDirname() + "/IceCubeHighEnergyEvents_KM3NetLo.dat");
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff 
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+             
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+              }
+            }
+            break;
+          }
+        case FitOptions::eIceCubeHighEnergyEventsKM3NeTMid:
+          {
+            ifstream in(fOptions.GetDataDirname() + "/IceCubeHighEnergyEvents_KM3NetMid.dat");
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff 
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+             
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+              }
+            }
+            break;
+          }
+        case FitOptions::eIceCubeHighEnergyEventsKM3NeTHi:
+          {
+            ifstream in(fOptions.GetDataDirname() + "/IceCubeHighEnergyEvents_KM3NetHi.dat");
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff 
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+            
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+              }
+            }
+            break;
+          }
+        default:
+          {
+            cerr << " unknown neutrino effective area " << endl;
+          }
+      }
+
+      // calculate flux corresponding to event list
+      {
+        const double lgEmin = fOptions.GetMinNuEventLgE();
+        const double lgEmax = fOptions.GetMaxNuEventLgE();
+        const double dlgE = 1./3.; // three bins per decade
+        const int n = int(ceil((lgEmax-lgEmin + dlgE/2.)/dlgE));
+        double lgE = lgEmin + dlgE/2.;
+        for(int i = 0; i < n; ++i) {
+          NuFluxData flux;
+          flux.fLgE = lgE;
+          flux.fdLgE = dlgE;
+          flux.fFlux = 0;
+          flux.fFluxErr = 0;
+   
+          int nE = 0;
+          int nMu = 0;
+          int nTau = 0;
+          double intExposureE = 0.;     
+          double intExposureMu = 0.;     
+          double intExposureTau = 0.;     
+          // to flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
+          for (const auto& nuAeffSet : fFitData.fNuEffectiveAreaData) { // loop over different Aeff sets
+            for (const auto& Aeff : nuAeffSet.second) { // loop over Aeff bins
+              const double lgElo = Aeff.fLgELo;
+              const double lgEhi = Aeff.fLgEHi;
+              const double lgEcenter = (lgElo+lgEhi)/2.;
+              const double Ecenter = pow(10, lgEcenter);
+              const double dLnE = log(pow(10, lgEhi-lgElo));
+              const double cosThetaLo = Aeff.fCosThetaLo;
+              const double cosThetaHi = Aeff.fCosThetaHi;
+              const double dOmega = cosThetaHi - cosThetaLo;
+              const double livetime = Aeff.fLivetime;       
+       
+              if(lgEcenter > lgE-dlgE/2. && lgEcenter <= lgE+dlgE/2.) {
+                nE += Aeff.fNE;
+                nMu += Aeff.fNMu;
+                nTau += Aeff.fNTau;
+                intExposureE += 2*M_PI*dOmega*Aeff.fAreaE*livetime*Ecenter*dLnE; // collect total integrated exposure 
+                intExposureMu += 2*M_PI*dOmega*Aeff.fAreaMu*livetime*Ecenter*dLnE; // collect total integrated exposure 
+                intExposureTau += 2*M_PI*dOmega*Aeff.fAreaTau*livetime*Ecenter*dLnE; // collect total integrated exposure 
+              }
+            }
+          }
+
+          // get flux from minimizing error = sum_i (N_i - flux/3*intExp_i)**2, where i is flavor
+          const double sumNExp = nE*intExposureE + nMu*intExposureMu + nTau*intExposureTau;
+          const double sumExp2 = pow(intExposureE, 2) + pow(intExposureMu, 2) + pow(intExposureTau, 2);
+          const double sumNExp2 = nE*pow(intExposureE, 2) + nMu*pow(intExposureMu, 2) + nTau*pow(intExposureTau, 2);
+          flux.fFlux = 2*3*sumNExp/sumExp2;
+          flux.fFluxErr = 2*3/sumExp2*sqrt(sumNExp2);
+          /*
+          if(nE > 0 || intExposureE > 0) {
+            flux.fFlux += nE/intExposureE;
+            flux.fFluxErr += nE/intExposureE/intExposureE; // Poisson error (summed in quadrature over flavors)
+          }
+          if(nMu > 0 || intExposureMu > 0) {
+            flux.fFlux += nMu/intExposureMu;
+            flux.fFluxErr += nMu/intExposureMu/intExposureMu;
+          }
+          if(nTau > 0 || intExposureTau > 0) {
+            flux.fFlux += nTau/intExposureTau;
+            flux.fFluxErr += nTau/intExposureTau/intExposureTau;
+          }
+
+          flux.fFluxErr = sqrt(flux.fFluxErr);
+          */
+          flux.fFluxErrUp = flux.fFluxErr;
+          flux.fFluxErrLow = flux.fFluxErr;
+
+          fFitData.fAllNuEffectiveAreaFlux.push_back(flux);
+          if (lgE+dlgE/2. > fOptions.GetMinNuEventLgE() && lgE-dlgE/2. <= fOptions.GetMaxNuEventLgE()) 
+            fFitData.fNuEffectiveAreaFlux.push_back(flux);
+
+          lgE += dlgE;
+        }
+      }
+    }
+   
+    int nNuAll = 0;
+    int nNuFit = 0; 
+    for (const auto& nuAeffSet : fFitData.fAllNuEffectiveAreaData)  // loop over different Aeff sets
+      nNuAll += nuAeffSet.second.size(); 
+    for (const auto& nuAeffSet : fFitData.fNuEffectiveAreaData)  // loop over different Aeff sets
+      nNuFit += nuAeffSet.second.size(); 
+    cout << " nu event: nAll = " << nNuAll 
+         << ", nFit = " <<  nNuFit << endl;
+  }
+
+  FitOptions::ENuEffectiveAreaType
+  Fitter::ReadNuEffectiveAreaData(const std::string effAreaName, const double livetime)
+  {
+    FitOptions::ENuEffectiveAreaType type;
+    if(effAreaName == "")
+      type = FitOptions::eNuEffectiveAreaNone;
+    else if(effAreaName == "IceCubeHESE")
+      type = FitOptions::eIceCubeHESE;
+    else if(effAreaName == "IceCubeHESE75")
+      type = FitOptions::eIceCubeHESE75;
+    else if(effAreaName == "IceCubeNorthernTracks")
+      type = FitOptions::eIceCubeNorthernTracks;
+    else if(effAreaName == "IceCubePEPE")
+      type = FitOptions::eIceCubePEPE;
+    else if(effAreaName == "KM3Net")
+      type = FitOptions::eKM3Net;
+    else
+      throw runtime_error("Unknown neutrino effective area type! "+effAreaName);
+
+    // check if this already exists
+    if(fFitData.fAllNuEffectiveAreaData.count(type) > 0)
+      throw runtime_error("This neutrino effective area type has already been read-in!");
+
+    switch(type) {
+
+      case FitOptions::eNuEffectiveAreaNone:
+        {
+          break;
+        }
+
+      case FitOptions::eIceCubeHESE:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeHESE.dat");
+          /*
+          # HESE effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv;
+            Aeff.fAreaMu = AeffMu * conv;
+            Aeff.fAreaTau = AeffTau * conv;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      case FitOptions::eIceCubeHESE75:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeHESE75.dat");
+          /*
+          # HESE effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv;
+            Aeff.fAreaMu = AeffMu * conv;
+            Aeff.fAreaTau = AeffTau * conv;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      case FitOptions::eIceCubeNorthernTracks:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeNorthernTracks.dat");
+          /*
+          # HESE effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv;
+            Aeff.fAreaMu = AeffMu * conv;
+            Aeff.fAreaTau = AeffTau * conv;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      case FitOptions::eIceCubePEPE:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeHESE75.dat");
+          /*
+          # PEPE Aeff is just 2 times the HESE75 Aeff
+          # PEPE effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          const double w = 2.0; // ratio of PEPE-to-HESE75 Aeffs
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv * w;
+            Aeff.fAreaMu = AeffMu * conv * w;
+            Aeff.fAreaTau = AeffTau * conv * w;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      case FitOptions::eKM3Net:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeNorthernTracks.dat");
+          /*
+          # Estimate 2024 event KM3Net Aeff to be roughly 0.2 of Northern Tracks Aeff
+          # HESE effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          const double w = 0.2; // ratio of KM3Net-to-NT Aeffs
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv * w;
+            Aeff.fAreaMu = AeffMu * conv * w;
+            Aeff.fAreaTau = AeffTau * conv * w;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      default:
+        {
+          cerr << " unknown neutrino effective area " << endl;
+        }
+    }
+
+    return type;
 
   }
 
@@ -2425,5 +3759,6 @@ namespace prop {
     FitFunc(nPar, &dummy, chi2, const_cast<double* const>(&par.front()), iFlag);
     return chi2;
   }
+  
 
 }

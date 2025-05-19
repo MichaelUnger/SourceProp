@@ -9,6 +9,7 @@
 
 class TCanvas;
 class TH1D;
+class TGraphAsymmErrors;
 
 namespace prop {
 
@@ -16,6 +17,7 @@ namespace prop {
   class Spectrum;
   class VSource;
   class Propagator;
+  class FitData;
 
   class Plotter {
   public:
@@ -46,6 +48,8 @@ namespace prop {
     void SetXRange(const double x1, const double x2);
     TCanvas* GetCanvas() { return fCanvas; }
 
+    void DrawXmaxDistributions(FitData& fitData,
+                               const int iPage);
     void DrawNeutrinoPlot(const Neutrinos& neutrinos,
                           const double gamma,
                           const std::string& dataDir,
@@ -89,6 +93,9 @@ namespace prop {
     double fGammaEarth;
     std::vector<TH1D*> fHists;
     std::vector<TH1D*> fHistsNoDraw;
+    std::map<int, TGraphAsymmErrors*> xmaxDistData;
+    std::map<int, TH1D*> xmaxHist;
+    std::map<std::string, std::map<int, TH1D*> > xmaxMassHist;
     double fNNeutrino;
     double fNNeutrino159; // total neutrinos above 10^15.9 eV
     double fNuFlux18; // total neutrino flux at 1 EeV

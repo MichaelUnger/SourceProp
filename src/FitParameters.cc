@@ -11,12 +11,14 @@ namespace prop {
   {
     string parNames[eNpars] =
       {"lg(R_{esc}^{ Fe19})", "lg(R_{hadint}^{Fe19})", "#delta_{esc}",
-       "lg(R_{diff}/V)", "lg(L/#lambda_{c})", "tanh(lg(L//#lambda_{c}))", "#gamma_{inj}", "lg(E_{max}^{ p}/eV)",
+       "lg(R_{diff}/V)", "lg(L/#lambda_{c})", "tanh(lg(L//#lambda_{c}))", "#gamma_{inj}", 
+       "lg(E_{min}^{ p}/eV)", "lg(E_{max}^{ p}/eV)",
        "f_{gal}", "#gamma_{gal}", "#gamma_{gal,0}", "#Delta#gamma_{gal}",
        "lg(E_{max}^{gal}/eV)",
        "lg(f_{GCRA})", "#gamma_{GCRA}", "lg(E_{max}^{GCRA}/eV)",
        "f_{noPhot}", "lg(fphot)", "lg(f(UHEp))", "lg(Emax, UHEp)",
-       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "#alpha_{R}", "#beta_{R}", "photonPeak", "N/A"};
+       "#gamma(UHEp)", "m_{extra}", "lg(E_{extra})", "m_{evo}", "z_{0, evo}", "D_{min, evo}", "#alpha_{R}", "#beta_{R}", "photonPeak",
+       "#gamma_{lo#nu}", "lg(E_{max}^{lo#nu}/eV)", "lg(#phi_{lo#nu})", "N/A"};
 
     if (boosted) {
       parNames[eGammaA] = "\\gamma_{A}";
@@ -42,13 +44,13 @@ namespace prop {
   GetParName(const EPar p, const bool boosted)
   {
     string parNames[eNpars] =
-      {"lgResc", "lgRhadint", "deltaEsc", "lgRdiff", "lgRsize", "tanhlgRsize", "gammaInj", "lgRmax",
+      {"lgResc", "lgRhadint", "deltaEsc", "lgRdiff", "lgRsize", "tanhlgRsize", "gammaInj", "lgRmin", "lgRmax",
        "fGal", "gammaGal", "gammaGalLowE", "deltaGammaGal", "lgEmaxGal",
        "lgfGalA", "gammaGalA", "lgEmaxGalA",
        "fNoPhoton", "lgfPhoton", "extraProtonLgFraction",
        "extraProtonLgEmax", "extraProtonGamma", "extraProtonMass",
        "extraProtonLgRefE", "evolutionM", "evolutionZ0", "evolutionDmin",
-       "Ralpha", "Rbeta", "photonPeak", "NA"};
+       "Ralpha", "Rbeta", "photonPeak", "gammaLoNu", "lgEmaxLoNu", "lgPhiLoNu", "NA"};
 
     if (boosted) {
       parNames[eGammaA] = "gammaA";

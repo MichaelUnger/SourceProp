@@ -60,6 +60,9 @@ public:
   double fRBeta;
   double fPhotonPeak;
   double fLgHadIntFac;
+  double fGammaLoNu;
+  double fLgEmaxLoNu;
+  double fLgPhiLoNu;
 
   double flgBaselineFrac;
   std::string fBaselineFilename;
@@ -96,6 +99,9 @@ public:
   double fRBetaErr[3];
   double fPhotonPeakErr[3]; 
   double fLgHadIntFacErr[3]; 
+  double fGammaLoNuErr[3];
+  double fLgEmaxLoNuErr[3];
+  double fLgPhiLoNuErr[3];
  
   std::string fMassFractionType; 
   std::vector<double> fMasses;

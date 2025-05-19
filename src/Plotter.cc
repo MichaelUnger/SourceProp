@@ -6,6 +6,7 @@
 #include "Particles.h"
 #include "Neutrinos.h"
 #include "IceCubeAcceptance.h"
+#include "FitData.h"
 
 #include <utl/Units.h>
 
@@ -18,6 +19,7 @@
 #include <TH1D.h>
 #include <TF1.h>
 #include <TFile.h>
+#include <TGraphAsymmErrors.h>
 
 #include <sstream>
 #include <fstream>
@@ -240,13 +242,13 @@ namespace prop {
                                   n, x1, x2));
         hInt_PH = fHists.back();
 
-	name.str("");
+        name.str("");
         name << "lambdaInt_H" << m.fRepA;
         fHists.push_back(new TH1D(name.str().c_str(),
                                   ";lg(E/eV);c #tau  [a.u.]",
                                   n, x1, x2));
         hInt_H = fHists.back();
-	hInt_H->SetLineStyle(3);
+        hInt_H->SetLineStyle(3);
 
         name.str("");
         name << "lambdaEsc" << m.fRepA;
@@ -491,8 +493,8 @@ namespace prop {
       if (i < mGroups.size()) {
         color = mGroups[i].fColor;
         style = mGroups[i].fLineStyle;
-	    if(nameBase == "hextraProtonEsc")
-	      style = 2;
+        if(nameBase == "hextraProtonEsc")
+          style = 2;
         if (mGroups[i].fFirst > 56 && mGroups[i].fFirst < kGalacticAOffset)
           title << "galactic (A=" << mGroups[i].fFirst % kGalacticOffset << ")";
         else if (mGroups[i].fFirst >= kGalacticAOffset)
@@ -670,7 +672,7 @@ namespace prop {
                                 eAntiTauNeutrino, tauColor, 1, " #bar{#nu}_{#tau}"));
     const string nameBase = "hNeutrino";
     const unsigned int iFirst = fHists.size();
-    for (unsigned int i = 0; i < mGroups.size() + 1; ++i) {
+    for (unsigned int i = 0; i < mGroups.size() + 2; ++i) {
       stringstream title;
       unsigned int color;
       unsigned int style;
@@ -678,6 +680,11 @@ namespace prop {
         color = mGroups[i].fColor;
         style = mGroups[i].fLineStyle;
         title << mGroups[i].fName;
+      }
+      else if(i == mGroups.size()) {
+        color = kBlack;
+        style = 2;
+        title << " low E sum";
       }
       else {
         color = kBlack;
@@ -717,7 +724,6 @@ namespace prop {
       fHists.back()->GetYaxis()->SetTitle(yTit.str().c_str());
     }
 
-    TH1D* histTot = fHists.back();
     for (auto& iter : specMap) {
       const unsigned int A = iter.first;
       const TMatrixD& m = iter.second;
@@ -734,6 +740,27 @@ namespace prop {
       for (unsigned int i = 0; i < n; ++i) {
         const double sumMass = hist->GetBinContent(i+1) + m[i][0];
         hist->SetBinContent(i + 1, sumMass);
+      }
+    }
+
+    // total low energy component
+    const map<int, TMatrixD> loNuMap = neutrinos.GetLowEnergyFlux();
+    int histLoIndex = iFirst + mGroups.size();
+    TH1D* histLo = fHists[histLoIndex];
+    for(auto& iter : loNuMap) {
+      const TMatrixD& m = iter.second;
+      for (unsigned int i = 0; i < n; ++i) {
+        const double sum = histLo->GetBinContent(i+1) + m[i][0];
+        histLo->SetBinContent(i + 1, sum);
+      }
+    }
+  
+    // total observed 
+    const map<int, TMatrixD> obsMap = neutrinos.GetObservedFlux(); 
+    TH1D* histTot = fHists.back();
+    for(auto& iter : obsMap) {
+      const TMatrixD& m = iter.second;
+      for (unsigned int i = 0; i < n; ++i) {
         const double sumTot = histTot->GetBinContent(i+1) + m[i][0];
         histTot->SetBinContent(i + 1, sumTot);
       }
@@ -826,7 +853,7 @@ namespace prop {
       leg->AddEntry(fHists[iFirst+3], fHists[iFirst+3]->GetTitle(), "L");
       leg->AddEntry(fHists[iFirst+4], fHists[iFirst+4]->GetTitle(), "L");
       leg->AddEntry(fHists[iFirst+5], fHists[iFirst+5]->GetTitle(), "L");
-      leg->AddEntry("", "", "");
+      leg->AddEntry(fHists[iFirst+6], fHists[iFirst+6]->GetTitle(), "L");
       leg->AddEntry(iceFluxUp, " IC2014", "L");
       leg->Draw();
     }
@@ -834,9 +861,9 @@ namespace prop {
     gPad->RedrawAxis();
 
     fCanvas->cd(2);
-    const unsigned int nX = 45;
-    const double hx1 = 14.5;
+    const double hx1 = 12;
     const double hx2 = 20;
+    const unsigned int nX = int((hx2-hx1)/0.1);
     TH1D* eventsE = new TH1D("eventsE", "", nX, hx1, hx2);
     TH1D* eventsMu = new TH1D("eventsMu", "", nX, hx1, hx2);
     TH1D* eventsTau = new TH1D("eventsTau", "", nX, hx1, hx2);
@@ -860,32 +887,20 @@ namespace prop {
     IceCubeAcceptance acc(dataDir);
     double nEvents = 0;
     for (unsigned int iBin = 0; iBin < nX; ++iBin) {
-      double sumE = 0;
-      double sumM = 0;
-      double sumT = 0;
-      const double nSub = 10;
+
       const double dlgE =
         (eventsE->GetXaxis()->GetBinUpEdge(iBin+1) -
-         eventsE->GetXaxis()->GetBinLowEdge(iBin+1)) / nSub;
+         eventsE->GetXaxis()->GetBinLowEdge(iBin+1));
       double lgE = eventsE->GetXaxis()->GetBinLowEdge(iBin+1);
-      for (unsigned int iSub = 0; iSub < nSub; ++iSub) {
-        const double lgECenter = lgE + dlgE/2;
-        const double E1 = pow(10, lgE);
-        const double E2 = pow(10, lgE + dlgE);
-        const double dE = (E2 - E1);
-        const double m2Tokm2  = 1e-6;
-        const double accE = acc(eElectronNeutrino, lgECenter) * m2Tokm2 * dE;
-        const double accEbar = acc(eAntiElectronNeutrino, lgECenter) * m2Tokm2 * dE;
-        const double accMu = acc(eMuonNeutrino, lgECenter) * m2Tokm2 * dE;
-        const double accTau = acc(eTauNeutrino, lgECenter) * m2Tokm2 * dE;
-        sumE += neutrinos.GetOscillatedFlux(eElectronNeutrino, lgECenter) * accE;
-        sumE += neutrinos.GetOscillatedFlux(eAntiElectronNeutrino, lgECenter) * accEbar;
-        sumM += (neutrinos.GetOscillatedFlux(eMuonNeutrino, lgECenter) +
-                 neutrinos.GetOscillatedFlux(eAntiMuonNeutrino, lgECenter)) * accMu;
-        sumT += (neutrinos.GetOscillatedFlux(eTauNeutrino, lgECenter) +
-                 neutrinos.GetOscillatedFlux(eAntiTauNeutrino, lgECenter)) * accTau;
-        lgE += dlgE;
-      }
+      const double lgECenter = lgE + dlgE/2;
+ 
+      const double sumE = neutrinos.GetEventRate(lgECenter, dlgE, eElectronNeutrino)
+                        + neutrinos.GetEventRate(lgECenter, dlgE, eAntiElectronNeutrino);
+      const double sumM = neutrinos.GetEventRate(lgECenter, dlgE, eMuonNeutrino)
+                        + neutrinos.GetEventRate(lgECenter, dlgE, eAntiMuonNeutrino);
+      const double sumT = neutrinos.GetEventRate(lgECenter, dlgE, eTauNeutrino)
+                        + neutrinos.GetEventRate(lgECenter, dlgE, eAntiTauNeutrino);
+      
       eventsE->SetBinContent(iBin+1, sumE*nYear);
       eventsMu->SetBinContent(iBin+1, sumM*nYear);
       eventsTau->SetBinContent(iBin+1, sumT*nYear);
@@ -1063,4 +1078,190 @@ namespace prop {
 #endif
   }
 
+  void Plotter::DrawXmaxDistributions(FitData& fitData,
+                                      const int iPage)
+  {
+    const int nXmax = int((fitData.fXmaxMax-fitData.fXmaxMin)/fitData.fdXmax);
+    // create graphs if they don't exist
+    if(xmaxDistData.size() == 0) {
+      for(const auto& xmax : fitData.fAllXmaxDistData) {
+        const int key = (int)(xmax.fLgE*1000);
+        if(xmaxDistData.count(key) == 0) {
+          xmaxDistData[key] = new TGraphAsymmErrors();
+          xmaxHist[key] = new TH1D("", "", nXmax, fitData.fXmaxMin, fitData.fXmaxMax);
+          xmaxMassHist["1p"][key] = new TH1D("", "", nXmax, fitData.fXmaxMin, fitData.fXmaxMax);
+          xmaxMassHist["2He"][key] = new TH1D("", "", nXmax, fitData.fXmaxMin, fitData.fXmaxMax);
+          xmaxMassHist["3CNO"][key] = new TH1D("", "", nXmax, fitData.fXmaxMin, fitData.fXmaxMax);
+          xmaxMassHist["4Si"][key] = new TH1D("", "", nXmax, fitData.fXmaxMin, fitData.fXmaxMax);
+          xmaxMassHist["5Fe"][key] = new TH1D("", "", nXmax, fitData.fXmaxMin, fitData.fXmaxMax);
+        }
+
+        const int i = xmaxDistData.at(key)->GetN();
+        xmaxDistData.at(key)->SetPoint(i, xmax.fXmax, xmax.binEvts);
+        xmaxDistData.at(key)->SetPointEYhigh(i, sqrt(max(xmax.binEvts,1)));
+        xmaxDistData.at(key)->SetPointEYlow(i, sqrt(max(xmax.binEvts,1)));
+
+        double nExpected = fitData.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE).Eval(xmax.fXmax) * xmax.totEvts * xmax.fdXmax;
+        xmaxHist.at(key)->Fill(xmax.fXmax, nExpected);
+        // p mass group
+        for(int A=1; A<3; ++A) {
+          nExpected = fitData.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE, A).Eval(xmax.fXmax) * xmax.totEvts * xmax.fdXmax;
+          xmaxMassHist.at("1p").at(key)->Fill(xmax.fXmax, nExpected);
+        }
+        // He mass group
+        for(int A=3; A<7; ++A) {
+          nExpected = fitData.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE, A).Eval(xmax.fXmax) * xmax.totEvts * xmax.fdXmax;
+          xmaxMassHist.at("2He").at(key)->Fill(xmax.fXmax, nExpected);
+        }
+        // CNO mass group
+        for(int A=7; A<20; ++A) {
+          nExpected = fitData.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE, A).Eval(xmax.fXmax) * xmax.totEvts * xmax.fdXmax;
+          xmaxMassHist.at("3CNO").at(key)->Fill(xmax.fXmax, nExpected);
+        }
+        // Si mass group
+        for(int A=20; A<40; ++A) {
+          nExpected = fitData.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE, A).Eval(xmax.fXmax) * xmax.totEvts * xmax.fdXmax;
+          xmaxMassHist.at("4Si").at(key)->Fill(xmax.fXmax, nExpected);
+        }
+        // Fe mass group
+        for(int A=40; A<57; ++A) {
+          nExpected = fitData.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE, A).Eval(xmax.fXmax) * xmax.totEvts * xmax.fdXmax;
+          xmaxMassHist.at("5Fe").at(key)->Fill(xmax.fXmax, nExpected);
+        }
+      }
+    }
+
+    const int nXDists = (int)fitData.fAllXmaxDistData.size()/nXmax;
+    const int nPages = (nXDists-1)/6 + 1;
+    const int iStart = iPage*6;
+    const int iEnd = (iPage+1 == nPages)? iStart + (nXDists-1)%6 + 1 : (iPage+1)*6;
+
+    // make sure everything is linear scale
+    for(int i = 0; i < 6; ++i) {
+      fCanvas->cd(i+1)->SetLogy(0);
+      TVirtualPad* fitPanel = fCanvas->cd(i+1);
+      fitPanel->SetTopMargin(0.1);
+      gPad->Update();
+    }
+
+    fCanvas->Clear("D");
+    for(int iPlot = 0; iPlot < iEnd-iStart; ++iPlot) {
+      fCanvas->cd(iPlot+1);
+    
+      // find (iStart+iPlot)-th distribution
+      int iDist = 0;
+      double lgE = -1;
+      int key = -1;
+      for(auto& iter : xmaxDistData) {
+        if(iDist == iPlot + iStart) {
+          lgE = double(iter.first)/1000.;
+          key = iter.first;
+          break;
+        }
+        iDist++;
+      }
+      
+      // check if this energy bin is in fitted data
+      int color = kGray+1;
+      int style = 24;
+      bool isFit = false;
+      for(auto& iter : fitData.fXmaxDistData) {
+        if(abs(lgE-iter.fLgE) < iter.fdLgE/2) {
+          color = kGray+2;
+          style = 20;
+          isFit = true;
+          break;
+        }
+      }
+
+      // plot data points
+      xmaxDistData.at(key)->SetLineColor(color);
+      xmaxDistData.at(key)->SetMarkerStyle(style);
+      xmaxDistData.at(key)->SetMarkerColor(color);
+      
+      xmaxDistData.at(key)->GetXaxis()->SetRangeUser(fitData.fXmaxMin, fitData.fXmaxMax);
+      double yMax = TMath::MaxElement(xmaxDistData.at(key)->GetN(), xmaxDistData.at(key)->GetY());
+      yMax = max(yMax, xmaxHist.at(key)->GetBinContent(xmaxHist.at(key)->GetMaximumBin()));
+      xmaxDistData.at(key)->GetYaxis()->SetRangeUser(-1, 1.2*yMax);
+      char title[500];
+      sprintf(title, "; X_{max} [g/cm^{2}]; Counts");
+      xmaxDistData.at(key)->SetTitle(title);
+      
+      xmaxDistData.at(key)->Draw("AP");
+      if(isFit) {
+        TH1D* xmaxDistData2 = (TH1D*)xmaxDistData.at(key)->Clone();
+        xmaxDistData2->SetLineColor(kBlack);
+        xmaxDistData2->SetMarkerStyle(24);
+        xmaxDistData2->SetMarkerColor(kBlack);
+        xmaxDistData2->Draw("P SAME");
+      }
+
+      // plot model curve
+      xmaxHist.at(key)->SetLineColor(kBlack);
+      xmaxHist.at(key)->Draw("HIST SAME");
+    
+      // plot mass group contributions 
+      xmaxMassHist.at("1p").at(key)->SetLineColor(kRed);
+      xmaxMassHist.at("1p").at(key)->Draw("HIST SAME");
+      xmaxMassHist.at("2He").at(key)->SetLineColor(kOrange-2);
+      xmaxMassHist.at("2He").at(key)->Draw("HIST SAME");
+      xmaxMassHist.at("3CNO").at(key)->SetLineColor(kGreen+1);
+      xmaxMassHist.at("3CNO").at(key)->Draw("HIST SAME");
+      xmaxMassHist.at("4Si").at(key)->SetLineColor(kAzure+10);
+      xmaxMassHist.at("4Si").at(key)->Draw("HIST SAME");
+      xmaxMassHist.at("5Fe").at(key)->SetLineColor(kBlue);
+      xmaxMassHist.at("5Fe").at(key)->Draw("HIST SAME");
+
+      TLatex l;
+      l.SetTextAlign(23); l.SetTextSize(0.06);
+      l.SetTextFont(42); l.SetNDC(true);
+      sprintf(title, "lg(E/eV) = %.2f", lgE);
+      l.DrawLatex(0.5, 0.98, title);
+
+      l.SetTextAlign(12);
+      l.SetTextSize(0.035);
+      double yMass = 0.88;
+      double dxMass = 0.13;
+      double xMass = 0.2;
+      for (const auto& m : xmaxMassHist) {
+        int fFirst, fLast, fColor;
+        if(m.first == "1p") {
+          fFirst = 1;
+          fLast = 2;
+          fColor = kRed;
+        }
+        else if(m.first == "2He") {
+          fFirst = 3;
+          fLast = 6;
+          fColor = kOrange-2;
+        }
+        else if(m.first == "3CNO") {
+          fFirst = 7;
+          fLast = 19;
+          fColor = kGreen+1;
+        }
+        else if(m.first == "4Si") {
+          fFirst = 20;
+          fLast = 39;
+          fColor = kAzure+10;
+        }
+        else if(m.first == "5Fe") {
+          fFirst = 40;
+          fLast = 56;
+          fColor = kBlue;
+        }
+        else
+          throw runtime_error("Something went wrong in plotting xmax distributions!");
+        stringstream lbl;
+        lbl << fFirst << " #leq A #leq " << fLast;
+        l.SetTextColor(fColor);
+        l.DrawLatex(xMass, yMass, lbl.str().c_str());
+        xMass += dxMass;
+        if (fFirst > 9)
+          xMass += 0.01;
+        if (fLast > 9)
+          xMass += 0.01;
+      }
+    }
+  }
 }

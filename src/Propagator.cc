@@ -58,9 +58,11 @@ namespace prop {
           }
           fNucleonResult += propSpectrum;
         }
-        if (!fSum.GetNoElements())
-          fSum.ResizeTo(propSpectrum);
-        fSum += propSpectrum;
+        if(IsNucleus(Asec)) {
+          if (!fSum.GetNoElements())
+            fSum.ResizeTo(propSpectrum);
+          fSum += propSpectrum;
+        }
       }
     }
   }
@@ -192,7 +194,6 @@ namespace prop {
     return GetLnAMoments(LgEtoIndex(lgE));
   }
 
-
   double
   Propagator::GetFluxSum(const double lgE)
     const
@@ -308,7 +309,8 @@ namespace prop {
     if (!spectrum.GetNoElements())
       spectrum.ResizeTo(flux);
     spectrum += flux;
-    fSum += flux;
+    if(IsNucleus(A))
+      fSum += flux;
   }
 
   void

@@ -38,6 +38,9 @@ namespace prop {
 
     enum ESpectrumType {
       eExponential,
+      eCosh2,
+      eCosh2_LowExpCutoff,
+      eCosh2_LowSechCutoff, 
       eBrokenExponential,
       eHeaviside,
       eDeltaGamma1,
@@ -48,16 +51,24 @@ namespace prop {
       eExternal
     };
 
+    enum ENuSpectrumType {
+      eNuExponential,
+      eNuCosh2
+    };
+
     typedef std::map<int, TMatrixD> SpecMap;
     typedef std::map<int, SpecMap> SecMap;
   public:
     Spectrum() : fSpectrumType(eExponential) {}
     Spectrum(const VSource* s, const double gamma,
-             const double Rmax, const double nE,
+             const double Rmin, const double Rmax, const double nE,
              const double lgEmin, const double lgEmax,
              const std::map<unsigned int, double>& fractions,
-             const ESpectrumType spectrumType = eExponential) :
+             const ESpectrumType spectrumType = eExponential,
+             const ENuSpectrumType nuSpectrumType = eNuExponential) :
       fSpectrumType(spectrumType),
+      fNuSpectrumType(nuSpectrumType),
+      fRmin(Rmin),
       fRmax(Rmax),
       fGamma(gamma),
       fSource(s),
@@ -69,7 +80,7 @@ namespace prop {
     }
 
     void SetParameters(const VSource* s, const double gamma,
-                       const double Emax, const double nE,
+                       const double Emin, const double Emax, const double nE,
                        unsigned int nSubBins,
                        const double lgEmin, const double lgEmax,
                        const std::map<unsigned int, double>& fractions,
@@ -97,6 +108,8 @@ namespace prop {
     double GetFluxSum(const unsigned int i);
     double GetFluxSum(const double lgE);
 
+    TMatrixD GetNeutrinoFlux(const double gamma, const double lgE, const double lgPhi); 
+
     double GetN() const
     { return fN; }
     double GetNSubBins() const
@@ -109,6 +122,9 @@ namespace prop {
     void SetSpectrumType(const ESpectrumType type)
     { fSpectrumType = type; }
 
+    void SetNuSpectrumType(const ENuSpectrumType type)
+    { fNuSpectrumType = type; }
+    
     void ReadBaseline(const std::string baselineFile);
 
     void Rescale(const double f);
@@ -138,6 +154,8 @@ namespace prop {
 
 
     ESpectrumType fSpectrumType;
+    ENuSpectrumType fNuSpectrumType;
+    double fRmin;
     double fRmax;
     double fGamma;
     const VSource* fSource;

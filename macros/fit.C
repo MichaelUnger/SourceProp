@@ -362,9 +362,11 @@ DrawData(const FitData& fitData,
   allLnASys->Draw("5");
   fitLnASys->Draw("5");
   fitLnASys->SetFillColor(kRed-10);
-  fitLnASys->SetFillStyle(1001);
+  //fitLnASys->SetFillStyle(1001);
+  fitLnASys->SetFillStyle(0);
   fitVlnASys->SetFillColor(TColor::GetColorBright(kGray));
-  fitVlnASys->SetFillStyle(1001);
+  //fitVlnASys->SetFillStyle(1001);
+  fitVlnASys->SetFillStyle(0);
   fitVlnASys2->SetFillStyle(0);
   //  fitVlnASys2->SetLineColor(kGray+3);
   fitVlnASys2->SetLineColor(kGray);
@@ -440,7 +442,7 @@ DrawNeutrinoData(const FitData& fitData,
                  const Plotter::EFluxUnits fUnits,
                  TCanvas* can)
 {
-  if(fitData.fAllNuFluxData.size() == 0) // if there's no neutrino data don't plot!
+  if(fitData.fAllNuFluxData.size() == 0 && fitData.fAllNuEffectiveAreaFlux.size() == 0) // if there's no neutrino data don't plot!
     return;
 
   double units = 1;
@@ -449,7 +451,8 @@ DrawNeutrinoData(const FitData& fitData,
   }
   TGraphAsymmErrors* fitSpectrum = new TGraphAsymmErrors();
   double lastLgE = 0;
-  const vector<NuFluxData>& fluxData = fitData.fNuFluxData;
+  const vector<NuFluxData>& fluxData = (fitData.fNuFluxData.size() > 0)? fitData.fNuFluxData
+                                                                        : fitData.fNuEffectiveAreaFlux;
   for (unsigned int i = 0; i < fluxData.size(); ++i) {
     const double w = pow(pow(10, fluxData[i].fLgE), gammaScaleEarth) * units;
     fitSpectrum->SetPoint(i, fluxData[i].fLgE, w*fluxData[i].fFlux);
@@ -469,23 +472,14 @@ DrawNeutrinoData(const FitData& fitData,
   fitSpectrum2->SetMarkerSize(0.5);
 
 
-  fitSpectrum->SetName("fitSpectrum");
-  TFile out("tmp.root","RECREATE");
-  fitSpectrum->Write();
-  out.Write();
-  out.Close();
-
-  double maxY = 0;
   TGraphAsymmErrors* allSpectrum = new TGraphAsymmErrors();
-  const vector<NuFluxData>& fluxDataAll = fitData.fAllNuFluxData;
+  const vector<NuFluxData>& fluxDataAll = (fitData.fAllNuFluxData.size() > 0)? fitData.fAllNuFluxData
+                                                                        : fitData.fAllNuEffectiveAreaFlux;
   for (unsigned int i = 0; i < fluxDataAll.size(); ++i) {
     const double w = pow(pow(10, fluxDataAll[i].fLgE), gammaScaleEarth) * units;
     allSpectrum->SetPoint(i, fluxDataAll[i].fLgE, w*fluxDataAll[i].fFlux);
     allSpectrum->SetPointEYhigh(i, w*fluxDataAll[i].fFluxErrUp);
     allSpectrum->SetPointEYlow(i, w*fluxDataAll[i].fFluxErrLow);
-    const double thisY = w*(fluxDataAll[i].fFlux + fluxDataAll[i].fFluxErrUp);
-    if (thisY > maxY)
-      maxY = thisY;
   }
   allSpectrum->SetMarkerColor(kGray+1);
   allSpectrum->SetMarkerColor(kGray+1);
@@ -498,6 +492,29 @@ DrawNeutrinoData(const FitData& fitData,
   fitSpectrum->Draw("P");
   fitSpectrum2->Draw("P");
 
+  TGraphAsymmErrors* eventSpectrum = new TGraphAsymmErrors();
+  if(fitData.fNuFluxData.size() > 0) { 
+    const vector<NuFluxData>& eventFluxData = fitData.fNuEffectiveAreaFlux;
+    for (unsigned int i = 0; i < eventFluxData.size(); ++i) {
+      const double w = pow(pow(10, eventFluxData[i].fLgE), gammaScaleEarth) * units;
+      eventSpectrum->SetPoint(i, eventFluxData[i].fLgE, w*eventFluxData[i].fFlux);
+      eventSpectrum->SetPointEYhigh(i, w*eventFluxData[i].fFluxErrUp);
+      eventSpectrum->SetPointEYlow(i, w*eventFluxData[i].fFluxErrLow);
+    }
+
+    eventSpectrum->SetMarkerStyle(21);
+    eventSpectrum->SetMarkerColor(kGray+2);
+    eventSpectrum->SetMarkerSize(0.5);
+    eventSpectrum->SetLineColor(kGray+2);
+    TGraphAsymmErrors* eventSpectrum2 = (TGraphAsymmErrors*) eventSpectrum->Clone("eventSpecCopy");
+    eventSpectrum2->SetMarkerStyle(25);
+    eventSpectrum2->SetMarkerColor(kBlack);
+    eventSpectrum2->SetMarkerSize(0.5);
+
+    eventSpectrum->Draw("P0");
+    eventSpectrum2->Draw("P0");
+  }
+
 #ifdef _PAPER_
   TLegend* legSpec;
   legSpec = new TLegend(0.62, 0.77, 0.93, 0.87, NULL, "brNDCARC");
@@ -509,8 +526,15 @@ DrawNeutrinoData(const FitData& fitData,
   legSpec->SetFillStyle(0);
   legSpec->SetBorderSize(0);
   legSpec->SetTextSize(0.030);
-  legSpec->AddEntry(fitSpectrum,
-                    fitOptions.GetNuSpectrumDataLabel().c_str(),"PE");
+  if(fitData.fNuFluxData.size() > 0) {  
+    legSpec->AddEntry(fitSpectrum,
+                      fitOptions.GetNuSpectrumDataLabel().c_str(),"PE");
+    legSpec->AddEntry(eventSpectrum,
+                      fitOptions.GetNuEventDataLabel().c_str(), "PE");
+  }
+  else
+    legSpec->AddEntry(fitSpectrum,
+                      fitOptions.GetNuEventDataLabel().c_str(), "PE");
   legSpec->Draw();
   
 }
@@ -528,13 +552,13 @@ DrawValues(const FitData& fitData,
   fitPanel->SetTopMargin(0.001);
   gPad->Update();
   TLatex l;
-  const double textSize = 0.025; //0.033;
+  const double textSize = 0.025;
   l.SetTextAlign(13); l.SetTextSize(textSize);
   l.SetTextFont(42); l.SetNDC(true);
-  const double yStart = 1;
+  const double yStart = 1.0;
   double y = yStart;
   const double dy = textSize*1.52;
-  const double x = 0.;
+  double x = 0.;
   const vector<FitParameter>& fitParameters = fitData.fFitParameters;
   for (unsigned int i = 0; i < eNpars; ++i) {
     const EPar par = EPar(i);
@@ -559,7 +583,12 @@ DrawValues(const FitData& fitData,
       parString << "#pm" << noshowpoint
                 << setprecision(1) << fitParameters[i].fError;
     l.DrawLatex(x, y, parString.str().c_str());
-    y -= dy;
+    if(i%2 == 0)
+      x = 1./3.;
+    else {
+      x = 0.;
+      y -= dy;
+    }
   }
 
   for (unsigned int i = 0; i < fitOptions.GetNPhotonFields(); ++i) {
@@ -638,25 +667,48 @@ DrawValues(const FitData& fitData,
   y -= dy;
 
   l.SetTextColor(kBlue+1);
-  stringstream chi2String;
-  chi2String << "#chi^{2}/ndf = "
-             << fitData.GetChi2Tot() << "/"
-             << fitData.GetNdfTot() << "," 
-             << "    f_{#nu} = " << fitData.fNuChi2Weight;
-  l.DrawLatex(x, y, chi2String.str().c_str());
-  y -= dy;
-  chi2String.str("");
-  l.SetTextSize(textSize*0.8);
-  chi2String << "spec: " << fitData.fChi2Spec << "/"
-             << fitData.fFluxData.size() << ", "
-             << "lnA: " << fitData.fChi2LnA << "/"
-             << fitData.fCompoData.size() << ", "
-             << "VLnA: " << fitData.fChi2VlnA << "/"
-             << fitData.fCompoData.size() << ","
-             << "nu spec: " << fitData.fChi2Nu << "/"
-             << fitData.fNonZeroNuFluxData.size();
-  l.SetTextColor(fixColor);
-  l.DrawLatex(x, y, chi2String.str().c_str());
+  if(!fitOptions.UseLgLikelihood()) {
+    stringstream chi2String;
+    chi2String << "#chi^{2}/ndf = "
+               << fitData.GetChi2Tot() << "/"
+               << fitData.GetNdfTot() << "," 
+               << "    f_{#nu} = " << fitData.fNuChi2Weight;
+    l.DrawLatex(x, y, chi2String.str().c_str());
+    y -= dy;
+    chi2String.str("");
+    l.SetTextSize(textSize*0.8);
+    chi2String << "spec: " << fitData.fChi2Spec << "/"
+               << fitData.fFluxData.size() << ", "
+               << "lnA: " << fitData.fChi2LnA << "/"
+               << fitData.fCompoData.size() << ", "
+               << "VLnA: " << fitData.fChi2VlnA << "/"
+               << fitData.fCompoData.size() << ","
+               << "nu spec: " << fitData.fChi2Nu << "/"
+               << fitData.fNonZeroNuFluxData.size();
+    l.SetTextColor(fixColor);
+    l.DrawLatex(x, y, chi2String.str().c_str());
+  }
+  else {
+    stringstream lgLString;
+    lgLString << "-lg(L) = "
+              << fitData.GetNegLogLikelihood() << ", "
+              << "ndf = " << fitData.GetNdfTot() << ", "
+              << "    f_{#nu} = " << fitData.fNuChi2Weight;
+    l.DrawLatex(x, y, lgLString.str().c_str());
+    y -= dy;
+    lgLString.str("");
+    l.SetTextSize(textSize*0.8);
+    lgLString << "spec: " << fitData.fLgLSpec << "/"
+              << fitData.fFluxData.size() << ", "
+              << "xmax: " << fitData.fLgLXmax << "/"
+              << fitData.fXmaxDistData.size() << ", "
+              << "nu spec: " << fitData.fLgLNuSpec << "/"
+              << fitData.fNuFluxData.size() << ", "
+              << "nu events: " << fitData.fLgLNuEvent << "/"
+              << fitData.fNuEffectiveAreaData.size();
+    l.SetTextColor(fixColor);
+    l.DrawLatex(x, y, lgLString.str().c_str());
+  }
   l.SetTextSize(textSize);
   y -= dy;
 
@@ -669,7 +721,7 @@ DrawValues(const FitData& fitData,
   {
     string parString = "massFractionType: " + fitOptions.GetMassFractionTypeName();
     l.SetTextColor(kBlack);
-    l.DrawLatex(0.63, y, parString.c_str());
+    l.DrawLatex(2./3., y, parString.c_str());
     y -= dy;
   } 
  
@@ -701,7 +753,7 @@ DrawValues(const FitData& fitData,
         isFix = true;
     }
     l.SetTextColor(isFix ? fixColor : freeColor);
-    l.DrawLatex(0.63, y, parString.str().c_str());
+    l.DrawLatex(2./3., y, parString.str().c_str());
     y -= dy;
   }
   y -= dy/3.;
@@ -710,7 +762,7 @@ DrawValues(const FitData& fitData,
   const unsigned int offset = 2*nMass - 1;
   vector<double> galFractions(nGalMass);
   vector<double> galZeta;
-  for (unsigned int i = 0; i < galFractions.size() - 1; ++i)
+  for (int i = 0; i < int(galFractions.size()) - 1; ++i)
     galZeta.push_back(pow(10, fitParameters[eNpars + offset + i].fValue));
   zetaToFraction(galFractions.size(), &galZeta.front(), &galFractions.front());
 
@@ -736,7 +788,41 @@ DrawValues(const FitData& fitData,
         isFix = true;
     }
     l.SetTextColor(isFix ? fixColor : freeColor);
-    l.DrawLatex(0.63, y, parString.str().c_str());
+    l.DrawLatex(2./3., y, parString.str().c_str());
+    y -= dy;
+  }
+
+  const unsigned int nGalAMass = fitData.GetNGalAMass();
+  const unsigned int offsetA = 2*nMass - 1 + 2*nGalMass - 1;
+  vector<double> galAFractions(nGalAMass);
+  vector<double> galAZeta;
+  for (int i = 0; i < int(galAFractions.size()) - 1; ++i) 
+    galAZeta.push_back(pow(10, fitParameters[eNpars + offsetA + i].fValue));
+  zetaToFraction(galAFractions.size(), &galAZeta.front(), &galAFractions.front());
+
+  nFix = 0;
+  for (unsigned int i = 0; i < galAFractions.size(); ++i) {
+    stringstream parString;
+    const double m =
+      fitData.fFitParameters[eNpars + offsetA + nGalAMass - 1 + i].fValue;
+    parString << "f_{gal,A}(" << m << ")"
+              << (m < 10 ? "  = " : "= ")
+              << scientific << setprecision(1)
+              << galAFractions[i];
+
+    bool isFix = false;
+    if (i < galAFractions.size() - 1) {
+      if (fitParameters[eNpars + offsetA + i].fIsFixed) {
+        ++nFix;
+        isFix = true;
+      }
+    }
+    else {
+      if (nFix == galAFractions.size() - 1)
+        isFix = true;
+    }
+    l.SetTextColor(isFix ? fixColor : freeColor);
+    l.DrawLatex(2./3., y, parString.str().c_str());
     y -= dy;
   }
 
@@ -746,11 +832,25 @@ DrawValues(const FitData& fitData,
        << " +/- " << fitData.fQ0Err / ( 1 / (pow(Mpc, 3) * year * erg) )  << endl;
 
   const double eps0Y = y-0.035;
-  const double xEdot = 0.55;
+  const double xEdot = 2./3.;
   const double lgEmin = 17;
   double edot = -1;
   stringstream powerString;
   try {
+    /*
+    {
+      const double lgEmax = log10(200e18);
+      const double dlgE = 0.1;
+      const int nE = int((lgEmax-lgEmin)/dlgE + 1.5);
+      double lgE = lgEmin;
+      cout << "lgE\tedot" << endl;
+      for(int i = 0; i < nE; ++i) {
+        edot = fitData.GetTotalPower(pow(10, lgE)) / ( erg / (pow(Mpc, 3) * year));
+        cout << lgE << "\t" << edot << endl;
+        lgE += dlgE;
+      }
+    }
+    */
     edot =
       fitData.GetTotalPower(pow(10, lgEmin)) / ( erg / (pow(Mpc, 3) * year));
     cout << " edot: " << setprecision(10) << edot << endl;
@@ -863,7 +963,7 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
   const double gammaScaleEarth = 3.;
   Plotter plot(NULL, gammaScaleSource, gammaScaleEarth);
 
-  const FitData& fitData = fitter.GetFitData();
+  FitData& fitData = fitter.GetFitData();
 
   //  fitData.fPropagator->SaveFluxAtEarth();
 
@@ -879,7 +979,27 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
   DrawData(fitData, opt, gammaScaleEarth, massGroups.size(), can);
   DrawValues(fitData, opt, can);
 
-  can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
+  if(!opt.UseLgLikelihood())
+    can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
+  else {
+    const int nXmax = int((fitData.fXmaxMax-fitData.fXmaxMin)/fitData.fdXmax); 
+    const int nXDists = (int)fitData.fAllXmaxDistData.size()/nXmax;
+    const int nPages = (nXDists == 0)?  0 : (nXDists-1)/6 + 1; // max 6 distributions per page
+
+    if(nPages == 0) 
+      can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
+    else
+      can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf(").c_str());
+
+    
+    for(int iPage = 0; iPage < nPages; ++iPage) {
+      plot.DrawXmaxDistributions(fitData, iPage);
+      if(iPage+1 == nPages)
+        can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf)").c_str());
+      else
+        can->Print((opt.GetOutDirname() + "/" + opt.GetOutFilename() + ".pdf").c_str());
+    }
+  }
 
   opt.WriteFitConfig((opt.GetOutDirname() + "/" +
                        opt.GetOutFilename() + ".config").c_str(),
@@ -896,8 +1016,15 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
     const double evoM = fitData.fFitParameters[GetPar("evolutionM")].fValue;
     const double evoZ0 = fitData.fFitParameters[GetPar("evolutionZ0")].fValue;
     const double evoDmin = fitData.fFitParameters[GetPar("evolutionDmin")].fValue;
-    Neutrinos neutrinos(fitData.fSpectrum,
-                        opt.GetPropmatrixNuFilename(), evoM, evoZ0, evoDmin, withSourceNu);
+    Neutrinos neutrinos(&fitData.fSpectrum,
+                        opt.GetPropmatrixNuFilename(), opt.GetDataDirname(),
+                        evoM, evoZ0, evoDmin, withSourceNu);
+    neutrinos.SetIceCubeAcceptance(opt.GetDataDirname());
+    const double nuGamma = fitData.fFitParameters[eGammaLoNu].fValue;
+    const double nuLgEmax = fitData.fFitParameters[eLgEmaxLoNu].fValue;
+    const double nuLgPhi = fitData.fFitParameters[eLgPhiLoNu].fValue;
+    neutrinos.SetLowEnergyFlux(nuGamma, nuLgEmax, nuLgPhi);
+
     TCanvas* neutrinoCanvas;
     bool singleSlide = false;
     if (singleSlide) {
@@ -934,8 +1061,9 @@ fit(string fitFilename = "Standard", bool fit = true, bool neutrino = true, bool
                                  (withSourceNu?"":"NoSource"));
     // get baseline neutrinos
     if(opt.GetLgBaselineFraction() > -100) {
-      Neutrinos baselineNeutrinos(fitData.fBaseline,
-                          opt.GetPropmatrixNuFilename(), evoM, evoZ0, evoDmin, withSourceNu);
+      Neutrinos baselineNeutrinos(&fitData.fBaseline,
+                          opt.GetPropmatrixNuFilename(), opt.GetDataDirname(),
+                          evoM, evoZ0, evoDmin, withSourceNu);
       const double baselineNuFlux18 = baselineNeutrinos.GetNuFlux18();
       const double baselineNuFlux19 = baselineNeutrinos.GetNuFlux19();
       fitter.GetFitData().SetBaselineNuFlux18(baselineNuFlux18);

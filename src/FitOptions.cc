@@ -21,10 +21,12 @@ namespace prop {
     fIRB = "Kneiske04";
     fDataDirname = "./data";
     fOutDirname = "./pdfs";
+    fUseLgLikelihood = false;
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
     fCSFSpectrum = false;
+    fWMEBurst = false;
     fGCRWithComponentA = false;
     fGCRWithGSFIron = false;
     fisFixedPPElasticity = true;
@@ -33,15 +35,19 @@ namespace prop {
     fMaxFluxLgE = 22.0;
     fMinCompLgE = 17.8;
     fMaxCompLgE = 22.0;
-    fMinNuFluxLgE = 12.0;
-    fMaxNuFluxLgE = 22.0;
+    fMinNuSpecLgE = 12.0;
+    fMaxNuSpecLgE = 22.0;
+    fMinNuEventLgE = 12.0;
+    fMaxNuEventLgE = 22.0;
     fEnergyBinShift = 0;
     fEnergyShiftType = eConstant;
     fXmaxSigmaShift = 0;
+    fXmaxAbsoluteShift = 0;
     fLgBaselineFraction = -100;
     fNuChi2Weight = 0;
     fInteractionModel = "eposLHC";
     fStartValues[eGamma] = StartValue(-1, 0.1 ,0, 0, 1);
+    fStartValues[eLgEmin] = StartValue(0.0, 0.1 ,0, 0, 1);
     fStartValues[eLgEmax] = StartValue(18.5, 0.1 ,18, 22, 0);
     fStartValues[eLgEscFac] = StartValue(2.62056e+00, 0.1 ,-10, 10, 0);
     fStartValues[eEscGamma] = StartValue(-1, 0.1 ,0, 0, 1);
@@ -71,20 +77,28 @@ namespace prop {
     fStartValues[eRBeta] = StartValue(0., 1, -100., 100., 1);
     fStartValues[ePhotonPeak] = StartValue(0.01, 0.1, 0., 0., 1.);
     fStartValues[eLgHadIntFac] = StartValue(10, 0.1 ,-10, 10, 1);
-
+    fStartValues[eGammaLoNu] = StartValue(-5, 0.1, -10, 0, 1);
+    fStartValues[eLgEmaxLoNu] = StartValue(18, 0.1, 12, 18, 1);
+    fStartValues[eLgPhiLoNu] = StartValue(-100, 0.1, -100, 0, 1); 
+  
     fSpectrumType = Spectrum::eExponential;
+    fNuSpectrumType = Spectrum::eNuExponential;
     fMassFractionType = eFixedEnergy;
     fSpectrumDataType = eAuger2013;
     fXmaxDataType = eAugerXmax2014;
+    fXmaxDistributionDataType = eXmaxDistributionNone;
     fLowESpectrumDataType = eNoLowESpectrum;
-    fNuSpectrumDataType = eNone;
+    fNuSpectrumDataType = eNuSpectrumNone;
+    fNuEventDataType = eNuEventNone;
 
     fSpectrumTypeName = "exponential";
+    fNuSpectrumTypeName = "exponential";
     fMassFractionTypeName = "fixedEnergy";
     fSpectrumDataTypeName = "Auger2013";
     fLowESpectrumDataTypeName = "";
     fXmaxDataTypeName = "Auger2014";
     fNuSpectrumDataTypeName = "";
+    fNuEventDataTypeName = "";
 
     fBaselineFilename = "";
 
@@ -234,6 +248,14 @@ namespace prop {
         if (!(line >> fInteractionModel))
           throw runtime_error("error decoding interactionModel");
       }
+      else if (keyword == "noExtragalacticComponent") {
+        if (!(line >> fNoEgComponent))
+          throw runtime_error("error decoding noExtragalacticComponent");
+      }
+      else if (keyword == "lgLikelihoodFit") {
+        if (!(line >> fUseLgLikelihood))
+          throw runtime_error("error decoding lgLikelihoodFit");
+      }
       else if (keyword == "fitComposition") {
         if (!(line >> fFitCompo))
           throw runtime_error("error decoding fitComposition");
@@ -249,6 +271,10 @@ namespace prop {
       else if (keyword == "gcrCSFSpectrum") {
         if (!(line >> fCSFSpectrum))
           throw runtime_error("error decoding gcrCSFSpectrum");
+      }
+      else if (keyword == "gcrWMEBurst") {
+        if (!(line >> fWMEBurst))
+          throw runtime_error("error decoding gcrWMEBurst");
       }
       else if (keyword == "gcrWithComponentA") {
         if (!(line >> fGCRWithComponentA))
@@ -283,6 +309,10 @@ namespace prop {
         if (!(line >> fXmaxSigmaShift))
           throw runtime_error("error decoding xmaxSigmaShift");
       }
+      else if (keyword == "xmaxAbsoluteShift") {
+        if (!(line >> fXmaxAbsoluteShift))
+          throw runtime_error("error decoding xmaxAbsoluteShift");
+      }
       else if (keyword == "rejectOutliers") {
         if (!(line >> fRejectOutliers))
           throw runtime_error("error decoding rejectOutliers");
@@ -303,13 +333,21 @@ namespace prop {
         if (!(line >> fMaxCompLgE))
           throw runtime_error("error decoding maxLgECompo");
       }
-      else if (keyword == "minLgENuFlux") {
-        if (!(line >> fMinNuFluxLgE))
-          throw runtime_error("error decoding minNuLgEFlux");
+      else if (keyword == "minLgENuSpec") {
+        if (!(line >> fMinNuSpecLgE))
+          throw runtime_error("error decoding minLgENuSpec");
       }
-      else if (keyword == "maxLgENuFlux") {
-        if (!(line >> fMaxNuFluxLgE))
-          throw runtime_error("error decoding maxNuLgEFlux");
+      else if (keyword == "maxLgENuSpec") {
+        if (!(line >> fMaxNuSpecLgE))
+          throw runtime_error("error decoding maxLgENuSpec");
+      }
+      else if (keyword == "minLgENuEvent") {
+        if (!(line >> fMinNuEventLgE))
+          throw runtime_error("error decoding minLgENuEvent");
+      }
+      else if (keyword == "maxLgENuEvent") {
+        if (!(line >> fMaxNuEventLgE))
+          throw runtime_error("error decoding maxLgENuEvent");
       }
       else if (keyword == "lgBaselineFrac") {
         if (!(line >> fLgBaselineFraction))
@@ -374,6 +412,8 @@ namespace prop {
           throw runtime_error("error decoding spectrumData");
         if (type == "Auger2014")
           fXmaxDataType = eAugerXmax2014;
+        else if (type == "Auger2014txt")
+          fXmaxDataType = eAugerXmax2014txt;
         else if (type == "Auger2017")
           fXmaxDataType = eAugerXmax2017;
         else if (type == "Auger2017fudge")
@@ -400,6 +440,18 @@ namespace prop {
           throw runtime_error("unknown Xmax data type: " + type);
         fXmaxDataTypeName = type;
       }
+      else if (keyword == "xmaxDistributionData") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding xmaxDistributionData");
+        if (type == "Auger2014")
+          fXmaxDistributionDataType = eAugerXmaxDistribution2014;
+        else if (type == "Auger2023")
+          fXmaxDistributionDataType = eAugerXmaxDistribution2023;
+        else
+          throw runtime_error("unknown Xmax distribution data type: " + type);
+        fXmaxDistributionDataTypeName = type;
+      }
       else if (keyword == "nuSpectrumData") {
         string type;
         if (!(line >> type))
@@ -408,9 +460,32 @@ namespace prop {
           fNuSpectrumDataType = eIceCubeCascades2020;
         else if (type == "IceCubeHESE2020")
           fNuSpectrumDataType = eIceCubeHESE2020;
+        else if (type == "IceCubeSPL") {
+          fNuSpectrumDataType = eIceCubeSPL;
+          if(!(line >> fIceCubeSplNorm >> fIceCubeSplGamma))
+            throw runtime_error("Error decoding IceCubeSPL parameters!");
+        }
         else
           throw runtime_error("unknown nu spectrum data type: " + type);
         fNuSpectrumDataTypeName = type;
+      }
+      else if (keyword == "nuEventData") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding nuEventData");
+        if (type == "IceCubeTemp") // temporary
+          fNuEventDataType = eIceCubeTemp;
+        else if (type == "IceCubeHighEnergyEvents") 
+          fNuEventDataType = eIceCubeHighEnergyEvents;
+        else if (type == "IceCubeHighEnergyEvents_KM3NetLo") 
+          fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTLo;
+        else if (type == "IceCubeHighEnergyEvents_KM3NetMid") 
+          fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTMid;
+        else if (type == "IceCubeHighEnergyEvents_KM3NetHi") 
+          fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTHi;
+        else
+          throw runtime_error("unknown nu event data type: " + type);
+        fNuEventDataTypeName = type;
       }
       else if (keyword == "spectrumType") {
         string type;
@@ -418,6 +493,12 @@ namespace prop {
           throw runtime_error("error decoding spectrumType");
         if (type == "exponential")
           fSpectrumType = Spectrum::eExponential;
+        else if (type == "cosh2")
+          fSpectrumType = Spectrum::eCosh2;
+        else if (type == "cosh2_lowExpCutoff")
+          fSpectrumType = Spectrum::eCosh2_LowExpCutoff;
+        else if (type == "cosh2_lowSechCutoff")
+          fSpectrumType = Spectrum::eCosh2_LowSechCutoff;
         else if (type == "brokenExponential")
           fSpectrumType = Spectrum::eBrokenExponential;
         else if (type == "deltaGamma1")
@@ -437,6 +518,18 @@ namespace prop {
         else
           throw runtime_error("unknown spectrum type" + type);
         fSpectrumTypeName = type;
+      }
+      else if (keyword == "nuSpectrumType") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding nuSpectrumType");
+        if (type == "exponential")
+          fNuSpectrumType = Spectrum::eNuExponential;
+        else if (type == "cosh2" || type == "sech")
+          fNuSpectrumType = Spectrum::eNuCosh2;
+        else
+          throw runtime_error("unknown nu spectrum type" + type);
+        fNuSpectrumTypeName = type;
       }
       else if (keyword == "massFracType") {
         string type;
@@ -745,6 +838,8 @@ namespace prop {
     switch (fXmaxDataType) {
     case eAugerXmax2014:
       return "Auger 2014";
+    case eAugerXmax2014txt:
+      return "Auger 2014";
     case eAugerXmax2017:
       return "Auger 2017";
     case eAugerXmax2017fudge:
@@ -771,6 +866,22 @@ namespace prop {
   }
 
   string
+  FitOptions::GetXmaxDistributionDataLabel()
+    const
+  {
+    switch (fXmaxDistributionDataType) {
+    case eXmaxDistributionNone:
+      return "none";
+    case eAugerXmaxDistribution2014:
+      return "Auger 2014";
+    case eAugerXmaxDistribution2023:
+      return "Auger 2023";
+    default:
+      return "unknown";
+    }
+  }
+
+  string
   FitOptions::GetNuSpectrumDataLabel() 
     const
   {
@@ -779,6 +890,34 @@ namespace prop {
       return "IceCube Cascades 2020";
     case eIceCubeHESE2020:
       return "IceCube HESE 2020";
+    case eIceCubeSPL:
+    {
+      string label = "#splitline{IceCube SPL}{(lg#Phi_{0}, #gamma) = (";
+      char buff[200];
+      sprintf(buff, "%.3f, %.3f)}",log10(fIceCubeSplNorm), fIceCubeSplGamma);
+      label += buff;
+      return label;
+    } 
+    default:
+      return "unknown";
+    }
+  }
+
+  string
+  FitOptions::GetNuEventDataLabel() 
+    const
+  {
+    switch (fNuEventDataType) {
+    case eIceCubeTemp:
+      return "temporary";
+    case eIceCubeHighEnergyEvents:
+      return "IceCube High Energy Events";
+    case eIceCubeHighEnergyEventsKM3NeTLo:
+      return "IceCube HE + KM3NeT Lo";
+    case eIceCubeHighEnergyEventsKM3NeTMid:
+      return "IceCube HE + KM3NeT Mid";
+    case eIceCubeHighEnergyEventsKM3NeTHi:
+      return "IceCube HE + KM3NeT Hi";
     default:
       return "unknown";
     }
@@ -788,27 +927,41 @@ namespace prop {
   FitOptions::WriteFitConfig(const string& filename, const FitData& fitData)
   {
     ofstream out(filename.c_str());
-    out << "# chi2Tot/ndf = " << fitData.GetChi2Tot() << "/"
-        << fitData.GetNdfTot() << endl;
-    out << "# chi2 spec: (" << fitData.fChi2Spec - fitData.fChi2SpecLowE
-        << ", " << fitData.fChi2SpecLowE << "), LnA: " << fitData.fChi2LnA
-        << ", V(lnA); " << fitData.fChi2VlnA 
-        << ", nuFlux = " << fitData.fChi2Nu << endl;
+    if(!fUseLgLikelihood) {
+      out << "# chi2Tot/ndf = " << fitData.GetChi2Tot() << "/"
+          << fitData.GetNdfTot() << endl;
+      out << "# chi2 spec: (" << fitData.fChi2Spec - fitData.fChi2SpecLowE
+          << ", " << fitData.fChi2SpecLowE << "), LnA: " << fitData.fChi2LnA
+          << ", V(lnA); " << fitData.fChi2VlnA 
+          << ", nuFlux = " << fitData.fChi2Nu << endl;
+    }
+    else {
+      out << "# lgLTot = " << fitData.GetNegLogLikelihood() << " , ndf = "
+          << fitData.GetNdfTot() << endl;
+      out << "# lgL spec= " << fitData.fLgLSpec
+          << ", lgL Xmax= " << fitData.fLgLXmax
+          << ", lgL nuSpec = " << fitData.fLgLNuSpec 
+          << ", lgL nuEvents = " << fitData.fLgLNuEvent << endl;
+    }
     out << "OutDir " << fOutDirname << "\n"
         << "DataDir " << fDataDirname << "\n"
         << "evolution " << fEvolution << "\n"
         << "IRB " << fIRB << "\n"
         << "energyBinShift " << fEnergyBinShift << "\n"
         << "xmaxSigmaShift " << fXmaxSigmaShift << "\n"
+        << "xmaxAbsoluteShift " << fXmaxAbsoluteShift << "\n"
         << "spectrumData " << fSpectrumDataTypeName << "\n"
         << "xmaxData " << fXmaxDataTypeName << "\n"
-        << "spectrumType " << fSpectrumTypeName << "\n";
+        << "spectrumType " << fSpectrumTypeName << "\n"
+        << "nuSpectrumType " << fNuSpectrumTypeName << "\n";
     out << "minLgEFlux " << fMinFluxLgE << "\n"
         << "maxLgEFlux " << fMaxFluxLgE << "\n"
         << "minLgECompo " << fMinCompLgE << "\n"
         << "maxLgECompo " << fMaxCompLgE << "\n"
-        << "minLgENuFlux " << fMinNuFluxLgE << "\n"
-        << "maxLgENuFlux " << fMaxNuFluxLgE << "\n"
+        << "minLgENuSpec " << fMinNuSpecLgE << "\n"
+        << "maxLgENuSpec " << fMaxNuSpecLgE << "\n"
+        << "minLgENuEvent " << fMinNuEventLgE << "\n"
+        << "maxLgENuEvent " << fMaxNuEventLgE << "\n"
         << "boostedModel " << fBoostedModel << endl;
     if (!fLowESpectrumDataTypeName.empty())
       out << "spectrumDataLowE " << fLowESpectrumDataTypeName << "\n";
@@ -844,6 +997,7 @@ namespace prop {
 
     out << "interactionModel " << fInteractionModel << "\n"
         << "fitComposition " << fFitCompo << "\n"
+        << "noExtragalacticComponent" << fNoEgComponent << "\n"
         << "gcrWithKnees " << fGCRWithKnees << "\n"
         << "gcrWithComponentA " << fGCRWithComponentA << "\n"
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"

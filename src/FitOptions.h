@@ -89,10 +89,17 @@ namespace prop {
       eAugerXmax2019withFixedTALEXmax2019 = 1 << 7,
       eTAXmax2019 = 1 << 8,
       eAugerXmax2023FD = 1 << 9,
-      eAugerXmax2023SD = 1 << 10
+      eAugerXmax2023SD = 1 << 10,
+      eAugerXmax2014txt = 1 << 11,
     };
     friend constexpr EXmaxDataType operator|(EXmaxDataType a, EXmaxDataType b) {
       return static_cast<EXmaxDataType>(static_cast<int>(a) | static_cast<int>(b));
+    };
+
+    enum EXmaxDistributionDataType {
+      eXmaxDistributionNone,
+      eAugerXmaxDistribution2014,
+      eAugerXmaxDistribution2023
     };
 
     enum EEnergyShiftType {
@@ -102,9 +109,28 @@ namespace prop {
     };
 
     enum ENuSpectrumDataType {
-      eNone,
+      eNuSpectrumNone,
       eIceCubeCascades2020,
-      eIceCubeHESE2020
+      eIceCubeHESE2020,
+      eIceCubeSPL
+    };
+
+    enum ENuEffectiveAreaType {
+      eNuEffectiveAreaNone,
+      eIceCubeHESE,
+      eIceCubeHESE75,
+      eIceCubeNorthernTracks,
+      eIceCubePEPE,
+      eKM3Net
+    };
+
+    enum ENuEventDataType {
+      eNuEventNone,
+      eIceCubeTemp,
+      eIceCubeHighEnergyEvents,
+      eIceCubeHighEnergyEventsKM3NeTLo,
+      eIceCubeHighEnergyEventsKM3NeTMid,
+      eIceCubeHighEnergyEventsKM3NeTHi
     };
 
     enum EMassFractionType {
@@ -160,6 +186,12 @@ namespace prop {
     EPhotonFieldType GetPhotonFieldType(const unsigned i) const
     { return fPhotonFieldType[i]; }
 
+    bool NoEGComponent()  const
+    { return fNoEgComponent; }
+
+    bool UseLgLikelihood() const
+    { return fUseLgLikelihood; }
+
     bool DoCompositionFit() const
     { return fFitCompo; }
 
@@ -168,6 +200,9 @@ namespace prop {
 
     bool GCRCSFSpectrum() const
     { return fCSFSpectrum; }
+
+    bool GCRWMEBurst() const
+    { return fWMEBurst; }
 
     bool GCRWithComponentA() const
     { return fGCRWithComponentA; }
@@ -196,11 +231,17 @@ namespace prop {
     double GetMaxCompLgE() const
     { return fMaxCompLgE; }
 
-    double GetMinNuFluxLgE() const
-    { return fMinNuFluxLgE; }
+    double GetMinNuSpecLgE() const
+    { return fMinNuSpecLgE; }
 
-    double GetMaxNuFluxLgE() const
-    { return fMaxNuFluxLgE; }
+    double GetMaxNuSpecLgE() const
+    { return fMaxNuSpecLgE; }
+
+    double GetMinNuEventLgE() const
+    { return fMinNuEventLgE; }
+
+    double GetMaxNuEventLgE() const
+    { return fMaxNuEventLgE; }
 
     EEnergyShiftType GetEnergyShiftType() const
     { return fEnergyShiftType; }
@@ -210,11 +251,20 @@ namespace prop {
     double GetXmaxSigmaShift() const
     { return fXmaxSigmaShift; }
 
+    double GetXmaxAbsoluteShift() const
+    { return fXmaxAbsoluteShift; }
+
     double GetLgBaselineFraction() const
     { return fLgBaselineFraction; }
 
     double GetNuChi2Weight() const
     { return fNuChi2Weight; }
+
+    double GetIceCubeSplNorm() const
+    { return fIceCubeSplNorm; }
+
+    double GetIceCubeSplGamma() const
+    { return fIceCubeSplGamma; }
 
     const std::vector<MassValue>& GetGalacticMasses() const
     { return fGalMasses; }
@@ -227,6 +277,9 @@ namespace prop {
 
     Spectrum::ESpectrumType GetSpectrumType() const
     { return fSpectrumType; }
+    
+    Spectrum::ENuSpectrumType GetNuSpectrumType() const
+    { return fNuSpectrumType; }
 
     ESpectrumDataType GetSpectrumDataType() const
     { return fSpectrumDataType; }
@@ -240,12 +293,22 @@ namespace prop {
     { return fXmaxDataType; }
     std::string GetXmaxDataLabel() const;
 
+    EXmaxDistributionDataType GetXmaxDistributionDataType() const
+    { return fXmaxDistributionDataType; }
+    std::string GetXmaxDistributionDataLabel() const;
+
     ENuSpectrumDataType GetNuSpectrumDataType() const
     { return fNuSpectrumDataType; }
     std::string GetNuSpectrumDataLabel() const;
     std::string GetNuSpectrumDataTypeName() const
     { return fNuSpectrumDataTypeName; } 
 
+    ENuEventDataType GetNuEventDataType() const
+    { return fNuEventDataType; }
+    std::string GetNuEventDataLabel() const;
+    std::string GetNuEventDataTypeName() const
+    { return fNuEventDataTypeName; }
+    
     EMassFractionType GetMassFractionType()  const
     { return fMassFractionType; }
     std::string GetMassFractionTypeName() const
@@ -269,10 +332,13 @@ namespace prop {
     std::vector<std::string> fBBTemperature;
     std::vector<std::string> fBBSigma;
     std::vector<std::string> fUserPhotonfieldName;
+    bool fNoEgComponent;
+    bool fUseLgLikelihood;
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
     bool fCSFSpectrum;
+    bool fWMEBurst;
     bool fGCRWithComponentA;
     bool fGCRWithGSFIron;
     bool fRejectOutliers;
@@ -281,27 +347,38 @@ namespace prop {
     double fMaxFluxLgE;
     double fMinCompLgE;
     double fMaxCompLgE;
-    double fMinNuFluxLgE;
-    double fMaxNuFluxLgE;
+    double fMinNuSpecLgE;
+    double fMaxNuSpecLgE;
+    double fMinNuEventLgE;
+    double fMaxNuEventLgE;
     double fEnergyBinShift;
-    double fXmaxSigmaShift;
+    double fXmaxSigmaShift; // shift in units of systematic error bar (energy dependent)
+    double fXmaxAbsoluteShift; // shift in g/cm2 (energy independent)
     double fLgBaselineFraction;
     double fNuChi2Weight;
+    double fIceCubeSplNorm;
+    double fIceCubeSplGamma;
     std::string fInteractionModel;
     Spectrum::ESpectrumType fSpectrumType;
+    Spectrum::ENuSpectrumType fNuSpectrumType;
     EMassFractionType fMassFractionType;
     std::vector<MassValue> fGalMasses;
     std::vector<MassValue> fGalAMasses;
     ESpectrumDataType fSpectrumDataType;
     ELowESpectrumDataType fLowESpectrumDataType;
     EXmaxDataType fXmaxDataType;
+    EXmaxDistributionDataType fXmaxDistributionDataType;
     EEnergyShiftType fEnergyShiftType;
     ENuSpectrumDataType fNuSpectrumDataType;
+    ENuEventDataType fNuEventDataType;
     std::string fSpectrumTypeName;
+    std::string fNuSpectrumTypeName;
     std::string fSpectrumDataTypeName;
     std::string fLowESpectrumDataTypeName;
     std::string fXmaxDataTypeName;
+    std::string fXmaxDistributionDataTypeName;
     std::string fNuSpectrumDataTypeName;
+    std::string fNuEventDataTypeName;
     std::string fMassFractionTypeName;
     ClassDefNV(FitOptions, 1);
   };

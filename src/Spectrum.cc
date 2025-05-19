@@ -398,8 +398,18 @@ namespace prop {
   {
     const double E0 = GetE0();
     const double Emax = fRmax * pow(aToZ(A), fRAlpha) * pow(A, fRBeta);
+    const double Emin = fRmin * aToZ(A);
     if (fSpectrumType == eExponential)
       return pow(E / E0, fGamma) * exp(-E/Emax);
+    else if (fSpectrumType == eCosh2) {
+      return pow(E / E0, fGamma) / cosh(pow(E/Emax, 2)); 
+    }
+    else if (fSpectrumType == eCosh2_LowExpCutoff) {
+      return pow(E / E0, fGamma) / cosh(pow(E/Emax, 2)) * exp(-Emin/E);
+    }
+    else if (fSpectrumType == eCosh2_LowSechCutoff) {
+      return pow(E / E0, fGamma) / cosh(pow(E/Emax, 2)) / cosh(Emin/E);
+    }
     else if (fSpectrumType == eBrokenExponential) {
       if (E > Emax)
         return  pow(E / E0, fGamma) * exp(1 - E/Emax);
@@ -535,7 +545,7 @@ namespace prop {
 
   void
   Spectrum::SetParameters(const VSource* s, const double gamma,
-                          const double Rmax, const double nE,
+                          const double Rmin, const double Rmax, const double nE,
                           unsigned int nSubBins,
                           const double lgEmin, const double lgEmax,
                           const std::map<unsigned int, double>& fractions,
@@ -546,6 +556,7 @@ namespace prop {
     fNucleons.clear();
     fSecondaries.clear();
     fExtraProtons.clear();
+    fRmin = Rmin;
     fRmax = Rmax;
     fGamma = gamma;
     fSource = s;
@@ -568,6 +579,7 @@ namespace prop {
     fEscape.clear();
     fNucleons.clear();
     fSecondaries.clear();
+    fRmin = 0;
     fRmax = 0;
     fGamma = 0;
     fSource = s;
@@ -1490,4 +1502,37 @@ namespace prop {
 
   double Spectrum::GetE0() { return 1e18*utl::eV; }
 
+  TMatrixD Spectrum::GetNeutrinoFlux(const double gamma, const double lgEcut, const double lgPhi0)
+  {
+    const double lgE0 = 14.0;
+    const double E0 = pow(10, lgE0) * utl::eV;
+   
+    const double phi0 = pow(10, lgPhi0); // flux dN/dE at E0 in 1/eV/yr/km2/sr
+    const double Ecut = pow(10, lgEcut) * utl::eV;
+ 
+    const double dlgE = (fLgEmax - fLgEmin) / fN;
+
+    TMatrixD m(fN, 1);
+
+    for(int i = 0; i < fN; ++i) {
+
+      const double lgE = fLgEmin + i*dlgE;
+      const double E = pow(10, lgE) * utl::eV;
+  
+      double flux;
+      if(fNuSpectrumType == eNuExponential) 
+        flux = phi0 * pow(E/E0, gamma) * exp(-(E-E0)/Ecut);
+      else if(fNuSpectrumType == eNuCosh2) 
+        flux = phi0 * pow(E/E0, gamma) / cosh(pow(E/Ecut, 2)) * cosh(pow(E0/Ecut, 2));
+      else
+        throw runtime_error("Unknown neutrino spectrum type!");
+
+      m(i, 0) = flux;
+    }
+  
+    return m;
+  }
+
 }
+
+

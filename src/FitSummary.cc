@@ -27,6 +27,9 @@ FitSummary::FitSummary() :
     fExtraProtonLgFractionErr[i] = 0;
     fExtraProtonLgEmaxErr[i] = 0;
     fExtraProtonGammaErr[i] = 0;
+    fGammaLoNuErr[i] = 0;
+    fLgEmaxLoNuErr[i] = 0;
+    fLgPhiLoNuErr[i] = 0;
   }
 
 }
@@ -68,7 +71,9 @@ FitSummary::Fill(const prop::FitData& fitData,
   fRBeta = fitData.fFitParameters[eRBeta].fValue;
   fPhotonPeak = fitData.fFitParameters[ePhotonPeak].fValue;
   fLgHadIntFac = fitData.fFitParameters[eLgHadIntFac].fValue;
-
+  fGammaLoNu = fitData.fFitParameters[eGammaLoNu].fValue;
+  fLgEmaxLoNu = fitData.fFitParameters[eLgEmaxLoNu].fValue;
+  fLgPhiLoNu = fitData.fFitParameters[eLgPhiLoNu].fValue;
   
   fGammaErr[0] = fitData.fFitParameters[eGamma].fError;
   fLgEmaxErr[0] = fitData.fFitParameters[eLgEmax].fError;
@@ -96,6 +101,9 @@ FitSummary::Fill(const prop::FitData& fitData,
   fRBetaErr[0] = fitData.fFitParameters[eRBeta].fError;
   fPhotonPeakErr[0] = fitData.fFitParameters[ePhotonPeak].fError;
   fLgHadIntFacErr[0] = fitData.fFitParameters[eLgHadIntFac].fError;
+  fGammaLoNuErr[0] = fitData.fFitParameters[eGammaLoNu].fError;
+  fLgEmaxLoNuErr[0] = fitData.fFitParameters[eLgEmaxLoNu].fError;
+  fLgPhiLoNuErr[0] = fitData.fFitParameters[eLgPhiLoNu].fError;
 
   fMassFractionType = fitOptions.GetMassFractionTypeName();
   const unsigned int nMass = fitData.GetNMass();

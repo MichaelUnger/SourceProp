@@ -2,6 +2,7 @@
 #define _Particles_h_
 
 enum EPseudoMass {
+  ePhoton = 0,
   eNeutron = 1000,
   eElectronNeutrino = 1012,
   eMuonNeutrino = 1014,
@@ -30,7 +31,7 @@ inline
 bool
 IsNucleus(const unsigned int A)
 {
-  return A < eNeutron || A > kGalacticOffset;
+  return (A > ePhoton && A < eNeutron) || A > kGalacticOffset;
 }
 
 #endif
