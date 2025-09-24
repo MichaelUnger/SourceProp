@@ -121,7 +121,9 @@ namespace prop {
       eIceCubeHESE75,
       eIceCubeNorthernTracks,
       eIceCubePEPE,
-      eKM3Net
+      eKM3Net,
+      eAugerES,
+      eAugerDG
     };
 
     enum ENuEventDataType {
@@ -130,7 +132,9 @@ namespace prop {
       eIceCubeHighEnergyEvents,
       eIceCubeHighEnergyEventsKM3NeTLo,
       eIceCubeHighEnergyEventsKM3NeTMid,
-      eIceCubeHighEnergyEventsKM3NeTHi
+      eIceCubeHighEnergyEventsKM3NeTHi,
+      eIceCubeHighEnergyEventsKM3NeTOfficial,
+      eIceCubeHighEnergyEventsCustom
     };
 
     enum EMassFractionType {
@@ -308,7 +312,9 @@ namespace prop {
     std::string GetNuEventDataLabel() const;
     std::string GetNuEventDataTypeName() const
     { return fNuEventDataTypeName; }
-    
+    std::string GetNuEventDataPath() const
+    { return fNuEventDataPath; }   
+ 
     EMassFractionType GetMassFractionType()  const
     { return fMassFractionType; }
     std::string GetMassFractionTypeName() const
@@ -371,6 +377,7 @@ namespace prop {
     EEnergyShiftType fEnergyShiftType;
     ENuSpectrumDataType fNuSpectrumDataType;
     ENuEventDataType fNuEventDataType;
+    std::string fNuEventDataPath;
     std::string fSpectrumTypeName;
     std::string fNuSpectrumTypeName;
     std::string fSpectrumDataTypeName;

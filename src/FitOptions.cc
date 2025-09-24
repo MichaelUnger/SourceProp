@@ -99,6 +99,7 @@ namespace prop {
     fXmaxDataTypeName = "Auger2014";
     fNuSpectrumDataTypeName = "";
     fNuEventDataTypeName = "";
+    fNuEventDataPath = "";
 
     fBaselineFilename = "";
 
@@ -483,6 +484,16 @@ namespace prop {
           fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTMid;
         else if (type == "IceCubeHighEnergyEvents_KM3NetHi") 
           fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTHi;
+        else if (type == "IceCubeHighEnergyEvents_KM3NetOfficial") 
+          fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTOfficial;
+        else if (type == "IceCubeHighEnergyEvents_Custom")
+        {
+          fNuEventDataType = eIceCubeHighEnergyEventsCustom;
+          string path;
+          if (!(line >> path))
+            throw runtime_error("error decoding custom nuEventData path");
+          fNuEventDataPath = path;
+        }
         else
           throw runtime_error("unknown nu event data type: " + type);
         fNuEventDataTypeName = type;
@@ -918,6 +929,10 @@ namespace prop {
       return "IceCube HE + KM3NeT Mid";
     case eIceCubeHighEnergyEventsKM3NeTHi:
       return "IceCube HE + KM3NeT Hi";
+    case eIceCubeHighEnergyEventsKM3NeTOfficial:
+      return "IceCube HE + KM3NeT Official";
+    case eIceCubeHighEnergyEventsCustom:
+      return "Custom HE Events";
     default:
       return "unknown";
     }

@@ -3395,6 +3395,178 @@ namespace prop {
             }
             break;
           }
+        case FitOptions::eIceCubeHighEnergyEventsKM3NeTOfficial:
+          {
+            ifstream in(fOptions.GetDataDirname() + "/IceCubeHighEnergyEvents_KM3NetOfficial.dat");
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff 
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+            
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+              }
+            }
+            break;
+          }
+        case FitOptions::eIceCubeHighEnergyEventsCustom:
+          {
+            ifstream in(fOptions.GetNuEventDataPath());
+            /*
+            # List of events
+            # AeffName name of relevant Aeff for following events
+            # Livetime in [years] for that Aeff 
+            # E/GeV central energy estimate
+            # theta/rad
+            # phi/rad
+            # flavor neutrino flavor assignment [pdg PID]
+            # AeffName livetime
+            # E theta phi flavor 
+            */
+            FitOptions::ENuEffectiveAreaType effAreaType;
+            std::string line;
+            while (true) {
+              // read line
+              getline(in, line);
+              if (!in.good())
+                break;
+              std::stringstream ss(line);
+              std::vector<std::string> words;
+              std::string buff;
+              while(ss >> buff)
+                words.push_back(buff);
+
+              if(words.size() == 2) { // new Aeff set
+                std::string effAreaName = words[0];
+                double livetime = stof(words[1]);
+                effAreaType = ReadNuEffectiveAreaData(effAreaName, livetime);
+              }
+              else { // event line
+                double E = stof(words[0]);
+                double theta = stof(words[1]); 
+                double phi = stof(words[2]);
+                int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
+                
+                double lgE, cosTheta;
+                // to eV
+                lgE = log10(E*1e9);
+                cosTheta = cos(theta);
+            
+                if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
+                  throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
+ 
+                // find corresponding Aeff bin -- assumes bins do not overlap
+                for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                    Aeff.fN++;
+                  }
+                }
+                for (auto& Aeff : fFitData.fNuEffectiveAreaData.at(effAreaType)) {
+                  const double lgElo = Aeff.fLgELo;
+                  const double lgEhi = Aeff.fLgEHi;
+                  const double cosThetaLo = Aeff.fCosThetaLo;
+                  const double cosThetaHi = Aeff.fCosThetaHi;
+
+                  if(lgElo+1e-12 < lgE && lgE <= lgEhi+1e-12 && cosThetaLo+1e-12 < cosTheta && cosTheta <= cosThetaHi+1e-12) {
+                    if(abs(pId) == 12)
+                      Aeff.fNE++;
+                    else if(abs(pId) == 14)
+                      Aeff.fNMu++;
+                    else if(abs(pId) == 16)
+                      Aeff.fNTau++;
+                    else
+                      throw runtime_error("Unknown neutrino flavor!");
+                  }
+                }
+              }
+            }
+            break;
+          }
         default:
           {
             cerr << " unknown neutrino effective area " << endl;
@@ -3505,6 +3677,10 @@ namespace prop {
       type = FitOptions::eIceCubePEPE;
     else if(effAreaName == "KM3Net")
       type = FitOptions::eKM3Net;
+    else if(effAreaName == "AugerES")
+      type = FitOptions::eAugerES;
+    else if(effAreaName == "AugerDG")
+      type = FitOptions::eAugerDG;
     else
       throw runtime_error("Unknown neutrino effective area type! "+effAreaName);
 
@@ -3691,10 +3867,9 @@ namespace prop {
         }
       case FitOptions::eKM3Net:
         {
-          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeNorthernTracks.dat");
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaKM3NeTArca21.dat");
           /*
-          # Estimate 2024 event KM3Net Aeff to be roughly 0.2 of Northern Tracks Aeff
-          # HESE effective area vs energy and zenith 
+          # ARCA21 effective area vs energy and zenith 
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
           # CosThetaLo lower edge of cos(zenith) bin 
@@ -3704,7 +3879,6 @@ namespace prop {
           # AeffTau/m^2 effective area to tau neutrinos
           # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
           */
-          const double w = 0.2; // ratio of KM3Net-to-NT Aeffs
           while (true) {
             NuEffectiveAreaData Aeff;
             double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
@@ -3719,9 +3893,93 @@ namespace prop {
             Aeff.fCosThetaHi = cosThetaHi;
             // to internal units [ km^2 ]
             const double conv = 1e-6;
-            Aeff.fAreaE = AeffE * conv * w;
-            Aeff.fAreaMu = AeffMu * conv * w;
-            Aeff.fAreaTau = AeffTau * conv * w;
+            Aeff.fAreaE = AeffE * conv;
+            Aeff.fAreaMu = AeffMu * conv;
+            Aeff.fAreaTau = AeffTau * conv;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      case FitOptions::eAugerES:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaAugerES.dat");
+          /*
+          # AugerES effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv;
+            Aeff.fAreaMu = AeffMu * conv;
+            Aeff.fAreaTau = AeffTau * conv;
+            Aeff.fNE = 0;
+            Aeff.fNMu = 0;
+            Aeff.fNTau = 0;
+            Aeff.fLivetime = livetime;
+
+            fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+              fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
+          }
+          break;
+        }
+      case FitOptions::eAugerDG:
+        {
+          ifstream in(fOptions.GetDataDirname() + "/effectiveAreaAugerDG.dat");
+          /*
+          # AugerDG effective area vs energy and zenith 
+          # Elo/GeV lower edge of energy bin
+          # Ehi/GeV upper edge of energy bin
+          # CosThetaLo lower edge of cos(zenith) bin 
+          # CosThetaHi upper edge of cos(zenith) bin 
+          # AeffE/m^2 effective area to electron neutrinos
+          # AeffMu/m^2 effective area to muon neutrinos
+          # AeffTau/m^2 effective area to tau neutrinos
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          */
+          while (true) {
+            NuEffectiveAreaData Aeff;
+            double Elo, Ehi, cosThetaLo, cosThetaHi, AeffE, AeffMu, AeffTau;
+            in >> Elo >> Ehi >> cosThetaLo >> cosThetaHi >> AeffE >> AeffMu >> AeffTau;
+            if (!in.good())
+              break;
+            // to eV
+            Aeff.fLgELo = log10(Elo*1e9);
+            Aeff.fLgEHi = log10(Ehi*1e9);
+            const double lgE = (Aeff.fLgELo + Aeff.fLgEHi)/2.;
+            Aeff.fCosThetaLo = cosThetaLo;
+            Aeff.fCosThetaHi = cosThetaHi;
+            // to internal units [ km^2 ]
+            const double conv = 1e-6;
+            Aeff.fAreaE = AeffE * conv;
+            Aeff.fAreaMu = AeffMu * conv;
+            Aeff.fAreaTau = AeffTau * conv;
             Aeff.fNE = 0;
             Aeff.fNMu = 0;
             Aeff.fNTau = 0;
