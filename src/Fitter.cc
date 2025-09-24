@@ -66,7 +66,7 @@ namespace prop {
 
     cout << "Initializing WME Burst series..." << endl;
 
-    const int N = 100; // number of terms calculate directly 
+    const int N = 100; // number of terms calculate directly
     gsl_sum_levin_u_workspace * w = gsl_sum_levin_u_alloc(N);
 
     const double lgxMin = -10;
@@ -81,7 +81,7 @@ namespace prop {
       lgx.push_back(lgxMin+i*dlgx);
       const double x = pow(10, lgx[i]);
       double sum_accel, err;
-    
+
       vector<double> terms(N);
       for(int j = 1; j < N+1; ++j)
         terms[j-1] = pow(-1, j+1)*j*j*exp(-2*pow(j*M_PI*x, 2));
@@ -96,30 +96,30 @@ namespace prop {
     gsl_sum_levin_u_free(w);
 
     fWMESeriesInt = new ROOT::Math::Interpolator(lgx, series, ROOT::Math::Interpolation::kLINEAR);
-  
+
     return;
   }
 
   double
-  WMEBurstSeries(const double E, const double E0) 
+  WMEBurstSeries(const double E, const double E0)
   {
-    const double lgx = log10(E/E0);  
+    const double lgx = log10(E/E0);
     const double sum = fWMESeriesInt->Eval(lgx);
     if(sum < 0) // just in case -- but this shouldn't happen with a linear interpolator
       return 0;
 
     return sum;
   }
-  
+
   void
   ConvertToFixedEnergyFraction(map<unsigned int, double>& frac, const double gamma,
                                     const FitOptions::EMassFractionType type)
   {
-    // convert from fractions a fixed energy to fixed energy 
-    if(type == FitOptions::eFixedEnergy) 
+    // convert from fractions a fixed energy to fixed energy
+    if(type == FitOptions::eFixedEnergy)
       return;
     // convert from fractions at fixed rigidity to fixed energy
-    else if(type == FitOptions::eFixedRigidity) { 
+    else if(type == FitOptions::eFixedRigidity) {
 
       double norm = 0;
       for(auto& iter : frac) {
@@ -161,7 +161,7 @@ namespace prop {
       const Neutrinos& n = *data.fNeutrinos;
       for (const auto& flux : data.fNonZeroNuFluxData) {
         const double y = flux.fFlux;
-        const double m = n.GetTotalOscillatedFlux(flux.fLgE); 
+        const double m = n.GetTotalOscillatedFlux(flux.fLgE);
         const double w = pow(1/flux.fFluxErr, 2);
         mywSum += (m*y*w);
         mmwSum += (m*m*w);
@@ -170,7 +170,7 @@ namespace prop {
         const double y = flux.fFlux;
         if(y == 0)
           continue;
-        const double m = n.GetTotalOscillatedFlux(flux.fLgE); 
+        const double m = n.GetTotalOscillatedFlux(flux.fLgE);
         const double w = pow(1/flux.fFluxErr, 2);
         mywSum += (m*y*w);
         mmwSum += (m*m*w);
@@ -484,7 +484,7 @@ namespace prop {
         }
 
         data.fPropagator->Propagate(data.fSpectrum.GetEscFlux(), true,  par);
-        if(fLgBaselineFraction > -100)  
+        if(fLgBaselineFraction > -100)
           data.fBaselinePropagator->Propagate(data.fBaseline.GetEscFlux(), true, par);
       }
 
@@ -625,11 +625,11 @@ namespace prop {
           const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
           double lgE = data.fLgEmin + dlgE/2;
           for(unsigned int i = 0; i < data.fNLgE; ++i) {
-            const double E = pow(10, lgE); 
+            const double E = pow(10, lgE);
             extraGalacticSum += pow(E, 2) * data.fPropagator->GetFluxSumInterpolated(lgE);
             lgE += dlgE;
           }
-          if(fWMEBurst) 
+          if(fWMEBurst)
             lgPhi0Gal = log10(fGal) + log10(extraGalacticSum) - lgGalSum - log10(1-fGal);
           else
             lgPhi0Gal = log10(fGal) + log10(extraGalactic) - lgGalSum - log10(1-fGal);
@@ -645,7 +645,7 @@ namespace prop {
               if(fCSFSpectrum)
                 galactic[i][0] = iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)); // spectrum of a colliding shock flow fitting data from arXiv:1706.01135
               else if(fWMEBurst)
-                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * WMEBurstSeries(E, emaxGal); 
+                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * WMEBurstSeries(E, emaxGal);
               else
                 galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
               lgE += dlgE;
@@ -653,7 +653,7 @@ namespace prop {
             data.fPropagator->AddComponent(iter.first + kGalacticOffset,
                                            galactic);
           }
-          
+
           // finally add in galactic component A with proper scaling
           if(fGCRComponentA) {
             const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
@@ -747,7 +747,7 @@ namespace prop {
                                            galactic);
           }
         }
-      
+
       }
 
       const pair<double, double> norm = calcNorm(data, fGCRGSFIron);
@@ -764,7 +764,7 @@ namespace prop {
         data.fNeutrinos->Rescale(norm.first);
         { // if there's a baseline model, give it the correct normalization too
           const double lgf = fLgBaselineFraction;
-          if(lgf > -100) { 
+          if(lgf > -100) {
             data.fBaseline.Rescale(norm.first*baselineNorm);
             data.fBaselinePropagator->Rescale(norm.first*baselineNorm);
           }
@@ -975,7 +975,7 @@ namespace prop {
         throw std::runtime_error("simple model not implemented");
       }
     }
-    
+
     {
       const double lgEref = log10(30e18);
       const double dlgE = (data.fLgEmax - data.fLgEmin) / data.fNLgE;
@@ -998,7 +998,7 @@ namespace prop {
         }
       }
       data.fProtonFraction30 = nucleonSum / allSum;
-    
+
       // calculate proton fraction just from the baseline model -- ie phi_protonBL/phi_tot, phi_tot = phi_gal + phi_normal + phi_BL
       if(fLgBaselineFraction > -100) {
         const double baselineLgEref = log10(30e18);
@@ -1032,7 +1032,7 @@ namespace prop {
     const bool debug = false;
 
     data.SetNdfTot();
-    
+
     // chi2 case
     if(!fUseLgLikelihood) {
       data.fChi2Spec = 0;
@@ -1089,7 +1089,7 @@ namespace prop {
         if (compo.fVlnAErr > 0)
           data.fChi2VlnA += pow((compo.fVlnA - m.second) / compo.fVlnAErr, 2);
       }
-      
+
       data.fChi2Nu = 0;
       for (const auto& nuFlux : data.fNuFluxData) {
         const double y = nuFlux.fFlux;
@@ -1104,9 +1104,9 @@ namespace prop {
           const double nExpected = data.fNeutrinos->GetEventRate(nuFlux.fLgE, nuFlux.fdLgE) * data.fNuLivetime;
           data.fChi2Nu += 2*nExpected;
           if(nExpected > 0.1) // if too many neutrinos are predicted we should include this data point in the dof's
-            data.IncrementNdfTot(); 
+            data.IncrementNdfTot();
         }
-        
+
       }
 
       chi2 = data.GetChi2Tot();
@@ -1119,7 +1119,7 @@ namespace prop {
              << data.fChi2SpecLowE << ", "
              << data.fChi2Spec - data.fChi2SpecLowE << ")"
              << ", lnA = " << data.fChi2LnA
-             << ", VlnA = " << data.fChi2VlnA 
+             << ", VlnA = " << data.fChi2VlnA
              << ", nuFlux = " << data.fChi2Nu << endl;
         cout << endl;
       }
@@ -1131,8 +1131,8 @@ namespace prop {
     }
     // log likelihood case
     else {
-   
-      // spectrum contribution 
+
+      // spectrum contribution
       data.fLgLSpec = 0;
       double lastLgE = 0;
       for (const auto& flux : data.fFluxData) {
@@ -1150,7 +1150,7 @@ namespace prop {
         if (lastLgE == 0 || flux.fLgE > lastLgE)
           lastLgE = flux.fLgE;
       }
-      
+
       const double dLgE = 0.1;
       double lgE = lastLgE + dLgE;
       while (lgE < data.fLgEmax) {
@@ -1160,8 +1160,8 @@ namespace prop {
           data.fPropagator->GetFluxSumInterpolated(lgE) * data.fUHEExposure * dE;
         double lgL = nExpected - nObs;
         data.fLgLSpec += lgL;
-            
-        data.IncrementNdfTot(); 
+
+        data.IncrementNdfTot();
 
         lgE += dLgE;
       }
@@ -1173,27 +1173,27 @@ namespace prop {
         const double nObs = xmax.totEvts; // total number of events Xmax distribution
         const double nObsXmax = xmax.binEvts; // number of events in Xmax bin
         if(xmaxDists.count(xmax.fLgE) == 0) // get predicted distribution if not yet calculated
-          xmaxDists[xmax.fLgE] = 
+          xmaxDists[xmax.fLgE] =
             data.GetObservedXmaxDistribution(xmax.fLgE, xmax.fdLgE);
         const double pXmax = xmaxDists[xmax.fLgE].Eval(xmax.fXmax) * xmax.fdXmax; // model probability for Xmax bin
         double lgL = (nObsXmax == 0)? 0 : nObsXmax*(log(nObsXmax) - log(pXmax) - log(nObs));
         data.fLgLXmax += lgL;
       }
-      
+
       // nu spec contribution
       data.fLgLNuSpec = 0;
       for (const auto& nuFlux : data.fNuFluxData) {
-        const double y = nuFlux.fFlux; 
+        const double y = nuFlux.fFlux;
         const double m = data.fNeutrinos->GetTotalObservedFlux(nuFlux.fLgE); //log10(data.fNeutrinos->GetTotalObservedFlux(nuFlux.fLgE));
         const double theta = nuFlux.fGammaTheta;
-        const double k = nuFlux.fGammaK; 
+        const double k = nuFlux.fGammaK;
         double lgL = (m-y)/theta;
         if(y > 0)
           lgL += (k-1)*(log(y) - log(m));
         data.fLgLNuSpec += lgL;
- 
-        if(y == 0 && !fFitData.fFitNuOnly && fFitData.fNuChi2Weight > 0) // upper-bounds not counted in ndfs yet 
-          data.IncrementNdfTot(); 
+
+        if(y == 0 && !fFitData.fFitNuOnly && fFitData.fNuChi2Weight > 0) // upper-bounds not counted in ndfs yet
+          data.IncrementNdfTot();
       }
 
       // nu event contribution
@@ -1250,16 +1250,16 @@ namespace prop {
         const double nObs = 0;
         const double nExpected = data.fNeutrinos->GetEventRate(lgE, dLgE) * data.fNuLivetime;
         if(nExpected > 0.1)
-          data.IncrementNdfTot(); 
+          data.IncrementNdfTot();
         double lgL = nExpected - nObs;
         if(nObs > 0)
           lgL += nObs*(log(nObs) - log(nExpected));
-        data.fLgLNuEvent += lgL;        
+        data.fLgLNuEvent += lgL;
 
         lgE += dLgE;
       }
 
-      // save total to chi2 because thats the value which minuit will minimize 
+      // save total to chi2 because thats the value which minuit will minimize
       chi2 = data.GetNegLogLikelihood();
 
       if (!(data.fIteration%10)) {
@@ -1269,7 +1269,7 @@ namespace prop {
              << setprecision(2) << ", spec = "
              << data.fLgLSpec
              << ", Xmax = " << data.fLgLXmax
-             << ", nuSpec = " << data.fLgLNuSpec 
+             << ", nuSpec = " << data.fLgLNuSpec
              << ", nuEvents  = " << data.fLgLNuEvent << endl;
         cout << endl;
       }
@@ -1335,7 +1335,7 @@ namespace prop {
                         fPropMatrices.GetLgEmax());
 
     fFitData.fPropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
-    if(fLgBaselineFraction > -100) 
+    if(fLgBaselineFraction > -100)
       fFitData.fBaselinePropagator = new Propagator(fPropMatrices, evoM, evoZ0, evoDmin, fOptions.GetEvolution());
 
     fFitData.fNeutrinos = new Neutrinos(fPropMatrices.GetLgEmin(), fPropMatrices.GetLgEmax(), fPropMatrices.GetN(),
@@ -1375,8 +1375,8 @@ namespace prop {
 
     if(fUseLgLikelihood)
       fFitData.fXmaxCalculator = new XmaxCalculator(fOptions.GetInteractionModel(), fOptions.GetDataDirname(), fFitData.fXmaxMin,
-                                                    fFitData.fXmaxMax, fFitData.fdXmax, fFitData.fAllXmaxDistData); 
-  
+                                                    fFitData.fXmaxMax, fFitData.fdXmax, fFitData.fAllXmaxDistData);
+
     fMinuit.SetPrintLevel(-1);
     fMinuit.SetFCN(Fitter::FitFunc);
 
@@ -1723,7 +1723,7 @@ namespace prop {
           flux.fFluxErrUp *= jacobian;
           flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
-          
+
           fFitData.fAllFluxData.push_back(flux);
           if (flux.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(flux);
@@ -1958,7 +1958,7 @@ namespace prop {
           flux.fFluxErrUp *= jacobian;
           flux.fFluxErrLow *= jacobian;
           flux.fLgE += deltaLgESys;
-          
+
           fFitData.fAllFluxData.push_back(flux);
           if (flux.fLgE > fOptions.GetMinFluxLgE()) {
             fFitData.fFluxData.push_back(flux);
@@ -2124,7 +2124,7 @@ namespace prop {
     TGraphAsymmErrors* xmaxSysGraph = nullptr;
     TGraphAsymmErrors* sigmaXmaxSysGraph = nullptr;
     int TAOffset = 0;
-   
+
     const FitOptions::EXmaxDataType xmaxType = fOptions.GetXmaxDataType();
     if(xmaxType &  FitOptions::eAugerXmax2014)
       {
@@ -2144,7 +2144,7 @@ namespace prop {
         sigmaXmaxSysGraph = new TGraphAsymmErrors();
     }
     if(xmaxType & FitOptions::eAugerXmax2014txt)
-      { // Auger ICRC14 Xmax from arXiv:1409.4809 
+      { // Auger ICRC14 Xmax from arXiv:1409.4809
         /*
           #  (1) meanLgE:      <lg(E/eV)>
           #  (2) nEvts:        number of events
@@ -2444,7 +2444,7 @@ namespace prop {
         }
       }
     if(xmaxType & FitOptions::eAugerXmax2023FD)
-      { // Auger ICRC23 FD Xmax from Fitoussi PoS(ICRC2023)319 
+      { // Auger ICRC23 FD Xmax from Fitoussi PoS(ICRC2023)319
         /*
           #  (1) meanLgE:      <lg(E/eV)>
           #  (2) nEvts:        number of events
@@ -2483,7 +2483,7 @@ namespace prop {
         }
       }
     if(xmaxType & FitOptions::eAugerXmax2023SD)
-      { // Auger ICRC23 SD Xmax from Glombitza PoS(ICRC2023)278 
+      { // Auger ICRC23 SD Xmax from Glombitza PoS(ICRC2023)278
         /*
           #  (1) meanLgE:      <lg(E/eV)>
           #  (2) nEvts:        number of events
@@ -2525,7 +2525,7 @@ namespace prop {
       {
         cerr << " unknown Xmax data " << endl;
       }
-    
+
     if (xmaxType & FitOptions::eAugerXmax2017fudgeAndSD) {
       const bool calibAugerSD = false;
       const unsigned int nSD = 14;
@@ -2674,7 +2674,7 @@ namespace prop {
           # Xmax/(g/cm2) center of Xmax bin (all bins 20 g/cm2 wide)
           # Nbin number of events in energy-Xmax bin
           */
-          int n = 0;
+          //          int n = 0;
           string buff;
           while(getline(in, buff)) {
             if(buff[0] == '#') // skip header lines
@@ -2684,7 +2684,7 @@ namespace prop {
               int nXbins;
               istringstream ss(buff);
               ss >> nEbins >> nXbins;
-              n = nEbins*nXbins;
+              //  n = nEbins*nXbins;
               break;
             }
           }
@@ -2699,7 +2699,7 @@ namespace prop {
             in >> lgECenter >> dlgE >> nTot >> xCenter >> nBin;
             if (!in.good())
               break;
-      
+
             dist.fLgE = lgECenter;
             dist.fdLgE = dlgE;
             dist.fXmax = xCenter;
@@ -2721,7 +2721,7 @@ namespace prop {
             fFitData.fAllXmaxDistData.push_back(dist);
 
           }
-          break; 
+          break;
         }
 
       case FitOptions::eAugerXmaxDistribution2023:
@@ -2735,7 +2735,7 @@ namespace prop {
           # Xmax/(g/cm2) center of Xmax bin (all bins 20 g/cm2 wide)
           # Nbin number of events in energy-Xmax bin
           */
-          int n = 0;
+          // int n = 0;
           string buff;
           while(getline(in, buff)) {
             if(buff[0] == '#') // skip header lines
@@ -2745,7 +2745,7 @@ namespace prop {
               int nXbins;
               istringstream ss(buff);
               ss >> nEbins >> nXbins;
-              n = nEbins*nXbins;
+              // n = nEbins*nXbins;
               break;
             }
           }
@@ -2760,7 +2760,7 @@ namespace prop {
             in >> lgECenter >> dlgE >> nTot >> xCenter >> nBin;
             if (!in.good())
               break;
-      
+
             dist.fLgE = lgECenter;
             dist.fdLgE = dlgE;
             dist.fXmax = xCenter;
@@ -2782,7 +2782,7 @@ namespace prop {
             fFitData.fAllXmaxDistData.push_back(dist);
 
           }
-          break; 
+          break;
         }
 
       default:
@@ -2792,16 +2792,16 @@ namespace prop {
     }
 
     for(unsigned int i = 0; i < fFitData.fXmaxDistData.size(); ++i) {
-      fFitData.fXmaxMin = (i == 0)? fFitData.fXmaxDistData[i].fXmax : 
+      fFitData.fXmaxMin = (i == 0)? fFitData.fXmaxDistData[i].fXmax :
                                   min(fFitData.fXmaxMin, fFitData.fXmaxDistData[i].fXmax);
-      fFitData.fXmaxMax = (i == 0)? fFitData.fXmaxDistData[i].fXmax : 
+      fFitData.fXmaxMax = (i == 0)? fFitData.fXmaxDistData[i].fXmax :
                                   max(fFitData.fXmaxMax, fFitData.fXmaxDistData[i].fXmax);
       if(i == 0)
         fFitData.fdXmax = fFitData.fXmaxDistData[0].fdXmax;
     }
     fFitData.fXmaxMin -= fFitData.fdXmax/2;
     fFitData.fXmaxMax += fFitData.fdXmax/2;
-    
+
     cout << " xmax distribution: nAll = " <<  fFitData.fAllXmaxDistData.size()
          << ", nFit = " <<  fFitData.fXmaxDistData.size() << endl;
 
@@ -2823,11 +2823,11 @@ namespace prop {
           # Livetime in [years]
           # E/GeV center of energy bin
           # E^2*J in  [GeV cm^-2 s^-1 sr^-1] units
-          # E_errLo 
+          # E_errLo
           # E_errUp
           # E^2*J_errLo
           # E^2*J_errUp
-          # log10E    E^2*J   E_errLo   E_errUp   E^2*J_errLo   E^2*J_errUp 
+          # log10E    E^2*J   E_errLo   E_errUp   E^2*J_errLo   E^2*J_errUp
           */
           double livetime;
           in >> livetime;
@@ -2875,7 +2875,7 @@ namespace prop {
           # J in  [GeV^-1 cm^-2 s^-1 sr^-1] units
           # J_errUp
           # J_errLo
-          # Elo    Eup   J  J_errUp   J_erroLo 
+          # Elo    Eup   J  J_errUp   J_erroLo
           */
           double livetime;
           in >> livetime;
@@ -2922,8 +2922,8 @@ namespace prop {
           while (lgE <= lgEmax) {
             NuFluxData flux;
             // to eV
-            flux.fLgE = lgE; 
-            flux.fdLgE = dlgE; 
+            flux.fLgE = lgE;
+            flux.fdLgE = dlgE;
             // to flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
             const double conv = 1e-9 * 1e10 * 365*24*3600;
             const double E = pow(10., lgE);
@@ -2940,7 +2940,7 @@ namespace prop {
               if (flux.fFlux > 0)
                 fFitData.fNonZeroNuFluxData.push_back(flux);
             }
-          
+
             lgE += dlgE;
           }
           break;
@@ -2950,7 +2950,7 @@ namespace prop {
           cerr << " unknown neutrino data " << endl;
         }
     }
-    
+
     cout << " nu spectrum: nAll = " <<  fFitData.fAllNuFluxData.size()
          << ", nFit = " <<  fFitData.fNuFluxData.size() << endl;
 
@@ -2977,7 +2977,7 @@ namespace prop {
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -2999,18 +2999,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-             
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3057,13 +3057,13 @@ namespace prop {
             /*
             # List of events
             # AeffName name of relevant Aeff for following events
-            # Livetime in [years] for that Aeff 
+            # Livetime in [years] for that Aeff
             # E/GeV central energy estimate
             # theta/rad
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -3085,18 +3085,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-             
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3143,13 +3143,13 @@ namespace prop {
             /*
             # List of events
             # AeffName name of relevant Aeff for following events
-            # Livetime in [years] for that Aeff 
+            # Livetime in [years] for that Aeff
             # E/GeV central energy estimate
             # theta/rad
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -3171,18 +3171,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-             
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3229,13 +3229,13 @@ namespace prop {
             /*
             # List of events
             # AeffName name of relevant Aeff for following events
-            # Livetime in [years] for that Aeff 
+            # Livetime in [years] for that Aeff
             # E/GeV central energy estimate
             # theta/rad
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -3257,18 +3257,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-             
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3315,13 +3315,13 @@ namespace prop {
             /*
             # List of events
             # AeffName name of relevant Aeff for following events
-            # Livetime in [years] for that Aeff 
+            # Livetime in [years] for that Aeff
             # E/GeV central energy estimate
             # theta/rad
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -3343,18 +3343,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-            
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3401,13 +3401,13 @@ namespace prop {
             /*
             # List of events
             # AeffName name of relevant Aeff for following events
-            # Livetime in [years] for that Aeff 
+            # Livetime in [years] for that Aeff
             # E/GeV central energy estimate
             # theta/rad
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -3429,18 +3429,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-            
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3487,13 +3487,13 @@ namespace prop {
             /*
             # List of events
             # AeffName name of relevant Aeff for following events
-            # Livetime in [years] for that Aeff 
+            # Livetime in [years] for that Aeff
             # E/GeV central energy estimate
             # theta/rad
             # phi/rad
             # flavor neutrino flavor assignment [pdg PID]
             # AeffName livetime
-            # E theta phi flavor 
+            # E theta phi flavor
             */
             FitOptions::ENuEffectiveAreaType effAreaType;
             std::string line;
@@ -3515,18 +3515,18 @@ namespace prop {
               }
               else { // event line
                 double E = stof(words[0]);
-                double theta = stof(words[1]); 
-                double phi = stof(words[2]);
+                double theta = stof(words[1]);
+                // double phi = stof(words[2]);
                 int pId = stoi(words[3]); // nu_e = 12, nu_mu = 14, nu_tau = 16
-                
+
                 double lgE, cosTheta;
                 // to eV
                 lgE = log10(E*1e9);
                 cosTheta = cos(theta);
-            
+
                 if(fFitData.fAllNuEffectiveAreaData.count(effAreaType) == 0)
                   throw runtime_error("Effective area data not properly initialized! "+to_string(effAreaType));
- 
+
                 // find corresponding Aeff bin -- assumes bins do not overlap
                 for (auto& Aeff : fFitData.fAllNuEffectiveAreaData.at(effAreaType)) {
                   const double lgElo = Aeff.fLgELo;
@@ -3586,13 +3586,13 @@ namespace prop {
           flux.fdLgE = dlgE;
           flux.fFlux = 0;
           flux.fFluxErr = 0;
-   
+
           int nE = 0;
           int nMu = 0;
           int nTau = 0;
-          double intExposureE = 0.;     
-          double intExposureMu = 0.;     
-          double intExposureTau = 0.;     
+          double intExposureE = 0.;
+          double intExposureMu = 0.;
+          double intExposureTau = 0.;
           // to flux w/ internal units [ eV^-1 km^-2 sr^-1 yr^-1 ]
           for (const auto& nuAeffSet : fFitData.fNuEffectiveAreaData) { // loop over different Aeff sets
             for (const auto& Aeff : nuAeffSet.second) { // loop over Aeff bins
@@ -3604,15 +3604,15 @@ namespace prop {
               const double cosThetaLo = Aeff.fCosThetaLo;
               const double cosThetaHi = Aeff.fCosThetaHi;
               const double dOmega = cosThetaHi - cosThetaLo;
-              const double livetime = Aeff.fLivetime;       
-       
+              const double livetime = Aeff.fLivetime;
+
               if(lgEcenter > lgE-dlgE/2. && lgEcenter <= lgE+dlgE/2.) {
                 nE += Aeff.fNE;
                 nMu += Aeff.fNMu;
                 nTau += Aeff.fNTau;
-                intExposureE += 2*M_PI*dOmega*Aeff.fAreaE*livetime*Ecenter*dLnE; // collect total integrated exposure 
-                intExposureMu += 2*M_PI*dOmega*Aeff.fAreaMu*livetime*Ecenter*dLnE; // collect total integrated exposure 
-                intExposureTau += 2*M_PI*dOmega*Aeff.fAreaTau*livetime*Ecenter*dLnE; // collect total integrated exposure 
+                intExposureE += 2*M_PI*dOmega*Aeff.fAreaE*livetime*Ecenter*dLnE; // collect total integrated exposure
+                intExposureMu += 2*M_PI*dOmega*Aeff.fAreaMu*livetime*Ecenter*dLnE; // collect total integrated exposure
+                intExposureTau += 2*M_PI*dOmega*Aeff.fAreaTau*livetime*Ecenter*dLnE; // collect total integrated exposure
               }
             }
           }
@@ -3643,21 +3643,21 @@ namespace prop {
           flux.fFluxErrLow = flux.fFluxErr;
 
           fFitData.fAllNuEffectiveAreaFlux.push_back(flux);
-          if (lgE+dlgE/2. > fOptions.GetMinNuEventLgE() && lgE-dlgE/2. <= fOptions.GetMaxNuEventLgE()) 
+          if (lgE+dlgE/2. > fOptions.GetMinNuEventLgE() && lgE-dlgE/2. <= fOptions.GetMaxNuEventLgE())
             fFitData.fNuEffectiveAreaFlux.push_back(flux);
 
           lgE += dlgE;
         }
       }
     }
-   
+
     int nNuAll = 0;
-    int nNuFit = 0; 
+    int nNuFit = 0;
     for (const auto& nuAeffSet : fFitData.fAllNuEffectiveAreaData)  // loop over different Aeff sets
-      nNuAll += nuAeffSet.second.size(); 
+      nNuAll += nuAeffSet.second.size();
     for (const auto& nuAeffSet : fFitData.fNuEffectiveAreaData)  // loop over different Aeff sets
-      nNuFit += nuAeffSet.second.size(); 
-    cout << " nu event: nAll = " << nNuAll 
+      nNuFit += nuAeffSet.second.size();
+    cout << " nu event: nAll = " << nNuAll
          << ", nFit = " <<  nNuFit << endl;
   }
 
@@ -3699,15 +3699,15 @@ namespace prop {
         {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeHESE.dat");
           /*
-          # HESE effective area vs energy and zenith 
+          # HESE effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           while (true) {
             NuEffectiveAreaData Aeff;
@@ -3732,7 +3732,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -3741,15 +3741,15 @@ namespace prop {
         {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeHESE75.dat");
           /*
-          # HESE effective area vs energy and zenith 
+          # HESE effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           while (true) {
             NuEffectiveAreaData Aeff;
@@ -3774,7 +3774,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -3783,15 +3783,15 @@ namespace prop {
         {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeNorthernTracks.dat");
           /*
-          # HESE effective area vs energy and zenith 
+          # HESE effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           while (true) {
             NuEffectiveAreaData Aeff;
@@ -3816,7 +3816,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -3826,15 +3826,15 @@ namespace prop {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaIceCubeHESE75.dat");
           /*
           # PEPE Aeff is just 2 times the HESE75 Aeff
-          # PEPE effective area vs energy and zenith 
+          # PEPE effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           const double w = 2.0; // ratio of PEPE-to-HESE75 Aeffs
           while (true) {
@@ -3860,7 +3860,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -3869,15 +3869,15 @@ namespace prop {
         {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaKM3NeTArca21.dat");
           /*
-          # ARCA21 effective area vs energy and zenith 
+          # ARCA21 effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           while (true) {
             NuEffectiveAreaData Aeff;
@@ -3902,7 +3902,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -3911,15 +3911,15 @@ namespace prop {
         {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaAugerES.dat");
           /*
-          # AugerES effective area vs energy and zenith 
+          # AugerES effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           while (true) {
             NuEffectiveAreaData Aeff;
@@ -3944,7 +3944,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -3953,15 +3953,15 @@ namespace prop {
         {
           ifstream in(fOptions.GetDataDirname() + "/effectiveAreaAugerDG.dat");
           /*
-          # AugerDG effective area vs energy and zenith 
+          # AugerDG effective area vs energy and zenith
           # Elo/GeV lower edge of energy bin
           # Ehi/GeV upper edge of energy bin
-          # CosThetaLo lower edge of cos(zenith) bin 
-          # CosThetaHi upper edge of cos(zenith) bin 
+          # CosThetaLo lower edge of cos(zenith) bin
+          # CosThetaHi upper edge of cos(zenith) bin
           # AeffE/m^2 effective area to electron neutrinos
           # AeffMu/m^2 effective area to muon neutrinos
           # AeffTau/m^2 effective area to tau neutrinos
-          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau 
+          # Elo Ehi CostThetaLo CosThetaHi AeffE AeffMu AeffTau
           */
           while (true) {
             NuEffectiveAreaData Aeff;
@@ -3986,7 +3986,7 @@ namespace prop {
             Aeff.fLivetime = livetime;
 
             fFitData.fAllNuEffectiveAreaData[type].push_back(Aeff);
-            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE()) 
+            if (lgE > fOptions.GetMinNuEventLgE() && lgE <= fOptions.GetMaxNuEventLgE())
               fFitData.fNuEffectiveAreaData[type].push_back(Aeff);
           }
           break;
@@ -4017,6 +4017,6 @@ namespace prop {
     FitFunc(nPar, &dummy, chi2, const_cast<double* const>(&par.front()), iFlag);
     return chi2;
   }
-  
+
 
 }
