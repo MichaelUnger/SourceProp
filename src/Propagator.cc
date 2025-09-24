@@ -13,21 +13,22 @@ using namespace std;
 
 namespace prop {
   void
-  Propagator::Propagate(const map<int, TMatrixD>& spectrum, const bool onlyNuc, double* const par)
+  Propagator::Propagate(const map<int, TMatrixD>& spectrum,
+                        const bool onlyNuc, const double* par)
   {
 
-    if(Evolution == "mz0Interpolator") {
+    if (fEvolution == "mz0Interpolator") {
 
-     fPropMatrices.UpdateMZ0(M, par[eEvolutionM], Z0, par[eEvolutionZ0]);	
-     M = par[eEvolutionM];
-     Z0 = par[eEvolutionZ0];
+     fPropMatrices.UpdateMZ0(fM, par[eEvolutionM], fZ0, par[eEvolutionZ0]);
+     fM = par[eEvolutionM];
+     fZ0 = par[eEvolutionZ0];
 
     }
 
-    else if(Evolution == "DminInterpolator") {
-     
-     fPropMatrices.UpdateDmin(Dmin, par[eEvolutionDmin]);	
-     Dmin = par[eEvolutionDmin];
+    else if (fEvolution == "DminInterpolator") {
+
+     fPropMatrices.UpdateDmin(fDmin, par[eEvolutionDmin]);
+     fDmin = par[eEvolutionDmin];
 
     }
 
@@ -58,7 +59,7 @@ namespace prop {
           }
           fNucleonResult += propSpectrum;
         }
-        if(IsNucleus(Asec)) {
+        if (IsNucleus(Asec)) {
           if (!fSum.GetNoElements())
             fSum.ResizeTo(propSpectrum);
           fSum += propSpectrum;
@@ -68,21 +69,23 @@ namespace prop {
   }
 
   void
-  Propagator::Propagate(const map<int, TMatrixD>& spectrum, const map<int, map<int , TMatrixD> >& secondaries, double* const par)
+  Propagator::Propagate(const map<int, TMatrixD>& spectrum,
+                        const map<int, map<int , TMatrixD>>& secondaries,
+                        const double* par)
   {
 
-    if(Evolution == "mz0Interpolator") {
+    if (fEvolution == "mz0Interpolator") {
 
-     fPropMatrices.UpdateMZ0(M, par[eEvolutionM], Z0, par[eEvolutionZ0]);	
-     M = par[eEvolutionM];
-     Z0 = par[eEvolutionZ0];
+     fPropMatrices.UpdateMZ0(fM, par[eEvolutionM], fZ0, par[eEvolutionZ0]);
+     fM = par[eEvolutionM];
+     fZ0 = par[eEvolutionZ0];
 
     }
 
-    else if(Evolution == "DminInterpolator") {
-     
-     fPropMatrices.UpdateDmin(Dmin, par[eEvolutionDmin]);	
-     Dmin = par[eEvolutionDmin];
+    else if (fEvolution == "DminInterpolator") {
+
+     fPropMatrices.UpdateDmin(fDmin, par[eEvolutionDmin]);
+     fDmin = par[eEvolutionDmin];
 
     }
 
@@ -97,7 +100,7 @@ namespace prop {
       const int Aprim = iter->first;
       bool isPionPrim = find(begin(ePions), end(ePions), Aprim) != end(ePions);
       bool isNuPrim = find(begin(eNeutrinos), end(eNeutrinos), Aprim) != end(eNeutrinos);
-      if (Aprim == eNeutron || isPionPrim || isNuPrim) // these all handled separately below 
+      if (Aprim == eNeutron || isPionPrim || isNuPrim) // these all handled separately below
         continue;
       const TMatrixD& sourceSpectrum = iter->second;
       if (!fPropMatrices.HasPrimary(Aprim)) {
@@ -118,7 +121,7 @@ namespace prop {
         r += propSpectrum;
       }
     }
-   
+
     // propagate secondaries (i.e. particles that will decay to/are neutrinos)
     for (auto iter = secondaries.begin(); iter != secondaries.end(); ++iter) {
       const int Aprim = iter->first;
@@ -140,7 +143,7 @@ namespace prop {
           const TMatrixD propSpectrum(m, TMatrixD::kMult, sourceSpectrum);
           bool isPionPrim = find(begin(ePions), end(ePions), Aprim) != end(ePions);
           bool isNuPrim = find(begin(eNeutrinos), end(eNeutrinos), Aprim) != end(eNeutrinos);
-          if(Aprim == eNeutron) {
+          if (Aprim == eNeutron) {
             const TMatrixD& mp = fPropMatrices.GetSecondaryMap(1)[Asec];
             const TMatrixD propOnlySpectrum(mp, TMatrixD::kMult, sourceSpectrum);
             TMatrixD& rProp = fPropSec[Asec];
@@ -152,20 +155,21 @@ namespace prop {
               rSrc.ResizeTo(propSpectrum);
             rSrc += propSpectrum - propOnlySpectrum;
           }
-          else if(isPionPrim || isNuPrim) {
+          else if (isPionPrim || isNuPrim) {
             TMatrixD& r = fSourceSec[Asec][channel];
-            if(!r.GetNoElements())
+            if (!r.GetNoElements())
               r.ResizeTo(propSpectrum);
             r += propSpectrum;
           }
           else {
-            throw runtime_error("Unexpected secondary detected! "+std::to_string(Aprim));
+            throw runtime_error("Unexpected secondary detected! " +
+                                std::to_string(Aprim));
           }
         }
       }
     }
   }
-  
+
   void
   Propagator::Rescale(const double f)
   {
@@ -226,7 +230,7 @@ namespace prop {
     return pow(10, arg);
   }
 
-  
+
   double
   Propagator::GetFluxAtEarth(const int A,
                              const double lgE)
@@ -241,7 +245,7 @@ namespace prop {
     }
     return iter->second[i][0];
   }
-  
+
   double
   Propagator::GetFluxAtEarthInterpolated(const int A, const double lgE)
     const
@@ -250,7 +254,7 @@ namespace prop {
     const double lgEmin = fPropMatrices.GetLgEmin();
     const double lgEmax = fPropMatrices.GetLgEmax();
     const double dlgE = (lgEmax - lgEmin) / n;
-    
+
     const double c1 = GetFluxAtEarth(A, lgE - dlgE/2);
     const double c2 = GetFluxAtEarth(A, lgE + dlgE/2);
     if (c1 <= 0 || c2 <= 0)
@@ -293,7 +297,7 @@ namespace prop {
   Propagator::GetFluxSum(const int i)
     const
   {
-    if (i < 0 || i >=  fSum.GetNoElements()) {
+    if (i < 0 || i >= fSum.GetNoElements()) {
       std::cerr << " Propagator::GetFluxSum() - "
                 << i << " is out of bound " << std::endl;
       return 0;
@@ -309,7 +313,7 @@ namespace prop {
     if (!spectrum.GetNoElements())
       spectrum.ResizeTo(flux);
     spectrum += flux;
-    if(IsNucleus(A))
+    if (IsNucleus(A))
       fSum += flux;
   }
 
@@ -356,4 +360,3 @@ namespace prop {
 
 
 }
-

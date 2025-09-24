@@ -20,10 +20,10 @@ namespace prop {
       fDmin(evoDmin), fEvolution(evolution) {}
 
     void Propagate(const std::map<int, TMatrixD>& spectrum,
-                   const bool onlyNuc = true, const double* par = nullptr );
+                   const bool onlyNuc = true, const double* par = nullptr);
     void Propagate(const std::map<int, TMatrixD>& spectrum,
                    const std::map<int, std::map<int, TMatrixD> >& secondaries,
-                   const double* par = nullptr );
+                   const double* par = nullptr);
 
     double GetFluxSum(const int i) const;
     double GetFluxSum(const double lgE) const;
