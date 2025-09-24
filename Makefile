@@ -16,10 +16,10 @@ LIB_DIR = $(PWD)/lib
 BIN_DIR = $(PWD)/bin
 
 CINT = rootcint
-CXXFLAGS += -std=c++11 -O3 -Wall -Wextra -fPIC
+CXXFLAGS += -std=c++11 -O3 -Wall -Wextra -fPIC -g -ggdb3 -pg
 CXXFLAGS += $(shell root-config --cflags)
-CXXFLAGS += -I$(SRC_DIR) -I.
-LDFLAGS  += -fPIC -ggdb3 -Wall
+CXXFLAGS += -I$(SRC_DIR) -I. 
+LDFLAGS  += -fPIC -ggdb3 -Wall 
 LDFLAGS  += $(shell root-config --libs)  -Wl,--no-as-needed -fPIC
 #LDFLAGS  += $(shell root-config --ldflags) -lMinuit -lGeom
 LDFLAGS  += $(shell root-config --ldflags) -lTreePlayer -lMinuit -lMathMore 
