@@ -15,7 +15,7 @@
 
     and then try to run
 
-    * fit("Marco/PRDFiducial.txt", true, true)
+    * fit("config/PRDFiducial.txt", true, true)
 
     The first argument is the configuration file (see below),
     if the second is "true" then the minimization will be
