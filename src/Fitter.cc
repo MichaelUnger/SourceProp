@@ -2979,7 +2979,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
@@ -3065,7 +3065,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
@@ -3151,7 +3151,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
@@ -3237,7 +3237,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
@@ -3323,7 +3323,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
@@ -3409,7 +3409,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
@@ -3495,7 +3495,7 @@ namespace prop {
             # AeffName livetime
             # E theta phi flavor
             */
-            FitOptions::ENuEffectiveAreaType effAreaType;
+            auto effAreaType = FitOptions::eNuEffectiveAreaNone;
             std::string line;
             while (true) {
               // read line
