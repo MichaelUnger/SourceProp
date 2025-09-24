@@ -115,7 +115,7 @@ namespace prop {
         return areaNuE * kFourPi * fac;
       else {
         const double areaAntiNuE = Eval2Linear(fLgAreaAntiNuE, lgEGeV);
-        const double glashow = 2*(areaAntiNuE - areaNuE);
+        const double glashow = 2*(areaAntiNuE - areaNuE); // factor of 2 corrects for downweighting glashow peak due to nu-nubar average
         return (areaNuE  + glashow) * kFourPi * fac;
       }
     }
