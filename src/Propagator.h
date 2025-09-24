@@ -13,11 +13,12 @@ namespace prop {
   class Propagator {
 
   public:
-    Propagator(PropMatrices& m, double evoM = 0., double evoZ0 = 0., double evoDmin = 0., std::string fEvolution = "") :
-      fPropMatrices(m) { M=evoM, Z0=evoZ0, Dmin=evoDmin, Evolution=fEvolution; }
+    Propagator(PropMatrices& m, const double evoM = 0,
+               const double evoZ0 = 0, const double evoDmin = 0,
+               const std::string evolution = "") :
+      fPropMatrices(m), fM(evoM), fZ0(evoZ0),
+      fDmin(evoDmin), fEvolution(evolution) {}
 
-    double M, Z0, Dmin;
-    std::string Evolution;
     void Propagate(const std::map<int, TMatrixD>& spectrum,
                    const bool onlyNuc = true, const double* par = nullptr );
     void Propagate(const std::map<int, TMatrixD>& spectrum,
@@ -60,6 +61,8 @@ namespace prop {
     Propagator();
 
     PropMatrices& fPropMatrices;
+    double fM, fZ0, fDmin;
+    std::string fEvolution;
     std::map<int, TMatrixD> fResult;
     std::map<int, TMatrixD> fPropSec;
     std::map<int, std::map<int, TMatrixD> > fSourceSec;
