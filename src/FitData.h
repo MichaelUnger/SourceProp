@@ -61,7 +61,7 @@ namespace prop {
       fLgE(0), fdLgE(0), fFlux(0), fFluxErr(0),
       fFluxErrUp(0), fFluxErrLow(0),
       fFluxE(0), fFluxM(0), fFluxT(0),
-      fFluxAE(0), fFluxAM(0), fFluxAT(0) 
+      fFluxAE(0), fFluxAM(0), fFluxAT(0)
     {}
     double fLgE;
     double fdLgE;
@@ -71,7 +71,7 @@ namespace prop {
     double fFluxErrLow;
     double fGammaK; // gamma-distribution k-parameter
     double fGammaTheta; // gamma-distribution theta-parameter
-    # warning - flavor breakdown not currently implemented
+    //    # warning - flavor breakdown not currently implemented
     double fFluxE; // flavor-breakdown
     double fFluxM;
     double fFluxT;
@@ -91,7 +91,7 @@ namespace prop {
   struct NuEffectiveAreaData { // this is for use with fNuEventData only
     NuEffectiveAreaData() :
       fLgELo(0), fLgEHi(0), fCosThetaLo(0), fCosThetaHi(0),
-      fAreaE(0), fAreaMu(0), fAreaTau(0), fN(0), 
+      fAreaE(0), fAreaMu(0), fAreaTau(0), fN(0),
       fNE(0), fNMu(0), fNTau(0), fLivetime(0)
     {}
     double fLgELo;
@@ -126,7 +126,7 @@ namespace prop {
     double GetChi2Tot() const;
     double GetNegLogLikelihood() const;
     void SetNdfTot();
-    void IncrementNdfTot() 
+    void IncrementNdfTot()
     { fNdf++; }
     unsigned int GetNdfTot() const { return fNdf; }
     double GetTotalPower(const double Elow) const;
@@ -148,7 +148,7 @@ namespace prop {
     { fBaselineNuFlux19 = n; }
     void SetNuFitOnly(const bool isFit)
     { fFitNuOnly = isFit; }
-  
+
     static double gammaDistParamsEquation(double x, void * p);
     double GetGammaDistributionTheta(double flux, double errUp, double errLo);
 
