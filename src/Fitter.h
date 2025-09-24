@@ -29,10 +29,8 @@ namespace prop {
     void ReadData();
     FitOptions::ENuEffectiveAreaType ReadNuEffectiveAreaData(const std::string effAreaName, const double livetime);
     unsigned int GetNParameters() const;
-    static void FitFunc(int& , double* const,
-                        double& , double* const,
-                        const int);
- 
+    static void FitFunc(int& , double* const, double&, double*, const int);
+
     PropMatrices fPropMatrices;
     FitOptions fOptions;
     static bool fNoEgComponent;

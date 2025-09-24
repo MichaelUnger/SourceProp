@@ -13,16 +13,16 @@ namespace prop {
   class Propagator {
 
   public:
-    Propagator(PropMatrices& m, double evoM = 0., double evoZ0 = 0., double evoDmin = 0., std::string fEvolution = "") : 
+    Propagator(PropMatrices& m, double evoM = 0., double evoZ0 = 0., double evoDmin = 0., std::string fEvolution = "") :
       fPropMatrices(m) { M=evoM, Z0=evoZ0, Dmin=evoDmin, Evolution=fEvolution; }
 
     double M, Z0, Dmin;
-    std::string Evolution; 
+    std::string Evolution;
     void Propagate(const std::map<int, TMatrixD>& spectrum,
-                   const bool onlyNuc = true, double* const par = nullptr );
+                   const bool onlyNuc = true, const double* par = nullptr );
     void Propagate(const std::map<int, TMatrixD>& spectrum,
                    const std::map<int, std::map<int, TMatrixD> >& secondaries,
-                   double* const par = nullptr );
+                   const double* par = nullptr );
 
     double GetFluxSum(const int i) const;
     double GetFluxSum(const double lgE) const;
@@ -55,11 +55,11 @@ namespace prop {
 
     void SaveFluxAtEarth() const;
     int LgEtoIndex(const double lgE) const;
-    
+
   private:
     Propagator();
 
-    PropMatrices& fPropMatrices; 
+    PropMatrices& fPropMatrices;
     std::map<int, TMatrixD> fResult;
     std::map<int, TMatrixD> fPropSec;
     std::map<int, std::map<int, TMatrixD> > fSourceSec;

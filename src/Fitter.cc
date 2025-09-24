@@ -214,7 +214,7 @@ namespace prop {
 
   void
   Fitter::FitFunc(int& /*nPar*/, double* const /*gin*/,
-                  double& chi2, double* const par,
+                  double& chi2, double* par,
                   const int /*iFlag*/)
   {
 
@@ -4014,9 +4014,7 @@ namespace prop {
     double dummy = 0;
     double chi2 = 0;
     int iFlag = 0;
-    FitFunc(nPar, &dummy, chi2, const_cast<double* const>(&par.front()), iFlag);
+    FitFunc(nPar, &dummy, chi2, const_cast<double*>(&par.front()), iFlag);
     return chi2;
   }
-
-
 }
