@@ -202,6 +202,9 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
+    bool GCRWithSech() const
+    { return fGCRWithSech; } //added Sech for galactic
+
     bool GCRCSFSpectrum() const
     { return fCSFSpectrum; }
 
@@ -343,6 +346,7 @@ namespace prop {
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
+    bool fGCRWithSech; //added Sech for Galactic cut-off
     bool fCSFSpectrum;
     bool fWMEBurst;
     bool fGCRWithComponentA;

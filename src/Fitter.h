@@ -36,6 +36,7 @@ namespace prop {
     static bool fNoEgComponent;
     static bool fUseLgLikelihood;
     static bool fGCRKnees;
+    static bool fGCRSech;//added Sech for GCR
     static bool fCSFSpectrum;
     static bool fWMEBurst;
     static bool fGCRComponentA;

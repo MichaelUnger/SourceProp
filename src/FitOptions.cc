@@ -25,6 +25,7 @@ namespace prop {
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
+    fGCRWithSech = false; //added Sech for Galactic
     fCSFSpectrum = false;
     fWMEBurst = false;
     fGCRWithComponentA = false;
@@ -268,6 +269,11 @@ namespace prop {
       else if (keyword == "gcrWithKnees") {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
+      }
+      else if (keyword == "gcrWithSech") {
+	//added Sech
+        if (!(line >> fGCRWithSech))
+          throw runtime_error("error decoding gcrWithSech");
       }
       else if (keyword == "gcrCSFSpectrum") {
         if (!(line >> fCSFSpectrum))
@@ -1014,6 +1020,7 @@ namespace prop {
         << "fitComposition " << fFitCompo << "\n"
         << "noExtragalacticComponent" << fNoEgComponent << "\n"
         << "gcrWithKnees " << fGCRWithKnees << "\n"
+	<< "gcrSech " << fGCRWithSech << "\n"
         << "gcrWithComponentA " << fGCRWithComponentA << "\n"
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
         << "rejectOutliers " << fRejectOutliers << "\n"
