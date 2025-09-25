@@ -25,6 +25,7 @@ namespace prop {
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
+    fGCRWithSech = false; //added Sech for Galactic
     fCSFSpectrum = false;
     fWMEBurst = false;
     fGCRWithComponentA = false;
@@ -99,7 +100,6 @@ namespace prop {
     fXmaxDataTypeName = "Auger2014";
     fNuSpectrumDataTypeName = "";
     fNuEventDataTypeName = "";
-    fNuEventDataPath = "";
 
     fBaselineFilename = "";
 
@@ -268,6 +268,11 @@ namespace prop {
       else if (keyword == "gcrWithKnees") {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
+      }
+      else if (keyword == "gcrWithSech") {
+	//added Sech
+        if (!(line >> fGCRWithSech))
+          throw runtime_error("error decoding gcrWithSech");
       }
       else if (keyword == "gcrCSFSpectrum") {
         if (!(line >> fCSFSpectrum))
@@ -484,16 +489,6 @@ namespace prop {
           fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTMid;
         else if (type == "IceCubeHighEnergyEvents_KM3NetHi") 
           fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTHi;
-        else if (type == "IceCubeHighEnergyEvents_KM3NetOfficial") 
-          fNuEventDataType = eIceCubeHighEnergyEventsKM3NeTOfficial;
-        else if (type == "IceCubeHighEnergyEvents_Custom")
-        {
-          fNuEventDataType = eIceCubeHighEnergyEventsCustom;
-          string path;
-          if (!(line >> path))
-            throw runtime_error("error decoding custom nuEventData path");
-          fNuEventDataPath = path;
-        }
         else
           throw runtime_error("unknown nu event data type: " + type);
         fNuEventDataTypeName = type;
@@ -929,10 +924,6 @@ namespace prop {
       return "IceCube HE + KM3NeT Mid";
     case eIceCubeHighEnergyEventsKM3NeTHi:
       return "IceCube HE + KM3NeT Hi";
-    case eIceCubeHighEnergyEventsKM3NeTOfficial:
-      return "IceCube HE + KM3NeT Official";
-    case eIceCubeHighEnergyEventsCustom:
-      return "Custom HE Events";
     default:
       return "unknown";
     }
@@ -1014,6 +1005,7 @@ namespace prop {
         << "fitComposition " << fFitCompo << "\n"
         << "noExtragalacticComponent" << fNoEgComponent << "\n"
         << "gcrWithKnees " << fGCRWithKnees << "\n"
+        << "gcrSech " << fGCRWithSech << "\n"
         << "gcrWithComponentA " << fGCRWithComponentA << "\n"
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
         << "rejectOutliers " << fRejectOutliers << "\n"

@@ -4,6 +4,7 @@
 #include "FitParameters.h"
 #include "Spectrum.h"
 
+#include <limits>
 #include <map>
 #include <string>
 
@@ -121,9 +122,7 @@ namespace prop {
       eIceCubeHESE75,
       eIceCubeNorthernTracks,
       eIceCubePEPE,
-      eKM3Net,
-      eAugerES,
-      eAugerDG
+      eKM3Net
     };
 
     enum ENuEventDataType {
@@ -132,9 +131,7 @@ namespace prop {
       eIceCubeHighEnergyEvents,
       eIceCubeHighEnergyEventsKM3NeTLo,
       eIceCubeHighEnergyEventsKM3NeTMid,
-      eIceCubeHighEnergyEventsKM3NeTHi,
-      eIceCubeHighEnergyEventsKM3NeTOfficial,
-      eIceCubeHighEnergyEventsCustom
+      eIceCubeHighEnergyEventsKM3NeTHi
     };
 
     enum EMassFractionType {
@@ -202,6 +199,9 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
+    bool GCRWithSech() const
+    { return fGCRWithSech; } //added Sech for galactic
+    
     bool GCRCSFSpectrum() const
     { return fCSFSpectrum; }
 
@@ -312,9 +312,7 @@ namespace prop {
     std::string GetNuEventDataLabel() const;
     std::string GetNuEventDataTypeName() const
     { return fNuEventDataTypeName; }
-    std::string GetNuEventDataPath() const
-    { return fNuEventDataPath; }   
- 
+    
     EMassFractionType GetMassFractionType()  const
     { return fMassFractionType; }
     std::string GetMassFractionTypeName() const
@@ -343,6 +341,7 @@ namespace prop {
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
+    bool fGCRWithSech; //added Sech for Galactic cut-off
     bool fCSFSpectrum;
     bool fWMEBurst;
     bool fGCRWithComponentA;
@@ -377,7 +376,6 @@ namespace prop {
     EEnergyShiftType fEnergyShiftType;
     ENuSpectrumDataType fNuSpectrumDataType;
     ENuEventDataType fNuEventDataType;
-    std::string fNuEventDataPath;
     std::string fSpectrumTypeName;
     std::string fNuSpectrumTypeName;
     std::string fSpectrumDataTypeName;

@@ -1,6 +1,7 @@
 #ifndef _Spectrum_h_
 #define _Spectrum_h_
 
+#include <limits>
 #include <map>
 #include <TMatrixD.h>
 
