@@ -385,7 +385,6 @@ namespace prop {
     std::string fGalSpectrumTypeName;
     std::string fSpectrumTypeName;
     std::string fNuSpectrumTypeName;
-    std::string fGalSpectrumDataTypeName;
     std::string fSpectrumDataTypeName;
     std::string fLowESpectrumDataTypeName;
     std::string fXmaxDataTypeName;
