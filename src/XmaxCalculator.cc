@@ -114,51 +114,8 @@ void prop::XmaxCalculator::Init(LnACalculator::EModel m)
   ReadXmaxAcceptance();
   ReadXmaxResolution();
 
-  // parameters for generalized Gumbel distribution from Arbeletche & de Souza (2019) arXiv:1903.03174 Table IV
-  # warning - please update values to those in arXiv:1903.03174 Table VI
-
-  // Table IV values
-  // sibyll2.3c
-  distLambda[LnACalculator::eSibyll23c][eA] = {0.02, 0.16, 0.11};
-  distLambda[LnACalculator::eSibyll23c][eB] = {0.038, 0.014, 0};
-  distLambda[LnACalculator::eSibyll23c][eC] = {0, 0, 0};
+  // parameters for generalized Gumbel distribution from Arbeletche & de Souza (2019) arXiv:1903.03174 Table VI
   
-  distMu[LnACalculator::eSibyll23c][eA] = {-537.61, -131.99, -19.68};
-  distMu[LnACalculator::eSibyll23c][eB] = {78.952, 11.515, 0.731};
-  distMu[LnACalculator::eSibyll23c][eC] = {-0.4886, -0.3366, 0};
-  
-  distSigma[LnACalculator::eSibyll23c][eA] = {60, 24, -17};
-  distSigma[LnACalculator::eSibyll23c][eB] = {-1.06, -1.5, 0.78};
-  distSigma[LnACalculator::eSibyll23c][eC] = {0, 0, 0};
-  
-  // EPOS-LHC
-  distLambda[LnACalculator::eEPOSLHC][eA] = {4.34, -4.84, 4.83};
-  distLambda[LnACalculator::eEPOSLHC][eB] = {-0.4489, 0.427, -0.314};
-  distLambda[LnACalculator::eEPOSLHC][eC] = {0.01325, 0, 0};
-
-  distMu[LnACalculator::eEPOSLHC][eA] = {-565.11, -211.43, -36.32};
-  distMu[LnACalculator::eEPOSLHC][eB] = {82.199, 22.453, 1.288};
-  distMu[LnACalculator::eEPOSLHC][eC] = {-0.6189, -0.6475, 0};
-
-  distSigma[LnACalculator::eEPOSLHC][eA] = {377.3, 324, -228.1};
-  distSigma[LnACalculator::eEPOSLHC][eB] = {-37.67, -29.63, 22.436};
-  distSigma[LnACalculator::eEPOSLHC][eC] = {1.0216, 0.7366, -0.5955};
-  
-  // QGSJetII-04
-  distLambda[LnACalculator::eQGSJetII04][eA] = {1.24, 11.74, -6.85};
-  distLambda[LnACalculator::eQGSJetII04][eB] = {-0.088, -1.393, 0.855};
-  distLambda[LnACalculator::eQGSJetII04][eC] = {0.00302, 0.04702, -0.02778};
-
-  distMu[LnACalculator::eQGSJetII04][eA] = {-368.79, -238.75, -32.14};
-  distMu[LnACalculator::eQGSJetII04][eB] = {61.443, 25.159, 1.255};
-  distMu[LnACalculator::eQGSJetII04][eC] = {-0.1138, -0.7326, 0};
-
-  distSigma[LnACalculator::eQGSJetII04][eA] = {55.9, 20.9, -15.9};
-  distSigma[LnACalculator::eQGSJetII04][eB] = {-1.08, 0.32, 0};
-  distSigma[LnACalculator::eQGSJetII04][eC] = {0, 0, 0};
- 
-  /* 
-  // Table VI values
   // sibyll2.3c
   distLambda[LnACalculator::eSibyll23c][eA] = {-1.164,  5.295, -1.288};
   distLambda[LnACalculator::eSibyll23c][eB] = {0.1623, -0.5541, 0.1595};
@@ -197,7 +154,6 @@ void prop::XmaxCalculator::Init(LnACalculator::EModel m)
   distSigma[LnACalculator::eQGSJetII04][eA] = {211.50, -13.05, -13.36};
   distSigma[LnACalculator::eQGSJetII04][eB] = {-17.650, 2.1148, 0.8359};
   distSigma[LnACalculator::eQGSJetII04][eC] = {0.44432, -0.03287, -0.02996};
-  */
 
   // check if requested model exists
   if(distLambda.count(m) == 0) {
