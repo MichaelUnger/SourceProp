@@ -202,9 +202,6 @@ namespace prop {
     bool GCRWithKnees() const
     { return fGCRWithKnees; }
 
-    bool GCRWithSech() const
-    { return fGCRWithSech; } //added Sech for galactic
-
     bool GCRCSFSpectrum() const
     { return fCSFSpectrum; }
 
@@ -282,6 +279,9 @@ namespace prop {
     const std::string GetInteractionModel() const
     { return fInteractionModel; }
 
+    GalSpectrum::ESpectrumType GetGalSpectrumType() const
+    { return fGalSpectrumType; }
+
     Spectrum::ESpectrumType GetSpectrumType() const
     { return fSpectrumType; }
     
@@ -346,7 +346,6 @@ namespace prop {
     bool fBoostedModel;
     bool fFitCompo;
     bool fGCRWithKnees;
-    bool fGCRWithSech; //added Sech for Galactic cut-off
     bool fCSFSpectrum;
     bool fWMEBurst;
     bool fGCRWithComponentA;
@@ -369,6 +368,7 @@ namespace prop {
     double fIceCubeSplNorm;
     double fIceCubeSplGamma;
     std::string fInteractionModel;
+    GalSpectrum::ESpectrumType fGalSpectrumType;
     Spectrum::ESpectrumType fSpectrumType;
     Spectrum::ENuSpectrumType fNuSpectrumType;
     EMassFractionType fMassFractionType;
@@ -382,8 +382,10 @@ namespace prop {
     ENuSpectrumDataType fNuSpectrumDataType;
     ENuEventDataType fNuEventDataType;
     std::string fNuEventDataPath;
+    std::string fGalSpectrumTypeName;
     std::string fSpectrumTypeName;
     std::string fNuSpectrumTypeName;
+    std::string fGalSpectrumDataTypeName;
     std::string fSpectrumDataTypeName;
     std::string fLowESpectrumDataTypeName;
     std::string fXmaxDataTypeName;
