@@ -156,6 +156,7 @@ namespace prop {
     unsigned int fNNan;
     VSource* fSource;
     Propagator* fPropagator;
+    GalSpectrum fGalSpectrum;
     Spectrum fSpectrum;
     Propagator* fBaselinePropagator;
     Spectrum fBaseline;

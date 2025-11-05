@@ -25,7 +25,6 @@ namespace prop {
     fBoostedModel = false;
     fFitCompo = true;
     fGCRWithKnees = false;
-    fGCRWithSech = false; //added Sech for Galactic
     fCSFSpectrum = false;
     fWMEBurst = false;
     fGCRWithComponentA = false;
@@ -81,7 +80,8 @@ namespace prop {
     fStartValues[eGammaLoNu] = StartValue(-5, 0.1, -10, 0, 1);
     fStartValues[eLgEmaxLoNu] = StartValue(18, 0.1, 12, 18, 1);
     fStartValues[eLgPhiLoNu] = StartValue(-100, 0.1, -100, 0, 1); 
-  
+ 
+    fGalSpectrumType = GalSpectrum::eExponential; 
     fSpectrumType = Spectrum::eExponential;
     fNuSpectrumType = Spectrum::eNuExponential;
     fMassFractionType = eFixedEnergy;
@@ -92,6 +92,7 @@ namespace prop {
     fNuSpectrumDataType = eNuSpectrumNone;
     fNuEventDataType = eNuEventNone;
 
+    fGalSpectrumTypeName = "exponential";
     fSpectrumTypeName = "exponential";
     fNuSpectrumTypeName = "exponential";
     fMassFractionTypeName = "fixedEnergy";
@@ -268,11 +269,6 @@ namespace prop {
       else if (keyword == "gcrWithKnees") {
         if (!(line >> fGCRWithKnees))
           throw runtime_error("error decoding gcrWithKnees");
-      }
-      else if (keyword == "gcrWithSech") {
-	//added Sech
-        if (!(line >> fGCRWithSech))
-          throw runtime_error("error decoding gcrWithSech");
       }
       else if (keyword == "gcrCSFSpectrum") {
         if (!(line >> fCSFSpectrum))
@@ -492,6 +488,18 @@ namespace prop {
         else
           throw runtime_error("unknown nu event data type: " + type);
         fNuEventDataTypeName = type;
+      }
+      else if (keyword == "galSpectrumType") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding spectrumType");
+        if (type == "exponential")
+          fGalSpectrumType = GalSpectrum::eExponential;
+        else if (type == "sech")
+          fGalSpectrumType = GalSpectrum::eCosh2;
+        else
+          throw runtime_error("unknown spectrum type" + type);
+        fGalSpectrumTypeName = type;
       }
       else if (keyword == "spectrumType") {
         string type;
@@ -959,6 +967,7 @@ namespace prop {
         << "spectrumData " << fSpectrumDataTypeName << "\n"
         << "xmaxData " << fXmaxDataTypeName << "\n"
         << "spectrumType " << fSpectrumTypeName << "\n"
+        << "galSpectrumType " << fGalSpectrumTypeName << "\n"
         << "nuSpectrumType " << fNuSpectrumTypeName << "\n";
     out << "minLgEFlux " << fMinFluxLgE << "\n"
         << "maxLgEFlux " << fMaxFluxLgE << "\n"
@@ -1005,7 +1014,6 @@ namespace prop {
         << "fitComposition " << fFitCompo << "\n"
         << "noExtragalacticComponent" << fNoEgComponent << "\n"
         << "gcrWithKnees " << fGCRWithKnees << "\n"
-        << "gcrSech " << fGCRWithSech << "\n"
         << "gcrWithComponentA " << fGCRWithComponentA << "\n"
         << "gcrWithGSFIron " << fGCRWithGSFIron << "\n"
         << "rejectOutliers " << fRejectOutliers << "\n"
