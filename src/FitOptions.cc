@@ -80,7 +80,8 @@ namespace prop {
     fStartValues[eGammaLoNu] = StartValue(-5, 0.1, -10, 0, 1);
     fStartValues[eLgEmaxLoNu] = StartValue(18, 0.1, 12, 18, 1);
     fStartValues[eLgPhiLoNu] = StartValue(-100, 0.1, -100, 0, 1); 
-  
+    
+    fGalSpectrumType = GalSpectrum::eExponential; 
     fSpectrumType = Spectrum::eExponential;
     fNuSpectrumType = Spectrum::eNuExponential;
     fMassFractionType = eFixedEnergy;
@@ -91,6 +92,7 @@ namespace prop {
     fNuSpectrumDataType = eNuSpectrumNone;
     fNuEventDataType = eNuEventNone;
 
+    fGalSpectrumTypeName = "exponential";
     fSpectrumTypeName = "exponential";
     fNuSpectrumTypeName = "exponential";
     fMassFractionTypeName = "fixedEnergy";
@@ -497,6 +499,18 @@ namespace prop {
         else
           throw runtime_error("unknown nu event data type: " + type);
         fNuEventDataTypeName = type;
+      }
+      else if (keyword == "galSpectrumType") {
+        string type;
+        if (!(line >> type))
+          throw runtime_error("error decoding spectrumType");
+        if (type == "exponential")
+          fGalSpectrumType = GalSpectrum::eExponential;
+        else if (type == "sech")
+          fGalSpectrumType = GalSpectrum::eCosh2;
+        else
+          throw runtime_error("unknown spectrum type" + type);
+        fGalSpectrumTypeName = type;
       }
       else if (keyword == "spectrumType") {
         string type;
@@ -967,6 +981,7 @@ namespace prop {
         << "xmaxAbsoluteShift " << fXmaxAbsoluteShift << "\n"
         << "spectrumData " << fSpectrumDataTypeName << "\n"
         << "xmaxData " << fXmaxDataTypeName << "\n"
+        << "galSpectrumType " << fGalSpectrumTypeName << "\n"
         << "spectrumType " << fSpectrumTypeName << "\n"
         << "nuSpectrumType " << fNuSpectrumTypeName << "\n";
     out << "minLgEFlux " << fMinFluxLgE << "\n"

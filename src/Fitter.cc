@@ -555,7 +555,7 @@ namespace prop {
               }
             }
             else
-              phiGal = iter.second * exp(-E0/emaxGal);
+              phiGal = iter.second * fFitData.fGalSpectrum.Flux(E0,emaxGal); //exp(-E0/emaxGal);;
             galSum += phiGal;
           }
 
@@ -608,7 +608,7 @@ namespace prop {
                 }
               }
               else
-                phiGalA = iter.second * exp(-E0/emaxGalA);
+                phiGalA = iter.second * fFitData.fGalSpectrum.Flux(E0,emaxGalA); //exp(-E0/emaxGalA);
               galASum += phiGalA;
             }
             const double lgGalASum = log10(galASum);
@@ -646,8 +646,8 @@ namespace prop {
                 galactic[i][0] = iter.second * phi0Gal * pow(E/E0, -0.56) * exp(-pow(E/emaxGal, 0.48)); // spectrum of a colliding shock flow fitting data from arXiv:1706.01135
               else if(fWMEBurst)
                 galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * WMEBurstSeries(E, emaxGal);
-              else
-                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * exp(-E/emaxGal);
+	          else
+                galactic[i][0] = iter.second * phi0Gal * pow(E/E0, gammaGal) * fFitData.fGalSpectrum.Flux(E,emaxGal);//  exp(-E/emaxGal);
               lgE += dlgE;
             }
             data.fPropagator->AddComponent(iter.first + kGalacticOffset,
@@ -666,8 +666,8 @@ namespace prop {
               for (unsigned int i = 0; i < data.fNLgE; ++i) {
                 const double E = pow(10, lgE);
                 galacticA[i][0] =
-                  iter.second * phi0Gal * phi0GalA * pow(E/E0, gammaGalA) * exp(-E/emaxGalA);
-                lgE += dlgE;
+                  iter.second * phi0Gal * phi0GalA * pow(E/E0, gammaGalA) * fFitData.fGalSpectrum.Flux(E,emaxGalA); // exp(-E/emaxGalA);
+		        lgE += dlgE;
               }
               data.fPropagator->AddComponent(iter.first + kGalacticAOffset,
                                              galacticA);
@@ -1289,6 +1289,7 @@ namespace prop {
     fNoEgComponent = fOptions.NoEGComponent();
     fUseLgLikelihood = fOptions.UseLgLikelihood();
     fFitData.fFitParameters.resize(GetNParameters());
+    fFitData.fGalSpectrum.SetSpectrumType(fOptions.GetGalSpectrumType());
     fFitData.fSpectrum.SetSpectrumType(fOptions.GetSpectrumType());
     fFitData.fSpectrum.SetNuSpectrumType(fOptions.GetNuSpectrumType());
     fLgBaselineFraction = fOptions.GetLgBaselineFraction();

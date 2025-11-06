@@ -8,6 +8,29 @@
 
 namespace prop {
 
+  class GalSpectrum {
+
+  public:
+    enum ESpectrumType {
+      eExponential,
+      eCosh2
+    };
+
+  public:
+    GalSpectrum() : fGalSpectrumType(eExponential) {}
+
+    GalSpectrum(const ESpectrumType spectrumType) : fGalSpectrumType(spectrumType) {}
+
+    void SetSpectrumType(const ESpectrumType type)
+    { fGalSpectrumType = type; }
+
+    double Flux(const double E, const double Emax) const;   
+  private: 
+    ESpectrumType fGalSpectrumType;
+
+  };
+
+
   class Spectrum {
 
   public:

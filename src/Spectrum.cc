@@ -37,6 +37,19 @@ namespace prop {
   const double gNeutronMass = 939.565379e6;
   const double gPionMass = 139.57061e6;
 
+  double
+  GalSpectrum::Flux(const double E, const double Emax)
+    const 
+  {
+    if (fGalSpectrumType == eExponential)
+      return  exp(-E/Emax);
+    else if (fGalSpectrumType == eCosh2) {
+      return 1.0 / cosh(pow(E/Emax, 2)); 
+    }
+    else
+      throw runtime_error("galactic spectrum type not implemented");
+  }
+
   const
   Spectrum::SpecMap&
   Spectrum::GetEscFlux()
